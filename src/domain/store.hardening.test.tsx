@@ -26,8 +26,7 @@ describe("store mutations / login race", () => {
         productId: "prod-iphone-15-pro",
         maxPrice: 1_111_000,
         conditionPreference: "any",
-        location: "Seoul",
-        tradeMethod: "any",
+        fulfillmentOptions: [{ mode: "SHIPPING" }, { mode: "MEETUP", place: { publicLabel: "Seoul" } }],
       });
       createdId = created?.id ?? null;
     });
@@ -55,8 +54,7 @@ describe("store mutations / login race", () => {
         productId,
         maxPrice: 1_000_000,
         conditionPreference: "any",
-        location: "Seoul",
-        tradeMethod: "any",
+        fulfillmentOptions: [{ mode: "SHIPPING" }, { mode: "MEETUP", place: { publicLabel: "Seoul" } }],
       });
     });
     await act(async () => {
@@ -66,8 +64,7 @@ describe("store mutations / login race", () => {
         productId,
         maxPrice: 2_000_000,
         conditionPreference: "sealed",
-        location: "Busan",
-        tradeMethod: "meetup",
+        fulfillmentOptions: [{ mode: "SHIPPING" }, { mode: "MEETUP", place: { publicLabel: "Seoul" } }],
       });
     });
 
@@ -124,8 +121,7 @@ describe("store mutations / login race", () => {
         productId: "prod-sony-a7iv",
         maxPrice: 2_500_000,
         conditionPreference: "any",
-        location: "Seoul",
-        tradeMethod: "any",
+        fulfillmentOptions: [{ mode: "SHIPPING" }, { mode: "MEETUP", place: { publicLabel: "Seoul" } }],
       });
     });
 

@@ -1,23 +1,23 @@
 import type { Demand, FeedItem, Product } from "./types";
 import { isBuyDemand, isIndividualDemandType } from "./types";
 import { isDemandLive } from "./demands";
-import {
-  aggregateDemands,
-  listDemandAggregates,
-} from "./aggregation";
+import { listDemandAggregates } from "./aggregation";
+import type { FeedAreaFilter } from "./fulfillment";
+import { matchesFeedAreaFilter } from "./fulfillment";
 
 export interface BuildFeedOptions {
   nowMs?: number;
   displaySeekerOverrides?: Record<string, number>;
   displayRecentDeltaFloor?: Record<string, number>;
+  areaFilter?: FeedAreaFilter;
+  viewerDefaultArea?: string;
 }
 
 function applyDisplayOverride(
-  agg: ReturnType<typeof aggregateDemands> & object,
+  agg: ReturnType<typeof listDemandAggregates>[number],
   overrides?: Record<string, number>,
   recentFloor?: Record<string, number>,
 ) {
-  if (!agg) return null;
   return {
     ...agg,
     seekerCount: overrides?.[agg.productId] ?? agg.seekerCount,
@@ -28,9 +28,29 @@ function applyDisplayOverride(
   };
 }
 
+function latestBuyCreatedAt(
+  demands: Demand[],
+  productId: string,
+  nowMs: number,
+): string {
+  let latest = 0;
+  let latestIso = new Date(0).toISOString();
+  for (const d of demands) {
+    if (!isBuyDemand(d) || d.details.productId !== productId) continue;
+    if (!isDemandLive(d, nowMs)) continue;
+    const t = new Date(d.createdAt).getTime();
+    if (t >= latest) {
+      latest = t;
+      latestIso = d.createdAt;
+    }
+  }
+  return latestIso;
+}
+
 /**
- * Mixed feed: aggregated BUY products + individual non-BUY demands.
- * Aggregated rows use unique-seeker domain counts (+ optional demo overrides).
+ * Mixed feed: aggregated BUY + individual non-BUY.
+ * Ranking uses the same time axis (createdAt / latest BUY createdAt)
+ * so aggregated rows are not permanently buried or pinned by a different scale.
  */
 export function buildFeedItems(
   products: Product[],
@@ -38,6 +58,9 @@ export function buildFeedItems(
   options: BuildFeedOptions = {},
 ): FeedItem[] {
   const nowMs = options.nowMs ?? Date.now();
+  const areaFilter = options.areaFilter ?? "all";
+  const viewerDefaultArea = options.viewerDefaultArea ?? "";
+
   const aggregated = listDemandAggregates(products, demands, { nowMs })
     .map((row) => {
       const agg = applyDisplayOverride(
@@ -45,37 +68,57 @@ export function buildFeedItems(
         options.displaySeekerOverrides,
         options.displayRecentDeltaFloor,
       );
-      if (!agg) return null;
+      const buyRows = demands.filter(
+        (d) =>
+          isBuyDemand(d) &&
+          d.details.productId === row.product.id &&
+          isDemandLive(d, nowMs),
+      );
+      if (
+        areaFilter !== "all" &&
+        !buyRows.some((d) =>
+          matchesFeedAreaFilter(d.fulfillmentOptions, areaFilter, viewerDefaultArea),
+        )
+      ) {
+        return null;
+      }
+      const { product, ...aggregate } = agg;
       return {
         kind: "aggregated" as const,
-        id: `agg:${row.product.id}`,
-        product: row.product,
-        aggregate: agg,
+        id: `agg:${product.id}`,
+        product,
+        aggregate,
+        sortAt: latestBuyCreatedAt(demands, product.id, nowMs),
       };
     })
-    .filter((x): x is Extract<FeedItem, { kind: "aggregated" }> => x != null);
+    .filter((x): x is NonNullable<typeof x> => x != null);
 
   const individual = demands
     .filter(
-      (d) => isIndividualDemandType(d.type) && isDemandLive(d, nowMs),
+      (d) =>
+        isIndividualDemandType(d.type) &&
+        isDemandLive(d, nowMs) &&
+        matchesFeedAreaFilter(d.fulfillmentOptions, areaFilter, viewerDefaultArea),
     )
     .map((demand) => ({
       kind: "individual" as const,
       id: `demand:${demand.id}`,
       demand,
+      sortAt: demand.createdAt,
     }));
 
   const merged: FeedItem[] = [...aggregated, ...individual];
   return merged.sort((a, b) => {
-    const aTime =
-      a.kind === "aggregated"
-        ? a.aggregate.recent7dDelta * 1_000_000 + a.aggregate.seekerCount
-        : new Date(a.demand.createdAt).getTime();
-    const bTime =
-      b.kind === "aggregated"
-        ? b.aggregate.recent7dDelta * 1_000_000 + b.aggregate.seekerCount
-        : new Date(b.demand.createdAt).getTime();
-    return bTime - aTime;
+    const aTime = new Date(a.sortAt).getTime();
+    const bTime = new Date(b.sortAt).getTime();
+    if (bTime !== aTime) return bTime - aTime;
+    // Stable tie-break: prefer higher seeker activity for aggregates, else id.
+    const aBoost =
+      a.kind === "aggregated" ? a.aggregate.seekerCount : 0;
+    const bBoost =
+      b.kind === "aggregated" ? b.aggregate.seekerCount : 0;
+    if (bBoost !== aBoost) return bBoost - aBoost;
+    return a.id.localeCompare(b.id);
   });
 }
 

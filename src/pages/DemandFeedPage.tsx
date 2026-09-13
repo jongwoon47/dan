@@ -6,6 +6,12 @@ import { Chip, ChipGroup, TextInput } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
+import { buildFeedItems } from "@/domain/feed";
+import type { FeedAreaFilter } from "@/domain/fulfillment";
+import { formatFulfillmentCardLine } from "@/domain/fulfillment";
+import {
+  DISPLAY_SEEKER_OVERRIDES,
+} from "@/domain/mockData";
 import type { DemandType } from "@/domain/types";
 import { DEMAND_TYPE_LABEL } from "@/domain/types";
 import "./pages.css";
@@ -14,13 +20,27 @@ import "@/components/feedCards.css";
 type Filter = "all" | DemandType;
 
 export function DemandFeedPage() {
-  const { demandFeed } = useDan();
+  const { state, currentUser, demandFeed, products } = useDan();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
+  const [areaFilter, setAreaFilter] = useState<FeedAreaFilter>("all");
+
+  const areaFeed = useMemo(
+    () =>
+      buildFeedItems(products, state.demands, {
+        displaySeekerOverrides: DISPLAY_SEEKER_OVERRIDES,
+        displayRecentDeltaFloor: { "prod-iphone-15-pro": 6 },
+        areaFilter,
+        viewerDefaultArea: currentUser?.defaultArea ?? "",
+      }),
+    [products, state.demands, areaFilter, currentUser?.defaultArea],
+  );
+
+  const source = areaFilter === "all" ? demandFeed : areaFeed;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return demandFeed.filter((item) => {
+    return source.filter((item) => {
       if (filter !== "all") {
         if (item.kind === "aggregated" && filter !== "BUY") return false;
         if (item.kind === "individual" && item.demand.type !== filter) return false;
@@ -29,16 +49,19 @@ export function DemandFeedPage() {
       if (item.kind === "aggregated") {
         return (
           item.product.name.toLowerCase().includes(q) ||
-          item.product.brand.toLowerCase().includes(q)
+          item.product.brand.toLowerCase().includes(q) ||
+          (item.aggregate.fulfillmentSummary ?? "").toLowerCase().includes(q)
         );
       }
       return (
         item.demand.title.toLowerCase().includes(q) ||
-        item.demand.location.toLowerCase().includes(q) ||
+        formatFulfillmentCardLine(item.demand.fulfillmentOptions)
+          .toLowerCase()
+          .includes(q) ||
         item.demand.description.toLowerCase().includes(q)
       );
     });
-  }, [demandFeed, filter, query]);
+  }, [source, filter, query]);
 
   return (
     <div className="page-stack">
@@ -53,6 +76,18 @@ export function DemandFeedPage() {
         placeholder={ko.searchPh}
         aria-label={ko.searchPh}
       />
+
+      <ChipGroup>
+        <Chip selected={areaFilter === "all"} onClick={() => setAreaFilter("all")}>
+          {ko.all}
+        </Chip>
+        <Chip selected={areaFilter === "nearby"} onClick={() => setAreaFilter("nearby")}>
+          {ko.filterNearby}
+        </Chip>
+        <Chip selected={areaFilter === "online"} onClick={() => setAreaFilter("online")}>
+          {ko.filterOnline}
+        </Chip>
+      </ChipGroup>
 
       <ChipGroup>
         <Chip selected={filter === "all"} onClick={() => setFilter("all")}>

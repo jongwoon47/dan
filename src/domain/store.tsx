@@ -3,6 +3,10 @@ import { useMemo, useReducer, type ReactNode } from "react";
 import { upsertActiveDemand } from "./demands";
 import { buildFeedItems } from "./feed";
 import {
+  areFulfillmentOptionsValid,
+  tradeMethodFromFulfillment,
+} from "./fulfillment";
+import {
   buildVisibleMatches,
   listMatchCandidates,
   parsePotentialMatchId,
@@ -42,7 +46,7 @@ import {
 } from "./danContext";
 import type { DanState } from "./storeTypes";
 
-const STORAGE_KEY = "dan-v1-store";
+const STORAGE_KEY = "dan-v2-fulfillment-store";
 
 type Action =
   | { type: "LOGIN"; userId: string }
@@ -133,6 +137,7 @@ function buildDemandFromInput(
   const expiresAt = new Date(Date.now() + 30 * 86400000).toISOString();
   if (payload.type === "BUY") {
     const product = PRODUCTS.find((p) => p.id === payload.productId);
+    const fulfillmentOptions = payload.fulfillmentOptions;
     const demand: BuyDemand = {
       id: existingBuy?.id ?? createId("demand"),
       userId: actorId,
@@ -141,7 +146,7 @@ function buildDemandFromInput(
       description: payload.description ?? payload.title,
       category: categoryForBuyProduct(payload.productId),
       budget: payload.maxPrice,
-      location: payload.location,
+      fulfillmentOptions,
       status: "ACTIVE",
       createdAt: existingBuy?.createdAt ?? now,
       expiresAt,
@@ -149,7 +154,8 @@ function buildDemandFromInput(
         productId: payload.productId,
         maxPrice: payload.maxPrice,
         conditionPreference: payload.conditionPreference,
-        tradeMethod: payload.tradeMethod,
+        tradeMethod:
+          payload.tradeMethod ?? tradeMethodFromFulfillment(fulfillmentOptions),
       },
     };
     return demand;
@@ -163,7 +169,7 @@ function buildDemandFromInput(
       description: payload.description ?? payload.title,
       category: "rental",
       budget: payload.budget,
-      location: payload.location,
+      fulfillmentOptions: payload.fulfillmentOptions,
       status: "ACTIVE",
       createdAt: now,
       expiresAt,
@@ -183,7 +189,7 @@ function buildDemandFromInput(
       description: payload.description ?? payload.taskDescription,
       category: "errand",
       budget: payload.budget,
-      location: payload.location,
+      fulfillmentOptions: payload.fulfillmentOptions,
       status: "ACTIVE",
       createdAt: now,
       expiresAt,
@@ -201,7 +207,7 @@ function buildDemandFromInput(
     description: payload.description ?? payload.serviceDescription,
     category: "service",
     budget: payload.budget,
-    location: payload.location,
+    fulfillmentOptions: payload.fulfillmentOptions,
     status: "ACTIVE",
     createdAt: now,
     expiresAt,
@@ -369,6 +375,9 @@ export function DanProvider({ children }: { children: ReactNode }) {
       login: (userId = CURRENT_USER_ID) => dispatch({ type: "LOGIN", userId }),
       logout: () => dispatch({ type: "LOGOUT" }),
       createDemand: async (payload) => {
+        if (!areFulfillmentOptionsValid(payload.fulfillmentOptions)) {
+          return null;
+        }
         const { actorId, ensureUserId } = resolveDemoActorId(state.currentUserId);
         const existingBuy =
           payload.type === "BUY"

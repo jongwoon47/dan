@@ -4,6 +4,7 @@ import {
   listDemandAggregates as listDemandAggregatesDomain,
 } from "./aggregation";
 import { buildFeedItems } from "./feed";
+import { placeFromLabel, type FulfillmentOption } from "./fulfillment";
 import type {
   BorrowDemand,
   BuyDemand,
@@ -20,10 +21,10 @@ import type {
 } from "./types";
 
 export const DEMO_USERS: User[] = [
-  { id: "user-mina", name: ko.mina, location: ko.seongdong },
-  { id: "user-jun", name: ko.jun, location: ko.mapo },
-  { id: "user-hae", name: ko.hae, location: ko.haeundae },
-  { id: "user-you", name: ko.you, location: ko.gangnam },
+  { id: "user-mina", name: ko.mina, defaultArea: ko.seongdong },
+  { id: "user-jun", name: ko.jun, defaultArea: ko.mapo },
+  { id: "user-hae", name: ko.hae, defaultArea: ko.haeundae },
+  { id: "user-you", name: ko.you, defaultArea: ko.pyeongtaek },
 ];
 
 export const CURRENT_USER_ID = "user-you";
@@ -97,6 +98,26 @@ function daysFromNow(days: number): string {
   return d.toISOString();
 }
 
+function buyFulfillment(index: number): FulfillmentOption[] {
+  const patterns: FulfillmentOption[][] = [
+    [{ mode: "SHIPPING" }, { mode: "MEETUP", place: placeFromLabel("???") }],
+    [{ mode: "SHIPPING" }],
+    [{ mode: "MEETUP", place: placeFromLabel("?? ???") }],
+    [{ mode: "SHIPPING" }, { mode: "MEETUP", place: placeFromLabel("??") }],
+    [{ mode: "MEETUP", place: placeFromLabel("??") }],
+  ];
+  return patterns[index % patterns.length]!;
+}
+
+function tradeFrom(options: FulfillmentOption[]) {
+  const shipping = options.some((o) => o.mode === "SHIPPING");
+  const meetup = options.some((o) => o.mode === "MEETUP");
+  if (shipping && meetup) return "any" as const;
+  if (shipping) return "shipping" as const;
+  if (meetup) return "meetup" as const;
+  return "any" as const;
+}
+
 function buySeed(
   productId: string,
   category: BuyDemand["category"],
@@ -110,31 +131,28 @@ function buySeed(
     "sealed",
     "any",
   ];
-  const locations = [ko.seoul, ko.gyeonggi, ko.busan, ko.daegu, ko.incheon];
-  const methods: BuyDemand["details"]["tradeMethod"][] = [
-    "any",
-    "meetup",
-    "shipping",
-  ];
-  return entries.map(([maxPrice, days], index) => ({
-    id: `demand-${productId}-${index}`,
-    userId: `seeker-${productId}-${index}`,
-    type: "BUY" as const,
-    title: `${productName} | ${Math.round(maxPrice / 10_000)}${ko.manWon}`,
-    description: `${productName} / ${maxPrice.toLocaleString("ko-KR")}${ko.won}`,
-    category,
-    budget: maxPrice,
-    location: locations[index % locations.length]!,
-    status: "ACTIVE" as const,
-    createdAt: daysAgo(days),
-    expiresAt: daysFromNow(30 - (days % 10)),
-    details: {
-      productId,
-      maxPrice,
-      conditionPreference: conditions[index % conditions.length]!,
-      tradeMethod: methods[index % methods.length]!,
-    },
-  }));
+  return entries.map(([maxPrice, days], index) => {
+    const fulfillmentOptions = buyFulfillment(index);
+    return {
+      id: `demand-${productId}-${index}`,
+      userId: `seeker-${productId}-${index}`,
+      type: "BUY" as const,
+      title: `${productName} | ${Math.round(maxPrice / 10_000)}${ko.manWon}`,
+      description: `${productName} / ${maxPrice.toLocaleString("ko-KR")}${ko.won}`,
+      category,
+      budget: maxPrice,
+      fulfillmentOptions,
+      status: "ACTIVE" as const,
+      createdAt: daysAgo(days),
+      expiresAt: daysFromNow(30 - (days % 10)),
+      details: {
+        productId,
+        maxPrice,
+        conditionPreference: conditions[index % conditions.length]!,
+        tradeMethod: tradeFrom(fulfillmentOptions),
+      },
+    };
+  });
 }
 
 const SEED_BUY: BuyDemand[] = [
@@ -195,19 +213,21 @@ const SEED_BUY: BuyDemand[] = [
 
 const SEED_BORROW: BorrowDemand[] = [
   {
-    id: "demand-borrow-a7iv",
-    userId: "user-mina",
+    id: "demand-borrow-projector",
+    userId: "user-jun",
     type: "BORROW",
-    title: "이번 주말 Sony A7 IV 빌리고 싶어요",
-    description: "컬영용으로 토·일 이틀만 빌려요.",
+    title: "?? ?? ????? ???",
+    description: "?? ?? ????? ??? ????.",
     category: "rental",
-    budget: 50000,
-    location: ko.seoul,
+    budget: 30000,
+    fulfillmentOptions: [
+      { mode: "PICKUP", place: placeFromLabel("??? ???") },
+    ],
     status: "ACTIVE",
     createdAt: daysAgo(1),
     expiresAt: daysFromNow(5),
     details: {
-      itemName: "Sony A7 IV",
+      itemName: "?????",
       startAt: daysFromNow(2),
       endAt: daysFromNow(4),
     },
@@ -216,112 +236,107 @@ const SEED_BORROW: BorrowDemand[] = [
     id: "demand-borrow-tent",
     userId: "user-hae",
     type: "BORROW",
-    title: "캠핑 텐트 2박 빌려요",
-    description: "2–3인용 텐트면 충분해요.",
+    title: "?? ?? 2? ???",
+    description: "2?3?? ??? ????.",
     category: "camping",
     budget: 30000,
-    location: ko.gyeonggi,
+    fulfillmentOptions: [
+      { mode: "MEETUP", place: placeFromLabel("??") },
+    ],
     status: "ACTIVE",
     createdAt: daysAgo(0),
     expiresAt: daysFromNow(7),
     details: {
-      itemName: "캠핑 텐트",
+      itemName: "?? ??",
       startAt: daysFromNow(3),
       endAt: daysFromNow(5),
     },
-  },
-  {
-    id: "demand-borrow-projector",
-    userId: "user-jun",
-    type: "BORROW",
-    title: "비프로젝터 하루만 빌려주실 분",
-    description: "모임 발표용으로 저녁 한 타임만 필요해요.",
-    category: "rental",
-    budget: 20000,
-    location: ko.mapo,
-    status: "ACTIVE",
-    createdAt: daysAgo(2),
-    expiresAt: daysFromNow(4),
-    details: { itemName: "비프로젝터" },
   },
 ];
 
 const SEED_TASK: TaskDemand[] = [
   {
-    id: "demand-task-doc",
-    userId: "user-mina",
-    type: "TASK",
-    title: "오늘 8시 전에 서류 하나 받아주실 분",
-    description: "평택에서 서류 픽업만 부탁드려요.",
-    category: "errand",
-    budget: 20000,
-    location: ko.pyeongtaek,
-    status: "ACTIVE",
-    createdAt: daysAgo(0),
-    expiresAt: daysFromNow(1),
-    details: { taskDescription: "서류 픽업 대행", dueAt: daysFromNow(0) },
-  },
-  {
     id: "demand-task-cake",
     userId: "user-hae",
     type: "TASK",
-    title: "오늘 강남에서 케이크 픽업해주실 분",
-    description: "케이크 가게에서 받아서 근처까지만 와주셔도 됩니다.",
+    title: "????? ??? ????? ?",
+    description: "??? ???? ?? ????? ???? ???.",
     category: "errand",
     budget: 15000,
-    location: ko.gangnam,
+    fulfillmentOptions: [
+      { mode: "PICKUP", place: placeFromLabel("??? ??") },
+    ],
     status: "ACTIVE",
     createdAt: daysAgo(0),
     expiresAt: daysFromNow(1),
-    details: { taskDescription: "케이크 픽업", dueAt: daysFromNow(0) },
+    details: { taskDescription: "??? ??", dueAt: daysFromNow(0) },
   },
   {
-    id: "demand-task-ikea",
+    id: "demand-task-doc-route",
+    userId: "user-mina",
+    type: "TASK",
+    title: "?? ??? ????? ?",
+    description: "?? 8??? ?? ?? ? ?? ?????.",
+    category: "errand",
+    budget: 20000,
+    fulfillmentOptions: [
+      {
+        mode: "ROUTE",
+        from: placeFromLabel("???"),
+        to: placeFromLabel("??"),
+      },
+    ],
+    status: "ACTIVE",
+    createdAt: daysAgo(0),
+    expiresAt: daysFromNow(1),
+    details: { taskDescription: "?? ?? ? ??", dueAt: daysFromNow(0) },
+  },
+  {
+    id: "demand-task-remote-form",
     userId: "user-jun",
     type: "TASK",
-    title: "이케아 책상 조립해주실 분",
-    description: "성동구에서 간단한 책상 조립 도와주세요.",
-    category: "furniture",
-    budget: 40000,
-    location: ko.seongdong,
+    title: "??? ??? ?? ??????",
+    description: "? ?? ?? ??? ?????.",
+    category: "errand",
+    budget: 10000,
+    fulfillmentOptions: [{ mode: "REMOTE" }],
     status: "ACTIVE",
     createdAt: daysAgo(1),
     expiresAt: daysFromNow(3),
-    details: { taskDescription: "이케아 책상 조립", dueAt: daysFromNow(2) },
+    details: { taskDescription: "??? ??? ?? ??" },
   },
 ];
 
 const SEED_SERVICE: ServiceDemand[] = [
   {
-    id: "demand-svc-photo",
+    id: "demand-svc-ikea",
     userId: "user-mina",
     type: "SERVICE",
-    title: "오늘 간단한 사진 촬영해주실 분",
-    description: "프로필용으로 30분만 찍어주세요.",
+    title: "??? ?? ??????",
+    description: "????? ??? ?? ?? ?????.",
+    category: "furniture",
+    budget: 40000,
+    fulfillmentOptions: [
+      { mode: "ONSITE", place: placeFromLabel("???") },
+    ],
+    status: "ACTIVE",
+    createdAt: daysAgo(1),
+    expiresAt: daysFromNow(3),
+    details: { serviceDescription: "??? ?? ??" },
+  },
+  {
+    id: "demand-svc-ppt",
+    userId: "user-hae",
+    type: "SERVICE",
+    title: "PPT ??? ?? ??????",
+    description: "???? ????? ??? ??? ???.",
     category: "service",
-    budget: 50000,
-    location: ko.seoul,
+    budget: 30000,
+    fulfillmentOptions: [{ mode: "REMOTE" }],
     status: "ACTIVE",
     createdAt: daysAgo(0),
     expiresAt: daysFromNow(2),
-    details: {
-      serviceDescription: "짧은 프로필 촬영",
-      preferredAt: daysFromNow(0),
-    },
-  },
-  {
-    id: "demand-svc-move",
-    userId: "user-hae",
-    type: "SERVICE",
-    title: "짐 조금 옮기는 것 도와주실 분",
-    description: "상자 몇 개만 엘리베이터까지 같이 옮겨요.",
-    category: "service",
-    budget: 30000,
-    location: ko.busan,
-    status: "ACTIVE",
-    createdAt: daysAgo(1),
-    expiresAt: daysFromNow(2),
-    details: { serviceDescription: "간단 짐 이동 도움" },
+    details: { serviceDescription: "PPT ?? ??" },
   },
 ];
 

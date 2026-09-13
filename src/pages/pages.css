@@ -399,3 +399,27 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+.route-fields {
+  display: grid;
+  gap: var(--space-md);
+  align-items: end;
+  grid-template-columns: 1fr;
+}
+
+.route-arrow {
+  display: none;
+  text-align: center;
+  color: var(--dan-ink-muted);
+  font-weight: 700;
+}
+
+@media (min-width: 640px) {
+  .route-fields {
+    grid-template-columns: 1fr auto 1fr;
+  }
+  .route-arrow {
+    display: block;
+    padding-bottom: 14px;
+  }
+}

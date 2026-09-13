@@ -1,4 +1,8 @@
 import type { CreateDemandInput } from "@/domain/danContext";
+import {
+  formatFulfillmentSummary,
+  tradeMethodFromFulfillment,
+} from "@/domain/fulfillment";
 import type {
   Demand,
   DemandAggregate,
@@ -37,7 +41,7 @@ export async function fetchSessionUser(): Promise<User | null> {
   return {
     id: auth.user.id,
     name: profile?.display_name ?? auth.user.email ?? "DAN user",
-    location: profile?.location ?? "",
+    defaultArea: profile?.location ?? "",
   };
 }
 
@@ -190,21 +194,25 @@ export async function createDemandRemote(input: CreateDemandInput): Promise<Dema
   if (!auth.user) throw new Error("login required");
 
   if (input.type === "BUY") {
+    const locationSummary = formatFulfillmentSummary(input.fulfillmentOptions);
+    const tradeMethod =
+      input.tradeMethod ?? tradeMethodFromFulfillment(input.fulfillmentOptions);
     const { data, error } = await sb.rpc("upsert_buy_demand", {
       p_product_id: input.productId,
       p_title: input.title,
       p_description: input.description ?? input.title,
       p_category: "electronics",
       p_max_price: input.maxPrice,
-      p_location: input.location,
+      p_location: locationSummary,
       p_condition_preference: input.conditionPreference,
-      p_trade_method: input.tradeMethod,
+      p_trade_method: tradeMethod,
       p_expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
     });
     if (error) throw error;
     return mapDemand(data as DbDemand);
   }
 
+  const locationSummary = formatFulfillmentSummary(input.fulfillmentOptions);
   const row =
     input.type === "BORROW"
       ? {
@@ -214,7 +222,7 @@ export async function createDemandRemote(input: CreateDemandInput): Promise<Dema
           description: input.description ?? input.title,
           category: "rental",
           budget: input.budget,
-          location: input.location,
+          location: locationSummary,
           status: "ACTIVE",
           item_name: input.itemName,
           start_at: input.startAt ?? null,
@@ -229,7 +237,7 @@ export async function createDemandRemote(input: CreateDemandInput): Promise<Dema
             description: input.description ?? input.taskDescription,
             category: "errand",
             budget: input.budget,
-            location: input.location,
+            location: locationSummary,
             status: "ACTIVE",
             task_description: input.taskDescription,
             due_at: input.dueAt ?? null,
@@ -242,7 +250,7 @@ export async function createDemandRemote(input: CreateDemandInput): Promise<Dema
             description: input.description ?? input.serviceDescription,
             category: "service",
             budget: input.budget,
-            location: input.location,
+            location: locationSummary,
             status: "ACTIVE",
             service_description: input.serviceDescription,
             preferred_at: input.preferredAt ?? null,

@@ -60,6 +60,10 @@ export function DemandDetailPage() {
         </div>
       </div>
 
+      {aggregate.fulfillmentSummary ? (
+        <p className="section-desc">{aggregate.fulfillmentSummary}</p>
+      ) : null}
+
       <Card className="section-stack">
         <h2 className="section-title">{ko.priceDist}</h2>
         <PriceDistribution buckets={aggregate.priceBuckets} />

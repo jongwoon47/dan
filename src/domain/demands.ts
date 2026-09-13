@@ -36,7 +36,7 @@ export function upsertActiveDemand(
     description: next.description,
     category: next.category,
     budget: next.budget,
-    location: next.location,
+    fulfillmentOptions: next.fulfillmentOptions,
     expiresAt: next.expiresAt,
     status: "ACTIVE",
     details: { ...existing.details, ...next.details },

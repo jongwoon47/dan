@@ -40,6 +40,7 @@ describe("mappers", () => {
     const d = mapDemand(row);
     expect(d.type).toBe("TASK");
     expect(d.budget).toBe(15000);
+    expect(d.fulfillmentOptions.length).toBeGreaterThan(0);
   });
 
   it("never maps POTENTIAL match status from DB shape", () => {

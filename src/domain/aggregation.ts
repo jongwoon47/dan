@@ -1,6 +1,7 @@
 import type { Demand, DemandAggregate, PriceBucket, Product } from "./types";
 import { isBuyDemand } from "./types";
 import { isDemandLive } from "./demands";
+import { summarizeBuyFulfillment } from "./fulfillment";
 import { ko } from "@/copy/ko";
 
 export interface AggregateOptions {
@@ -46,6 +47,9 @@ export function aggregateDemands(
     recent7dDelta,
     highestIntentPrice: maxPrice,
     priceBuckets: buildBuckets(prices),
+    fulfillmentSummary: summarizeBuyFulfillment(
+      live.map((d) => d.fulfillmentOptions),
+    ),
   };
 }
 

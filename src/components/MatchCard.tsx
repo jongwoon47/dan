@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { CategoryPill, ProductVisual } from "@/components/ProductVisual";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
+import { formatFulfillmentSummary } from "@/domain/fulfillment";
 import { CONDITION_LABEL, MATCH_STATUS_LABEL, type Match } from "@/domain/types";
 import { isBuyDemand } from "@/domain/types";
 import { formatWon } from "@/lib/format";
@@ -117,8 +118,8 @@ export function MatchCard({ match }: { match: Match }) {
           <strong>{CONDITION_LABEL[ownership.condition]}</strong>
         </div>
         <div>
-          <span>{ko.location}</span>
-          <strong>{demand.location}</strong>
+          <span>{ko.detailWhere}</span>
+          <strong>{formatFulfillmentSummary(demand.fulfillmentOptions)}</strong>
         </div>
         <div>
           <span>{isBuyer ? ko.sellConsiderPrice : ko.hopePrice}</span>

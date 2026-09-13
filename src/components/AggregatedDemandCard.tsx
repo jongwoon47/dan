@@ -26,6 +26,9 @@ export function AggregatedDemandCard({
           </strong>
           {ko.similarSeeking}
         </p>
+        {aggregate.fulfillmentSummary ? (
+          <p className="feed-row__place">{aggregate.fulfillmentSummary}</p>
+        ) : null}
       </div>
       <div className="feed-row__stats">
         <div>

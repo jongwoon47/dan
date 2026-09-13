@@ -1,4 +1,5 @@
 import { ko } from "@/copy/ko";
+import type { FulfillmentOption } from "./fulfillment";
 
 export type DemandType = "BUY" | "BORROW" | "TASK" | "SERVICE";
 
@@ -34,7 +35,8 @@ export type MatchStatus =
 export interface User {
   id: string;
   name: string;
-  location: string;
+  /** Profile default area ? input/filter default only, not matching truth. */
+  defaultArea: string;
 }
 
 export interface Product {
@@ -55,7 +57,8 @@ export interface DemandBase {
   description: string;
   category: DemandCategory;
   budget: number;
-  location: string;
+  /** How this demand can be fulfilled (not profile residence). */
+  fulfillmentOptions: FulfillmentOption[];
   status: DemandStatus;
   createdAt: string;
   expiresAt: string;
@@ -65,6 +68,7 @@ export interface BuyDemandDetails {
   productId: string;
   maxPrice: number;
   conditionPreference: ConditionPreference;
+  /** Derived from fulfillmentOptions for BUY matching. */
   tradeMethod: TradeMethod;
 }
 
@@ -115,7 +119,6 @@ export interface Ownership {
   createdAt: string;
 }
 
-/** BUY-specific supply signal: willing to sell owned product. */
 export interface SellIntent {
   id: string;
   ownershipId: string;
@@ -126,10 +129,6 @@ export interface SellIntent {
   createdAt: string;
 }
 
-/**
- * Generic supply-side intent: "I can fulfill this demand."
- * BUY may also use SellIntent; non-BUY uses Response.
- */
 export interface Response {
   id: string;
   demandId: string;
@@ -161,6 +160,7 @@ export interface DemandAggregate {
   recent7dDelta: number;
   highestIntentPrice: number;
   priceBuckets: PriceBucket[];
+  fulfillmentSummary?: string;
 }
 
 export interface PriceBucket {
@@ -176,11 +176,13 @@ export type FeedItem =
       id: string;
       product: Product;
       aggregate: DemandAggregate;
+      sortAt: string;
     }
   | {
       kind: "individual";
       id: string;
       demand: Demand;
+      sortAt: string;
     };
 
 export const DEMAND_TYPE_LABEL: Record<DemandType, string> = {
@@ -231,3 +233,10 @@ export function isBuyDemand(demand: Demand): demand is BuyDemand {
 export function isIndividualDemandType(type: DemandType): boolean {
   return type === "BORROW" || type === "TASK" || type === "SERVICE";
 }
+
+export type {
+  FulfillmentMode,
+  FulfillmentOption,
+  Place,
+  FeedAreaFilter,
+} from "./fulfillment";

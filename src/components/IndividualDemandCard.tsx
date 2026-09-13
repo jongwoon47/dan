@@ -1,11 +1,13 @@
 import { Link } from "react-router-dom";
 import { ko } from "@/copy/ko";
+import { formatFulfillmentCardLine } from "@/domain/fulfillment";
 import type { Demand } from "@/domain/types";
 import { CATEGORY_LABEL, DEMAND_TYPE_LABEL } from "@/domain/types";
 import { formatWon } from "@/lib/format";
 import "./feedCards.css";
 
 export function IndividualDemandCard({ demand }: { demand: Demand }) {
+  const fulfillLine = formatFulfillmentCardLine(demand.fulfillmentOptions);
   return (
     <Link to={`/demand/item/${demand.id}`} className="feed-row feed-row--ind">
       <div className="feed-row__meta">
@@ -14,13 +16,17 @@ export function IndividualDemandCard({ demand }: { demand: Demand }) {
         </span>
         <h3 className="feed-row__title">{demand.title}</h3>
         <p className="feed-row__place">
-          {demand.location}
+          {fulfillLine}
           {demand.type === "BORROW" ? ` · ${formatWon(demand.budget)}${ko.perDay}` : null}
         </p>
       </div>
       <div className="feed-row__stats">
         <div>
-          <span>{demand.type === "TASK" || demand.type === "SERVICE" ? ko.reward : ko.detailBudget}</span>
+          <span>
+            {demand.type === "TASK" || demand.type === "SERVICE"
+              ? ko.reward
+              : ko.detailBudget}
+          </span>
           <strong>{formatWon(demand.budget)}</strong>
         </div>
       </div>

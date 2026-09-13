@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
+import { formatFulfillmentSummary } from "@/domain/fulfillment";
 import { CATEGORY_LABEL, DEMAND_TYPE_LABEL } from "@/domain/types";
 import { formatWon } from "@/lib/format";
 import "./pages.css";
@@ -70,7 +71,7 @@ export function DemandItemPage() {
       <div className="detail-facts">
         <div>
           <span>{ko.detailWhere}</span>
-          <strong>{demand.location}</strong>
+          <strong>{formatFulfillmentSummary(demand.fulfillmentOptions)}</strong>
         </div>
         <div>
           <span>{ko.detailBudget}</span>

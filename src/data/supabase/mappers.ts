@@ -12,6 +12,10 @@ import type {
   Response,
   SellIntent,
 } from "@/domain/types";
+import {
+  fulfillmentFromLegacyLocation,
+  type FulfillmentOption,
+} from "@/domain/fulfillment";
 
 export type DbProduct = {
   id: string;
@@ -32,6 +36,7 @@ export type DbDemand = {
   category: string;
   budget: number;
   location: string;
+  fulfillment_options?: unknown;
   status: Demand["status"];
   product_id: string | null;
   max_price: number | null;
@@ -107,6 +112,11 @@ export function mapProduct(row: DbProduct): Product {
 }
 
 export function mapDemand(row: DbDemand): Demand {
+  const fulfillmentOptions =
+    Array.isArray(row.fulfillment_options) && row.fulfillment_options.length > 0
+      ? (row.fulfillment_options as FulfillmentOption[])
+      : fulfillmentFromLegacyLocation(row.location ?? "");
+
   const base = {
     id: row.id,
     userId: row.user_id,
@@ -114,7 +124,7 @@ export function mapDemand(row: DbDemand): Demand {
     description: row.description,
     category: row.category as DemandCategory,
     budget: Number(row.budget),
-    location: row.location,
+    fulfillmentOptions,
     status: row.status,
     createdAt: row.created_at,
     expiresAt: row.expires_at ?? row.created_at,
