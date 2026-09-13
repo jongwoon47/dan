@@ -1,0 +1,179 @@
+:root {
+  /* DAN identity — neutral + teal accent (not PAN purple) */
+  --dan-bg: #f3f4f6;
+  --dan-bg-elevated: #eef0f3;
+  --dan-surface: #ffffff;
+  --dan-ink: #14161a;
+  --dan-ink-secondary: #4b5563;
+  --dan-ink-muted: #8b93a1;
+  --dan-border: #e5e7eb;
+  --dan-border-strong: #d1d5db;
+  --dan-accent: #0e7c66;
+  --dan-accent-pressed: #0b6553;
+  --dan-accent-soft: #e6f5f1;
+  --dan-accent-text: #0a5c4c;
+  --dan-warn: #b54708;
+  --dan-warn-soft: #fffaeb;
+  --dan-danger: #b42318;
+  --dan-success: #067647;
+
+  /* Spacing inspired by PAN density (4/8/12/16/20/28/40) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-xxl: 28px;
+  --space-xxxl: 40px;
+
+  /* Radius inspired by PAN (10/12/16/22/28) */
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-xxl: 28px;
+  --radius-full: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(20, 22, 26, 0.04);
+  --shadow-md: 0 8px 24px rgba(20, 22, 26, 0.06);
+  --shadow-card: 0 1px 2px rgba(20, 22, 26, 0.04),
+    0 4px 16px rgba(20, 22, 26, 0.04);
+
+  --font-sans: "Manrope", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --font-display: "Outfit", "Manrope", sans-serif;
+
+  --nav-height: 64px;
+  --bottom-nav-height: 64px;
+  --content-max: 1080px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--dan-ink);
+  background: var(--dan-bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--dan-accent);
+  outline-offset: 2px;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-xl) var(--space-lg) calc(var(--bottom-nav-height) + 24px);
+}
+
+@media (min-width: 860px) {
+  .app-main {
+    padding: var(--space-xxl) var(--space-xxl) var(--space-xxxl);
+  }
+}
+
+.page-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xxl);
+}
+
+.section-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.section-desc {
+  color: var(--dan-ink-secondary);
+  font-size: 0.9375rem;
+}
+
+.grid-cards {
+  display: grid;
+  gap: var(--space-lg);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .grid-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 960px) {
+  .grid-cards.cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}

@@ -1,0 +1,136 @@
+.demand-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-lg);
+  text-decoration: none;
+  color: inherit;
+  align-items: stretch;
+}
+
+.demand-card__signal {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-width: 88px;
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--dan-accent-soft);
+  text-align: center;
+}
+
+.demand-card__count {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  line-height: 1;
+}
+
+.demand-card__count-num {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--dan-accent-text);
+}
+
+.demand-card__count-unit {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: var(--dan-accent-text);
+}
+
+.demand-card__count-label {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--dan-accent-text);
+}
+
+.demand-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  min-width: 0;
+}
+
+.demand-card__row {
+  display: flex;
+  gap: var(--space-md);
+  min-width: 0;
+}
+
+.demand-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.demand-card__title {
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.demand-card__stats {
+  display: grid;
+  gap: var(--space-sm);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 420px) {
+  .demand-card__stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.demand-card__stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.demand-card__stats strong {
+  font-size: 0.8125rem;
+  letter-spacing: -0.01em;
+  word-break: keep-all;
+}
+
+.demand-card__range {
+  font-size: 0.75rem !important;
+  color: var(--dan-ink-secondary);
+  font-weight: 600 !important;
+}
+
+.demand-card__label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--dan-ink-muted);
+}
+
+.demand-card__trend {
+  color: var(--dan-warn) !important;
+}
+
+@media (max-width: 419px) {
+  .demand-card {
+    grid-template-columns: 1fr;
+  }
+
+  .demand-card__signal {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: var(--space-md);
+    min-width: 0;
+    padding: 12px 14px;
+  }
+
+  .demand-card__count-label {
+    margin-top: 0;
+  }
+}

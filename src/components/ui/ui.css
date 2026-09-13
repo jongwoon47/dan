@@ -1,0 +1,208 @@
+.dan-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  min-height: 48px;
+  padding: 12px 16px;
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+  text-align: center;
+}
+
+.dan-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.dan-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.dan-btn--block {
+  width: 100%;
+}
+
+.dan-btn--sm {
+  min-height: 40px;
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+}
+
+.dan-btn--lg {
+  min-height: 52px;
+  padding: 14px 20px;
+  font-size: 1rem;
+}
+
+.dan-btn--primary {
+  background: var(--dan-accent);
+  color: #fff;
+}
+
+.dan-btn--primary:hover:not(:disabled) {
+  background: var(--dan-accent-pressed);
+}
+
+.dan-btn--secondary {
+  background: var(--dan-surface);
+  border-color: var(--dan-border-strong);
+  color: var(--dan-ink);
+}
+
+.dan-btn--secondary:hover:not(:disabled) {
+  background: var(--dan-bg-elevated);
+}
+
+.dan-btn--ghost {
+  background: transparent;
+  color: var(--dan-accent-text);
+}
+
+.dan-btn--ghost:hover:not(:disabled) {
+  background: var(--dan-accent-soft);
+}
+
+.dan-btn--danger {
+  background: var(--dan-danger);
+  color: #fff;
+}
+
+.dan-card {
+  background: var(--dan-surface);
+  border: 1px solid var(--dan-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.dan-card--padded {
+  padding: var(--space-lg);
+}
+
+.dan-card--interactive {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dan-card--interactive:hover {
+  border-color: var(--dan-border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.dan-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.dan-field__label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--dan-ink-secondary);
+}
+
+.dan-field__hint {
+  font-size: 0.8125rem;
+  color: var(--dan-ink-muted);
+}
+
+.dan-input {
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid var(--dan-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--dan-surface);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dan-input:focus {
+  outline: none;
+  border-color: var(--dan-accent);
+  box-shadow: 0 0 0 3px var(--dan-accent-soft);
+}
+
+.dan-select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--dan-ink-muted) 50%),
+    linear-gradient(135deg, var(--dan-ink-muted) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 22px, calc(100% - 12px) 22px;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 36px;
+}
+
+.dan-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.dan-chip {
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--dan-border-strong);
+  background: var(--dan-surface);
+  color: var(--dan-ink-secondary);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.dan-chip--selected {
+  background: var(--dan-accent-soft);
+  border-color: var(--dan-accent);
+  color: var(--dan-accent-text);
+}
+
+.dan-empty {
+  text-align: center;
+  padding: var(--space-xxxl) var(--space-lg);
+  border: 1px dashed var(--dan-border-strong);
+  border-radius: var(--radius-xl);
+  background: var(--dan-surface);
+}
+
+.dan-empty__title {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.dan-empty__body {
+  margin-top: var(--space-sm);
+  color: var(--dan-ink-secondary);
+}
+
+.dan-empty__action {
+  margin-top: var(--space-lg);
+  display: flex;
+  justify-content: center;
+}
+
+.dan-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.dan-badge--neutral {
+  background: var(--dan-bg-elevated);
+  color: var(--dan-ink-secondary);
+}
+
+.dan-badge--accent {
+  background: var(--dan-accent-soft);
+  color: var(--dan-accent-text);
+}
+
+.dan-badge--warn {
+  background: var(--dan-warn-soft);
+  color: var(--dan-warn);
+}

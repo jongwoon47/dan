@@ -1,0 +1,37 @@
+.price-dist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.price-dist__row {
+  display: grid;
+  grid-template-columns: minmax(88px, 110px) 1fr 48px;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.price-dist__label {
+  font-size: 0.8125rem;
+  color: var(--dan-ink-secondary);
+  font-weight: 600;
+}
+
+.price-dist__track {
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--dan-bg-elevated);
+  overflow: hidden;
+}
+
+.price-dist__bar {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--dan-accent);
+}
+
+.price-dist__count {
+  text-align: right;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
