@@ -27,7 +27,7 @@ VITE_SUPABASE_ANON_KEY=
 
 4. `npm run dev` → email/password at `/login`
 
-Force demo even with env: `VITE_DAN_DATA_MODE=demo`
+Force demo even with env: `VITE_DATA_MODE=demo` (alias: `VITE_DAN_DATA_MODE=demo`)
 
 ## Validation
 
@@ -43,9 +43,11 @@ npm run build
 - [BACKEND_ARCHITECTURE.md](docs/BACKEND_ARCHITECTURE.md)
 - [DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md)
 - [RLS_SECURITY.md](docs/RLS_SECURITY.md)
+- [FULFILLMENT_MODEL.md](docs/FULFILLMENT_MODEL.md)
 - [E2E_TEST_PLAN.md](docs/E2E_TEST_PLAN.md)
 - [DEPLOYMENT.md](docs/DEPLOYMENT.md)
 - [COST_ARCHITECTURE.md](docs/COST_ARCHITECTURE.md)
+- [SCRIPTS.md](docs/SCRIPTS.md)
 
 ## Deploy
 

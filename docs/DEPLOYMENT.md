@@ -12,6 +12,7 @@
 |------|---------|-------|
 | `VITE_SUPABASE_URL` | No | Project URL |
 | `VITE_SUPABASE_ANON_KEY` | Treat as public client key | Never use service_role |
+| `VITE_DATA_MODE` | No | Optional `demo` to force localStorage adapter |
 
 Do not commit `.env` / `.env.local`.
 

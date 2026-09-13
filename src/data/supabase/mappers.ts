@@ -13,9 +13,28 @@ import type {
   SellIntent,
 } from "@/domain/types";
 import {
+  areFulfillmentOptionsValid,
   fulfillmentFromLegacyLocation,
   type FulfillmentOption,
 } from "@/domain/fulfillment";
+
+export function parseFulfillmentOptions(
+  raw: unknown,
+  legacyLocation: string,
+): FulfillmentOption[] {
+  let parsed: unknown = raw;
+  if (typeof raw === "string") {
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      parsed = null;
+    }
+  }
+  if (Array.isArray(parsed) && areFulfillmentOptionsValid(parsed as FulfillmentOption[])) {
+    return parsed as FulfillmentOption[];
+  }
+  return fulfillmentFromLegacyLocation(legacyLocation ?? "");
+}
 
 export type DbProduct = {
   id: string;
@@ -112,10 +131,10 @@ export function mapProduct(row: DbProduct): Product {
 }
 
 export function mapDemand(row: DbDemand): Demand {
-  const fulfillmentOptions =
-    Array.isArray(row.fulfillment_options) && row.fulfillment_options.length > 0
-      ? (row.fulfillment_options as FulfillmentOption[])
-      : fulfillmentFromLegacyLocation(row.location ?? "");
+  const fulfillmentOptions = parseFulfillmentOptions(
+    row.fulfillment_options,
+    row.location ?? "",
+  );
 
   const base = {
     id: row.id,

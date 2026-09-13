@@ -35,13 +35,14 @@ export async function fetchSessionUser(): Promise<User | null> {
   if (!auth.user) return null;
   const { data: profile } = await sb
     .from("profiles")
-    .select("id, display_name, location")
+    .select("id, display_name, location, default_area_label")
     .eq("id", auth.user.id)
     .maybeSingle();
   return {
     id: auth.user.id,
     name: profile?.display_name ?? auth.user.email ?? "DAN user",
-    defaultArea: profile?.location ?? "",
+    defaultArea:
+      profile?.default_area_label ?? profile?.location ?? "",
   };
 }
 
@@ -207,54 +208,53 @@ export async function createDemandRemote(input: CreateDemandInput): Promise<Dema
       p_condition_preference: input.conditionPreference,
       p_trade_method: tradeMethod,
       p_expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
+      p_fulfillment_options: input.fulfillmentOptions,
     });
     if (error) throw error;
     return mapDemand(data as DbDemand);
   }
 
   const locationSummary = formatFulfillmentSummary(input.fulfillmentOptions);
+  const shared = {
+    user_id: auth.user.id,
+    location: locationSummary,
+    fulfillment_options: input.fulfillmentOptions,
+    status: "ACTIVE",
+    expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
+  };
   const row =
     input.type === "BORROW"
       ? {
-          user_id: auth.user.id,
+          ...shared,
           type: "BORROW",
           title: input.title,
           description: input.description ?? input.title,
           category: "rental",
           budget: input.budget,
-          location: locationSummary,
-          status: "ACTIVE",
           item_name: input.itemName,
           start_at: input.startAt ?? null,
           end_at: input.endAt ?? null,
-          expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
         }
       : input.type === "TASK"
         ? {
-            user_id: auth.user.id,
+            ...shared,
             type: "TASK",
             title: input.title,
             description: input.description ?? input.taskDescription,
             category: "errand",
             budget: input.budget,
-            location: locationSummary,
-            status: "ACTIVE",
             task_description: input.taskDescription,
             due_at: input.dueAt ?? null,
-            expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
           }
         : {
-            user_id: auth.user.id,
+            ...shared,
             type: "SERVICE",
             title: input.title,
             description: input.description ?? input.serviceDescription,
             category: "service",
             budget: input.budget,
-            location: locationSummary,
-            status: "ACTIVE",
             service_description: input.serviceDescription,
             preferred_at: input.preferredAt ?? null,
-            expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
           };
 
   const { data, error } = await sb

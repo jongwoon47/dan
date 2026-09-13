@@ -14,7 +14,7 @@ Supabase Postgres + RLS + SQL/RPC
 
 | Mode | When | Source of truth |
 |------|------|-----------------|
-| `demo` | Missing env **or** `VITE_DAN_DATA_MODE=demo` | localStorage + in-memory domain |
+| `demo` | Missing env **or** `VITE_DATA_MODE=demo` (alias `VITE_DAN_DATA_MODE`) | localStorage + in-memory domain |
 | `supabase` | `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` set | Postgres via anon key + RLS |
 
 Tests force `demo`.

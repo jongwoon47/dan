@@ -22,6 +22,12 @@ type Place = {
 Public feed only uses approximate labels. Exact private addresses are out of
 scope until CONNECTED (future).
 
+## Privacy (V1)
+
+Public Demand never stores apartment unit / street address as a dedicated field.
+Public labels only (e.g. "평택역 근처", "성수동"). Exact address handoff after
+CONNECTED is **not** implemented in V1.
+
 ## FulfillmentOption
 
 `REMOTE | SHIPPING | MEETUP | ONSITE | PICKUP | ROUTE` discriminated union.
@@ -39,6 +45,7 @@ may apply (e.g. BUY shipping + meetup).
 
 ## Supabase note
 
-Not installed in this pass as a product dependency change. Existing adapter
-maps legacy `location` text → fulfillment options until a dedicated
-`fulfillment_options` column ships.
+Migration `0006_fulfillment_options.sql` adds `demands.fulfillment_options` JSONB
+as the structured source of truth. `demands.location` remains a denormalized
+public summary for display/legacy. Profile `default_area_label` is form/filter
+default only — never Demand fulfillment truth.

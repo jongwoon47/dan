@@ -269,4 +269,22 @@ describe("feed generalization", () => {
     expect(canRespondToDemand(task, "helper", NOW)).toBe(true);
     expect(canRespondToDemand(task, "owner", NOW)).toBe(false);
   });
+
+  it("rejects response to expired demand", () => {
+    const task = {
+      id: "t-exp",
+      userId: "owner",
+      type: "TASK" as const,
+      title: "Expired",
+      description: "Expired",
+      category: "errand" as const,
+      budget: 10000,
+      fulfillmentOptions: [{ mode: "REMOTE" as const }],
+      status: "ACTIVE" as const,
+      createdAt: "2026-08-01T00:00:00.000Z",
+      expiresAt: "2026-09-01T00:00:00.000Z",
+      details: { taskDescription: "Too late" },
+    };
+    expect(canRespondToDemand(task, "helper", NOW)).toBe(false);
+  });
 });
