@@ -19,6 +19,7 @@ export function DemandItemPage() {
   } = useDan();
   const demand = getDemand(demandId);
   const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   if (!demand) {
     return (
@@ -41,13 +42,19 @@ export function DemandItemPage() {
         ? ko.respondService
         : ko.respondCta;
 
-  function respond() {
-    const result = createResponse({
-      demandId: demand!.id,
-      message: respondLabel,
-      offeredPrice: demand!.budget,
-    });
-    if (result) setSent(true);
+  async function respond() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const result = await createResponse({
+        demandId: demand!.id,
+        message: respondLabel,
+        offeredPrice: demand!.budget,
+      });
+      if (result) setSent(true);
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -75,8 +82,8 @@ export function DemandItemPage() {
         sent ? (
           <p className="section-desc">{ko.respondSent}</p>
         ) : (
-          <Button fullWidth size="lg" onClick={respond}>
-            {respondLabel}
+          <Button fullWidth size="lg" onClick={() => void respond()} disabled={busy}>
+            {busy ? "..." : respondLabel}
           </Button>
         )
       ) : (
@@ -88,7 +95,16 @@ export function DemandItemPage() {
             openResponses.map((r) => (
               <div key={r.id} className="response-row">
                 <p>{r.message}</p>
-                <Button onClick={() => acceptResponse(r.id)}>{ko.acceptResponse}</Button>
+                <Button
+                  disabled={busy}
+                  onClick={() => {
+                    if (busy) return;
+                    setBusy(true);
+                    void acceptResponse(r.id).finally(() => setBusy(false));
+                  }}
+                >
+                  {ko.acceptResponse}
+                </Button>
               </div>
             ))
           )}

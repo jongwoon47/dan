@@ -368,7 +368,7 @@ export function DanProvider({ children }: { children: ReactNode }) {
       isLoggedIn: Boolean(state.currentUserId),
       login: (userId = CURRENT_USER_ID) => dispatch({ type: "LOGIN", userId }),
       logout: () => dispatch({ type: "LOGOUT" }),
-      createDemand: (payload) => {
+      createDemand: async (payload) => {
         const { actorId, ensureUserId } = resolveDemoActorId(state.currentUserId);
         const existingBuy =
           payload.type === "BUY"
@@ -384,7 +384,7 @@ export function DanProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "UPSERT_DEMAND", demand, ensureUserId });
         return demand;
       },
-      createOwnership: (payload) => {
+      createOwnership: async (payload) => {
         const { actorId, ensureUserId } = resolveDemoActorId(state.currentUserId);
         const existing = state.ownerships.find(
           (o) =>
@@ -407,7 +407,7 @@ export function DanProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "CREATE_OWNERSHIP", ownership, ensureUserId });
         return ownership;
       },
-      createSellIntent: (payload) => {
+      createSellIntent: async (payload) => {
         const { actorId, ensureUserId } = resolveDemoActorId(state.currentUserId);
         const ownership = state.ownerships.find((o) => o.id === payload.ownershipId);
         if (!ownership || ownership.userId !== actorId) return null;
@@ -427,7 +427,7 @@ export function DanProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "UPSERT_SELL_INTENT", sellIntent: result, ensureUserId });
         return result;
       },
-      createResponse: (payload) => {
+      createResponse: async (payload) => {
         const { actorId, ensureUserId } = resolveDemoActorId(state.currentUserId);
         const demand = state.demands.find((d) => d.id === payload.demandId);
         if (!demand) return null;
@@ -445,7 +445,7 @@ export function DanProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "UPSERT_RESPONSE", response: result, ensureUserId });
         return result;
       },
-      acceptResponse: (responseId) => {
+      acceptResponse: async (responseId) => {
         const before = state.matches.length;
         dispatch({ type: "ACCEPT_RESPONSE", responseId });
         // optimistic return from current state snapshot is unreliable; compute expected
@@ -466,7 +466,7 @@ export function DanProvider({ children }: { children: ReactNode }) {
           createdAt: new Date().toISOString(),
         };
       },
-      expressBuyerInterest: (matchId) => {
+      expressBuyerInterest: async (matchId) => {
         const visible = buildVisibleMatches(state, state.currentUserId);
         const match =
           visible.find((m) => m.id === matchId) ??
@@ -495,7 +495,7 @@ export function DanProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "BUYER_INTEREST", match });
         return true;
       },
-      connectAsSeller: (matchId) => {
+      connectAsSeller: async (matchId) => {
         dispatch({ type: "SELLER_CONNECT", matchId });
         return true;
       },

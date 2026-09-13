@@ -67,23 +67,23 @@ export interface DanContextValue {
   isLoggedIn: boolean;
   login: (userId?: string) => void;
   logout: () => void;
-  createDemand: (payload: CreateDemandInput) => Demand | null;
+  createDemand: (payload: CreateDemandInput) => Promise<Demand | null>;
   createOwnership: (payload: {
     productId: string;
     condition: ItemCondition;
-  }) => Ownership | null;
+  }) => Promise<Ownership | null>;
   createSellIntent: (payload: {
     ownershipId: string;
     minimumPrice: number;
-  }) => SellIntent | null;
+  }) => Promise<SellIntent | null>;
   createResponse: (payload: {
     demandId: string;
     message: string;
     offeredPrice?: number;
-  }) => Response | null;
-  acceptResponse: (responseId: string) => Match | null;
-  expressBuyerInterest: (matchId: string) => boolean;
-  connectAsSeller: (matchId: string) => boolean;
+  }) => Promise<Response | null>;
+  acceptResponse: (responseId: string) => Promise<Match | null>;
+  expressBuyerInterest: (matchId: string) => Promise<boolean>;
+  connectAsSeller: (matchId: string) => Promise<boolean>;
   getProduct: (id: string) => Product | undefined;
   getDemand: (id: string) => Demand | undefined;
   getAggregate: (productId: string) => DemandAggregate | null;

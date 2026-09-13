@@ -10,7 +10,7 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 describe("store mutations / login race", () => {
-  it("createDemand works after logout without a prior login flush", () => {
+  it("createDemand works after logout without a prior login flush", async () => {
     const { result } = renderHook(() => useDan(), { wrapper });
 
     act(() => {
@@ -19,8 +19,8 @@ describe("store mutations / login race", () => {
     expect(result.current.isLoggedIn).toBe(false);
 
     let createdId: string | null = null;
-    act(() => {
-      const created = result.current.createDemand({
+    await act(async () => {
+      const created = await result.current.createDemand({
         type: "BUY",
         title: "Phone",
         productId: "prod-iphone-15-pro",
@@ -44,12 +44,12 @@ describe("store mutations / login race", () => {
     ).toHaveLength(1);
   });
 
-  it("upserts demand instead of duplicating ACTIVE rows", () => {
+  it("upserts demand instead of duplicating ACTIVE rows", async () => {
     const { result } = renderHook(() => useDan(), { wrapper });
     const productId = "prod-airpods-pro2";
 
-    act(() => {
-      result.current.createDemand({
+    await act(async () => {
+      await result.current.createDemand({
         type: "BUY",
         title: "AirPods",
         productId,
@@ -59,8 +59,8 @@ describe("store mutations / login race", () => {
         tradeMethod: "any",
       });
     });
-    act(() => {
-      result.current.createDemand({
+    await act(async () => {
+      await result.current.createDemand({
         type: "BUY",
         title: "AirPods",
         productId,
@@ -82,7 +82,7 @@ describe("store mutations / login race", () => {
     expect(mine[0]?.type === "BUY" && mine[0].details.maxPrice).toBe(2_000_000);
   });
 
-  it("rejects seller connect on derived POTENTIAL via reducer", () => {
+  it("rejects seller connect on derived POTENTIAL via reducer", async () => {
     const { result } = renderHook(() => useDan(), { wrapper });
 
     act(() => {
@@ -92,8 +92,8 @@ describe("store mutations / login race", () => {
     const potential = result.current.myMatches.find((m) => m.status === "POTENTIAL");
     expect(potential).toBeTruthy();
 
-    act(() => {
-      result.current.connectAsSeller(potential!.id);
+    await act(async () => {
+      await result.current.connectAsSeller(potential!.id);
     });
 
     const after = result.current.myMatches.find(
@@ -111,14 +111,14 @@ describe("store mutations / login race", () => {
     ).toBeUndefined();
   });
 
-  it("buyer interest materializes, then seller can connect", () => {
+  it("buyer interest materializes, then seller can connect", async () => {
     const { result } = renderHook(() => useDan(), { wrapper });
 
     act(() => {
       result.current.login("user-you");
     });
-    act(() => {
-      result.current.createDemand({
+    await act(async () => {
+      await result.current.createDemand({
         type: "BUY",
         title: "Sony A7 IV",
         productId: "prod-sony-a7iv",
@@ -134,8 +134,8 @@ describe("store mutations / login race", () => {
     );
     expect(asBuyer).toBeTruthy();
 
-    act(() => {
-      result.current.expressBuyerInterest(asBuyer!.id);
+    await act(async () => {
+      await result.current.expressBuyerInterest(asBuyer!.id);
     });
 
     const interested = result.current.state.matches.find(
@@ -146,8 +146,8 @@ describe("store mutations / login race", () => {
     act(() => {
       result.current.login("user-jun");
     });
-    act(() => {
-      result.current.connectAsSeller(interested!.id);
+    await act(async () => {
+      await result.current.connectAsSeller(interested!.id);
     });
 
     expect(

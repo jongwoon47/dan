@@ -18,6 +18,7 @@ export function SellIntentPage() {
   const aggregate = ownership ? getAggregate(ownership.productId) : null;
   const suggested = aggregate?.highestIntentPrice ?? 0;
   const [price, setPrice] = useState(suggested ? String(suggested) : "1800000");
+  const [busy, setBusy] = useState(false);
 
   if (!ownership || !product) {
     return (
@@ -29,11 +30,17 @@ export function SellIntentPage() {
     );
   }
 
-  function submit() {
+  async function submit() {
+    if (busy) return;
     const minimumPrice = Number(price.replace(/,/g, ""));
     if (!Number.isFinite(minimumPrice) || minimumPrice <= 0) return;
-    createSellIntent({ ownershipId, minimumPrice });
-    navigate("/my?tab=matches");
+    setBusy(true);
+    try {
+      const created = await createSellIntent({ ownershipId, minimumPrice });
+      if (created) navigate("/my?tab=matches");
+    } finally {
+      setBusy(false);
+    }
   }
 
   const previewMatches = myMatches.filter((m) => m.productId === ownership.productId).length;
@@ -85,8 +92,8 @@ export function SellIntentPage() {
           </p>
         ) : null}
 
-        <Button fullWidth size="lg" onClick={submit}>
-          {ko.sellCta}
+        <Button fullWidth size="lg" onClick={() => void submit()} disabled={busy}>
+          {busy ? "..." : ko.sellCta}
         </Button>
         {previewMatches > 0 ? (
           <p className="section-desc">

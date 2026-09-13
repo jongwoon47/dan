@@ -1,18 +1,18 @@
 # DAN Cost Architecture
 
-DAN targets a low-fixed-cost stack before any always-on compute is introduced.
-
-## Target architecture (when backend arrives)
+DAN targets a low-fixed-cost stack. **V1 backend is live in-repo** as:
 
 ```
 Vite React SPA
   → Cloudflare Pages (static hosting)
-  → Supabase Auth
-  → Supabase Postgres + Row Level Security (RLS)
+    → Supabase Auth
+    → Supabase Postgres + Row Level Security (RLS)
 ```
 
 Client talks to Postgres through Supabase with RLS policies as the primary
 authorization boundary. Prefer SQL views / RPCs over new services.
+
+See [BACKEND_ARCHITECTURE.md](./BACKEND_ARCHITECTURE.md).
 
 ## Do not introduce early
 
@@ -41,5 +41,5 @@ Persisting every compatible pair as a `POTENTIAL` row causes:
 only when a user takes an intentional action (e.g. buyer interest →
 `BUYER_INTERESTED`, then seller connect → `CONNECTED`).
 
-Local V0 follows the same rule: candidates are computed in memory; only
-progressive statuses are stored in `localStorage`.
+Demo mode follows the same rule in memory; production persists only intentional
+statuses via RPCs.

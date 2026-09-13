@@ -4,6 +4,7 @@ import { MatchList } from "@/components/MatchCard";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ko } from "@/copy/ko";
+import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
 import { formatWon } from "@/lib/format";
 import "./pages.css";
@@ -22,6 +23,7 @@ export function MyDanPage() {
     getAggregate,
     resetDemo,
   } = useDan();
+  const dataMode = getDataMode();
 
   const attention = useMemo(() => {
     const items: string[] = [];
@@ -46,7 +48,13 @@ export function MyDanPage() {
       <EmptyState
         title={ko.needLogin}
         body={ko.needLoginBody}
-        action={<Button onClick={() => login()}>{ko.demoLogin}</Button>}
+        action={
+          dataMode === "supabase" ? (
+            <Button to="/login">{ko.login}</Button>
+          ) : (
+            <Button onClick={() => login()}>{ko.demoLogin}</Button>
+          )
+        }
       />
     );
   }
@@ -133,9 +141,11 @@ export function MyDanPage() {
         )}
       </section>
 
-      <Button variant="ghost" onClick={resetDemo}>
-        {ko.resetDemo}
-      </Button>
+      {dataMode === "demo" ? (
+        <Button variant="ghost" onClick={resetDemo}>
+          {ko.resetDemo}
+        </Button>
+      ) : null}
     </div>
   );
 }

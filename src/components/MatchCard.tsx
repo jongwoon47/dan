@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Badge, EmptyState } from "@/components/ui/EmptyState";
 import { Card } from "@/components/ui/Card";
@@ -11,6 +12,27 @@ import "./matchCard.css";
 
 export function MatchCard({ match }: { match: Match }) {
   const { currentUser, getProduct, state, expressBuyerInterest, connectAsSeller } = useDan();
+  const [busy, setBusy] = useState(false);
+
+  async function onInterest() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await expressBuyerInterest(match.id);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onConnect() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await connectAsSeller(match.id);
+    } finally {
+      setBusy(false);
+    }
+  }
   const demand = state.demands.find((d) => d.id === match.demandId);
   const sell = match.sellIntentId
     ? state.sellIntents.find((s) => s.id === match.sellIntentId)
@@ -43,8 +65,8 @@ export function MatchCard({ match }: { match: Match }) {
           </div>
         ) : null}
         {!isBuyer && match.status === "BUYER_INTERESTED" ? (
-          <Button fullWidth onClick={() => connectAsSeller(match.id)}>
-            {ko.connect}
+          <Button fullWidth onClick={() => void onConnect()} disabled={busy}>
+            {busy ? "..." : ko.connect}
           </Button>
         ) : null}
       </Card>
@@ -106,8 +128,8 @@ export function MatchCard({ match }: { match: Match }) {
 
       <div className="match-card__actions">
         {isBuyer && match.status === "POTENTIAL" ? (
-          <Button fullWidth onClick={() => expressBuyerInterest(match.id)}>
-            {ko.sendInterest}
+          <Button fullWidth onClick={() => void onInterest()} disabled={busy}>
+            {busy ? "..." : ko.sendInterest}
           </Button>
         ) : null}
         {isBuyer && match.status === "BUYER_INTERESTED" ? (
@@ -116,8 +138,8 @@ export function MatchCard({ match }: { match: Match }) {
           </Button>
         ) : null}
         {isSeller && match.status === "BUYER_INTERESTED" ? (
-          <Button fullWidth onClick={() => connectAsSeller(match.id)}>
-            {ko.connect}
+          <Button fullWidth onClick={() => void onConnect()} disabled={busy}>
+            {busy ? "..." : ko.connect}
           </Button>
         ) : null}
         {match.status === "CONNECTED" ? (

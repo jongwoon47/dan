@@ -1,8 +1,10 @@
-# DAN V0
+# DAN
 
-찾는 사람이 먼저 올리는 마켓 (Demand-first marketplace).
+Demand-first marketplace — 필요한 사람이 먼저 올리는 곳.
 
-## 실행
+Types: **BUY · BORROW · TASK · SERVICE**
+
+## Quick start (demo)
 
 ```bash
 cd DAN
@@ -10,9 +12,24 @@ npm install
 npm run dev
 ```
 
-브라우저: http://localhost:5173
+Without Supabase env vars the app runs in **demo mode** (localStorage).
 
-## 검증
+## Supabase mode
+
+1. Create a Supabase project
+2. Apply `supabase/migrations/*.sql` in order (see [docs/DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md))
+3. Copy `.env.example` → `.env.local` and set:
+
+```
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+```
+
+4. `npm run dev` → email/password at `/login`
+
+Force demo even with env: `VITE_DAN_DATA_MODE=demo`
+
+## Validation
 
 ```bash
 npm run typecheck
@@ -21,12 +38,15 @@ npm test
 npm run build
 ```
 
-## 핵심 흐름
+## Docs
 
-1. Home → 찾는 물건 등록 (Demand)
-2. 수요 둘러보기 → Demand Detail
-3. 가지고 있어요 → Ownership (판매글 아님)
-4. 이 가격이면 팔 수도 있어요 → Sell Intent
-5. 조건 일치 시 Match → 내 DAN
+- [BACKEND_ARCHITECTURE.md](docs/BACKEND_ARCHITECTURE.md)
+- [DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md)
+- [RLS_SECURITY.md](docs/RLS_SECURITY.md)
+- [E2E_TEST_PLAN.md](docs/E2E_TEST_PLAN.md)
+- [DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- [COST_ARCHITECTURE.md](docs/COST_ARCHITECTURE.md)
 
-데모 로그인은 기본으로 켜져 있습니다. `내 DAN`에서 데모 데이터를 초기화할 수 있습니다.
+## Deploy
+
+Cloudflare Pages: build `npm run build`, output `dist`. Details in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).

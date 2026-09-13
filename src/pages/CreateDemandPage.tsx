@@ -48,54 +48,61 @@ export function CreateDemandPage() {
     return Boolean(title.trim() || detail.trim());
   }, [price, selected, type, title, itemName, detail]);
 
-  function submit() {
-    if (!canSubmit) return;
-    if (type === "BUY" && selected) {
-      const created = createDemand({
-        type: "BUY",
-        title: title.trim() || selected.name,
-        productId: selected.id,
-        maxPrice: price,
-        conditionPreference: condition,
-        location: location.trim() || ko.seoul,
-        tradeMethod,
-      });
-      if (created && created.type === "BUY") {
-        navigate(`/demand/${created.details.productId}`);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function submit() {
+    if (!canSubmit || submitting) return;
+    setSubmitting(true);
+    try {
+      if (type === "BUY" && selected) {
+        const created = await createDemand({
+          type: "BUY",
+          title: title.trim() || selected.name,
+          productId: selected.id,
+          maxPrice: price,
+          conditionPreference: condition,
+          location: location.trim() || ko.seoul,
+          tradeMethod,
+        });
+        if (created && created.type === "BUY") {
+          navigate(`/demand/${created.details.productId}`);
+        }
+        return;
       }
-      return;
-    }
-    if (type === "BORROW") {
-      const created = createDemand({
-        type: "BORROW",
-        title: title.trim() || itemName.trim(),
-        itemName: itemName.trim() || title.trim(),
-        budget: price,
-        location: location.trim() || ko.seoul,
-        description: detail,
-      });
-      if (created) navigate(`/demand/item/${created.id}`);
-      return;
-    }
-    if (type === "TASK") {
-      const created = createDemand({
-        type: "TASK",
+      if (type === "BORROW") {
+        const created = await createDemand({
+          type: "BORROW",
+          title: title.trim() || itemName.trim(),
+          itemName: itemName.trim() || title.trim(),
+          budget: price,
+          location: location.trim() || ko.seoul,
+          description: detail,
+        });
+        if (created) navigate(`/demand/item/${created.id}`);
+        return;
+      }
+      if (type === "TASK") {
+        const created = await createDemand({
+          type: "TASK",
+          title: title.trim() || detail.trim(),
+          taskDescription: detail.trim() || title.trim(),
+          budget: price,
+          location: location.trim() || ko.seoul,
+        });
+        if (created) navigate(`/demand/item/${created.id}`);
+        return;
+      }
+      const created = await createDemand({
+        type: "SERVICE",
         title: title.trim() || detail.trim(),
-        taskDescription: detail.trim() || title.trim(),
+        serviceDescription: detail.trim() || title.trim(),
         budget: price,
         location: location.trim() || ko.seoul,
       });
       if (created) navigate(`/demand/item/${created.id}`);
-      return;
+    } finally {
+      setSubmitting(false);
     }
-    const created = createDemand({
-      type: "SERVICE",
-      title: title.trim() || detail.trim(),
-      serviceDescription: detail.trim() || title.trim(),
-      budget: price,
-      location: location.trim() || ko.seoul,
-    });
-    if (created) navigate(`/demand/item/${created.id}`);
   }
 
   return (
@@ -178,8 +185,8 @@ export function CreateDemandPage() {
           <TextInput value={location} onChange={(e) => setLocation(e.target.value)} placeholder={ko.locationPh} />
         </Field>
 
-        <Button fullWidth size="lg" onClick={submit} disabled={!canSubmit}>
-          {ko.submitDemand}
+        <Button fullWidth size="lg" onClick={() => void submit()} disabled={!canSubmit || submitting}>
+          {submitting ? "..." : ko.submitDemand}
         </Button>
       </section>
     </div>

@@ -22,6 +22,7 @@ export function OwnershipPage() {
   const aggregate = getAggregate(productId);
   const [condition, setCondition] = useState<ItemCondition>("lightly_used");
   const [doneId, setDoneId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   if (!product) {
     return (
@@ -32,10 +33,15 @@ export function OwnershipPage() {
     );
   }
 
-  function register() {
-    // Mutations resolve the demo actor synchronously (no login?create race).
-    const ownership = createOwnership({ productId, condition });
-    if (ownership) setDoneId(ownership.id);
+  async function register() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const ownership = await createOwnership({ productId, condition });
+      if (ownership) setDoneId(ownership.id);
+    } finally {
+      setBusy(false);
+    }
   }
 
   if (doneId) {
@@ -103,8 +109,8 @@ export function OwnershipPage() {
             ))}
           </ChipGroup>
         </div>
-        <Button fullWidth size="lg" onClick={register}>
-          {ko.registerOwned}
+        <Button fullWidth size="lg" onClick={() => void register()} disabled={busy}>
+          {busy ? "..." : ko.registerOwned}
         </Button>
       </Card>
     </div>
