@@ -17,7 +17,7 @@ const CONDITIONS: ItemCondition[] = ["sealed", "like_new", "lightly_used"];
 export function OwnershipPage() {
   const { productId = "" } = useParams();
   const navigate = useNavigate();
-  const { getProduct, getAggregate, createOwnership, isLoggedIn, login } = useDan();
+  const { getProduct, getAggregate, createOwnership } = useDan();
   const product = getProduct(productId);
   const aggregate = getAggregate(productId);
   const [condition, setCondition] = useState<ItemCondition>("lightly_used");
@@ -33,7 +33,7 @@ export function OwnershipPage() {
   }
 
   function register() {
-    if (!isLoggedIn) login();
+    // Mutations resolve the demo actor synchronously (no login?create race).
     const ownership = createOwnership({ productId, condition });
     if (ownership) setDoneId(ownership.id);
   }

@@ -43,8 +43,8 @@ export interface DanContextValue {
     ownershipId: string;
     minimumPrice: number;
   }) => SellIntent | null;
-  expressBuyerInterest: (matchId: string) => void;
-  connectAsSeller: (matchId: string) => void;
+  expressBuyerInterest: (matchId: string) => boolean;
+  connectAsSeller: (matchId: string) => boolean;
   getProduct: (id: string) => Product | undefined;
   getAggregate: (productId: string) => DemandAggregate | null;
   demandFeed: DemandFeedRow[];

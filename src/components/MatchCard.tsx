@@ -78,8 +78,7 @@ export function MatchCard({ match }: { match: Match }) {
             {ko.waitingSeller}
           </Button>
         ) : null}
-        {isSeller &&
-        (match.status === "POTENTIAL" || match.status === "BUYER_INTERESTED") ? (
+        {isSeller && match.status === "BUYER_INTERESTED" ? (
           <Button fullWidth onClick={() => connectAsSeller(match.id)}>
             {ko.connect}
           </Button>

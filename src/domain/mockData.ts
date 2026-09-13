@@ -1,10 +1,13 @@
 import { ko } from "@/copy/ko";
+import {
+  aggregateDemands as aggregateDemandsDomain,
+  listDemandAggregates as listDemandAggregatesDomain,
+} from "./aggregation";
 import type {
   Demand,
   DemandAggregate,
   Match,
   Ownership,
-  PriceBucket,
   Product,
   SellIntent,
   User,
@@ -42,14 +45,23 @@ function daysFromNow(days: number): string {
   return d.toISOString();
 }
 
+/**
+ * Seed demands use unique synthetic seeker ids so domain seekerCount
+ * (unique userId) stays meaningful without relying on display overrides.
+ */
 function priceSet(productId: string, entries: Array<[number, number]>): Demand[] {
-  const conditions: Demand["conditionPreference"][] = ["any", "like_new", "lightly_used", "sealed", "any"];
+  const conditions: Demand["conditionPreference"][] = [
+    "any",
+    "like_new",
+    "lightly_used",
+    "sealed",
+    "any",
+  ];
   const locations = [ko.seoul, ko.gyeonggi, ko.busan, ko.daegu, ko.incheon];
   const methods: Demand["tradeMethod"][] = ["any", "meetup", "shipping"];
-  const users = ["user-mina", "user-jun", "user-hae"];
   return entries.map(([maxPrice, days], index) => ({
     id: "demand-" + productId + "-" + index,
-    userId: users[index % users.length]!,
+    userId: `seeker-${productId}-${index}`,
     productId,
     maxPrice,
     conditionPreference: conditions[index % conditions.length]!,
@@ -72,62 +84,87 @@ export const SEED_DEMANDS: Demand[] = [
   ...priceSet("prod-leica-q3", [[6200000,21],[6400000,14],[6500000,9],[6700000,5],[6800000,2]]),
 ];
 
-export const DISPLAY_SEEKER_OVERRIDES: Record<string, number> = { "prod-fuji-x100vi": 31 };
+/**
+ * DEMO DISPLAY ONLY ? never import into production domain logic.
+ * Inflates seekerCount for a few products in the local V0 UI.
+ */
+export const DISPLAY_SEEKER_OVERRIDES: Record<string, number> = {
+  "prod-fuji-x100vi": 31,
+};
+
+/** DEMO DISPLAY ONLY ? floor recent delta for Sony feed storytelling. */
+const DISPLAY_RECENT_DELTA_FLOOR: Record<string, number> = {
+  "prod-sony-2470-gm2": 4,
+};
 
 export const SEED_OWNERSHIPS: Ownership[] = [
-  { id: "own-jun-2470", userId: "user-jun", productId: "prod-sony-2470-gm2", condition: "lightly_used", status: "OWNED", createdAt: daysAgo(40) },
+  {
+    id: "own-jun-2470",
+    userId: "user-jun",
+    productId: "prod-sony-2470-gm2",
+    condition: "lightly_used",
+    status: "OWNED",
+    createdAt: daysAgo(40),
+  },
 ];
 
 export const SEED_SELL_INTENTS: SellIntent[] = [
-  { id: "sell-jun-2470", ownershipId: "own-jun-2470", userId: "user-jun", productId: "prod-sony-2470-gm2", minimumPrice: 1800000, status: "OPEN", createdAt: daysAgo(2) },
+  {
+    id: "sell-jun-2470",
+    ownershipId: "own-jun-2470",
+    userId: "user-jun",
+    productId: "prod-sony-2470-gm2",
+    minimumPrice: 1800000,
+    status: "OPEN",
+    createdAt: daysAgo(2),
+  },
 ];
 
+/** Persisted progressive matches only; POTENTIAL is derived at runtime. */
 export const SEED_MATCHES: Match[] = [];
 
-function buildBuckets(prices: number[]): PriceBucket[] {
-  if (prices.length === 0) return [];
-  const counts = new Map<number, number>();
-  for (const price of prices) {
-    const band = Math.floor(price / 100_000) * 100_000;
-    counts.set(band, (counts.get(band) ?? 0) + 1);
-  }
-  return [...counts.entries()]
-    .sort((a, b) => a[0] - b[0])
-    .map(([min, count]) => ({
-      label: `${Math.round(min / 10_000)}${ko.bandSuffix}`,
-      count,
-      min,
-      max: min + 100_000,
-    }));
-}
-
-export function aggregateDemands(productId: string, demands: Demand[]): DemandAggregate | null {
-  const active = demands.filter((d) => d.productId === productId && d.status === "ACTIVE");
-  if (active.length === 0) return null;
-  const prices = active.map((d) => d.maxPrice);
-  const minPrice = Math.min(...prices);
-  const maxPrice = Math.max(...prices);
-  const avgPrice = Math.round(prices.reduce((sum, p) => sum + p, 0) / prices.length);
-  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const recent7dDelta = active.filter((d) => new Date(d.createdAt).getTime() >= weekAgo).length;
+function applyDemoDisplayOverride(agg: DemandAggregate): DemandAggregate {
+  const seekerOverride = DISPLAY_SEEKER_OVERRIDES[agg.productId];
+  const recentFloor = DISPLAY_RECENT_DELTA_FLOOR[agg.productId];
   return {
-    productId,
-    seekerCount: DISPLAY_SEEKER_OVERRIDES[productId] ?? active.length,
-    minPrice,
-    maxPrice,
-    avgPrice,
-    recent7dDelta: productId === "prod-sony-2470-gm2" ? Math.max(recent7dDelta, 4) : recent7dDelta,
-    highestIntentPrice: maxPrice,
-    priceBuckets: buildBuckets(prices),
+    ...agg,
+    seekerCount: seekerOverride ?? agg.seekerCount,
+    recent7dDelta:
+      recentFloor == null
+        ? agg.recent7dDelta
+        : Math.max(agg.recent7dDelta, recentFloor),
   };
 }
 
-export function listDemandAggregates(products: Product[], demands: Demand[]): Array<DemandAggregate & { product: Product }> {
-  return products
-    .map((product) => {
-      const agg = aggregateDemands(product.id, demands);
-      return agg ? { ...agg, product } : null;
-    })
-    .filter((row): row is DemandAggregate & { product: Product } => row != null)
-    .sort((a, b) => b.seekerCount - a.seekerCount);
+/** Domain aggregate (unique seekers). No display overrides. */
+export function aggregateDemandsDomainOnly(
+  productId: string,
+  demands: Demand[],
+  nowMs?: number,
+): DemandAggregate | null {
+  return aggregateDemandsDomain(productId, demands, { nowMs });
+}
+
+/**
+ * Demo feed helper: domain aggregate + isolated display overrides.
+ * Production backend must use aggregateDemandsDomainOnly / aggregation.ts.
+ */
+export function aggregateDemands(
+  productId: string,
+  demands: Demand[],
+  nowMs?: number,
+): DemandAggregate | null {
+  const agg = aggregateDemandsDomain(productId, demands, { nowMs });
+  return agg ? applyDemoDisplayOverride(agg) : null;
+}
+
+export function listDemandAggregates(
+  products: Product[],
+  demands: Demand[],
+  nowMs?: number,
+): Array<DemandAggregate & { product: Product }> {
+  return listDemandAggregatesDomain(products, demands, { nowMs }).map((row) => ({
+    ...applyDemoDisplayOverride(row),
+    product: row.product,
+  }));
 }

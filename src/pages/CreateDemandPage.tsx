@@ -14,7 +14,7 @@ const CONDITIONS: ConditionPreference[] = ["sealed", "like_new", "lightly_used",
 const TRADES: TradeMethod[] = ["meetup", "shipping", "any"];
 
 export function CreateDemandPage() {
-  const { products, createDemand, isLoggedIn, login } = useDan();
+  const { products, createDemand } = useDan();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [productId, setProductId] = useState(products[0]?.id ?? "");
@@ -34,15 +34,16 @@ export function CreateDemandPage() {
   const canSubmit = Boolean(selected && Number.isFinite(price) && price > 0);
 
   function submit() {
-    if (!isLoggedIn) login();
     if (!selected || !canSubmit) return;
-    createDemand({
+    // Mutations resolve the demo actor synchronously (no login?create race).
+    const created = createDemand({
       productId: selected.id,
       maxPrice: price,
       conditionPreference: condition,
       location: location.trim() || ko.seoul,
       tradeMethod,
     });
+    if (!created) return;
     navigate(`/demand/${selected.id}`);
   }
 

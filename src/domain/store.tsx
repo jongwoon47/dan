@@ -1,6 +1,14 @@
 import { useMemo, useReducer, type ReactNode } from "react";
 
-import { canCreateMatch } from "./matching";
+import { upsertActiveDemand } from "./demands";
+import {
+  buildVisibleMatches,
+  listMatchCandidates,
+  parsePotentialMatchId,
+  toPotentialMatchView,
+  transitionBuyerInterest,
+  transitionSellerConnect,
+} from "./matchLifecycle";
 import {
   CURRENT_USER_ID,
   DEMO_USERS,
@@ -12,25 +20,21 @@ import {
   aggregateDemands,
   listDemandAggregates,
 } from "./mockData";
-import type {
-  Demand,
-  Match,
-  Ownership,
-  SellIntent,
-} from "./types";
+import { upsertOpenSellIntent } from "./sellIntents";
+import type { Demand, Match, Ownership, SellIntent } from "./types";
 import { createId } from "../lib/format";
 import { DanContext, type DanContextValue } from "./danContext";
 import type { DanState } from "./storeTypes";
 
-const STORAGE_KEY = "dan-v0-store";
+const STORAGE_KEY = "dan-v0-store-v2";
 
 type Action =
   | { type: "LOGIN"; userId: string }
   | { type: "LOGOUT" }
-  | { type: "CREATE_DEMAND"; demand: Demand }
-  | { type: "CREATE_OWNERSHIP"; ownership: Ownership }
-  | { type: "CREATE_SELL_INTENT"; sellIntent: SellIntent }
-  | { type: "BUYER_INTEREST"; matchId: string }
+  | { type: "UPSERT_DEMAND"; demand: Demand; ensureUserId?: string }
+  | { type: "CREATE_OWNERSHIP"; ownership: Ownership; ensureUserId?: string }
+  | { type: "UPSERT_SELL_INTENT"; sellIntent: SellIntent; ensureUserId?: string }
+  | { type: "BUYER_INTEREST"; match: Match }
   | { type: "SELLER_CONNECT"; matchId: string }
   | { type: "HYDRATE"; state: DanState };
 
@@ -44,6 +48,10 @@ function defaultState(): DanState {
   };
 }
 
+function sanitizePersistedMatches(matches: Match[] | undefined): Match[] {
+  return (matches ?? SEED_MATCHES).filter((m) => m.status !== "POTENTIAL");
+}
+
 function loadState(): DanState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -55,7 +63,7 @@ function loadState(): DanState {
       demands: parsed.demands?.length ? parsed.demands : SEED_DEMANDS,
       ownerships: parsed.ownerships ?? SEED_OWNERSHIPS,
       sellIntents: parsed.sellIntents ?? SEED_SELL_INTENTS,
-      matches: parsed.matches ?? SEED_MATCHES,
+      matches: sanitizePersistedMatches(parsed.matches),
     };
   } catch {
     return defaultState();
@@ -63,45 +71,25 @@ function loadState(): DanState {
 }
 
 function persist(state: DanState) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  const toSave: DanState = {
+    ...state,
+    matches: sanitizePersistedMatches(state.matches),
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
 }
 
-function recomputeMatches(state: DanState): Match[] {
-  const existingKeys = new Set(
-    state.matches.map((m) => `${m.demandId}:${m.sellIntentId}`),
+function withEnsuredUser(state: DanState, ensureUserId?: string): DanState {
+  if (!ensureUserId || state.currentUserId) return state;
+  return { ...state, currentUserId: ensureUserId };
+}
+
+function ownershipMap(state: DanState) {
+  return new Map(
+    state.ownerships.map((o) => [
+      o.id,
+      { condition: o.condition, status: o.status, userId: o.userId },
+    ]),
   );
-  const next = [...state.matches];
-
-  for (const sell of state.sellIntents.filter((s) => s.status === "OPEN")) {
-    const ownership = state.ownerships.find((o) => o.id === sell.ownershipId);
-    if (!ownership || ownership.status !== "OWNED") continue;
-
-    for (const demand of state.demands.filter((d) => d.status === "ACTIVE")) {
-      const key = `${demand.id}:${sell.id}`;
-      if (existingKeys.has(key)) continue;
-      if (
-        !canCreateMatch({
-          demand,
-          sellIntent: sell,
-          ownershipCondition: ownership.condition,
-        })
-      ) {
-        continue;
-      }
-      next.push({
-        id: createId("match"),
-        demandId: demand.id,
-        sellIntentId: sell.id,
-        productId: demand.productId,
-        buyerId: demand.userId,
-        sellerId: sell.userId,
-        status: "POTENTIAL",
-        createdAt: new Date().toISOString(),
-      });
-      existingKeys.add(key);
-    }
-  }
-  return next;
 }
 
 function reducer(state: DanState, action: Action): DanState {
@@ -118,44 +106,70 @@ function reducer(state: DanState, action: Action): DanState {
       persist(next);
       return next;
     }
-    case "CREATE_DEMAND": {
-      const base = { ...state, demands: [action.demand, ...state.demands] };
-      const next = { ...base, matches: recomputeMatches(base) };
+    case "UPSERT_DEMAND": {
+      const base = withEnsuredUser(state, action.ensureUserId);
+      const next = {
+        ...base,
+        demands: upsertActiveDemand(base.demands, action.demand),
+      };
       persist(next);
       return next;
     }
     case "CREATE_OWNERSHIP": {
+      const base = withEnsuredUser(state, action.ensureUserId);
       const next = {
-        ...state,
-        ownerships: [action.ownership, ...state.ownerships],
+        ...base,
+        ownerships: [action.ownership, ...base.ownerships],
       };
       persist(next);
       return next;
     }
-    case "CREATE_SELL_INTENT": {
-      const base = {
-        ...state,
-        sellIntents: [action.sellIntent, ...state.sellIntents],
-      };
-      const next = { ...base, matches: recomputeMatches(base) };
+    case "UPSERT_SELL_INTENT": {
+      const base = withEnsuredUser(state, action.ensureUserId);
+      const { list } = upsertOpenSellIntent(base.sellIntents, action.sellIntent);
+      const next = { ...base, sellIntents: list };
       persist(next);
       return next;
     }
     case "BUYER_INTEREST": {
-      const matches = state.matches.map((m) =>
-        m.id === action.matchId && m.buyerId === state.currentUserId
-          ? { ...m, status: "BUYER_INTERESTED" as const }
-          : m,
+      const actorId = state.currentUserId;
+      if (!actorId) return state;
+      const existing = state.matches.find(
+        (m) =>
+          m.demandId === action.match.demandId &&
+          m.sellIntentId === action.match.sellIntentId,
       );
-      const next = { ...state, matches };
+      if (existing) {
+        const transitioned = transitionBuyerInterest(existing, actorId);
+        if (!transitioned) return state;
+        const matches = state.matches.map((m) =>
+          m.id === existing.id ? transitioned : m,
+        );
+        const next = { ...state, matches };
+        persist(next);
+        return next;
+      }
+      // Materialize derived POTENTIAL into persisted BUYER_INTERESTED.
+      if (action.match.status !== "POTENTIAL") return state;
+      if (action.match.buyerId !== actorId) return state;
+      const materialized: Match = {
+        ...action.match,
+        id: createId("match"),
+        status: "BUYER_INTERESTED",
+      };
+      const next = { ...state, matches: [materialized, ...state.matches] };
       persist(next);
       return next;
     }
     case "SELLER_CONNECT": {
+      const actorId = state.currentUserId;
+      if (!actorId) return state;
+      const current = state.matches.find((m) => m.id === action.matchId);
+      if (!current) return state;
+      const transitioned = transitionSellerConnect(current, actorId);
+      if (!transitioned) return state;
       const matches = state.matches.map((m) =>
-        m.id === action.matchId && m.sellerId === state.currentUserId
-          ? { ...m, status: "CONNECTED" as const }
-          : m,
+        m.id === action.matchId ? transitioned : m,
       );
       const next = { ...state, matches };
       persist(next);
@@ -164,6 +178,15 @@ function reducer(state: DanState, action: Action): DanState {
     default:
       return state;
   }
+}
+
+/** Resolve demo actor without assuming a prior login render flush. */
+function resolveDemoActorId(currentUserId: string | null): {
+  actorId: string;
+  ensureUserId?: string;
+} {
+  if (currentUserId) return { actorId: currentUserId };
+  return { actorId: CURRENT_USER_ID, ensureUserId: CURRENT_USER_ID };
 }
 
 export function DanProvider({ children }: { children: ReactNode }) {
@@ -181,10 +204,7 @@ export function DanProvider({ children }: { children: ReactNode }) {
     const mySellIntents = state.sellIntents.filter(
       (s) => s.userId === state.currentUserId,
     );
-    const myMatches = state.matches.filter(
-      (m) =>
-        m.buyerId === state.currentUserId || m.sellerId === state.currentUserId,
-    );
+    const myMatches = buildVisibleMatches(state, state.currentUserId);
 
     return {
       state,
@@ -195,64 +215,104 @@ export function DanProvider({ children }: { children: ReactNode }) {
       login: (userId = CURRENT_USER_ID) => dispatch({ type: "LOGIN", userId }),
       logout: () => dispatch({ type: "LOGOUT" }),
       createDemand: (payload) => {
-        if (!state.currentUserId) return null;
+        const { actorId, ensureUserId } = resolveDemoActorId(state.currentUserId);
+        const existing = state.demands.find(
+          (d) =>
+            d.userId === actorId &&
+            d.productId === payload.productId &&
+            d.status === "ACTIVE",
+        );
         const demand: Demand = {
-          id: createId("demand"),
-          userId: state.currentUserId,
+          id: existing?.id ?? createId("demand"),
+          userId: actorId,
           productId: payload.productId,
           maxPrice: payload.maxPrice,
           conditionPreference: payload.conditionPreference,
           location: payload.location,
           tradeMethod: payload.tradeMethod,
           status: "ACTIVE",
-          createdAt: new Date().toISOString(),
+          createdAt: existing?.createdAt ?? new Date().toISOString(),
           expiresAt: new Date(Date.now() + 30 * 86400000).toISOString(),
         };
-        dispatch({ type: "CREATE_DEMAND", demand });
+        dispatch({ type: "UPSERT_DEMAND", demand, ensureUserId });
         return demand;
       },
       createOwnership: (payload) => {
-        if (!state.currentUserId) return null;
+        const { actorId, ensureUserId } = resolveDemoActorId(state.currentUserId);
         const existing = state.ownerships.find(
           (o) =>
-            o.userId === state.currentUserId &&
+            o.userId === actorId &&
             o.productId === payload.productId &&
             o.status === "OWNED",
         );
-        if (existing) return existing;
+        if (existing) {
+          if (ensureUserId) dispatch({ type: "LOGIN", userId: ensureUserId });
+          return existing;
+        }
         const ownership: Ownership = {
           id: createId("own"),
-          userId: state.currentUserId,
+          userId: actorId,
           productId: payload.productId,
           condition: payload.condition,
           status: "OWNED",
           createdAt: new Date().toISOString(),
         };
-        dispatch({ type: "CREATE_OWNERSHIP", ownership });
+        dispatch({ type: "CREATE_OWNERSHIP", ownership, ensureUserId });
         return ownership;
       },
       createSellIntent: (payload) => {
-        if (!state.currentUserId) return null;
-        const ownership = state.ownerships.find(
-          (o) => o.id === payload.ownershipId,
+        const { actorId, ensureUserId } = resolveDemoActorId(state.currentUserId);
+        const ownership = state.ownerships.find((o) => o.id === payload.ownershipId);
+        if (!ownership || ownership.userId !== actorId) return null;
+        const existingOpen = state.sellIntents.find(
+          (s) => s.ownershipId === ownership.id && s.status === "OPEN",
         );
-        if (!ownership || ownership.userId !== state.currentUserId) return null;
         const sellIntent: SellIntent = {
-          id: createId("sell"),
+          id: existingOpen?.id ?? createId("sell"),
           ownershipId: ownership.id,
-          userId: state.currentUserId,
+          userId: actorId,
           productId: ownership.productId,
           minimumPrice: payload.minimumPrice,
           status: "OPEN",
-          createdAt: new Date().toISOString(),
+          createdAt: existingOpen?.createdAt ?? new Date().toISOString(),
         };
-        dispatch({ type: "CREATE_SELL_INTENT", sellIntent });
-        return sellIntent;
+        const { result } = upsertOpenSellIntent(state.sellIntents, sellIntent);
+        dispatch({ type: "UPSERT_SELL_INTENT", sellIntent: result, ensureUserId });
+        return result;
       },
-      expressBuyerInterest: (matchId) =>
-        dispatch({ type: "BUYER_INTEREST", matchId }),
-      connectAsSeller: (matchId) =>
-        dispatch({ type: "SELLER_CONNECT", matchId }),
+      expressBuyerInterest: (matchId) => {
+        const visible = buildVisibleMatches(state, state.currentUserId);
+        const match =
+          visible.find((m) => m.id === matchId) ??
+          state.matches.find((m) => m.id === matchId);
+        if (!match) {
+          const parsed = parsePotentialMatchId(matchId);
+          if (!parsed) return false;
+          const candidates = listMatchCandidates({
+            demands: state.demands,
+            sellIntents: state.sellIntents,
+            ownershipById: ownershipMap(state),
+            nowMs: Date.now(),
+          });
+          const candidate = candidates.find(
+            (c) =>
+              c.demandId === parsed.demandId &&
+              c.sellIntentId === parsed.sellIntentId,
+          );
+          if (!candidate) return false;
+          dispatch({
+            type: "BUYER_INTEREST",
+            match: toPotentialMatchView(candidate, new Date().toISOString()),
+          });
+          return true;
+        }
+        dispatch({ type: "BUYER_INTEREST", match });
+        return true;
+      },
+      connectAsSeller: (matchId) => {
+        dispatch({ type: "SELLER_CONNECT", matchId });
+        return true;
+      },
       getProduct: (id) => PRODUCTS.find((p) => p.id === id),
       getAggregate: (productId) => aggregateDemands(productId, state.demands),
       demandFeed: listDemandAggregates(PRODUCTS, state.demands),
@@ -262,6 +322,7 @@ export function DanProvider({ children }: { children: ReactNode }) {
       myMatches,
       resetDemo: () => {
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem("dan-v0-store");
         const fresh = defaultState();
         persist(fresh);
         dispatch({ type: "HYDRATE", state: fresh });
