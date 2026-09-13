@@ -1,4 +1,5 @@
 import type { Demand, DemandAggregate, PriceBucket, Product } from "./types";
+import { isBuyDemand } from "./types";
 import { isDemandLive } from "./demands";
 import { ko } from "@/copy/ko";
 
@@ -7,9 +8,8 @@ export interface AggregateOptions {
 }
 
 /**
- * Production domain aggregation.
- * seekerCount = unique live (ACTIVE + not expired) seeker userIds.
- * Never applies demo display overrides.
+ * Production domain aggregation for BUY demands sharing a productId.
+ * seekerCount = unique live seeker userIds. No display overrides.
  */
 export function aggregateDemands(
   productId: string,
@@ -18,12 +18,15 @@ export function aggregateDemands(
 ): DemandAggregate | null {
   const nowMs = options.nowMs ?? Date.now();
   const live = demands.filter(
-    (d) => d.productId === productId && isDemandLive(d, nowMs),
+    (d) =>
+      isBuyDemand(d) &&
+      d.details.productId === productId &&
+      isDemandLive(d, nowMs),
   );
   if (live.length === 0) return null;
 
   const seekerIds = new Set(live.map((d) => d.userId));
-  const prices = live.map((d) => d.maxPrice);
+  const prices = live.map((d) => (isBuyDemand(d) ? d.details.maxPrice : 0));
   const minPrice = Math.min(...prices);
   const maxPrice = Math.max(...prices);
   const avgPrice = Math.round(

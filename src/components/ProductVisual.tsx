@@ -6,6 +6,9 @@ const CATEGORY_MARK: Record<ProductCategory, string> = {
   camera: "CAM",
   lens: "LENS",
   electronics: "GEAR",
+  furniture: "HOME",
+  camping: "OUT",
+  other: "ITEM",
 };
 
 export function ProductVisual({

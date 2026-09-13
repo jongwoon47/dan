@@ -1,12 +1,28 @@
 import { ko } from "@/copy/ko";
 
-export type ProductCategory = "camera" | "lens" | "electronics";
+export type DemandType = "BUY" | "BORROW" | "TASK" | "SERVICE";
+
+export type ProductCategory =
+  | "electronics"
+  | "camera"
+  | "lens"
+  | "furniture"
+  | "camping"
+  | "other";
+
+export type DemandCategory =
+  | ProductCategory
+  | "errand"
+  | "service"
+  | "rental";
+
 export type ItemCondition = "sealed" | "like_new" | "lightly_used";
 export type ConditionPreference = ItemCondition | "any";
 export type TradeMethod = "meetup" | "shipping" | "any";
 export type DemandStatus = "ACTIVE" | "MATCHED" | "CLOSED" | "EXPIRED";
 export type OwnershipStatus = "OWNED" | "RELEASED";
 export type SellIntentStatus = "OPEN" | "PAUSED" | "MATCHED" | "CLOSED";
+export type ResponseStatus = "OPEN" | "ACCEPTED" | "WITHDRAWN";
 export type MatchStatus =
   | "POTENTIAL"
   | "BUYER_INTERESTED"
@@ -31,18 +47,64 @@ export interface Product {
   createdAt: string;
 }
 
-export interface Demand {
+export interface DemandBase {
   id: string;
   userId: string;
-  productId: string;
-  maxPrice: number;
-  conditionPreference: ConditionPreference;
+  type: DemandType;
+  title: string;
+  description: string;
+  category: DemandCategory;
+  budget: number;
   location: string;
-  tradeMethod: TradeMethod;
   status: DemandStatus;
   createdAt: string;
   expiresAt: string;
 }
+
+export interface BuyDemandDetails {
+  productId: string;
+  maxPrice: number;
+  conditionPreference: ConditionPreference;
+  tradeMethod: TradeMethod;
+}
+
+export interface BorrowDemandDetails {
+  itemName: string;
+  startAt?: string;
+  endAt?: string;
+}
+
+export interface TaskDemandDetails {
+  taskDescription: string;
+  dueAt?: string;
+}
+
+export interface ServiceDemandDetails {
+  serviceDescription: string;
+  preferredAt?: string;
+}
+
+export type BuyDemand = DemandBase & {
+  type: "BUY";
+  details: BuyDemandDetails;
+};
+
+export type BorrowDemand = DemandBase & {
+  type: "BORROW";
+  details: BorrowDemandDetails;
+};
+
+export type TaskDemand = DemandBase & {
+  type: "TASK";
+  details: TaskDemandDetails;
+};
+
+export type ServiceDemand = DemandBase & {
+  type: "SERVICE";
+  details: ServiceDemandDetails;
+};
+
+export type Demand = BuyDemand | BorrowDemand | TaskDemand | ServiceDemand;
 
 export interface Ownership {
   id: string;
@@ -53,6 +115,7 @@ export interface Ownership {
   createdAt: string;
 }
 
+/** BUY-specific supply signal: willing to sell owned product. */
 export interface SellIntent {
   id: string;
   ownershipId: string;
@@ -63,11 +126,26 @@ export interface SellIntent {
   createdAt: string;
 }
 
+/**
+ * Generic supply-side intent: "I can fulfill this demand."
+ * BUY may also use SellIntent; non-BUY uses Response.
+ */
+export interface Response {
+  id: string;
+  demandId: string;
+  userId: string;
+  message: string;
+  offeredPrice?: number;
+  status: ResponseStatus;
+  createdAt: string;
+}
+
 export interface Match {
   id: string;
   demandId: string;
-  sellIntentId: string;
-  productId: string;
+  sellIntentId?: string;
+  responseId?: string;
+  productId?: string;
   buyerId: string;
   sellerId: string;
   status: MatchStatus;
@@ -92,10 +170,36 @@ export interface PriceBucket {
   max: number | null;
 }
 
-export const CATEGORY_LABEL: Record<ProductCategory, string> = {
+export type FeedItem =
+  | {
+      kind: "aggregated";
+      id: string;
+      product: Product;
+      aggregate: DemandAggregate;
+    }
+  | {
+      kind: "individual";
+      id: string;
+      demand: Demand;
+    };
+
+export const DEMAND_TYPE_LABEL: Record<DemandType, string> = {
+  BUY: ko.typeBuy,
+  BORROW: ko.typeBorrow,
+  TASK: ko.typeTask,
+  SERVICE: ko.typeService,
+};
+
+export const CATEGORY_LABEL: Record<DemandCategory, string> = {
   camera: ko.camera,
   lens: ko.lens,
   electronics: ko.electronics,
+  furniture: ko.furniture,
+  camping: ko.camping,
+  other: ko.other,
+  errand: ko.errand,
+  service: ko.serviceCat,
+  rental: ko.rental,
 };
 
 export const CONDITION_LABEL: Record<ConditionPreference, string> = {
@@ -119,3 +223,11 @@ export const MATCH_STATUS_LABEL: Record<MatchStatus, string> = {
   DECLINED: ko.matchStatusDeclined,
   CLOSED: ko.matchStatusClosed,
 };
+
+export function isBuyDemand(demand: Demand): demand is BuyDemand {
+  return demand.type === "BUY";
+}
+
+export function isIndividualDemandType(type: DemandType): boolean {
+  return type === "BORROW" || type === "TASK" || type === "SERVICE";
+}

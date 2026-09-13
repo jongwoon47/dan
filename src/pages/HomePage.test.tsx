@@ -6,7 +6,7 @@ import { DanProvider } from "@/domain/store";
 import { HomePage } from "@/pages/HomePage";
 
 describe("HomePage", () => {
-  it("renders demand-first hero and CTAs", () => {
+  it("renders composer-first home and mixed demand feed", () => {
     render(
       <DanProvider>
         <MemoryRouter>
@@ -15,10 +15,9 @@ describe("HomePage", () => {
       </DanProvider>,
     );
 
-    expect(screen.getByRole("heading", { name: ko.heroTitle })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: ko.ctaCreate })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: ko.ctaBrowse })).toBeInTheDocument();
-    expect(screen.getByText(ko.featuredTitle)).toBeInTheDocument();
-    expect(screen.getAllByText("31").length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { name: ko.composerTitle })).toBeInTheDocument();
+    expect(screen.getByText(ko.typeBuy)).toBeInTheDocument();
+    expect(screen.getByText(ko.typeTask)).toBeInTheDocument();
+    expect(screen.getByText(ko.feedNowTitle)).toBeInTheDocument();
   });
 });

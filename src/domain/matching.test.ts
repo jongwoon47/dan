@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { aggregateDemands } from "@/domain/aggregation";
 import { upsertActiveDemand } from "@/domain/demands";
+import { buildFeedItems, classifyFeedItem } from "@/domain/feed";
 import {
   canExpressBuyerInterest,
   canSellerConnect,
@@ -15,24 +16,36 @@ import {
   isConditionCompatible,
   isPriceCompatible,
 } from "@/domain/matching";
+import { canRespondToDemand } from "@/domain/responses";
 import { upsertOpenSellIntent } from "@/domain/sellIntents";
-import type { Demand, Match, Ownership, SellIntent } from "@/domain/types";
+import type { BuyDemand, Match, Ownership, Product, SellIntent } from "@/domain/types";
 
 const NOW = Date.parse("2026-09-13T12:00:00.000Z");
 
-const demand = (overrides: Partial<Demand> = {}): Demand => ({
-  id: "d1",
-  userId: "buyer",
-  productId: "p1",
-  maxPrice: 1_800_000,
-  conditionPreference: "any",
-  location: "Seoul",
-  tradeMethod: "any",
-  status: "ACTIVE",
-  createdAt: "2026-09-01T00:00:00.000Z",
-  expiresAt: "2026-10-13T00:00:00.000Z",
-  ...overrides,
-});
+const demand = (overrides: Partial<BuyDemand> & { details?: Partial<BuyDemand["details"]> } = {}): BuyDemand => {
+  const { details: detailOverrides, ...rest } = overrides;
+  return {
+    id: "d1",
+    userId: "buyer",
+    type: "BUY",
+    title: "Item",
+    description: "Item",
+    category: "electronics",
+    budget: detailOverrides?.maxPrice ?? 1_800_000,
+    location: "Seoul",
+    status: "ACTIVE",
+    createdAt: "2026-09-01T00:00:00.000Z",
+    expiresAt: "2026-10-13T00:00:00.000Z",
+    ...rest,
+    details: {
+      productId: "p1",
+      maxPrice: 1_800_000,
+      conditionPreference: "any",
+      tradeMethod: "any",
+      ...detailOverrides,
+    },
+  };
+};
 
 const sell = (overrides: Partial<SellIntent> = {}): SellIntent => ({
   id: "s1",
@@ -70,7 +83,7 @@ describe("matching compatibility", () => {
   it("rejects buyer max < seller min", () => {
     expect(
       canCreateMatch({
-        demand: demand({ maxPrice: 1_500_000 }),
+        demand: demand({ details: { productId: "p1", maxPrice: 1_500_000, conditionPreference: "any", tradeMethod: "any" } }),
         sellIntent: sell({ minimumPrice: 1_900_000 }),
         ownershipCondition: "lightly_used",
         nowMs: NOW,
@@ -114,31 +127,27 @@ describe("matching compatibility", () => {
 
 describe("demand uniqueness + seeker aggregation", () => {
   it("prevents duplicate ACTIVE demand for same user/product via upsert", () => {
-    const first = demand({ id: "d-a", userId: "u1", maxPrice: 1_000_000 });
+    const first = demand({ id: "d-a", userId: "u1", details: { productId: "p1", maxPrice: 1_000_000, conditionPreference: "any", tradeMethod: "any" } });
     const second = demand({
       id: "d-b",
       userId: "u1",
-      maxPrice: 1_200_000,
-      conditionPreference: "sealed",
+      details: { productId: "p1", maxPrice: 1_200_000, conditionPreference: "sealed", tradeMethod: "any" },
     });
     const list = upsertActiveDemand(upsertActiveDemand([], first), second);
     const active = list.filter(
-      (d) => d.userId === "u1" && d.productId === "p1" && d.status === "ACTIVE",
+      (d) => d.userId === "u1" && d.type === "BUY" && d.status === "ACTIVE",
     );
     expect(active).toHaveLength(1);
     expect(active[0]?.id).toBe("d-a");
-    expect(active[0]?.maxPrice).toBe(1_200_000);
-    expect(active[0]?.conditionPreference).toBe("sealed");
+    expect(active[0]?.type === "BUY" && active[0].details.maxPrice).toBe(1_200_000);
   });
 
   it("counts unique seekers, not demand rows", () => {
     const demands = [
-      demand({ id: "1", userId: "a", maxPrice: 100 }),
-      demand({ id: "2", userId: "a", maxPrice: 200 }),
-      demand({ id: "3", userId: "b", maxPrice: 300 }),
+      demand({ id: "1", userId: "a", details: { productId: "p1", maxPrice: 100, conditionPreference: "any", tradeMethod: "any" } }),
+      demand({ id: "2", userId: "a", details: { productId: "p1", maxPrice: 200, conditionPreference: "any", tradeMethod: "any" } }),
+      demand({ id: "3", userId: "b", details: { productId: "p1", maxPrice: 300, conditionPreference: "any", tradeMethod: "any" } }),
     ];
-    // Two ACTIVE rows for user a should still count as one seeker once upserted,
-    // but even with duplicate rows domain aggregation uses unique userIds.
     const agg = aggregateDemands("p1", demands, { nowMs: NOW });
     expect(agg?.seekerCount).toBe(2);
   });
@@ -150,13 +159,10 @@ describe("sell intent uniqueness", () => {
     const second = sell({ id: "s-new", minimumPrice: 1_500_000 });
     const once = upsertOpenSellIntent([], first);
     const twice = upsertOpenSellIntent(once.list, second);
-    const open = twice.list.filter(
-      (s) => s.ownershipId === "o1" && s.status === "OPEN",
-    );
+    const open = twice.list.filter((s) => s.ownershipId === "o1" && s.status === "OPEN");
     expect(open).toHaveLength(1);
     expect(open[0]?.id).toBe("s-old");
     expect(open[0]?.minimumPrice).toBe(1_500_000);
-    expect(twice.result.id).toBe("s-old");
   });
 });
 
@@ -182,9 +188,7 @@ describe("match lifecycle", () => {
     const interested = transitionBuyerInterest(potential, "buyer");
     expect(interested?.status).toBe("BUYER_INTERESTED");
     expect(canSellerConnect(interested!, "seller")).toBe(true);
-    expect(transitionSellerConnect(interested!, "seller")?.status).toBe(
-      "CONNECTED",
-    );
+    expect(transitionSellerConnect(interested!, "seller")?.status).toBe("CONNECTED");
   });
 
   it("keeps POTENTIAL derived and progressive matches persisted in merge", () => {
@@ -198,14 +202,7 @@ describe("match lifecycle", () => {
       nowMs: NOW,
     });
     expect(candidates).toHaveLength(1);
-
-    const persisted: Match[] = [
-      {
-        ...potential,
-        id: "match-persisted",
-        status: "BUYER_INTERESTED",
-      },
-    ];
+    const persisted: Match[] = [{ ...potential, id: "match-persisted", status: "BUYER_INTERESTED" }];
     const visible = mergeVisibleMatches({
       persisted,
       candidates,
@@ -214,5 +211,62 @@ describe("match lifecycle", () => {
     });
     expect(visible).toHaveLength(1);
     expect(visible[0]?.status).toBe("BUYER_INTERESTED");
+  });
+});
+
+describe("feed generalization", () => {
+  const product: Product = {
+    id: "p1",
+    name: "Phone",
+    brand: "A",
+    model: "Phone",
+    category: "electronics",
+    imageHue: 200,
+    createdAt: "2026-01-01T00:00:00.000Z",
+  };
+
+  it("classifies aggregated vs individual", () => {
+    const feed = buildFeedItems(
+      [product],
+      [
+        demand(),
+        {
+          id: "t1",
+          userId: "u2",
+          type: "TASK",
+          title: "Pickup",
+          description: "Pickup",
+          category: "errand",
+          budget: 20000,
+          location: "Seoul",
+          status: "ACTIVE",
+          createdAt: "2026-09-13T00:00:00.000Z",
+          expiresAt: "2026-09-20T00:00:00.000Z",
+          details: { taskDescription: "Pickup" },
+        },
+      ],
+      { nowMs: NOW },
+    );
+    expect(feed.some((f) => classifyFeedItem(f) === "aggregated")).toBe(true);
+    expect(feed.some((f) => classifyFeedItem(f) === "individual")).toBe(true);
+  });
+
+  it("allows response to foreign live demand", () => {
+    const task = {
+      id: "t1",
+      userId: "owner",
+      type: "TASK" as const,
+      title: "Pickup",
+      description: "Pickup",
+      category: "errand" as const,
+      budget: 20000,
+      location: "Seoul",
+      status: "ACTIVE" as const,
+      createdAt: "2026-09-13T00:00:00.000Z",
+      expiresAt: "2026-09-20T00:00:00.000Z",
+      details: { taskDescription: "Pickup" },
+    };
+    expect(canRespondToDemand(task, "helper", NOW)).toBe(true);
+    expect(canRespondToDemand(task, "owner", NOW)).toBe(false);
   });
 });

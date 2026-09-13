@@ -1,33 +1,44 @@
 import { useMemo, useState } from "react";
-import { DemandCard } from "@/components/DemandCard";
+import { AggregatedDemandCard } from "@/components/AggregatedDemandCard";
+import { IndividualDemandCard } from "@/components/IndividualDemandCard";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Button } from "@/components/ui/Button";
 import { Chip, ChipGroup, TextInput } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
-import type { ProductCategory } from "@/domain/types";
-import { CATEGORY_LABEL } from "@/domain/types";
+import type { DemandType } from "@/domain/types";
+import { DEMAND_TYPE_LABEL } from "@/domain/types";
 import "./pages.css";
+import "@/components/feedCards.css";
 
-const FILTERS: Array<"all" | ProductCategory> = ["all", "camera", "lens", "electronics"];
+type Filter = "all" | DemandType;
 
 export function DemandFeedPage() {
   const { demandFeed } = useDan();
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<"all" | ProductCategory>("all");
+  const [filter, setFilter] = useState<Filter>("all");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return demandFeed.filter((row) => {
-      if (category !== "all" && row.product.category !== category) return false;
+    return demandFeed.filter((item) => {
+      if (filter !== "all") {
+        if (item.kind === "aggregated" && filter !== "BUY") return false;
+        if (item.kind === "individual" && item.demand.type !== filter) return false;
+      }
       if (!q) return true;
+      if (item.kind === "aggregated") {
+        return (
+          item.product.name.toLowerCase().includes(q) ||
+          item.product.brand.toLowerCase().includes(q)
+        );
+      }
       return (
-        row.product.name.toLowerCase().includes(q) ||
-        row.product.brand.toLowerCase().includes(q) ||
-        row.product.model.toLowerCase().includes(q)
+        item.demand.title.toLowerCase().includes(q) ||
+        item.demand.location.toLowerCase().includes(q) ||
+        item.demand.description.toLowerCase().includes(q)
       );
     });
-  }, [demandFeed, query, category]);
+  }, [demandFeed, filter, query]);
 
   return (
     <div className="page-stack">
@@ -35,32 +46,48 @@ export function DemandFeedPage() {
         <h1 className="page-title">{ko.feedTitle}</h1>
         <p className="section-desc">{ko.feedDesc}</p>
       </header>
-      <div className="feed-controls">
-        <TextInput
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={ko.searchPh}
-          aria-label="search"
-        />
-        <ChipGroup>
-          {FILTERS.map((key) => (
-            <Chip key={key} selected={category === key} onClick={() => setCategory(key)}>
-              {key === "all" ? ko.all : CATEGORY_LABEL[key]}
-            </Chip>
-          ))}
-        </ChipGroup>
-      </div>
+
+      <TextInput
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder={ko.searchPh}
+        aria-label={ko.searchPh}
+      />
+
+      <ChipGroup>
+        <Chip selected={filter === "all"} onClick={() => setFilter("all")}>
+          {ko.all}
+        </Chip>
+        {(["BUY", "BORROW", "TASK", "SERVICE"] as DemandType[]).map((t) => (
+          <Chip key={t} selected={filter === t} onClick={() => setFilter(t)}>
+            {DEMAND_TYPE_LABEL[t]}
+          </Chip>
+        ))}
+      </ChipGroup>
+
       {filtered.length === 0 ? (
         <EmptyState
           title={ko.noSearch}
           body={ko.noSearchBody}
-          action={<Button to="/create" variant="secondary">{ko.ctaCreate}</Button>}
+          action={
+            <Button to="/create" variant="secondary">
+              {ko.ctaCreate}
+            </Button>
+          }
         />
       ) : (
-        <div className="grid-cards">
-          {filtered.map((row) => (
-            <DemandCard key={row.productId} product={row.product} aggregate={row} />
-          ))}
+        <div className="feed-list">
+          {filtered.map((item) =>
+            item.kind === "aggregated" ? (
+              <AggregatedDemandCard
+                key={item.id}
+                product={item.product}
+                aggregate={item.aggregate}
+              />
+            ) : (
+              <IndividualDemandCard key={item.id} demand={item.demand} />
+            ),
+          )}
         </div>
       )}
     </div>

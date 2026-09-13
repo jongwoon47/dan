@@ -5,18 +5,55 @@ import { CategoryPill, ProductVisual } from "@/components/ProductVisual";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import { CONDITION_LABEL, MATCH_STATUS_LABEL, type Match } from "@/domain/types";
+import { isBuyDemand } from "@/domain/types";
 import { formatWon } from "@/lib/format";
 import "./matchCard.css";
 
 export function MatchCard({ match }: { match: Match }) {
   const { currentUser, getProduct, state, expressBuyerInterest, connectAsSeller } = useDan();
-  const product = getProduct(match.productId);
   const demand = state.demands.find((d) => d.id === match.demandId);
-  const sell = state.sellIntents.find((s) => s.id === match.sellIntentId);
-  const ownership = state.ownerships.find((o) => o.id === sell?.ownershipId);
+  const sell = match.sellIntentId
+    ? state.sellIntents.find((s) => s.id === match.sellIntentId)
+    : undefined;
+  const ownership = sell
+    ? state.ownerships.find((o) => o.id === sell.ownershipId)
+    : undefined;
+  const product = match.productId ? getProduct(match.productId) : undefined;
 
-  if (!product || !demand || !sell || !ownership || !currentUser) return null;
+  if (!demand || !currentUser) return null;
 
+  // Non-BUY connected match (response-based)
+  if (!sell || !ownership) {
+    const isBuyer = match.buyerId === currentUser.id;
+    return (
+      <Card className="match-card">
+        <div className="match-card__head">
+          <div>
+            <Badge tone="accent">{MATCH_STATUS_LABEL[match.status]}</Badge>
+            <h3>{demand.title}</h3>
+            <p className="match-card__lead">{ko.matchLead}</p>
+          </div>
+        </div>
+        {match.status === "CONNECTED" ? (
+          <div className="match-card__connected">
+            <p>{ko.connectedMsg}</p>
+            <Button to="/my" variant="secondary" fullWidth>
+              {ko.viewInMy}
+            </Button>
+          </div>
+        ) : null}
+        {!isBuyer && match.status === "BUYER_INTERESTED" ? (
+          <Button fullWidth onClick={() => connectAsSeller(match.id)}>
+            {ko.connect}
+          </Button>
+        ) : null}
+      </Card>
+    );
+  }
+
+  if (!product) return null;
+
+  const buyMax = isBuyDemand(demand) ? demand.details.maxPrice : demand.budget;
   const isBuyer = match.buyerId === currentUser.id;
   const isSeller = match.sellerId === currentUser.id;
 
@@ -38,7 +75,7 @@ export function MatchCard({ match }: { match: Match }) {
         <div>
           <span>{ko.buyUntil}</span>
           <strong>
-            {formatWon(demand.maxPrice)} {ko.untilSuffix}
+            {formatWon(buyMax)} {ko.untilSuffix}
           </strong>
         </div>
         <div className="match-card__compare-divider" aria-hidden>
@@ -63,7 +100,7 @@ export function MatchCard({ match }: { match: Match }) {
         </div>
         <div>
           <span>{isBuyer ? ko.sellConsiderPrice : ko.hopePrice}</span>
-          <strong>{formatWon(isBuyer ? sell.minimumPrice : demand.maxPrice)}</strong>
+          <strong>{formatWon(isBuyer ? sell.minimumPrice : buyMax)}</strong>
         </div>
       </div>
 

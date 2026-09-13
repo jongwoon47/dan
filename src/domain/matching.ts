@@ -5,6 +5,7 @@ import type {
   SellIntent,
   TradeMethod,
 } from "./types";
+import { isBuyDemand } from "./types";
 import { isDemandLive } from "./demands";
 
 const CONDITION_RANK: Record<ConditionPreference, number> = {
@@ -44,20 +45,27 @@ export interface MatchCandidateInput {
   demand: Demand;
   sellIntent: SellIntent;
   ownershipCondition: ItemCondition;
-  /** Injected for tests; defaults to Date.now(). */
   nowMs?: number;
 }
 
-/** Compatibility gate for a Demand × SellIntent pair (derived, not persisted). */
+/** BUY-only compatibility gate (derived, not persisted). */
 export function canCreateMatch(input: MatchCandidateInput): boolean {
   const { demand, sellIntent, ownershipCondition } = input;
   const nowMs = input.nowMs ?? Date.now();
+  if (!isBuyDemand(demand)) return false;
   if (!isDemandLive(demand, nowMs)) return false;
   if (sellIntent.status !== "OPEN") return false;
-  if (demand.productId !== sellIntent.productId) return false;
+  if (demand.details.productId !== sellIntent.productId) return false;
   if (demand.userId === sellIntent.userId) return false;
-  if (!isPriceCompatible(demand.maxPrice, sellIntent.minimumPrice)) return false;
-  if (!isConditionCompatible(demand.conditionPreference, ownershipCondition)) {
+  if (!isPriceCompatible(demand.details.maxPrice, sellIntent.minimumPrice)) {
+    return false;
+  }
+  if (
+    !isConditionCompatible(
+      demand.details.conditionPreference,
+      ownershipCondition,
+    )
+  ) {
     return false;
   }
   return true;

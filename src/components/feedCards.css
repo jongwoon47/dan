@@ -1,0 +1,124 @@
+.feed-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-xl) 0;
+  border-bottom: 1px solid var(--dan-border);
+  color: inherit;
+}
+
+.feed-row:last-child {
+  border-bottom: none;
+}
+
+.feed-row__type {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--dan-accent-text);
+  margin-bottom: 6px;
+}
+
+.feed-row__title {
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+}
+
+.feed-row__signal,
+.feed-row__place {
+  margin-top: 6px;
+  color: var(--dan-ink-secondary);
+  font-size: 0.9375rem;
+}
+
+.feed-row__signal strong {
+  color: var(--dan-ink);
+  margin-right: 4px;
+}
+
+.feed-row__stats {
+  display: flex;
+  gap: var(--space-xl);
+}
+
+.feed-row__stats span {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--dan-ink-muted);
+  margin-bottom: 2px;
+}
+
+.feed-row__stats strong {
+  font-size: 0.9375rem;
+}
+
+.feed-row__trend {
+  color: var(--dan-accent-text);
+}
+
+.feed-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg) 0 var(--space-xl);
+}
+
+.composer__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.composer__hint {
+  color: var(--dan-ink-secondary);
+  font-size: 0.9375rem;
+}
+
+.composer__box {
+  display: block;
+  width: 100%;
+  min-height: 56px;
+  padding: 16px 18px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--dan-border-strong);
+  background: var(--dan-surface);
+  color: var(--dan-ink-muted);
+  text-align: left;
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+.composer__box:hover {
+  border-color: var(--dan-accent);
+  color: var(--dan-ink);
+}
+
+.type-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (min-width: 720px) {
+  .feed-row {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .feed-row__meta {
+    flex: 1;
+    min-width: 0;
+    padding-right: var(--space-xl);
+  }
+}

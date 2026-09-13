@@ -1,57 +1,57 @@
+import { Link } from "react-router-dom";
+import { AggregatedDemandCard } from "@/components/AggregatedDemandCard";
+import { IndividualDemandCard } from "@/components/IndividualDemandCard";
 import { ko } from "@/copy/ko";
-import { DemandCard } from "@/components/DemandCard";
-import { Button } from "@/components/ui/Button";
 import { useDan } from "@/domain/danContext";
+import type { DemandType } from "@/domain/types";
+import { DEMAND_TYPE_LABEL } from "@/domain/types";
 import "./pages.css";
+import "@/components/feedCards.css";
+
+const TYPES: DemandType[] = ["BUY", "BORROW", "TASK", "SERVICE"];
 
 export function HomePage() {
   const { demandFeed } = useDan();
-  const featured = demandFeed.slice(0, 4);
+  const featured = demandFeed.slice(0, 8);
 
   return (
     <div className="page-stack home-page">
-      <section className="hero hero--compact">
-        <div className="hero__brand">
-          <img
-            className="hero__logo"
-            src="/dan-logo.png"
-            alt="DAN"
-            width={72}
-            height={72}
-          />
-          <p className="hero__eyebrow">Demand-first</p>
-        </div>
-        <h1 className="hero__title">{ko.heroTitle}</h1>
-        <p className="hero__body">
-          {ko.heroBody1}
-          <br />
-          {ko.heroBody2}
-        </p>
-        <div className="hero__actions">
-          <Button to="/create" size="lg">
-            {ko.ctaCreate}
-          </Button>
-          <Button to="/feed" size="lg" variant="secondary">
-            {ko.ctaBrowse}
-          </Button>
+      <section className="composer">
+        <h1 className="composer__title">{ko.composerTitle}</h1>
+        <p className="composer__hint">{ko.composerHint}</p>
+        <Link to="/create" className="composer__box">
+          {ko.composerPlaceholder}
+        </Link>
+        <div className="type-row" aria-label="demand types">
+          {TYPES.map((type) => (
+            <Link key={type} to={`/create?type=${type}`} className="type-chip">
+              {DEMAND_TYPE_LABEL[type]}
+            </Link>
+          ))}
         </div>
       </section>
 
       <section className="section-stack">
         <div className="section-head">
-          <h2 className="section-title">{ko.featuredTitle}</h2>
-          <p className="section-desc">{ko.featuredDesc}</p>
+          <h2 className="section-title">{ko.feedNowTitle}</h2>
+          <p className="section-desc">{ko.feedNowDesc}</p>
         </div>
-        <div className="grid-cards">
-          {featured.map((row) => (
-            <DemandCard key={row.productId} product={row.product} aggregate={row} />
-          ))}
+        <div className="feed-list">
+          {featured.map((item) =>
+            item.kind === "aggregated" ? (
+              <AggregatedDemandCard
+                key={item.id}
+                product={item.product}
+                aggregate={item.aggregate}
+              />
+            ) : (
+              <IndividualDemandCard key={item.id} demand={item.demand} />
+            ),
+          )}
         </div>
-        <div className="section-footer">
-          <Button to="/feed" variant="ghost">
-            {ko.viewAllDemand}
-          </Button>
-        </div>
+        <Link to="/feed" className="text-link">
+          {ko.viewAllDemand}
+        </Link>
       </section>
     </div>
   );

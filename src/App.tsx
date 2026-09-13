@@ -5,6 +5,7 @@ import { DanProvider } from "@/domain/store";
 import { CreateDemandPage } from "@/pages/CreateDemandPage";
 import { DemandDetailPage } from "@/pages/DemandDetailPage";
 import { DemandFeedPage } from "@/pages/DemandFeedPage";
+import { DemandItemPage } from "@/pages/DemandItemPage";
 import { HomePage } from "@/pages/HomePage";
 import { MyDanPage } from "@/pages/MyDanPage";
 import { OwnershipPage } from "@/pages/OwnershipPage";
@@ -19,6 +20,7 @@ export default function App() {
             <Route index element={<HomePage />} />
             <Route path="feed" element={<DemandFeedPage />} />
             <Route path="create" element={<CreateDemandPage />} />
+            <Route path="demand/item/:demandId" element={<DemandItemPage />} />
             <Route path="demand/:productId" element={<DemandDetailPage />} />
             <Route path="demand/:productId/own" element={<OwnershipPage />} />
             <Route

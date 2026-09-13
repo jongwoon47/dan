@@ -1,4 +1,5 @@
 import type { Demand, ItemCondition, Match, SellIntent } from "./types";
+import { isBuyDemand } from "./types";
 import { canCreateMatch } from "./matching";
 
 export interface MatchPairKey {
@@ -43,7 +44,7 @@ export interface CandidateScanInput {
   nowMs: number;
 }
 
-/** Derived query: do not persist these as DB rows. */
+/** Derived BUY candidates: do not persist these as DB rows. */
 export function listMatchCandidates(input: CandidateScanInput): MatchCandidate[] {
   const out: MatchCandidate[] = [];
   const openSells = input.sellIntents.filter((s) => s.status === "OPEN");
@@ -63,10 +64,11 @@ export function listMatchCandidates(input: CandidateScanInput): MatchCandidate[]
       ) {
         continue;
       }
+      if (!isBuyDemand(demand)) continue;
       out.push({
         demandId: demand.id,
         sellIntentId: sell.id,
-        productId: demand.productId,
+        productId: demand.details.productId,
         buyerId: demand.userId,
         sellerId: sell.userId,
       });
@@ -139,7 +141,9 @@ export function mergeVisibleMatches(args: {
       isPersistedMatchStatus(m.status),
   );
   const taken = new Set(
-    persistedForUser.map((m) => pairKey(m.demandId, m.sellIntentId)),
+    persistedForUser.map((m) =>
+      pairKey(m.demandId, m.sellIntentId ?? m.responseId ?? "none"),
+    ),
   );
   const derived = args.candidates
     .filter(

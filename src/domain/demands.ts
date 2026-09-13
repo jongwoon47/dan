@@ -1,4 +1,5 @@
-import type { Demand } from "./types";
+import type { BuyDemand, Demand } from "./types";
+import { isBuyDemand } from "./types";
 
 /** ACTIVE + not past expiresAt. */
 export function isDemandLive(demand: Demand, nowMs: number): boolean {
@@ -6,47 +7,55 @@ export function isDemandLive(demand: Demand, nowMs: number): boolean {
   return new Date(demand.expiresAt).getTime() > nowMs;
 }
 
+export function asBuyDemand(demand: Demand): BuyDemand | null {
+  return isBuyDemand(demand) ? demand : null;
+}
+
 /**
- * Upsert ACTIVE demand for (userId, productId).
+ * Upsert ACTIVE BUY demand for (userId, productId).
  * Prefer update over creating a second ACTIVE row.
  */
 export function upsertActiveDemand(
   demands: Demand[],
-  next: Demand,
+  next: BuyDemand,
 ): Demand[] {
   const existingIndex = demands.findIndex(
     (d) =>
+      isBuyDemand(d) &&
       d.userId === next.userId &&
-      d.productId === next.productId &&
+      d.details.productId === next.details.productId &&
       d.status === "ACTIVE",
   );
   if (existingIndex === -1) {
     return [next, ...demands];
   }
-  const existing = demands[existingIndex]!;
-  const updated: Demand = {
+  const existing = demands[existingIndex] as BuyDemand;
+  const updated: BuyDemand = {
     ...existing,
-    maxPrice: next.maxPrice,
-    conditionPreference: next.conditionPreference,
+    title: next.title,
+    description: next.description,
+    category: next.category,
+    budget: next.budget,
     location: next.location,
-    tradeMethod: next.tradeMethod,
     expiresAt: next.expiresAt,
     status: "ACTIVE",
+    details: { ...existing.details, ...next.details },
   };
   const copy = [...demands];
   copy[existingIndex] = updated;
   return copy;
 }
 
-export function findActiveDemand(
+export function findActiveBuyDemand(
   demands: Demand[],
   userId: string,
   productId: string,
-): Demand | undefined {
+): BuyDemand | undefined {
   return demands.find(
-    (d) =>
+    (d): d is BuyDemand =>
+      isBuyDemand(d) &&
       d.userId === userId &&
-      d.productId === productId &&
+      d.details.productId === productId &&
       d.status === "ACTIVE",
   );
 }

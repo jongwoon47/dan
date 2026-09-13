@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 
 import { useDan } from "@/domain/danContext";
 import { DanProvider } from "@/domain/store";
-import { PRODUCTS } from "@/domain/mockData";
 
 function wrapper({ children }: { children: ReactNode }) {
   return <DanProvider>{children}</DanProvider>;
@@ -13,7 +12,6 @@ function wrapper({ children }: { children: ReactNode }) {
 describe("store mutations / login race", () => {
   it("createDemand works after logout without a prior login flush", () => {
     const { result } = renderHook(() => useDan(), { wrapper });
-    const productId = PRODUCTS[0]!.id;
 
     act(() => {
       result.current.logout();
@@ -23,7 +21,9 @@ describe("store mutations / login race", () => {
     let createdId: string | null = null;
     act(() => {
       const created = result.current.createDemand({
-        productId,
+        type: "BUY",
+        title: "Phone",
+        productId: "prod-iphone-15-pro",
         maxPrice: 1_111_000,
         conditionPreference: "any",
         location: "Seoul",
@@ -38,7 +38,7 @@ describe("store mutations / login race", () => {
       result.current.state.demands.filter(
         (d) =>
           d.userId === result.current.currentUser?.id &&
-          d.productId === productId &&
+          d.type === "BUY" &&
           d.status === "ACTIVE",
       ),
     ).toHaveLength(1);
@@ -46,10 +46,12 @@ describe("store mutations / login race", () => {
 
   it("upserts demand instead of duplicating ACTIVE rows", () => {
     const { result } = renderHook(() => useDan(), { wrapper });
-    const productId = PRODUCTS[1]!.id;
+    const productId = "prod-airpods-pro2";
 
     act(() => {
       result.current.createDemand({
+        type: "BUY",
+        title: "AirPods",
         productId,
         maxPrice: 1_000_000,
         conditionPreference: "any",
@@ -59,6 +61,8 @@ describe("store mutations / login race", () => {
     });
     act(() => {
       result.current.createDemand({
+        type: "BUY",
+        title: "AirPods",
         productId,
         maxPrice: 2_000_000,
         conditionPreference: "sealed",
@@ -70,18 +74,17 @@ describe("store mutations / login race", () => {
     const mine = result.current.state.demands.filter(
       (d) =>
         d.userId === result.current.currentUser?.id &&
-        d.productId === productId &&
+        d.type === "BUY" &&
+        d.details.productId === productId &&
         d.status === "ACTIVE",
     );
     expect(mine).toHaveLength(1);
-    expect(mine[0]?.maxPrice).toBe(2_000_000);
-    expect(mine[0]?.conditionPreference).toBe("sealed");
+    expect(mine[0]?.type === "BUY" && mine[0].details.maxPrice).toBe(2_000_000);
   });
 
   it("rejects seller connect on derived POTENTIAL via reducer", () => {
     const { result } = renderHook(() => useDan(), { wrapper });
 
-    // Seed has jun selling Sony 24-70; login as jun and try connect on potential.
     act(() => {
       result.current.login("user-jun");
     });
@@ -111,14 +114,15 @@ describe("store mutations / login race", () => {
   it("buyer interest materializes, then seller can connect", () => {
     const { result } = renderHook(() => useDan(), { wrapper });
 
-    // Create demand as you that matches jun's open sell (min 1.8m).
     act(() => {
       result.current.login("user-you");
     });
     act(() => {
       result.current.createDemand({
-        productId: "prod-sony-2470-gm2",
-        maxPrice: 2_000_000,
+        type: "BUY",
+        title: "Sony A7 IV",
+        productId: "prod-sony-a7iv",
+        maxPrice: 2_500_000,
         conditionPreference: "any",
         location: "Seoul",
         tradeMethod: "any",

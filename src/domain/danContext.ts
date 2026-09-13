@@ -4,10 +4,13 @@ import type {
   ConditionPreference,
   Demand,
   DemandAggregate,
+  DemandType,
+  FeedItem,
   ItemCondition,
   Match,
   Ownership,
   Product,
+  Response,
   SellIntent,
   TradeMethod,
   User,
@@ -16,9 +19,45 @@ import type { DanState } from "./storeTypes";
 
 export type { DanState } from "./storeTypes";
 
-export interface DemandFeedRow extends DemandAggregate {
-  product: Product;
-}
+export type CreateDemandInput =
+  | {
+      type: "BUY";
+      title: string;
+      description?: string;
+      productId: string;
+      maxPrice: number;
+      conditionPreference: ConditionPreference;
+      location: string;
+      tradeMethod: TradeMethod;
+    }
+  | {
+      type: "BORROW";
+      title: string;
+      description?: string;
+      itemName: string;
+      budget: number;
+      location: string;
+      startAt?: string;
+      endAt?: string;
+    }
+  | {
+      type: "TASK";
+      title: string;
+      description?: string;
+      taskDescription: string;
+      budget: number;
+      location: string;
+      dueAt?: string;
+    }
+  | {
+      type: "SERVICE";
+      title: string;
+      description?: string;
+      serviceDescription: string;
+      budget: number;
+      location: string;
+      preferredAt?: string;
+    };
 
 export interface DanContextValue {
   state: DanState;
@@ -28,13 +67,7 @@ export interface DanContextValue {
   isLoggedIn: boolean;
   login: (userId?: string) => void;
   logout: () => void;
-  createDemand: (payload: {
-    productId: string;
-    maxPrice: number;
-    conditionPreference: ConditionPreference;
-    location: string;
-    tradeMethod: TradeMethod;
-  }) => Demand | null;
+  createDemand: (payload: CreateDemandInput) => Demand | null;
   createOwnership: (payload: {
     productId: string;
     condition: ItemCondition;
@@ -43,14 +76,22 @@ export interface DanContextValue {
     ownershipId: string;
     minimumPrice: number;
   }) => SellIntent | null;
+  createResponse: (payload: {
+    demandId: string;
+    message: string;
+    offeredPrice?: number;
+  }) => Response | null;
+  acceptResponse: (responseId: string) => Match | null;
   expressBuyerInterest: (matchId: string) => boolean;
   connectAsSeller: (matchId: string) => boolean;
   getProduct: (id: string) => Product | undefined;
+  getDemand: (id: string) => Demand | undefined;
   getAggregate: (productId: string) => DemandAggregate | null;
-  demandFeed: DemandFeedRow[];
+  demandFeed: FeedItem[];
   myDemands: Demand[];
   myOwnerships: Ownership[];
   mySellIntents: SellIntent[];
+  myResponses: Response[];
   myMatches: Match[];
   resetDemo: () => void;
 }
@@ -62,3 +103,5 @@ export function useDan() {
   if (!ctx) throw new Error("useDan must be used within DanProvider");
   return ctx;
 }
+
+export type { DemandType };
