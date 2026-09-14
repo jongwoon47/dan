@@ -32,6 +32,7 @@ export interface DanContextValue {
   login: (userId?: string) => void;
   logout: () => void;
   createDemand: (payload: CreateDemandInput) => Promise<Demand | null>;
+  ensureProduct: (name: string) => Promise<Product | null>;
   updateDemand: (payload: {
     demandId: string;
     title: string;
@@ -40,6 +41,9 @@ export interface DanContextValue {
     fulfillmentOptions: FulfillmentOption[];
     expiresAt?: string;
     dueAt?: string;
+    startAt?: string;
+    endAt?: string;
+    preferredAt?: string;
     itemName?: string;
     taskDescription?: string;
     serviceDescription?: string;

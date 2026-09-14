@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
-import type { ActivityEvent } from "@/domain/types";
+import type { ActivityEvent, Demand } from "@/domain/types";
 import { getDataMode } from "@/data/mode";
 import { formatWon } from "@/lib/format";
 import "./pages.css";
 
-function kindLead(kind: ActivityEvent["kind"]) {
+function kindVerb(kind: ActivityEvent["kind"]) {
   switch (kind) {
     case "NEW_RESPONSE":
       return "응답했어요";
@@ -18,11 +18,11 @@ function kindLead(kind: ActivityEvent["kind"]) {
     case "RESPONSE_DECLINED":
       return "응답이 거절됐어요";
     case "BUYER_INTEREST":
-      return "구매 관심이 도착했어요";
+      return "구매 관심을 표시했어요";
     case "MATCH_CONNECTED":
       return "연결됐어요";
     case "NEW_MESSAGE":
-      return "새 메시지가 있어요";
+      return "메시지를 보냈어요";
     case "DEMAND_CLOSED":
       return "요청이 마감됐어요";
     default:
@@ -30,9 +30,12 @@ function kindLead(kind: ActivityEvent["kind"]) {
   }
 }
 
-function hrefFor(ev: ActivityEvent) {
+function hrefFor(ev: ActivityEvent, demand?: Demand) {
   if (ev.kind === "NEW_MESSAGE" || ev.kind === "MATCH_CONNECTED") {
     if (ev.matchId) return `/match/${ev.matchId}`;
+  }
+  if (ev.kind === "BUYER_INTEREST" && demand?.type === "BUY") {
+    return `/demand/${demand.details.productId}`;
   }
   if (ev.demandId) return `/demand/item/${ev.demandId}`;
   return "/my";
@@ -129,26 +132,30 @@ export function ActivityPage() {
               ? state.responses.find((r) => r.id === ev.responseId)
               : undefined;
             const actor = ev.actorId ? names[ev.actorId] : undefined;
-            const title =
-              actor &&
+            const withActor =
+              Boolean(actor) &&
               (ev.kind === "NEW_RESPONSE" ||
                 ev.kind === "MATCH_CONNECTED" ||
                 ev.kind === "BUYER_INTEREST" ||
-                ev.kind === "NEW_MESSAGE")
-                ? `${actor}님이 ${kindLead(ev.kind)}`
-                : kindLead(ev.kind);
+                ev.kind === "NEW_MESSAGE" ||
+                ev.kind === "RESPONSE_ACCEPTED");
+            const title = withActor
+              ? `${actor}님이 ${kindVerb(ev.kind)}`
+              : kindVerb(ev.kind);
             const bits = [
               demand?.title,
               response?.offeredPrice != null
                 ? formatWon(response.offeredPrice)
-                : null,
+                : demand?.type === "BUY"
+                  ? formatWon(demand.budget)
+                  : null,
               response?.availabilityText,
             ].filter(Boolean);
 
             return (
               <li key={ev.id} className={ev.readAt ? undefined : "is-unread"}>
                 <Link
-                  to={hrefFor(ev)}
+                  to={hrefFor(ev, demand)}
                   onClick={() => void markActivityRead(ev.id)}
                 >
                   <span className="activity-list__main">

@@ -7,7 +7,7 @@ import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
 import { CATEGORY_LABEL, DEMAND_TYPE_LABEL } from "@/domain/types";
-import { formatWon } from "@/lib/format";
+import { formatDemandWhen, formatWon } from "@/lib/format";
 import "./pages.css";
 
 function responseStatusLabel(status: string) {
@@ -142,9 +142,21 @@ export function DemandItemPage() {
           <strong>{formatFulfillmentSummary(demand.fulfillmentOptions)}</strong>
         </div>
         <div>
-          <span>{ko.detailBudget}</span>
+          <span>
+            {demand.type === "BORROW"
+              ? ko.borrowBudgetTotal
+              : demand.type === "TASK" || demand.type === "SERVICE"
+                ? ko.reward
+                : ko.detailBudget}
+          </span>
           <strong>{formatWon(demand.budget)}</strong>
         </div>
+        {formatDemandWhen(demand) ? (
+          <div>
+            <span>{ko.detailWhen}</span>
+            <strong>{formatDemandWhen(demand)}</strong>
+          </div>
+        ) : null}
       </div>
 
       {isOwner && demand.status === "ACTIVE" ? (

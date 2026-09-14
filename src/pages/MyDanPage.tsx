@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { MatchList } from "@/components/MatchCard";
 import { Button } from "@/components/ui/Button";
@@ -17,6 +17,10 @@ function responseLabel(status: string) {
   return status;
 }
 
+function demandHref(d: { id: string; type: string }) {
+  return `/demand/item/${d.id}`;
+}
+
 export function MyDanPage() {
   const {
     isLoggedIn,
@@ -32,14 +36,55 @@ export function MyDanPage() {
     activities,
     unreadActivityCount,
     getDemand,
+    getPublicProfile,
     resetDemo,
   } = useDan();
   const dataMode = getDataMode();
+  const [peerNames, setPeerNames] = useState<Record<string, string>>({});
+
+  const connected = myMatches.filter((m) => m.status === "CONNECTED");
+  const peerKey = useMemo(
+    () =>
+      connected
+        .map((m) =>
+          currentUser?.id === m.buyerId ? m.sellerId : m.buyerId,
+        )
+        .join(","),
+    [connected, currentUser?.id],
+  );
+
+  useEffect(() => {
+    if (!peerKey) return;
+    const ids = [...new Set(peerKey.split(",").filter(Boolean))];
+    let cancelled = false;
+    void (async () => {
+      const next: Record<string, string> = {};
+      await Promise.all(
+        ids.map(async (id) => {
+          const p = await getPublicProfile(id);
+          next[id] = p?.displayName ?? "상대";
+        }),
+      );
+      if (!cancelled) setPeerNames((prev) => ({ ...prev, ...next }));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [peerKey, getPublicProfile]);
 
   const nowItems = useMemo(() => {
     const items: { key: string; text: string; sub?: string; to: string }[] = [];
     for (const ev of activities.filter((a) => !a.readAt).slice(0, 3)) {
       const demand = ev.demandId ? getDemand(ev.demandId) : undefined;
+      const to =
+        ev.matchId &&
+        (ev.kind === "NEW_MESSAGE" || ev.kind === "MATCH_CONNECTED")
+          ? `/match/${ev.matchId}`
+          : ev.kind === "BUYER_INTEREST" && demand?.type === "BUY"
+            ? `/demand/${demand.details.productId}`
+            : ev.demandId
+              ? `/demand/item/${ev.demandId}`
+              : "/activity";
       items.push({
         key: ev.id,
         text:
@@ -53,13 +98,7 @@ export function MyDanPage() {
                   ? ko.activityConnected
                   : ko.attentionTitle,
         sub: demand?.title,
-        to:
-          ev.matchId &&
-          (ev.kind === "NEW_MESSAGE" || ev.kind === "MATCH_CONNECTED")
-            ? `/match/${ev.matchId}`
-            : ev.demandId
-              ? `/demand/item/${ev.demandId}`
-              : "/activity",
+        to,
       });
     }
     if (myMatches.some((m) => m.status === "BUYER_INTERESTED")) {
@@ -84,7 +123,6 @@ export function MyDanPage() {
   }, [activities, myMatches, myOwnerships, getAggregate, getDemand]);
 
   const activeDemands = myDemands.filter((d) => d.status === "ACTIVE");
-  const connected = myMatches.filter((m) => m.status === "CONNECTED");
   const openResponses = myResponses.filter((r) => r.status === "OPEN");
 
   if (!isLoggedIn) {
@@ -150,15 +188,7 @@ export function MyDanPage() {
           </p>
         ) : (
           activeDemands.map((d) => (
-            <Link
-              key={d.id}
-              className="simple-row"
-              to={
-                d.type === "BUY"
-                  ? `/demand/${d.details.productId}`
-                  : `/demand/item/${d.id}`
-              }
-            >
+            <Link key={d.id} className="simple-row" to={demandHref(d)}>
               <strong>{d.title}</strong>
               <span>{formatWon(d.budget)}</span>
             </Link>
@@ -170,12 +200,21 @@ export function MyDanPage() {
         <h2 className="section-title">{ko.myConnections}</h2>
         {connected.length > 0 ? (
           <div className="section-stack">
-            {connected.map((m) => (
-              <Link key={m.id} className="simple-row" to={`/match/${m.id}`}>
-                <strong>{ko.openChat}</strong>
-                <span>{ko.statusConnected}</span>
-              </Link>
-            ))}
+            {connected.map((m) => {
+              const peerId =
+                currentUser?.id === m.buyerId ? m.sellerId : m.buyerId;
+              const demand = getDemand(m.demandId);
+              const peer = peerNames[peerId] ?? "상대";
+              return (
+                <Link key={m.id} className="simple-row" to={`/match/${m.id}`}>
+                  <strong>
+                    {peer}
+                    {demand?.title ? ` · ${demand.title}` : ""}
+                  </strong>
+                  <span>{ko.openChat}</span>
+                </Link>
+              );
+            })}
           </div>
         ) : null}
         <MatchList
@@ -184,7 +223,9 @@ export function MyDanPage() {
       </section>
 
       <details className="my-vault">
-        <summary>{ko.myItems} · {ko.myResponses}</summary>
+        <summary>
+          {ko.myItems} · {ko.myResponses}
+        </summary>
         <div className="section-stack">
           <h3 className="section-title">{ko.myItems}</h3>
           {myOwnerships.length === 0 ? (

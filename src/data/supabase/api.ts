@@ -52,6 +52,43 @@ export async function listProducts(): Promise<Product[]> {
   return ((data ?? []) as DbProduct[]).map(mapProduct);
 }
 
+/** Find or create a catalog product by display name (BUY custom requests). */
+export async function ensureProductRemote(name: string): Promise<Product> {
+  const canonical = name.trim().replace(/\s+/g, " ");
+  if (!canonical) throw new Error("product name required");
+  const sb = getSupabase();
+  const { data: existing } = await sb
+    .from("products")
+    .select("*")
+    .eq("canonical_name", canonical)
+    .maybeSingle();
+  if (existing) return mapProduct(existing as DbProduct);
+
+  const hue = 180 + (canonical.length * 17) % 160;
+  const { data, error } = await sb
+    .from("products")
+    .insert({
+      canonical_name: canonical,
+      brand: null,
+      model: canonical,
+      category: "other",
+      image_hue: hue,
+    })
+    .select("*")
+    .single();
+  if (error) {
+    // Race: another user created same name
+    const { data: again } = await sb
+      .from("products")
+      .select("*")
+      .eq("canonical_name", canonical)
+      .maybeSingle();
+    if (again) return mapProduct(again as DbProduct);
+    throw error;
+  }
+  return mapProduct(data as DbProduct);
+}
+
 export async function listActiveDemands(): Promise<Demand[]> {
   const { data, error } = await getSupabase()
     .from("demands")
@@ -394,6 +431,9 @@ export async function updateDemandRemote(input: {
   fulfillmentOptions: import("@/domain/fulfillment").FulfillmentOption[];
   expiresAt?: string;
   dueAt?: string;
+  startAt?: string;
+  endAt?: string;
+  preferredAt?: string;
   itemName?: string;
   taskDescription?: string;
   serviceDescription?: string;
@@ -419,6 +459,25 @@ export async function updateDemandRemote(input: {
     p_location: locationSummary,
   });
   if (error) throw error;
+
+  // Owner RLS allows patching schedule fields not yet on update_demand RPC.
+  const schedule: Record<string, string | null> = {};
+  if (input.startAt !== undefined) schedule.start_at = input.startAt ?? null;
+  if (input.endAt !== undefined) schedule.end_at = input.endAt ?? null;
+  if (input.preferredAt !== undefined) {
+    schedule.preferred_at = input.preferredAt ?? null;
+  }
+  if (Object.keys(schedule).length > 0) {
+    const { data: patched, error: patchErr } = await getSupabase()
+      .from("demands")
+      .update(schedule)
+      .eq("id", input.demandId)
+      .select("*")
+      .single();
+    if (patchErr) throw patchErr;
+    return mapDemand(patched as DbDemand);
+  }
+
   return mapDemand(data as DbDemand);
 }
 

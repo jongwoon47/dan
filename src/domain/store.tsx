@@ -1,4 +1,4 @@
-import { useMemo, useReducer, type ReactNode } from "react";
+import { useMemo, useReducer, useState, type ReactNode } from "react";
 
 import { upsertActiveDemand } from "./demands";
 import { buildFeedItems } from "./feed";
@@ -52,6 +52,8 @@ type Action =
   | { type: "LOGIN"; userId: string }
   | { type: "LOGOUT" }
   | { type: "UPSERT_DEMAND"; demand: Demand; ensureUserId?: string }
+  | { type: "REPLACE_DEMAND"; demand: Demand }
+  | { type: "CLOSE_DEMAND"; demandId: string }
   | { type: "CREATE_OWNERSHIP"; ownership: Ownership; ensureUserId?: string }
   | { type: "UPSERT_SELL_INTENT"; sellIntent: SellIntent; ensureUserId?: string }
   | { type: "UPSERT_RESPONSE"; response: Response; ensureUserId?: string }
@@ -244,6 +246,22 @@ function reducer(state: DanState, action: Action): DanState {
       persist(next);
       return next;
     }
+    case "REPLACE_DEMAND": {
+      const demands = state.demands.map((d) =>
+        d.id === action.demand.id ? action.demand : d,
+      );
+      const next = { ...state, demands };
+      persist(next);
+      return next;
+    }
+    case "CLOSE_DEMAND": {
+      const demands = state.demands.map((d) =>
+        d.id === action.demandId ? { ...d, status: "CLOSED" as const } : d,
+      );
+      const next = { ...state, demands };
+      persist(next);
+      return next;
+    }
     case "CREATE_OWNERSHIP": {
       const base = withEnsuredUser(state, action.ensureUserId);
       const next = {
@@ -344,6 +362,13 @@ function reducer(state: DanState, action: Action): DanState {
 
 export function DanProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, loadState);
+  const [extraProducts, setExtraProducts] = useState<
+    import("./types").Product[]
+  >([]);
+  const products = useMemo(
+    () => [...PRODUCTS, ...extraProducts],
+    [extraProducts],
+  );
   const currentUser =
     DEMO_USERS.find((u) => u.id === state.currentUserId) ?? null;
 
@@ -361,19 +386,38 @@ export function DanProvider({ children }: { children: ReactNode }) {
       (r) => r.userId === state.currentUserId,
     );
     const myMatches = buildVisibleMatches(state, state.currentUserId);
-    const demandFeed = buildFeedItems(PRODUCTS, state.demands, {
+    const demandFeed = buildFeedItems(products, state.demands, {
       displaySeekerOverrides: DISPLAY_SEEKER_OVERRIDES,
       displayRecentDeltaFloor: { "prod-iphone-15-pro": 6 },
     });
 
     return {
       state,
-      products: PRODUCTS,
+      products,
       users: DEMO_USERS,
       currentUser,
       isLoggedIn: Boolean(state.currentUserId),
       login: (userId = CURRENT_USER_ID) => dispatch({ type: "LOGIN", userId }),
       logout: () => dispatch({ type: "LOGOUT" }),
+      ensureProduct: async (name) => {
+        const canonical = name.trim().replace(/\s+/g, " ");
+        if (!canonical) return null;
+        const found = products.find(
+          (p) => p.name.toLowerCase() === canonical.toLowerCase(),
+        );
+        if (found) return found;
+        const product: import("./types").Product = {
+          id: createId("prod"),
+          name: canonical,
+          brand: "",
+          model: canonical,
+          category: "other",
+          imageHue: 180 + ((canonical.length * 17) % 160),
+          createdAt: new Date().toISOString(),
+        };
+        setExtraProducts((prev) => [...prev, product]);
+        return product;
+      },
       createDemand: async (payload) => {
         if (!areFulfillmentOptionsValid(payload.fulfillmentOptions)) {
           return null;
@@ -390,6 +434,10 @@ export function DanProvider({ children }: { children: ReactNode }) {
               )
             : undefined;
         const demand = buildDemandFromInput(actorId, payload, existingBuy);
+        if (demand.type === "BUY") {
+          const product = products.find((p) => p.id === demand.details.productId);
+          demand.category = product?.category ?? "other";
+        }
         dispatch({ type: "UPSERT_DEMAND", demand, ensureUserId });
         return demand;
       },
@@ -474,12 +522,75 @@ export function DanProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "UPSERT_RESPONSE", response: next });
         return next;
       },
-      updateDemand: async () => null,
-      closeDemand: async () => null,
+      updateDemand: async (payload) => {
+        const demand = state.demands.find((d) => d.id === payload.demandId);
+        if (!demand || demand.userId !== state.currentUserId) return null;
+        if (demand.status !== "ACTIVE") return null;
+        let next: Demand = {
+          ...demand,
+          title: payload.title,
+          description: payload.description,
+          budget: payload.budget,
+          fulfillmentOptions: payload.fulfillmentOptions,
+        };
+        if (next.type === "BUY") {
+          next = {
+            ...next,
+            budget: payload.maxPrice ?? payload.budget,
+            details: {
+              ...next.details,
+              maxPrice: payload.maxPrice ?? payload.budget,
+              conditionPreference:
+                (payload.conditionPreference as typeof next.details.conditionPreference) ??
+                next.details.conditionPreference,
+              tradeMethod:
+                (payload.tradeMethod as typeof next.details.tradeMethod) ??
+                next.details.tradeMethod,
+            },
+          };
+        } else if (next.type === "BORROW") {
+          next = {
+            ...next,
+            details: {
+              ...next.details,
+              itemName: payload.itemName ?? next.details.itemName,
+              startAt: payload.startAt ?? next.details.startAt,
+              endAt: payload.endAt ?? next.details.endAt,
+            },
+          };
+        } else if (next.type === "TASK") {
+          next = {
+            ...next,
+            details: {
+              ...next.details,
+              taskDescription:
+                payload.taskDescription ?? next.details.taskDescription,
+              dueAt: payload.dueAt ?? next.details.dueAt,
+            },
+          };
+        } else {
+          next = {
+            ...next,
+            details: {
+              ...next.details,
+              serviceDescription:
+                payload.serviceDescription ?? next.details.serviceDescription,
+              preferredAt: payload.preferredAt ?? next.details.preferredAt,
+            },
+          };
+        }
+        dispatch({ type: "REPLACE_DEMAND", demand: next });
+        return next;
+      },
+      closeDemand: async (demandId) => {
+        const demand = state.demands.find((d) => d.id === demandId);
+        if (!demand || demand.userId !== state.currentUserId) return null;
+        dispatch({ type: "CLOSE_DEMAND", demandId });
+        return { ...demand, status: "CLOSED" as const };
+      },
       acceptResponse: async (responseId) => {
         const before = state.matches.length;
         dispatch({ type: "ACCEPT_RESPONSE", responseId });
-        // optimistic return from current state snapshot is unreliable; compute expected
         const response = state.responses.find((r) => r.id === responseId);
         const demand = response
           ? state.demands.find((d) => d.id === response.demandId)
@@ -554,7 +665,7 @@ export function DanProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "SELLER_CONNECT", matchId });
         return true;
       },
-      getProduct: (id) => PRODUCTS.find((p) => p.id === id),
+      getProduct: (id) => products.find((p) => p.id === id),
       getDemand: (id) => state.demands.find((d) => d.id === id),
       getAggregate: (productId) => aggregateDemands(productId, state.demands),
       demandFeed,
@@ -570,9 +681,10 @@ export function DanProvider({ children }: { children: ReactNode }) {
         const fresh = defaultState();
         persist(fresh);
         dispatch({ type: "HYDRATE", state: fresh });
+        setExtraProducts([]);
       },
     };
-  }, [state, currentUser]);
+  }, [state, currentUser, products]);
 
   return <DanContext.Provider value={value}>{children}</DanContext.Provider>;
 }

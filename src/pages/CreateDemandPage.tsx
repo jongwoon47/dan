@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
-import { Chip, ChipGroup, Field, TextInput, TextSelect } from "@/components/ui/Input";
+import { Chip, ChipGroup, Field, TextInput } from "@/components/ui/Input";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import {
@@ -14,6 +14,8 @@ import type {
   DemandType,
 } from "@/domain/types";
 import { CONDITION_LABEL, DEMAND_TYPE_LABEL } from "@/domain/types";
+import { fromDatetimeLocalValue } from "@/lib/datetime";
+import { budgetLabelForType } from "@/lib/format";
 import "./pages.css";
 import "@/components/feedCards.css";
 
@@ -31,12 +33,15 @@ function parseType(raw: string | null): DemandType {
 }
 
 export function CreateDemandPage() {
-  const { products, createDemand, currentUser } = useDan();
+  const { products, createDemand, ensureProduct, currentUser } = useDan();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [type, setType] = useState<DemandType>(parseType(params.get("type")));
   const [title, setTitle] = useState("");
-  const [productId, setProductId] = useState(products[0]?.id ?? "");
+  const [productId, setProductId] = useState("");
+  const [productQuery, setProductQuery] = useState("");
+  const [customProduct, setCustomProduct] = useState(false);
+  const [customProductName, setCustomProductName] = useState("");
   const [maxPrice, setMaxPrice] = useState("1000000");
   const [budget, setBudget] = useState("20000");
   const [condition, setCondition] = useState<ConditionPreference>("any");
@@ -46,20 +51,30 @@ export function CreateDemandPage() {
 
   const [buyShipping, setBuyShipping] = useState(true);
   const [buyMeetup, setBuyMeetup] = useState(true);
-  const [meetupPlace, setMeetupPlace] = useState(
-    currentUser?.defaultArea ?? String(ko.pyeongtaek),
-  );
-  const defaultArea = currentUser?.defaultArea?.trim() || String(ko.pyeongtaek);
-  const [borrowPlace, setBorrowPlace] = useState(defaultArea);
+  const profileArea = currentUser?.defaultArea?.trim() ?? "";
+  const [meetupPlace, setMeetupPlace] = useState(profileArea);
+  const [borrowPlace, setBorrowPlace] = useState(profileArea);
+  const [borrowStart, setBorrowStart] = useState("");
+  const [borrowEnd, setBorrowEnd] = useState("");
   const [taskMode, setTaskMode] = useState<TaskMode>("pickup");
-  const [taskPlace, setTaskPlace] = useState(defaultArea);
+  const [taskPlace, setTaskPlace] = useState(profileArea);
   const [routeFrom, setRouteFrom] = useState("");
   const [routeTo, setRouteTo] = useState("");
+  const [dueAt, setDueAt] = useState("");
   const [serviceMode, setServiceMode] = useState<ServiceMode>("onsite");
-  const [servicePlace, setServicePlace] = useState(defaultArea);
+  const [servicePlace, setServicePlace] = useState(profileArea);
+  const [preferredAt, setPreferredAt] = useState("");
 
   const selected = products.find((p) => p.id === productId);
   const price = Number((type === "BUY" ? maxPrice : budget).replace(/,/g, ""));
+
+  const filteredProducts = useMemo(() => {
+    const q = productQuery.trim().toLowerCase();
+    if (!q) return products.slice(0, 8);
+    return products
+      .filter((p) => p.name.toLowerCase().includes(q))
+      .slice(0, 12);
+  }, [products, productQuery]);
 
   const fulfillmentOptions = useMemo((): FulfillmentOption[] => {
     if (type === "BUY") {
@@ -108,26 +123,62 @@ export function CreateDemandPage() {
   const canSubmit = useMemo(() => {
     if (!Number.isFinite(price) || price <= 0) return false;
     if (!areFulfillmentOptionsValid(fulfillmentOptions)) return false;
-    if (type === "BUY") return Boolean(selected) && (buyShipping || buyMeetup);
-    if (type === "BORROW") return Boolean(title.trim() || itemName.trim());
+    if (type === "BUY") {
+      const hasProduct =
+        Boolean(selected) || (customProduct && Boolean(customProductName.trim()));
+      return hasProduct && (buyShipping || buyMeetup);
+    }
+    if (type === "BORROW") {
+      if (!borrowStart.trim() || !borrowEnd.trim()) return false;
+      return Boolean(title.trim() || itemName.trim());
+    }
+    if (type === "TASK") {
+      if (!dueAt.trim()) return false;
+      return Boolean(title.trim() || detail.trim());
+    }
+    if (!preferredAt.trim()) return false;
     return Boolean(title.trim() || detail.trim());
-  }, [price, selected, type, title, itemName, detail, fulfillmentOptions, buyShipping, buyMeetup]);
+  }, [
+    price,
+    selected,
+    type,
+    title,
+    itemName,
+    detail,
+    fulfillmentOptions,
+    buyShipping,
+    buyMeetup,
+    customProduct,
+    customProductName,
+    borrowStart,
+    borrowEnd,
+    dueAt,
+    preferredAt,
+  ]);
 
   async function submit() {
     if (!canSubmit || submitting) return;
     setSubmitting(true);
     try {
-      if (type === "BUY" && selected) {
+      if (type === "BUY") {
+        let pid = selected?.id;
+        let productName = selected?.name;
+        if (!pid) {
+          const createdProduct = await ensureProduct(customProductName.trim());
+          if (!createdProduct) return;
+          pid = createdProduct.id;
+          productName = createdProduct.name;
+        }
         const created = await createDemand({
           type: "BUY",
-          title: title.trim() || selected.name,
-          productId: selected.id,
+          title: title.trim() || productName || customProductName.trim(),
+          productId: pid,
           maxPrice: price,
           conditionPreference: condition,
           fulfillmentOptions,
         });
         if (created && created.type === "BUY") {
-          navigate(`/demand/${created.details.productId}`);
+          navigate(`/demand/item/${created.id}`);
         }
         return;
       }
@@ -139,6 +190,8 @@ export function CreateDemandPage() {
           budget: price,
           fulfillmentOptions,
           description: detail,
+          startAt: fromDatetimeLocalValue(borrowStart),
+          endAt: fromDatetimeLocalValue(borrowEnd),
         });
         if (created) navigate(`/demand/item/${created.id}`);
         return;
@@ -150,6 +203,7 @@ export function CreateDemandPage() {
           taskDescription: detail.trim() || title.trim(),
           budget: price,
           fulfillmentOptions,
+          dueAt: fromDatetimeLocalValue(dueAt),
         });
         if (created) navigate(`/demand/item/${created.id}`);
         return;
@@ -160,6 +214,7 @@ export function CreateDemandPage() {
         serviceDescription: detail.trim() || title.trim(),
         budget: price,
         fulfillmentOptions,
+        preferredAt: fromDatetimeLocalValue(preferredAt),
       });
       if (created) navigate(`/demand/item/${created.id}`);
     } finally {
@@ -194,15 +249,57 @@ export function CreateDemandPage() {
 
         {type === "BUY" ? (
           <>
-            <Field label={ko.product}>
-              <TextSelect value={productId} onChange={(e) => setProductId(e.target.value)}>
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </TextSelect>
+            <Field label={ko.productSearch} hint={ko.productCustom}>
+              <TextInput
+                value={customProduct ? customProductName : productQuery}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (customProduct) {
+                    setCustomProductName(v);
+                  } else {
+                    setProductQuery(v);
+                    setProductId("");
+                  }
+                }}
+                placeholder={
+                  customProduct ? ko.productCustomPh : ko.productSearchPh
+                }
+              />
             </Field>
+            {!customProduct ? (
+              <div className="product-pick-list">
+                {filteredProducts.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={
+                      productId === p.id
+                        ? "product-pick is-selected"
+                        : "product-pick"
+                    }
+                    onClick={() => {
+                      setProductId(p.id);
+                      setProductQuery(p.name);
+                      setCustomProduct(false);
+                    }}
+                  >
+                    {p.name}
+                    {productId === p.id ? ` · ${ko.productSelected}` : ""}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            <button
+              type="button"
+              className="text-link product-custom-toggle"
+              onClick={() => {
+                setCustomProduct((v) => !v);
+                setProductId("");
+                if (!customProduct) setCustomProductName(productQuery);
+              }}
+            >
+              {customProduct ? ko.productSearch : ko.productCustom}
+            </button>
             <Field label={ko.maxPrice} hint={ko.maxPriceHint}>
               <TextInput
                 inputMode="numeric"
@@ -236,7 +333,7 @@ export function CreateDemandPage() {
                 <TextInput
                   value={meetupPlace}
                   onChange={(e) => setMeetupPlace(e.target.value)}
-                  placeholder={ko.placePh}
+                  placeholder={ko.locationPh}
                 />
               </Field>
             ) : null}
@@ -252,7 +349,21 @@ export function CreateDemandPage() {
               <TextInput
                 value={borrowPlace}
                 onChange={(e) => setBorrowPlace(e.target.value)}
-                placeholder={ko.placePh}
+                placeholder={ko.locationPh}
+              />
+            </Field>
+            <Field label={ko.borrowStart}>
+              <TextInput
+                type="datetime-local"
+                value={borrowStart}
+                onChange={(e) => setBorrowStart(e.target.value)}
+              />
+            </Field>
+            <Field label={ko.borrowEnd}>
+              <TextInput
+                type="datetime-local"
+                value={borrowEnd}
+                onChange={(e) => setBorrowEnd(e.target.value)}
               />
             </Field>
           </>
@@ -293,10 +404,17 @@ export function CreateDemandPage() {
                 <TextInput
                   value={taskPlace}
                   onChange={(e) => setTaskPlace(e.target.value)}
-                  placeholder={ko.placePh}
+                  placeholder={ko.locationPh}
                 />
               </Field>
             ) : null}
+            <Field label={ko.dueAt}>
+              <TextInput
+                type="datetime-local"
+                value={dueAt}
+                onChange={(e) => setDueAt(e.target.value)}
+              />
+            </Field>
           </div>
         ) : null}
 
@@ -316,10 +434,17 @@ export function CreateDemandPage() {
                 <TextInput
                   value={servicePlace}
                   onChange={(e) => setServicePlace(e.target.value)}
-                  placeholder={ko.placePh}
+                  placeholder={ko.locationPh}
                 />
               </Field>
             ) : null}
+            <Field label={ko.preferredAt}>
+              <TextInput
+                type="datetime-local"
+                value={preferredAt}
+                onChange={(e) => setPreferredAt(e.target.value)}
+              />
+            </Field>
           </div>
         ) : null}
 
@@ -330,7 +455,10 @@ export function CreateDemandPage() {
         ) : null}
 
         {type !== "BUY" ? (
-          <Field label={type === "TASK" || type === "SERVICE" ? ko.reward : ko.budgetLabel}>
+          <Field
+            label={budgetLabelForType(type)}
+            hint={type === "BORROW" ? ko.borrowBudgetHint : undefined}
+          >
             <TextInput
               inputMode="numeric"
               value={budget}

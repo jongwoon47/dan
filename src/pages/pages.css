@@ -617,3 +617,33 @@
 .form-error {
   color: #b42318;
 }
+
+.product-pick-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.product-pick {
+  text-align: left;
+  border: 1px solid var(--dan-border, #d5e0e0);
+  background: var(--dan-surface, #fff);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.product-pick.is-selected {
+  border-color: var(--dan-accent, #0d9488);
+  background: color-mix(in srgb, var(--dan-accent, #0d9488) 10%, white);
+}
+
+.product-custom-toggle {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}

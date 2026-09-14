@@ -11,10 +11,18 @@ import "./pages.css";
 
 export function DemandDetailPage() {
   const { productId = "" } = useParams();
-  const { getProduct, getAggregate, myOwnerships } = useDan();
+  const { getProduct, getAggregate, myOwnerships, myDemands, currentUser } =
+    useDan();
   const product = getProduct(productId);
   const aggregate = getAggregate(productId);
   const owned = myOwnerships.find((o) => o.productId === productId);
+  const myBuy = myDemands.find(
+    (d) =>
+      d.type === "BUY" &&
+      d.status === "ACTIVE" &&
+      d.userId === currentUser?.id &&
+      d.details.productId === productId,
+  );
 
   if (!product || !aggregate) {
     return (
@@ -98,9 +106,21 @@ export function DemandDetailPage() {
         <p className="holder-cta__note">{ko.ownershipNote}</p>
       </Card>
 
+      {myBuy ? (
+        <Card className="section-stack">
+          <h2 className="section-title">{ko.myBuyManage}</h2>
+          <p className="section-desc">
+            {ko.maxPrice} {formatWon(myBuy.budget)}
+          </p>
+          <Button to={`/demand/item/${myBuy.id}`} fullWidth>
+            {ko.editDemand} / {ko.closeDemand}
+          </Button>
+        </Card>
+      ) : null}
+
       <p className="detail-foot">
         {ko.buyerSide}
-        <Link to="/create">{ko.registerSame}</Link>
+        <Link to="/create?type=BUY">{ko.registerSame}</Link>
       </p>
       <span className="sr-only">{formatWon(aggregate.highestIntentPrice)}</span>
     </div>

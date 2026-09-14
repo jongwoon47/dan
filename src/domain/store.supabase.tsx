@@ -182,6 +182,13 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         }
         return run(() => api.createDemandRemote(payload));
       },
+      ensureProduct: async (name) => {
+        if (!currentUser) {
+          window.location.assign("/login");
+          return null;
+        }
+        return run(() => api.ensureProductRemote(name));
+      },
       createOwnership: async (payload) => {
         if (!currentUser) {
           window.location.assign("/login");
