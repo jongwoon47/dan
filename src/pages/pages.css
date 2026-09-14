@@ -497,6 +497,36 @@
   border-bottom: 1px solid var(--dan-line);
   text-decoration: none;
   color: inherit;
+  align-items: flex-start;
+}
+
+.activity-list__main {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.activity-list__meta {
+  color: var(--dan-ink-muted);
+  font-size: 0.9rem;
+}
+
+.activity-list__time {
+  flex-shrink: 0;
+  color: var(--dan-ink-muted);
+  font-size: 0.8rem;
+}
+
+.my-vault {
+  border-top: 1px solid var(--dan-line);
+  padding-top: var(--space-md);
+}
+
+.my-vault > summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--dan-ink-secondary);
+  margin-bottom: var(--space-md);
 }
 
 .activity-list li.is-unread a strong {

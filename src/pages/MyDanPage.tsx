@@ -17,13 +17,6 @@ function responseLabel(status: string) {
   return status;
 }
 
-function demandLabel(status: string) {
-  if (status === "ACTIVE") return ko.statusActive;
-  if (status === "CLOSED") return ko.statusClosed;
-  if (status === "MATCHED") return ko.statusMatched;
-  return status;
-}
-
 export function MyDanPage() {
   const {
     isLoggedIn,
@@ -38,14 +31,17 @@ export function MyDanPage() {
     getAggregate,
     activities,
     unreadActivityCount,
+    getDemand,
     resetDemo,
   } = useDan();
   const dataMode = getDataMode();
 
-  const attention = useMemo(() => {
-    const items: { text: string; to: string }[] = [];
-    for (const ev of activities.filter((a) => !a.readAt).slice(0, 5)) {
+  const nowItems = useMemo(() => {
+    const items: { key: string; text: string; sub?: string; to: string }[] = [];
+    for (const ev of activities.filter((a) => !a.readAt).slice(0, 3)) {
+      const demand = ev.demandId ? getDemand(ev.demandId) : undefined;
       items.push({
+        key: ev.id,
         text:
           ev.kind === "NEW_RESPONSE"
             ? ko.activityNewResponse
@@ -56,8 +52,10 @@ export function MyDanPage() {
                 : ev.kind === "MATCH_CONNECTED"
                   ? ko.activityConnected
                   : ko.attentionTitle,
+        sub: demand?.title,
         to:
-          ev.matchId && (ev.kind === "NEW_MESSAGE" || ev.kind === "MATCH_CONNECTED")
+          ev.matchId &&
+          (ev.kind === "NEW_MESSAGE" || ev.kind === "MATCH_CONNECTED")
             ? `/match/${ev.matchId}`
             : ev.demandId
               ? `/demand/item/${ev.demandId}`
@@ -65,24 +63,29 @@ export function MyDanPage() {
       });
     }
     if (myMatches.some((m) => m.status === "BUYER_INTERESTED")) {
-      items.push({ text: ko.signalMatch, to: "/my" });
+      items.push({
+        key: "interest",
+        text: ko.signalMatch,
+        to: "/my#connections",
+      });
     }
     for (const own of myOwnerships) {
       const agg = getAggregate(own.productId);
       if (agg && agg.seekerCount > 0) {
         items.push({
+          key: own.id,
           text: `${ko.signalOwned} (${agg.seekerCount}${ko.myung})`,
           to: `/demand/${own.productId}`,
         });
         break;
       }
     }
-    return items;
-  }, [activities, myMatches, myOwnerships, getAggregate]);
+    return items.slice(0, 4);
+  }, [activities, myMatches, myOwnerships, getAggregate, getDemand]);
 
   const activeDemands = myDemands.filter((d) => d.status === "ACTIVE");
-  const otherDemands = myDemands.filter((d) => d.status !== "ACTIVE");
   const connected = myMatches.filter((m) => m.status === "CONNECTED");
+  const openResponses = myResponses.filter((r) => r.status === "OPEN");
 
   if (!isLoggedIn) {
     return (
@@ -120,13 +123,16 @@ export function MyDanPage() {
 
       <section className="section-stack">
         <h2 className="section-title">{ko.attentionTitle}</h2>
-        {attention.length === 0 ? (
+        {nowItems.length === 0 ? (
           <p className="section-desc">{ko.activityEmpty}</p>
         ) : (
           <ul className="signal-list">
-            {attention.map((item) => (
-              <li key={item.text + item.to}>
-                <Link to={item.to}>{item.text}</Link>
+            {nowItems.map((item) => (
+              <li key={item.key}>
+                <Link to={item.to}>
+                  <strong>{item.text}</strong>
+                  {item.sub ? <span className="muted"> · {item.sub}</span> : null}
+                </Link>
               </li>
             ))}
           </ul>
@@ -134,11 +140,14 @@ export function MyDanPage() {
       </section>
 
       <section className="section-stack">
-        <h2 className="section-title">
-          {ko.myRequests} · {ko.myRequestsActive}
-        </h2>
+        <h2 className="section-title">{ko.myRequests}</h2>
         {activeDemands.length === 0 ? (
-          <p className="section-desc">{ko.emptyFeedBody}</p>
+          <p className="section-desc">
+            {ko.emptyFeedBody}{" "}
+            <Link to="/create" className="text-link">
+              {ko.navCreate}
+            </Link>
+          </p>
         ) : (
           activeDemands.map((d) => (
             <Link
@@ -151,79 +160,13 @@ export function MyDanPage() {
               }
             >
               <strong>{d.title}</strong>
-              <span>
-                {demandLabel(d.status)} · {formatWon(d.budget)}
-              </span>
+              <span>{formatWon(d.budget)}</span>
             </Link>
           ))
         )}
       </section>
 
-      {otherDemands.length > 0 ? (
-        <section className="section-stack">
-          <h2 className="section-title">{ko.myRequestsDone}</h2>
-          {otherDemands.map((d) => (
-            <Link
-              key={d.id}
-              className="simple-row"
-              to={
-                d.type === "BUY"
-                  ? `/demand/${d.details.productId}`
-                  : `/demand/item/${d.id}`
-              }
-            >
-              <strong>{d.title}</strong>
-              <span>{demandLabel(d.status)}</span>
-            </Link>
-          ))}
-        </section>
-      ) : null}
-
-      <section className="section-stack">
-        <h2 className="section-title">{ko.myResponses}</h2>
-        {myResponses.length === 0 ? (
-          <p className="section-desc">{ko.noMatchBody}</p>
-        ) : (
-          myResponses.map((r) => (
-            <Link
-              key={r.id}
-              className="simple-row"
-              to={`/demand/item/${r.demandId}`}
-            >
-              <strong>{r.message}</strong>
-              <span>{responseLabel(r.status)}</span>
-            </Link>
-          ))
-        )}
-      </section>
-
-      <section className="section-stack">
-        <h2 className="section-title">{ko.myItems}</h2>
-        {myOwnerships.length === 0 ? (
-          <p className="section-desc">{ko.missingOwnBody}</p>
-        ) : (
-          myOwnerships.map((o) => {
-            const product = getProduct(o.productId);
-            const sell = mySellIntents.find(
-              (s) => s.ownershipId === o.id && s.status === "OPEN",
-            );
-            return (
-              <div key={o.id} className="simple-row">
-                <strong>{product?.name ?? o.productId}</strong>
-                {sell ? (
-                  <Link to={`/ownership/${o.id}/sell-intent`}>
-                    {formatWon(sell.minimumPrice)}
-                  </Link>
-                ) : (
-                  <Link to={`/ownership/${o.id}/sell-intent`}>{ko.sellCta}</Link>
-                )}
-              </div>
-            );
-          })
-        )}
-      </section>
-
-      <section className="section-stack">
+      <section className="section-stack" id="connections">
         <h2 className="section-title">{ko.myConnections}</h2>
         {connected.length > 0 ? (
           <div className="section-stack">
@@ -235,8 +178,50 @@ export function MyDanPage() {
             ))}
           </div>
         ) : null}
-        <MatchList matches={myMatches} />
+        <MatchList
+          matches={myMatches.filter((m) => m.status !== "CONNECTED")}
+        />
       </section>
+
+      <details className="my-vault">
+        <summary>{ko.myItems} · {ko.myResponses}</summary>
+        <div className="section-stack">
+          <h3 className="section-title">{ko.myItems}</h3>
+          {myOwnerships.length === 0 ? (
+            <p className="section-desc">{ko.missingOwnBody}</p>
+          ) : (
+            myOwnerships.map((o) => {
+              const product = getProduct(o.productId);
+              const sell = mySellIntents.find(
+                (s) => s.ownershipId === o.id && s.status === "OPEN",
+              );
+              return (
+                <div key={o.id} className="simple-row">
+                  <strong>{product?.name ?? o.productId}</strong>
+                  <Link to={`/ownership/${o.id}/sell-intent`}>
+                    {sell ? formatWon(sell.minimumPrice) : ko.sellCta}
+                  </Link>
+                </div>
+              );
+            })
+          )}
+          <h3 className="section-title">{ko.myResponses}</h3>
+          {openResponses.length === 0 ? (
+            <p className="section-desc">{ko.noMatchBody}</p>
+          ) : (
+            openResponses.map((r) => (
+              <Link
+                key={r.id}
+                className="simple-row"
+                to={`/demand/item/${r.demandId}`}
+              >
+                <strong>{r.message}</strong>
+                <span>{responseLabel(r.status)}</span>
+              </Link>
+            ))
+          )}
+        </div>
+      </details>
 
       {dataMode === "demo" ? (
         <Button variant="ghost" onClick={resetDemo}>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
@@ -40,6 +41,7 @@ export function DemandItemPage() {
   const [sent, setSent] = useState(false);
   const [names, setNames] = useState<Record<string, string>>({});
   const [localError, setLocalError] = useState<string | null>(null);
+  const [closeOpen, setCloseOpen] = useState(false);
 
   const myOpen = useMemo(
     () =>
@@ -115,8 +117,8 @@ export function DemandItemPage() {
 
   async function onCloseDemand() {
     if (busy || !demand) return;
-    if (!window.confirm(ko.closeDemandConfirm)) return;
     const result = await closeDemand(demand.id);
+    setCloseOpen(false);
     if (result) navigate("/my");
   }
 
@@ -125,9 +127,12 @@ export function DemandItemPage() {
       <header className="page-header">
         <p className="feed-row__type">
           {CATEGORY_LABEL[demand.category]} · {DEMAND_TYPE_LABEL[demand.type]}
-          {demand.status !== "ACTIVE" ? ` · ${demand.status === "CLOSED" ? ko.statusClosed : ko.statusMatched}` : ""}
+          {demand.status !== "ACTIVE"
+            ? ` · ${demand.status === "CLOSED" ? ko.statusClosed : ko.statusMatched}`
+            : ""}
         </p>
         <h1 className="page-title">{demand.title}</h1>
+        <p className="section-desc">{ko.demandFirstLead}</p>
         <p className="section-desc">{demand.description}</p>
       </header>
 
@@ -147,7 +152,7 @@ export function DemandItemPage() {
           <Button variant="secondary" to={`/demand/item/${demand.id}/edit`}>
             {ko.editDemand}
           </Button>
-          <Button variant="secondary" onClick={() => void onCloseDemand()} disabled={busy}>
+          <Button variant="secondary" onClick={() => setCloseOpen(true)} disabled={busy}>
             {ko.closeDemand}
           </Button>
         </div>
@@ -253,16 +258,13 @@ export function DemandItemPage() {
                 setComposerOpen(true);
               }}
             >
-              {ko.respondSheetTitle}
+              {ko.respondToThisNeed}
             </Button>
           ) : null}
         </>
       ) : (
         <div className="section-stack">
-          <h2 className="section-title">
-            {ko.responsesTitle} {ownerResponses.length}
-            {ko.responseCountSuffix}
-          </h2>
+          <h2 className="section-title">{ko.ownerResponsesLead}</h2>
           {ownerResponses.length === 0 ? (
             <p className="section-desc">{ko.noMatchBody}</p>
           ) : (
@@ -303,6 +305,16 @@ export function DemandItemPage() {
           )}
         </div>
       )}
+
+      <ConfirmSheet
+        open={closeOpen}
+        title={ko.closeDemand}
+        body={ko.closeDemandConfirm}
+        confirmLabel={ko.closeDemand}
+        danger
+        onCancel={() => setCloseOpen(false)}
+        onConfirm={() => void onCloseDemand()}
+      />
     </div>
   );
 }

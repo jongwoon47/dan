@@ -24,19 +24,23 @@ export function AppShell() {
             </span>
           </NavLink>
           <nav className="top-nav__links" aria-label="primary">
-            <NavLink to="/create">{ko.navCreate}</NavLink>
             <NavLink to="/feed">{ko.navFeed}</NavLink>
-            <NavLink to="/activity">
-              {ko.navActivity}
-              {unreadActivityCount > 0 ? (
-                <span className="nav-badge">{unreadActivityCount}</span>
-              ) : null}
-            </NavLink>
+            <NavLink to="/create">{ko.navCreate}</NavLink>
             <NavLink to="/my">{ko.navMy}</NavLink>
           </nav>
           <div className="top-nav__auth">
             {isLoggedIn && currentUser ? (
               <>
+                <NavLink
+                  to="/activity"
+                  className="top-nav__bell"
+                  aria-label={ko.navActivity}
+                >
+                  {ko.navActivity}
+                  {unreadActivityCount > 0 ? (
+                    <span className="nav-badge">{unreadActivityCount}</span>
+                  ) : null}
+                </NavLink>
                 <NavLink to={`/profile/${currentUser.id}`} className="top-nav__user">
                   {currentUser.name}
                 </NavLink>
@@ -62,16 +66,19 @@ export function AppShell() {
         <NavLink to="/feed">
           <span>{ko.navDemand}</span>
         </NavLink>
-        <NavLink to="/activity">
+        <NavLink to="/create" className="bottom-nav__create">
+          <span className="bottom-nav__plus" aria-hidden>
+            +
+          </span>
+          <span>{ko.navCreateShort}</span>
+        </NavLink>
+        <NavLink to="/my" className="bottom-nav__my">
           <span>
-            {ko.navActivity}
+            {ko.navMy}
             {unreadActivityCount > 0 ? (
               <span className="nav-badge">{unreadActivityCount}</span>
             ) : null}
           </span>
-        </NavLink>
-        <NavLink to="/my">
-          <span>{ko.navMy}</span>
         </NavLink>
       </nav>
     </div>

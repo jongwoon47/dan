@@ -49,15 +49,14 @@ export function CreateDemandPage() {
   const [meetupPlace, setMeetupPlace] = useState(
     currentUser?.defaultArea ?? String(ko.pyeongtaek),
   );
-  const [borrowPlace, setBorrowPlace] = useState(
-    currentUser?.defaultArea ?? "??? ???",
-  );
+  const defaultArea = currentUser?.defaultArea?.trim() || String(ko.pyeongtaek);
+  const [borrowPlace, setBorrowPlace] = useState(defaultArea);
   const [taskMode, setTaskMode] = useState<TaskMode>("pickup");
-  const [taskPlace, setTaskPlace] = useState("??? ??");
-  const [routeFrom, setRouteFrom] = useState("???");
-  const [routeTo, setRouteTo] = useState("??");
+  const [taskPlace, setTaskPlace] = useState(defaultArea);
+  const [routeFrom, setRouteFrom] = useState("");
+  const [routeTo, setRouteTo] = useState("");
   const [serviceMode, setServiceMode] = useState<ServiceMode>("onsite");
-  const [servicePlace, setServicePlace] = useState("???");
+  const [servicePlace, setServicePlace] = useState(defaultArea);
 
   const selected = products.find((p) => p.id === productId);
   const price = Number((type === "BUY" ? maxPrice : budget).replace(/,/g, ""));

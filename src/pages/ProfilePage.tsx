@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
@@ -23,6 +24,11 @@ export function ProfilePage() {
   const [name, setName] = useState("");
   const [area, setArea] = useState("");
   const [bio, setBio] = useState("");
+  const [confirm, setConfirm] = useState<"block" | "report" | null>(null);
+  const [reportReason, setReportReason] = useState<
+    "spam" | "fraud" | "abuse" | "other"
+  >("spam");
+  const [toast, setToast] = useState<string | null>(null);
   const isSelf = currentUser?.id === userId;
 
   useEffect(() => {
@@ -93,10 +99,12 @@ export function ProfilePage() {
         </p>
       </header>
 
+      {toast ? <p className="section-desc">{toast}</p> : null}
+
       {editing ? (
         <form className="composer-sheet" onSubmit={(e) => void onSave(e)}>
           <label className="field">
-            <span>{ko.login}</span>
+            <span>{ko.displayName}</span>
             <input value={name} onChange={(e) => setName(e.target.value)} required />
           </label>
           <label className="field">
@@ -118,7 +126,9 @@ export function ProfilePage() {
         </form>
       ) : (
         <>
-          <p className="section-desc">{profile.bio || ko.profileBioPh}</p>
+          <p className="section-desc">
+            {profile.bio || "아직 소개가 없어요."}
+          </p>
           <p className="muted">
             {ko.profileJoined}{" "}
             {new Date(profile.createdAt).toLocaleDateString("ko-KR")}
@@ -129,29 +139,72 @@ export function ProfilePage() {
             </Button>
           ) : (
             <div className="action-row">
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  if (!window.confirm(ko.blockConfirm)) return;
-                  void blockUser(userId).then(() => window.alert(ko.blockedOk));
-                }}
-              >
+              <Button variant="secondary" onClick={() => setConfirm("block")}>
                 {ko.block}
               </Button>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  void reportUser({ targetUserId: userId, reason: "other" }).then(
-                    () => window.alert(ko.reportSent),
-                  );
-                }}
-              >
+              <Button variant="secondary" onClick={() => setConfirm("report")}>
                 {ko.report}
               </Button>
             </div>
           )}
         </>
       )}
+
+      <ConfirmSheet
+        open={confirm === "block"}
+        title={ko.block}
+        body={ko.blockConfirm}
+        confirmLabel={ko.block}
+        danger
+        onCancel={() => setConfirm(null)}
+        onConfirm={() => {
+          void blockUser(userId).then((ok) => {
+            setConfirm(null);
+            if (ok) setToast(ko.blockedOk);
+          });
+        }}
+      />
+
+      <ConfirmSheet
+        open={confirm === "report"}
+        title={ko.report}
+        body={ko.reportReason}
+        confirmLabel={ko.reportSubmit}
+        onCancel={() => setConfirm(null)}
+        onConfirm={() => {
+          void reportUser({
+            targetUserId: userId,
+            reason: reportReason,
+          }).then((ok) => {
+            setConfirm(null);
+            if (ok) setToast(ko.reportSent);
+          });
+        }}
+      >
+        <div className="confirm-sheet__choices">
+          {(
+            [
+              ["spam", ko.reportSpam],
+              ["fraud", ko.reportFraud],
+              ["abuse", ko.reportAbuse],
+              ["other", ko.reportOther],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={
+                reportReason === value
+                  ? "confirm-sheet__choice is-selected"
+                  : "confirm-sheet__choice"
+              }
+              onClick={() => setReportReason(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </ConfirmSheet>
     </div>
   );
 }

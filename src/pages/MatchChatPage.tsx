@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
@@ -20,6 +21,7 @@ export function MatchChatPage() {
     markMessagesRead,
     blockUser,
     reportUser,
+    getPublicProfile,
     busy,
   } = useDan();
   const match = myMatches.find((m) => m.id === matchId);
@@ -35,6 +37,12 @@ export function MatchChatPage() {
   const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [peerName, setPeerName] = useState("");
+  const [confirm, setConfirm] = useState<"block" | "report" | null>(null);
+  const [reportReason, setReportReason] = useState<
+    "spam" | "fraud" | "abuse" | "other"
+  >("spam");
+  const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!matchId) return;
@@ -61,7 +69,18 @@ export function MatchChatPage() {
     };
   }, [load]);
 
-  const title = useMemo(() => demand?.title ?? ko.chatTitle, [demand]);
+  useEffect(() => {
+    if (!peerId) return;
+    let cancelled = false;
+    void getPublicProfile(peerId).then((p) => {
+      if (!cancelled) setPeerName(p?.displayName ?? "");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [getPublicProfile, peerId]);
+
+  const demandTitle = useMemo(() => demand?.title ?? ko.chatTitle, [demand]);
 
   if (!match || match.status !== "CONNECTED") {
     return (
@@ -91,46 +110,23 @@ export function MatchChatPage() {
     <div className="chat-page">
       <header className="chat-page__header">
         <div>
-          <h1 className="page-title">{ko.chatTitle}</h1>
-          <p className="section-desc">
+          <h1 className="page-title">
             {peerId ? (
               <Link to={`/profile/${peerId}`} className="text-link">
-                {ko.profileTitle}
+                {peerName || "…"}
               </Link>
-            ) : null}
-            {" · "}
-            {title}
-          </p>
+            ) : (
+              ko.chatTitle
+            )}
+          </h1>
+          <p className="section-desc">{demandTitle}</p>
         </div>
         {peerId ? (
           <div className="action-row">
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => {
-                if (!window.confirm(ko.blockConfirm)) return;
-                void blockUser(peerId);
-              }}
-            >
+            <Button size="sm" variant="secondary" onClick={() => setConfirm("block")}>
               {ko.block}
             </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => {
-                const reason = window.prompt(
-                  `${ko.reportReason} (spam/fraud/abuse/other)`,
-                  "other",
-                );
-                if (!reason) return;
-                void reportUser({
-                  targetUserId: peerId,
-                  reason: (["spam", "fraud", "abuse", "other"].includes(reason)
-                    ? reason
-                    : "other") as "spam" | "fraud" | "abuse" | "other",
-                }).then(() => window.alert(ko.reportSent));
-              }}
-            >
+            <Button size="sm" variant="secondary" onClick={() => setConfirm("report")}>
               {ko.report}
             </Button>
           </div>
@@ -138,6 +134,7 @@ export function MatchChatPage() {
       </header>
 
       {error ? <p className="form-error">{error}</p> : null}
+      {toast ? <p className="section-desc">{toast}</p> : null}
 
       <div className="chat-thread" aria-live="polite">
         {loading ? <p className="muted">{ko.saving}</p> : null}
@@ -175,6 +172,64 @@ export function MatchChatPage() {
           {ko.chatSend}
         </Button>
       </form>
+
+      <ConfirmSheet
+        open={confirm === "block"}
+        title={ko.block}
+        body={ko.blockConfirm}
+        confirmLabel={ko.block}
+        danger
+        onCancel={() => setConfirm(null)}
+        onConfirm={() => {
+          if (!peerId) return;
+          void blockUser(peerId).then((ok) => {
+            setConfirm(null);
+            if (ok) setToast(ko.blockedOk);
+          });
+        }}
+      />
+
+      <ConfirmSheet
+        open={confirm === "report"}
+        title={ko.report}
+        body={ko.reportReason}
+        confirmLabel={ko.reportSubmit}
+        onCancel={() => setConfirm(null)}
+        onConfirm={() => {
+          if (!peerId) return;
+          void reportUser({
+            targetUserId: peerId,
+            reason: reportReason,
+          }).then((ok) => {
+            setConfirm(null);
+            if (ok) setToast(ko.reportSent);
+          });
+        }}
+      >
+        <div className="confirm-sheet__choices">
+          {(
+            [
+              ["spam", ko.reportSpam],
+              ["fraud", ko.reportFraud],
+              ["abuse", ko.reportAbuse],
+              ["other", ko.reportOther],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={
+                reportReason === value
+                  ? "confirm-sheet__choice is-selected"
+                  : "confirm-sheet__choice"
+              }
+              onClick={() => setReportReason(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </ConfirmSheet>
     </div>
   );
 }

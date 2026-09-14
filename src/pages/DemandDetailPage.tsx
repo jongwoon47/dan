@@ -32,6 +32,7 @@ export function DemandDetailPage() {
         <div className="detail-top__identity">
           <CategoryPill category={product.category} />
           <h1 className="page-title">{product.name}</h1>
+          <p className="section-desc">{ko.demandFirstLead}</p>
           <p className="detail-hero__count">
             <strong>
               {aggregate.seekerCount}

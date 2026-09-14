@@ -1,0 +1,66 @@
+.confirm-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  align-items: end;
+  background: rgba(15, 23, 22, 0.45);
+  padding: 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+.confirm-sheet__panel {
+  width: min(480px, 100%);
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 20px;
+  padding: 20px 18px 16px;
+  display: grid;
+  gap: 12px;
+  box-shadow: 0 16px 40px rgba(15, 23, 22, 0.18);
+}
+
+.confirm-sheet__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  letter-spacing: -0.02em;
+}
+
+.confirm-sheet__body {
+  margin: 0;
+  color: var(--dan-ink-muted);
+  line-height: 1.45;
+}
+
+.confirm-sheet__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.confirm-sheet__choices {
+  display: grid;
+  gap: 8px;
+}
+
+.confirm-sheet__choice {
+  text-align: left;
+  border: 1px solid var(--dan-line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #fff;
+  font: inherit;
+}
+
+.confirm-sheet__choice.is-selected {
+  border-color: var(--dan-accent, #0d9488);
+  background: var(--dan-accent-soft, #d7f1ee);
+}
+
+@media (min-width: 768px) {
+  .confirm-sheet {
+    align-items: center;
+  }
+}
