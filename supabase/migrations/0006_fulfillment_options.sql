@@ -56,7 +56,7 @@ create or replace function public.upsert_buy_demand(
   p_location text,
   p_condition_preference text,
   p_trade_method text,
-  p_expires_at timestamptz default null,
+  p_expires_at timestamptz,
   p_fulfillment_options jsonb
 )
 returns public.demands
