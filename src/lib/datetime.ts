@@ -16,6 +16,23 @@ export function fromDatetimeLocalValue(value: string): string | undefined {
   return d.toISOString();
 }
 
+/** Allow ~1 minute clock skew; reject clearly past datetimes. */
+export function isDatetimeLocalNotPast(
+  value: string,
+  nowMs: number = Date.now(),
+): boolean {
+  const iso = fromDatetimeLocalValue(value);
+  if (!iso) return false;
+  return new Date(iso).getTime() >= nowMs - 60_000;
+}
+
+export function isBorrowRangeValid(startLocal: string, endLocal: string): boolean {
+  const start = fromDatetimeLocalValue(startLocal);
+  const end = fromDatetimeLocalValue(endLocal);
+  if (!start || !end) return false;
+  return new Date(end).getTime() > new Date(start).getTime();
+}
+
 export function formatWhenShort(iso?: string | null): string | null {
   if (!iso) return null;
   const d = new Date(iso);

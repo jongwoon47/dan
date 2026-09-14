@@ -63,7 +63,12 @@ export function DemandItemPage() {
   );
 
   const isOwner = currentUser?.id === demand?.userId;
-  const canRespond = Boolean(demand && demand.status === "ACTIVE" && !isOwner);
+  const canRespond = Boolean(
+    demand &&
+      demand.type !== "BUY" &&
+      demand.status === "ACTIVE" &&
+      !isOwner,
+  );
 
   const ownerResponderKey = ownerResponses.map((r) => r.userId).join(",");
 
@@ -172,7 +177,16 @@ export function DemandItemPage() {
 
       {localError ? <p className="form-error">{localError}</p> : null}
 
-      {!isOwner ? (
+      {!isOwner && demand.type === "BUY" ? (
+        <div className="section-stack">
+          <p className="section-desc">{ko.haveItBody}</p>
+          <Button to={`/demand/${demand.details.productId}`} fullWidth size="lg">
+            {ko.haveIt}
+          </Button>
+        </div>
+      ) : null}
+
+      {!isOwner && demand.type !== "BUY" ? (
         <>
           {sent || myOpen ? (
             <div className="section-stack">
@@ -274,10 +288,18 @@ export function DemandItemPage() {
             </Button>
           ) : null}
         </>
-      ) : (
+      ) : null}
+
+      {isOwner ? (
         <div className="section-stack">
           <h2 className="section-title">{ko.ownerResponsesLead}</h2>
-          {ownerResponses.length === 0 ? (
+          {demand.type === "BUY" ? (
+            <p className="section-desc">
+              <Button to={`/demand/${demand.details.productId}`} variant="secondary">
+                {ko.viewDemand}
+              </Button>
+            </p>
+          ) : ownerResponses.length === 0 ? (
             <p className="section-desc">{ko.noMatchBody}</p>
           ) : (
             ownerResponses.map((r) => (
@@ -297,9 +319,11 @@ export function DemandItemPage() {
                   <div className="action-row">
                     <Button
                       disabled={busy}
-                      onClick={() => void acceptResponse(r.id).then((m) => {
-                        if (m) navigate(`/match/${m.id}`);
-                      })}
+                      onClick={() =>
+                        void acceptResponse(r.id).then((m) => {
+                          if (m) navigate(`/match/${m.id}`);
+                        })
+                      }
                     >
                       {ko.acceptResponseAction}
                     </Button>
@@ -316,7 +340,7 @@ export function DemandItemPage() {
             ))
           )}
         </div>
-      )}
+      ) : null}
 
       <ConfirmSheet
         open={closeOpen}

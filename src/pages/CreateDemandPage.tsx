@@ -14,8 +14,9 @@ import type {
   DemandType,
 } from "@/domain/types";
 import { CONDITION_LABEL, DEMAND_TYPE_LABEL } from "@/domain/types";
-import { fromDatetimeLocalValue } from "@/lib/datetime";
+import { fromDatetimeLocalValue, isBorrowRangeValid, isDatetimeLocalNotPast } from "@/lib/datetime";
 import { budgetLabelForType } from "@/lib/format";
+import { findProductByMatchKey, productMatchKey } from "@/domain/productName";
 import "./pages.css";
 import "@/components/feedCards.css";
 
@@ -25,18 +26,18 @@ const CONDITIONS: ConditionPreference[] = ["sealed", "like_new", "lightly_used",
 type TaskMode = "onsite" | "pickup" | "route" | "remote";
 type ServiceMode = "onsite" | "remote";
 
-function parseType(raw: string | null): DemandType {
+function parseType(raw: string | null): DemandType | null {
   if (raw === "BUY" || raw === "BORROW" || raw === "TASK" || raw === "SERVICE") {
     return raw;
   }
-  return "BUY";
+  return null;
 }
 
 export function CreateDemandPage() {
   const { products, createDemand, ensureProduct, currentUser } = useDan();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const [type, setType] = useState<DemandType>(parseType(params.get("type")));
+  const [type, setType] = useState<DemandType | null>(parseType(params.get("type")));
   const [title, setTitle] = useState("");
   const [productId, setProductId] = useState("");
   const [productQuery, setProductQuery] = useState("");
@@ -48,10 +49,11 @@ export function CreateDemandPage() {
   const [itemName, setItemName] = useState("");
   const [detail, setDetail] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const [buyShipping, setBuyShipping] = useState(true);
-  const [buyMeetup, setBuyMeetup] = useState(true);
   const profileArea = currentUser?.defaultArea?.trim() ?? "";
+  const [buyShipping, setBuyShipping] = useState(true);
+  const [buyMeetup, setBuyMeetup] = useState(() => Boolean(profileArea));
   const [meetupPlace, setMeetupPlace] = useState(profileArea);
   const [borrowPlace, setBorrowPlace] = useState(profileArea);
   const [borrowStart, setBorrowStart] = useState("");
@@ -66,17 +68,25 @@ export function CreateDemandPage() {
   const [preferredAt, setPreferredAt] = useState("");
 
   const selected = products.find((p) => p.id === productId);
-  const price = Number((type === "BUY" ? maxPrice : budget).replace(/,/g, ""));
+  const price = Number(
+    ((type === "BUY" ? maxPrice : budget) || "0").replace(/,/g, ""),
+  );
 
   const filteredProducts = useMemo(() => {
-    const q = productQuery.trim().toLowerCase();
+    const q = productQuery.trim();
     if (!q) return products.slice(0, 8);
+    const qKey = productMatchKey(q);
     return products
-      .filter((p) => p.name.toLowerCase().includes(q))
+      .filter(
+        (p) =>
+          p.name.toLowerCase().includes(q.toLowerCase()) ||
+          (qKey.length > 0 && productMatchKey(p.name).includes(qKey)),
+      )
       .slice(0, 12);
   }, [products, productQuery]);
 
   const fulfillmentOptions = useMemo((): FulfillmentOption[] => {
+    if (!type) return [];
     if (type === "BUY") {
       const opts: FulfillmentOption[] = [];
       if (buyShipping) opts.push({ mode: "SHIPPING" });
@@ -120,23 +130,44 @@ export function CreateDemandPage() {
     servicePlace,
   ]);
 
-  const canSubmit = useMemo(() => {
-    if (!Number.isFinite(price) || price <= 0) return false;
-    if (!areFulfillmentOptionsValid(fulfillmentOptions)) return false;
-    if (type === "BUY") {
-      const hasProduct =
-        Boolean(selected) || (customProduct && Boolean(customProductName.trim()));
-      return hasProduct && (buyShipping || buyMeetup);
-    }
+  const scheduleError = useMemo(() => {
     if (type === "BORROW") {
-      if (!borrowStart.trim() || !borrowEnd.trim()) return false;
-      return Boolean(title.trim() || itemName.trim());
+      if (!borrowStart.trim() || !borrowEnd.trim()) return ko.timeRequiredError;
+      if (!isBorrowRangeValid(borrowStart, borrowEnd)) return ko.borrowRangeError;
+      if (
+        !isDatetimeLocalNotPast(borrowStart) ||
+        !isDatetimeLocalNotPast(borrowEnd)
+      ) {
+        return ko.timePastError;
+      }
+      return null;
     }
     if (type === "TASK") {
-      if (!dueAt.trim()) return false;
-      return Boolean(title.trim() || detail.trim());
+      if (!dueAt.trim()) return ko.timeRequiredError;
+      if (!isDatetimeLocalNotPast(dueAt)) return ko.timePastError;
+      return null;
     }
-    if (!preferredAt.trim()) return false;
+    if (type === "SERVICE") {
+      if (!preferredAt.trim()) return ko.timeRequiredError;
+      if (!isDatetimeLocalNotPast(preferredAt)) return ko.timePastError;
+      return null;
+    }
+    return null;
+  }, [type, borrowStart, borrowEnd, dueAt, preferredAt]);
+
+  const canSubmit = useMemo(() => {
+    if (!type) return false;
+    if (!Number.isFinite(price) || price <= 0) return false;
+    if (!areFulfillmentOptionsValid(fulfillmentOptions)) return false;
+    if (scheduleError) return false;
+    if (type === "BUY") {
+      const hasProduct =
+        Boolean(selected) ||
+        (customProduct && Boolean(customProductName.trim())) ||
+        Boolean(findProductByMatchKey(products, productQuery));
+      return hasProduct && (buyShipping || buyMeetup);
+    }
+    if (type === "BORROW") return Boolean(title.trim() || itemName.trim());
     return Boolean(title.trim() || detail.trim());
   }, [
     price,
@@ -150,21 +181,28 @@ export function CreateDemandPage() {
     buyMeetup,
     customProduct,
     customProductName,
-    borrowStart,
-    borrowEnd,
-    dueAt,
-    preferredAt,
+    scheduleError,
+    products,
+    productQuery,
   ]);
 
   async function submit() {
-    if (!canSubmit || submitting) return;
+    if (!canSubmit || submitting || !type) return;
+    if (scheduleError) {
+      setFormError(scheduleError);
+      return;
+    }
+    setFormError(null);
     setSubmitting(true);
     try {
       if (type === "BUY") {
         let pid = selected?.id;
         let productName = selected?.name;
         if (!pid) {
-          const createdProduct = await ensureProduct(customProductName.trim());
+          const rawName = customProduct
+            ? customProductName.trim()
+            : productQuery.trim();
+          const createdProduct = await ensureProduct(rawName);
           if (!createdProduct) return;
           pid = createdProduct.id;
           productName = createdProduct.name;
@@ -239,6 +277,10 @@ export function CreateDemandPage() {
           ))}
         </ChipGroup>
 
+        {!type ? (
+          <p className="section-desc">{ko.pickDemandType}</p>
+        ) : (
+          <>
         <Field label={ko.titleLabel}>
           <TextInput
             value={title}
@@ -467,6 +509,10 @@ export function CreateDemandPage() {
           </Field>
         ) : null}
 
+        {formError || scheduleError ? (
+          <p className="form-error">{formError ?? scheduleError}</p>
+        ) : null}
+
         <Button
           fullWidth
           size="lg"
@@ -475,6 +521,8 @@ export function CreateDemandPage() {
         >
           {submitting ? "..." : ko.submitDemand}
         </Button>
+          </>
+        )}
       </section>
     </div>
   );

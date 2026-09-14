@@ -13,6 +13,8 @@ import {
 } from "@/domain/fulfillment";
 import {
   fromDatetimeLocalValue,
+  isBorrowRangeValid,
+  isDatetimeLocalNotPast,
   toDatetimeLocalValue,
 } from "@/lib/datetime";
 import { budgetLabelForType } from "@/lib/format";
@@ -121,6 +123,43 @@ export function DemandEditPage() {
       setError(ko.genericError);
       return;
     }
+    if (demand!.type === "BORROW") {
+      if (!borrowStart.trim() || !borrowEnd.trim()) {
+        setError(ko.timeRequiredError);
+        return;
+      }
+      if (!isBorrowRangeValid(borrowStart, borrowEnd)) {
+        setError(ko.borrowRangeError);
+        return;
+      }
+      if (
+        !isDatetimeLocalNotPast(borrowStart) ||
+        !isDatetimeLocalNotPast(borrowEnd)
+      ) {
+        setError(ko.timePastError);
+        return;
+      }
+    }
+    if (demand!.type === "TASK") {
+      if (!dueAt.trim()) {
+        setError(ko.timeRequiredError);
+        return;
+      }
+      if (!isDatetimeLocalNotPast(dueAt)) {
+        setError(ko.timePastError);
+        return;
+      }
+    }
+    if (demand!.type === "SERVICE") {
+      if (!preferredAt.trim()) {
+        setError(ko.timeRequiredError);
+        return;
+      }
+      if (!isDatetimeLocalNotPast(preferredAt)) {
+        setError(ko.timePastError);
+        return;
+      }
+    }
     const fulfillmentOptions = rebuildFulfillment(
       demand!.fulfillmentOptions,
       place,
@@ -228,6 +267,7 @@ export function DemandEditPage() {
                 type="datetime-local"
                 value={borrowStart}
                 onChange={(e) => setBorrowStart(e.target.value)}
+                required
               />
             </Field>
             <Field label={ko.borrowEnd}>
@@ -235,6 +275,7 @@ export function DemandEditPage() {
                 type="datetime-local"
                 value={borrowEnd}
                 onChange={(e) => setBorrowEnd(e.target.value)}
+                required
               />
             </Field>
           </>
@@ -245,6 +286,7 @@ export function DemandEditPage() {
               type="datetime-local"
               value={dueAt}
               onChange={(e) => setDueAt(e.target.value)}
+              required
             />
           </Field>
         ) : null}
@@ -254,6 +296,7 @@ export function DemandEditPage() {
               type="datetime-local"
               value={preferredAt}
               onChange={(e) => setPreferredAt(e.target.value)}
+              required
             />
           </Field>
         ) : null}

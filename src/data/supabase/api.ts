@@ -3,6 +3,11 @@ import {
   formatFulfillmentSummary,
   tradeMethodFromFulfillment,
 } from "@/domain/fulfillment";
+import {
+  displayProductName,
+  findProductByMatchKey,
+  productMatchKey,
+} from "@/domain/productName";
 import type {
   Demand,
   DemandAggregate,
@@ -54,36 +59,31 @@ export async function listProducts(): Promise<Product[]> {
 
 /** Find or create a catalog product by display name (BUY custom requests). */
 export async function ensureProductRemote(name: string): Promise<Product> {
-  const canonical = name.trim().replace(/\s+/g, " ");
-  if (!canonical) throw new Error("product name required");
-  const sb = getSupabase();
-  const { data: existing } = await sb
-    .from("products")
-    .select("*")
-    .eq("canonical_name", canonical)
-    .maybeSingle();
-  if (existing) return mapProduct(existing as DbProduct);
+  const display = displayProductName(name);
+  const key = productMatchKey(display);
+  if (!key) throw new Error("product name required");
 
-  const hue = 180 + (canonical.length * 17) % 160;
+  const catalog = await listProducts();
+  const matched = findProductByMatchKey(catalog, display);
+  if (matched) return matched;
+
+  const sb = getSupabase();
+  const hue = 180 + ((key.length * 17) % 160);
   const { data, error } = await sb
     .from("products")
     .insert({
-      canonical_name: canonical,
+      canonical_name: display,
       brand: null,
-      model: canonical,
+      model: display,
       category: "other",
       image_hue: hue,
     })
     .select("*")
     .single();
   if (error) {
-    // Race: another user created same name
-    const { data: again } = await sb
-      .from("products")
-      .select("*")
-      .eq("canonical_name", canonical)
-      .maybeSingle();
-    if (again) return mapProduct(again as DbProduct);
+    const again = await listProducts();
+    const recovered = findProductByMatchKey(again, display);
+    if (recovered) return recovered;
     throw error;
   }
   return mapProduct(data as DbProduct);

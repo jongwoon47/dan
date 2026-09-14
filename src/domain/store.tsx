@@ -28,6 +28,11 @@ import {
 } from "./mockData";
 import { canRespondToDemand, upsertOpenResponse } from "./responses";
 import { upsertOpenSellIntent } from "./sellIntents";
+import {
+  displayProductName,
+  findProductByMatchKey,
+  productMatchKey,
+} from "./productName";
 import type {
   BuyDemand,
   Demand,
@@ -400,19 +405,18 @@ export function DanProvider({ children }: { children: ReactNode }) {
       login: (userId = CURRENT_USER_ID) => dispatch({ type: "LOGIN", userId }),
       logout: () => dispatch({ type: "LOGOUT" }),
       ensureProduct: async (name) => {
-        const canonical = name.trim().replace(/\s+/g, " ");
-        if (!canonical) return null;
-        const found = products.find(
-          (p) => p.name.toLowerCase() === canonical.toLowerCase(),
-        );
+        const display = displayProductName(name);
+        const key = productMatchKey(display);
+        if (!key) return null;
+        const found = findProductByMatchKey(products, display);
         if (found) return found;
         const product: import("./types").Product = {
           id: createId("prod"),
-          name: canonical,
+          name: display,
           brand: "",
-          model: canonical,
+          model: display,
           category: "other",
-          imageHue: 180 + ((canonical.length * 17) % 160),
+          imageHue: 180 + ((key.length * 17) % 160),
           createdAt: new Date().toISOString(),
         };
         setExtraProducts((prev) => [...prev, product]);
