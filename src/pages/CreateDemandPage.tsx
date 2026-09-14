@@ -41,8 +41,7 @@ export function CreateDemandPage() {
   const [title, setTitle] = useState("");
   const [productId, setProductId] = useState("");
   const [productQuery, setProductQuery] = useState("");
-  const [customProduct, setCustomProduct] = useState(false);
-  const [customProductName, setCustomProductName] = useState("");
+  const [suggestOpen, setSuggestOpen] = useState(false);
   const [maxPrice, setMaxPrice] = useState("1000000");
   const [budget, setBudget] = useState("20000");
   const [condition, setCondition] = useState<ConditionPreference>("any");
@@ -72,18 +71,24 @@ export function CreateDemandPage() {
     ((type === "BUY" ? maxPrice : budget) || "0").replace(/,/g, ""),
   );
 
-  const filteredProducts = useMemo(() => {
+  const suggestions = useMemo(() => {
     const q = productQuery.trim();
-    if (!q) return products.slice(0, 8);
+    if (q.length < 1) return [];
     const qKey = productMatchKey(q);
+    const qLower = q.toLowerCase();
     return products
       .filter(
         (p) =>
-          p.name.toLowerCase().includes(q.toLowerCase()) ||
+          p.name.toLowerCase().includes(qLower) ||
           (qKey.length > 0 && productMatchKey(p.name).includes(qKey)),
       )
-      .slice(0, 12);
+      .slice(0, 5);
   }, [products, productQuery]);
+
+  const exactMatch = useMemo(
+    () => findProductByMatchKey(products, productQuery),
+    [products, productQuery],
+  );
 
   const fulfillmentOptions = useMemo((): FulfillmentOption[] => {
     if (!type) return [];
@@ -161,17 +166,13 @@ export function CreateDemandPage() {
     if (!areFulfillmentOptionsValid(fulfillmentOptions)) return false;
     if (scheduleError) return false;
     if (type === "BUY") {
-      const hasProduct =
-        Boolean(selected) ||
-        (customProduct && Boolean(customProductName.trim())) ||
-        Boolean(findProductByMatchKey(products, productQuery));
+      const hasProduct = Boolean(productQuery.trim());
       return hasProduct && (buyShipping || buyMeetup);
     }
     if (type === "BORROW") return Boolean(title.trim() || itemName.trim());
     return Boolean(title.trim() || detail.trim());
   }, [
     price,
-    selected,
     type,
     title,
     itemName,
@@ -179,10 +180,7 @@ export function CreateDemandPage() {
     fulfillmentOptions,
     buyShipping,
     buyMeetup,
-    customProduct,
-    customProductName,
     scheduleError,
-    products,
     productQuery,
   ]);
 
@@ -196,12 +194,15 @@ export function CreateDemandPage() {
     setSubmitting(true);
     try {
       if (type === "BUY") {
-        let pid = selected?.id;
-        let productName = selected?.name;
+        const rawName = productQuery.trim();
+        const picked =
+          selected &&
+          productMatchKey(selected.name) === productMatchKey(rawName)
+            ? selected
+            : exactMatch;
+        let pid = picked?.id;
+        let productName = picked?.name;
         if (!pid) {
-          const rawName = customProduct
-            ? customProductName.trim()
-            : productQuery.trim();
           const createdProduct = await ensureProduct(rawName);
           if (!createdProduct) return;
           pid = createdProduct.id;
@@ -209,7 +210,7 @@ export function CreateDemandPage() {
         }
         const created = await createDemand({
           type: "BUY",
-          title: title.trim() || productName || customProductName.trim(),
+          title: title.trim() || productName || rawName,
           productId: pid,
           maxPrice: price,
           conditionPreference: condition,
@@ -291,57 +292,49 @@ export function CreateDemandPage() {
 
         {type === "BUY" ? (
           <>
-            <Field label={ko.productSearch} hint={ko.productCustom}>
-              <TextInput
-                value={customProduct ? customProductName : productQuery}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  if (customProduct) {
-                    setCustomProductName(v);
-                  } else {
-                    setProductQuery(v);
+            <div className="product-suggest">
+              <Field label={ko.productSearch} hint={ko.productSearchHint}>
+                <TextInput
+                  value={productQuery}
+                  onChange={(e) => {
+                    setProductQuery(e.target.value);
                     setProductId("");
-                  }
-                }}
-                placeholder={
-                  customProduct ? ko.productCustomPh : ko.productSearchPh
-                }
-              />
-            </Field>
-            {!customProduct ? (
-              <div className="product-pick-list">
-                {filteredProducts.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    className={
-                      productId === p.id
-                        ? "product-pick is-selected"
-                        : "product-pick"
-                    }
-                    onClick={() => {
-                      setProductId(p.id);
-                      setProductQuery(p.name);
-                      setCustomProduct(false);
-                    }}
-                  >
-                    {p.name}
-                    {productId === p.id ? ` · ${ko.productSelected}` : ""}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            <button
-              type="button"
-              className="text-link product-custom-toggle"
-              onClick={() => {
-                setCustomProduct((v) => !v);
-                setProductId("");
-                if (!customProduct) setCustomProductName(productQuery);
-              }}
-            >
-              {customProduct ? ko.productSearch : ko.productCustom}
-            </button>
+                    setSuggestOpen(true);
+                  }}
+                  onFocus={() => setSuggestOpen(true)}
+                  onBlur={() => {
+                    window.setTimeout(() => setSuggestOpen(false), 120);
+                  }}
+                  placeholder={ko.productSearchPh}
+                  autoComplete="off"
+                />
+              </Field>
+              {suggestOpen && suggestions.length > 0 ? (
+                <ul className="product-suggest__list" role="listbox">
+                  {suggestions.map((p) => (
+                    <li key={p.id}>
+                      <button
+                        type="button"
+                        role="option"
+                        className={
+                          productId === p.id
+                            ? "product-suggest__item is-selected"
+                            : "product-suggest__item"
+                        }
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          setProductId(p.id);
+                          setProductQuery(p.name);
+                          setSuggestOpen(false);
+                        }}
+                      >
+                        {p.name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
             <Field label={ko.maxPrice} hint={ko.maxPriceHint}>
               <TextInput
                 inputMode="numeric"
