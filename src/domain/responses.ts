@@ -19,6 +19,7 @@ export function upsertOpenResponse(
     ...existing,
     message: next.message,
     offeredPrice: next.offeredPrice,
+    availabilityText: next.availabilityText,
     status: "OPEN",
   };
   const copy = [...responses];

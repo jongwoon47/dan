@@ -100,6 +100,7 @@ export type DbResponse = {
   response_type: string;
   message: string;
   offered_price: number | null;
+  availability_text?: string | null;
   status: Response["status"];
   created_at: string;
   updated_at: string;
@@ -223,6 +224,7 @@ export function mapResponse(row: DbResponse): Response {
     userId: row.responder_id,
     message: row.message,
     offeredPrice: row.offered_price == null ? undefined : Number(row.offered_price),
+    availabilityText: row.availability_text?.trim() || undefined,
     status: row.status,
     createdAt: row.created_at,
   };

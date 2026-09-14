@@ -41,6 +41,9 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [activities, setActivities] = useState<
+    import("@/domain/types").ActivityEvent[]
+  >([]);
 
   const refresh = useCallback(async () => {
     setLoadState((prev) => (prev === "ready" ? "ready" : "loading"));
@@ -97,6 +100,16 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         setMatches([]);
       }
       setLoadState("ready");
+      if (auth.user) {
+        try {
+          const acts = await api.listActivityRemote();
+          setActivities(acts);
+        } catch {
+          /* activity is best-effort */
+        }
+      } else {
+        setActivities([]);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
       setLoadState("error");
@@ -190,6 +203,34 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         }
         return run(() => api.createResponseRemote(payload));
       },
+      withdrawResponse: async (responseId) => {
+        if (!currentUser) {
+          window.location.assign("/login");
+          return null;
+        }
+        return run(() => api.withdrawResponseRemote(responseId));
+      },
+      declineResponse: async (responseId) => {
+        if (!currentUser) {
+          window.location.assign("/login");
+          return null;
+        }
+        return run(() => api.declineResponseRemote(responseId));
+      },
+      updateDemand: async (payload) => {
+        if (!currentUser) {
+          window.location.assign("/login");
+          return null;
+        }
+        return run(() => api.updateDemandRemote(payload));
+      },
+      closeDemand: async (demandId) => {
+        if (!currentUser) {
+          window.location.assign("/login");
+          return null;
+        }
+        return run(() => api.closeDemandRemote(demandId));
+      },
       acceptResponse: async (responseId) => {
         if (!currentUser) {
           window.location.assign("/login");
@@ -197,6 +238,84 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         }
         return run(() => api.acceptResponseRemote(responseId));
       },
+      listMessages: async (matchId) => {
+        if (!currentUser) return [];
+        try {
+          return await api.listMessagesRemote(matchId);
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "채팅을 불러오지 못했어요");
+          return [];
+        }
+      },
+      sendMessage: async (matchId, body) => {
+        if (!currentUser) {
+          window.location.assign("/login");
+          return null;
+        }
+        return run(() => api.sendMessageRemote(matchId, body));
+      },
+      markMessagesRead: async (matchId) => {
+        if (!currentUser) return;
+        try {
+          await api.markMessagesReadRemote(matchId);
+        } catch {
+          /* ignore */
+        }
+      },
+      activities,
+      unreadActivityCount: activities.filter((a) => !a.readAt).length,
+      refreshActivities: async () => {
+        if (!currentUser) {
+          setActivities([]);
+          return;
+        }
+        try {
+          setActivities(await api.listActivityRemote());
+        } catch {
+          /* ignore */
+        }
+      },
+      markActivityRead: async (activityId) => {
+        if (!currentUser) return;
+        try {
+          await api.markActivityReadRemote(activityId);
+          setActivities(await api.listActivityRemote());
+        } catch {
+          /* ignore */
+        }
+      },
+      getPublicProfile: async (userId) => {
+        try {
+          return await api.fetchPublicProfile(userId);
+        } catch {
+          return null;
+        }
+      },
+      updateMyProfile: async (payload) => {
+        if (!currentUser) {
+          window.location.assign("/login");
+          return null;
+        }
+        return run(() => api.updateMyProfileRemote(payload));
+      },
+      blockUser: async (userId) => {
+        if (!currentUser) {
+          window.location.assign("/login");
+          return false;
+        }
+        const ok = await run(() => api.blockUserRemote(userId));
+        return ok !== null;
+      },
+      reportUser: async (payload) => {
+        if (!currentUser) {
+          window.location.assign("/login");
+          return false;
+        }
+        const ok = await run(() => api.reportUserRemote(payload));
+        return ok !== null;
+      },
+      busy,
+      loadError: error,
       expressBuyerInterest: async (matchId) => {
         if (!currentUser) {
           window.location.assign("/login");
@@ -250,6 +369,9 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
     sellIntents,
     responses,
     aggregates,
+    activities,
+    error,
+    busy,
     run,
     refresh,
   ]);

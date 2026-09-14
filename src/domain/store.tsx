@@ -447,6 +447,7 @@ export function DanProvider({ children }: { children: ReactNode }) {
           userId: actorId,
           message: payload.message,
           offeredPrice: payload.offeredPrice,
+          availabilityText: payload.availabilityText,
           status: "OPEN",
           createdAt: new Date().toISOString(),
         };
@@ -454,6 +455,27 @@ export function DanProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "UPSERT_RESPONSE", response: result, ensureUserId });
         return result;
       },
+      withdrawResponse: async (responseId) => {
+        const response = state.responses.find((r) => r.id === responseId);
+        if (!response || response.userId !== state.currentUserId) return null;
+        if (response.status !== "OPEN") return null;
+        const next = { ...response, status: "WITHDRAWN" as const };
+        dispatch({ type: "UPSERT_RESPONSE", response: next });
+        return next;
+      },
+      declineResponse: async (responseId) => {
+        const response = state.responses.find((r) => r.id === responseId);
+        const demand = response
+          ? state.demands.find((d) => d.id === response.demandId)
+          : undefined;
+        if (!response || !demand || demand.userId !== state.currentUserId) return null;
+        if (response.status !== "OPEN") return null;
+        const next = { ...response, status: "DECLINED" as const };
+        dispatch({ type: "UPSERT_RESPONSE", response: next });
+        return next;
+      },
+      updateDemand: async () => null,
+      closeDemand: async () => null,
       acceptResponse: async (responseId) => {
         const before = state.matches.length;
         dispatch({ type: "ACCEPT_RESPONSE", responseId });
@@ -475,6 +497,30 @@ export function DanProvider({ children }: { children: ReactNode }) {
           createdAt: new Date().toISOString(),
         };
       },
+      listMessages: async () => [],
+      sendMessage: async () => null,
+      markMessagesRead: async () => undefined,
+      activities: [],
+      unreadActivityCount: 0,
+      refreshActivities: async () => undefined,
+      markActivityRead: async () => undefined,
+      getPublicProfile: async (userId) => {
+        const u = DEMO_USERS.find((x) => x.id === userId);
+        if (!u) return null;
+        return {
+          id: u.id,
+          displayName: u.name,
+          defaultArea: u.defaultArea,
+          bio: u.bio ?? "",
+          createdAt: u.createdAt ?? new Date().toISOString(),
+          connectionCount: 0,
+        };
+      },
+      updateMyProfile: async () => currentUser,
+      blockUser: async () => false,
+      reportUser: async () => false,
+      busy: false,
+      loadError: null,
       expressBuyerInterest: async (matchId) => {
         const visible = buildVisibleMatches(state, state.currentUserId);
         const match =

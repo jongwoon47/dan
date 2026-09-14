@@ -5,7 +5,7 @@ import { useDan } from "@/domain/danContext";
 import "./layout.css";
 
 export function AppShell() {
-  const { currentUser, isLoggedIn, login, logout } = useDan();
+  const { currentUser, isLoggedIn, login, logout, unreadActivityCount } = useDan();
   return (
     <div className="app-shell">
       <header className="top-nav">
@@ -26,25 +26,53 @@ export function AppShell() {
           <nav className="top-nav__links" aria-label="primary">
             <NavLink to="/create">{ko.navCreate}</NavLink>
             <NavLink to="/feed">{ko.navFeed}</NavLink>
+            <NavLink to="/activity">
+              {ko.navActivity}
+              {unreadActivityCount > 0 ? (
+                <span className="nav-badge">{unreadActivityCount}</span>
+              ) : null}
+            </NavLink>
             <NavLink to="/my">{ko.navMy}</NavLink>
           </nav>
           <div className="top-nav__auth">
             {isLoggedIn && currentUser ? (
               <>
-                <span className="top-nav__user">{currentUser.name}</span>
-                <Button size="sm" variant="secondary" onClick={logout}>{ko.logout}</Button>
+                <NavLink to={`/profile/${currentUser.id}`} className="top-nav__user">
+                  {currentUser.name}
+                </NavLink>
+                <Button size="sm" variant="secondary" onClick={logout}>
+                  {ko.logout}
+                </Button>
               </>
             ) : (
-              <Button size="sm" onClick={() => login()}>{ko.login}</Button>
+              <Button size="sm" onClick={() => login()}>
+                {ko.login}
+              </Button>
             )}
           </div>
         </div>
       </header>
-      <main className="app-main"><Outlet /></main>
+      <main className="app-main">
+        <Outlet />
+      </main>
       <nav className="bottom-nav" aria-label="mobile">
-        <NavLink to="/" end><span>{ko.navHome}</span></NavLink>
-        <NavLink to="/feed"><span>{ko.navDemand}</span></NavLink>
-        <NavLink to="/my"><span>{ko.navMy}</span></NavLink>
+        <NavLink to="/" end>
+          <span>{ko.navHome}</span>
+        </NavLink>
+        <NavLink to="/feed">
+          <span>{ko.navDemand}</span>
+        </NavLink>
+        <NavLink to="/activity">
+          <span>
+            {ko.navActivity}
+            {unreadActivityCount > 0 ? (
+              <span className="nav-badge">{unreadActivityCount}</span>
+            ) : null}
+          </span>
+        </NavLink>
+        <NavLink to="/my">
+          <span>{ko.navMy}</span>
+        </NavLink>
       </nav>
     </div>
   );

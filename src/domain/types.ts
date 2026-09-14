@@ -23,7 +23,7 @@ export type TradeMethod = "meetup" | "shipping" | "any";
 export type DemandStatus = "ACTIVE" | "MATCHED" | "CLOSED" | "EXPIRED";
 export type OwnershipStatus = "OWNED" | "RELEASED";
 export type SellIntentStatus = "OPEN" | "PAUSED" | "MATCHED" | "CLOSED";
-export type ResponseStatus = "OPEN" | "ACCEPTED" | "WITHDRAWN";
+export type ResponseStatus = "OPEN" | "ACCEPTED" | "WITHDRAWN" | "DECLINED";
 export type MatchStatus =
   | "POTENTIAL"
   | "BUYER_INTERESTED"
@@ -35,8 +35,10 @@ export type MatchStatus =
 export interface User {
   id: string;
   name: string;
-  /** Profile default area ? input/filter default only, not matching truth. */
+  /** Profile default area — input/filter default only, not matching truth. */
   defaultArea: string;
+  bio?: string;
+  createdAt?: string;
 }
 
 export interface Product {
@@ -135,6 +137,7 @@ export interface Response {
   userId: string;
   message: string;
   offeredPrice?: number;
+  availabilityText?: string;
   status: ResponseStatus;
   createdAt: string;
 }
@@ -149,6 +152,45 @@ export interface Match {
   sellerId: string;
   status: MatchStatus;
   createdAt: string;
+}
+
+export type ActivityKind =
+  | "NEW_RESPONSE"
+  | "RESPONSE_ACCEPTED"
+  | "RESPONSE_DECLINED"
+  | "BUYER_INTEREST"
+  | "MATCH_CONNECTED"
+  | "NEW_MESSAGE"
+  | "DEMAND_CLOSED";
+
+export interface ActivityEvent {
+  id: string;
+  recipientId: string;
+  actorId?: string;
+  kind: ActivityKind;
+  demandId?: string;
+  responseId?: string;
+  matchId?: string;
+  readAt?: string;
+  createdAt: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  matchId: string;
+  senderId: string;
+  body: string;
+  createdAt: string;
+  readAt?: string;
+}
+
+export interface PublicProfile {
+  id: string;
+  displayName: string;
+  defaultArea: string;
+  bio: string;
+  createdAt: string;
+  connectionCount: number;
 }
 
 export interface DemandAggregate {

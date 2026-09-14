@@ -60,8 +60,8 @@ export function MatchCard({ match }: { match: Match }) {
         {match.status === "CONNECTED" ? (
           <div className="match-card__connected">
             <p>{ko.connectedMsg}</p>
-            <Button to="/my" variant="secondary" fullWidth>
-              {ko.viewInMy}
+            <Button to={`/match/${match.id}`} fullWidth>
+              {ko.openChat}
             </Button>
           </div>
         ) : null}
@@ -146,8 +146,8 @@ export function MatchCard({ match }: { match: Match }) {
         {match.status === "CONNECTED" ? (
           <div className="match-card__connected">
             <p>{ko.connectedMsg}</p>
-            <Button to="/my" variant="secondary" fullWidth>
-              {ko.viewInMy}
+            <Button to={`/match/${match.id}`} fullWidth>
+              {ko.openChat}
             </Button>
           </div>
         ) : null}

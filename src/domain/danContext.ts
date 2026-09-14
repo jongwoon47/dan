@@ -1,7 +1,10 @@
 import { createContext, useContext } from "react";
 
 import type { CreateDemandInput } from "./createDemand";
+import type { FulfillmentOption } from "./fulfillment";
 import type {
+  ActivityEvent,
+  ChatMessage,
   Demand,
   DemandAggregate,
   DemandType,
@@ -10,6 +13,7 @@ import type {
   Match,
   Ownership,
   Product,
+  PublicProfile,
   Response,
   SellIntent,
   User,
@@ -28,6 +32,22 @@ export interface DanContextValue {
   login: (userId?: string) => void;
   logout: () => void;
   createDemand: (payload: CreateDemandInput) => Promise<Demand | null>;
+  updateDemand: (payload: {
+    demandId: string;
+    title: string;
+    description: string;
+    budget: number;
+    fulfillmentOptions: FulfillmentOption[];
+    expiresAt?: string;
+    dueAt?: string;
+    itemName?: string;
+    taskDescription?: string;
+    serviceDescription?: string;
+    maxPrice?: number;
+    conditionPreference?: string;
+    tradeMethod?: string;
+  }) => Promise<Demand | null>;
+  closeDemand: (demandId: string) => Promise<Demand | null>;
   createOwnership: (payload: {
     productId: string;
     condition: ItemCondition;
@@ -40,10 +60,32 @@ export interface DanContextValue {
     demandId: string;
     message: string;
     offeredPrice?: number;
+    availabilityText?: string;
   }) => Promise<Response | null>;
+  withdrawResponse: (responseId: string) => Promise<Response | null>;
+  declineResponse: (responseId: string) => Promise<Response | null>;
   acceptResponse: (responseId: string) => Promise<Match | null>;
   expressBuyerInterest: (matchId: string) => Promise<boolean>;
   connectAsSeller: (matchId: string) => Promise<boolean>;
+  listMessages: (matchId: string) => Promise<ChatMessage[]>;
+  sendMessage: (matchId: string, body: string) => Promise<ChatMessage | null>;
+  markMessagesRead: (matchId: string) => Promise<void>;
+  activities: ActivityEvent[];
+  unreadActivityCount: number;
+  refreshActivities: () => Promise<void>;
+  markActivityRead: (activityId?: string) => Promise<void>;
+  getPublicProfile: (userId: string) => Promise<PublicProfile | null>;
+  updateMyProfile: (payload: {
+    displayName: string;
+    defaultArea: string;
+    bio: string;
+  }) => Promise<User | null>;
+  blockUser: (userId: string) => Promise<boolean>;
+  reportUser: (payload: {
+    targetUserId: string;
+    reason: "spam" | "fraud" | "abuse" | "other";
+    detail?: string;
+  }) => Promise<boolean>;
   getProduct: (id: string) => Product | undefined;
   getDemand: (id: string) => Demand | undefined;
   getAggregate: (productId: string) => DemandAggregate | null;
@@ -53,6 +95,8 @@ export interface DanContextValue {
   mySellIntents: SellIntent[];
   myResponses: Response[];
   myMatches: Match[];
+  busy: boolean;
+  loadError: string | null;
   resetDemo: () => void;
 }
 
