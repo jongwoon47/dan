@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { AggregatedDemandCard } from "@/components/AggregatedDemandCard";
 import { IndividualDemandCard } from "@/components/IndividualDemandCard";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Chip, ChipGroup, TextInput } from "@/components/ui/Input";
+import { Chip, TextInput } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
@@ -21,6 +21,7 @@ export function DemandFeedPage() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [areaFilter, setAreaFilter] = useState<FeedAreaFilter>("all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const areaFeed = useMemo(
     () =>
@@ -72,28 +73,49 @@ export function DemandFeedPage() {
         aria-label={ko.searchPh}
       />
 
-      <ChipGroup>
-        <Chip selected={areaFilter === "all"} onClick={() => setAreaFilter("all")}>
-          {ko.all}
-        </Chip>
-        <Chip selected={areaFilter === "nearby"} onClick={() => setAreaFilter("nearby")}>
-          {ko.filterNearby}
-        </Chip>
-        <Chip selected={areaFilter === "online"} onClick={() => setAreaFilter("online")}>
-          {ko.filterOnline}
-        </Chip>
-      </ChipGroup>
-
-      <ChipGroup>
-        <Chip selected={filter === "all"} onClick={() => setFilter("all")}>
-          {ko.all}
-        </Chip>
-        {(["BUY", "BORROW", "TASK", "SERVICE"] as DemandType[]).map((t) => (
-          <Chip key={t} selected={filter === t} onClick={() => setFilter(t)}>
-            {DEMAND_TYPE_LABEL[t]}
+      <div className="feed-filter-bar">
+        <div className="feed-filter-scroll" role="toolbar" aria-label="유형 필터">
+          <Chip selected={filter === "all"} onClick={() => setFilter("all")}>
+            {ko.all}
           </Chip>
-        ))}
-      </ChipGroup>
+          {(["BUY", "BORROW", "TASK", "SERVICE"] as DemandType[]).map((t) => (
+            <Chip key={t} selected={filter === t} onClick={() => setFilter(t)}>
+              {DEMAND_TYPE_LABEL[t]}
+            </Chip>
+          ))}
+        </div>
+        <button
+          type="button"
+          className={
+            filtersOpen || areaFilter !== "all"
+              ? "feed-filter-toggle is-active"
+              : "feed-filter-toggle"
+          }
+          onClick={() => setFiltersOpen((v) => !v)}
+        >
+          {ko.filterMore}
+        </button>
+      </div>
+
+      {filtersOpen ? (
+        <div className="feed-filter-scroll" role="toolbar" aria-label="지역 필터">
+          <Chip selected={areaFilter === "all"} onClick={() => setAreaFilter("all")}>
+            {ko.all}
+          </Chip>
+          <Chip
+            selected={areaFilter === "nearby"}
+            onClick={() => setAreaFilter("nearby")}
+          >
+            {ko.filterNearby}
+          </Chip>
+          <Chip
+            selected={areaFilter === "online"}
+            onClick={() => setAreaFilter("online")}
+          >
+            {ko.filterOnline}
+          </Chip>
+        </div>
+      ) : null}
 
       {filtered.length === 0 ? (
         <EmptyState

@@ -28,6 +28,10 @@
   letter-spacing: -0.02em;
   line-height: 1.35;
   color: var(--dan-ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .feed-row__place {
@@ -35,6 +39,10 @@
   color: var(--dan-ink-secondary);
   font-size: 0.8125rem;
   line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .feed-row__signal {
@@ -89,18 +97,33 @@
 
 .composer__title {
   font-family: var(--font-display);
-  font-size: clamp(1.5rem, 5vw, 1.85rem);
+  font-size: clamp(1.75rem, 6vw, 2.1rem);
   font-weight: 800;
   letter-spacing: -0.04em;
+  line-height: 1.2;
 }
 
 .composer__hint {
   color: var(--dan-ink-secondary);
   font-size: 0.9375rem;
+  margin-bottom: var(--space-sm);
+}
+
+.composer__quick-label {
+  margin-top: var(--space-sm);
+  font-size: 0.8125rem;
+  color: var(--dan-ink-muted);
 }
 
 .type-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.type-chip--quiet {
+  min-height: 36px;
+  font-weight: 600;
+  color: var(--dan-ink-secondary);
+  background: transparent;
 }

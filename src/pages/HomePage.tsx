@@ -14,20 +14,20 @@ const TYPES: DemandType[] = ["BUY", "BORROW", "TASK", "SERVICE"];
 
 export function HomePage() {
   const { demandFeed } = useDan();
-  const featured = demandFeed.slice(0, 8);
+  const featured = demandFeed.slice(0, 6);
 
   return (
     <div className="page-stack home-page">
       <section className="composer">
         <h1 className="composer__title">{ko.composerTitle}</h1>
         <p className="composer__hint">{ko.composerHint}</p>
-        <p className="section-desc">{ko.homeCtaHint}</p>
         <Button to="/create" fullWidth size="lg">
           {ko.homeCta}
         </Button>
-        <div className="type-row" aria-label="demand types">
+        <p className="composer__quick-label">{ko.homeQuickHint}</p>
+        <div className="type-row" aria-label="빠른 유형 선택">
           {TYPES.map((type) => (
-            <Link key={type} to={`/create?type=${type}`} className="type-chip">
+            <Link key={type} to={`/create?type=${type}`} className="type-chip type-chip--quiet">
               {DEMAND_TYPE_LABEL[type]}
             </Link>
           ))}
@@ -37,7 +37,6 @@ export function HomePage() {
       <section className="section-stack">
         <div className="section-head">
           <h2 className="section-title">{ko.feedNowTitle}</h2>
-          <p className="section-desc">{ko.feedNowDesc}</p>
         </div>
         {featured.length === 0 ? (
           <EmptyState

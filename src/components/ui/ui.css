@@ -115,6 +115,7 @@
   border: 1px solid var(--dan-border-strong);
   border-radius: var(--radius-md);
   background: var(--dan-surface);
+  font-size: 16px;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -159,10 +160,24 @@
 
 .dan-empty {
   text-align: center;
-  padding: var(--space-xxxl) var(--space-lg);
-  border: 1px dashed var(--dan-border-strong);
-  border-radius: var(--radius-xl);
-  background: var(--dan-surface);
+  padding: var(--space-xxl) var(--space-lg);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.dan-empty__icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto var(--space-md);
+  border-radius: 16px;
+  background: var(--dan-bg-elevated);
+  color: var(--dan-ink-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 700;
 }
 
 .dan-empty__title {

@@ -1,8 +1,16 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { Link, useParams } from "react-router-dom";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import type { ChatMessage } from "@/domain/types";
@@ -10,8 +18,22 @@ import "./pages.css";
 
 const POLL_MS = 8000;
 
+function dayKey(iso: string) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function dayLabel(iso: string) {
+  return new Date(iso).toLocaleDateString("ko-KR", {
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+  });
+}
+
 export function MatchChatPage() {
   const { matchId = "" } = useParams();
+  const navigate = useNavigate();
   const {
     myMatches,
     getDemand,
@@ -44,6 +66,9 @@ export function MatchChatPage() {
     "spam" | "fraud" | "abuse" | "other"
   >("spam");
   const [toast, setToast] = useState<string | null>(null);
+  const threadRef = useRef<HTMLDivElement>(null);
+
+  useDeepHeader({ hide: true });
 
   const load = useCallback(async () => {
     if (!matchId) return;
@@ -81,7 +106,19 @@ export function MatchChatPage() {
     };
   }, [getPublicProfile, peerId]);
 
+  useEffect(() => {
+    const el = threadRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [messages, loading]);
+
   const demandTitle = useMemo(() => demand?.title ?? ko.chatTitle, [demand]);
+  const displayPeer = peerName || "상대";
+
+  function goBack() {
+    if (window.history.length > 1) navigate(-1);
+    else navigate("/my");
+  }
 
   if (!match || match.status !== "CONNECTED") {
     return (
@@ -107,20 +144,31 @@ export function MatchChatPage() {
     await load();
   }
 
+  let lastDay = "";
+
   return (
     <div className="chat-page page-narrow">
       <header className="chat-page__header">
+        <button
+          type="button"
+          className="chat-page__back"
+          aria-label="뒤로가기"
+          onClick={goBack}
+        >
+          ←
+        </button>
+        <span className="avatar-initial avatar-initial--sm" aria-hidden>
+          {displayPeer.slice(0, 1)}
+        </span>
         <div className="chat-page__identity">
-          <h1 className="page-title">
+          <h1 className="chat-page__name">
             {peerId ? (
-              <Link to={`/profile/${peerId}`} className="text-link">
-                {(peerName || "상대") + ko.chatWith}
-              </Link>
+              <Link to={`/profile/${peerId}`}>{displayPeer}</Link>
             ) : (
-              ko.chatTitle
+              displayPeer
             )}
           </h1>
-          <p className="section-desc">{demandTitle}</p>
+          <p className="chat-page__demand">{demandTitle}</p>
         </div>
         {peerId ? (
           <div className="chat-menu">
@@ -164,25 +212,34 @@ export function MatchChatPage() {
       {error ? <p className="form-error">{error}</p> : null}
       {toast ? <p className="section-desc">{toast}</p> : null}
 
-      <div className="chat-thread" aria-live="polite">
+      <div className="chat-thread" ref={threadRef} aria-live="polite">
         {loading ? <p className="muted">{ko.loadingChat}</p> : null}
         {!loading && messages.length === 0 ? (
           <p className="section-desc">{ko.chatEmpty}</p>
         ) : null}
         {messages.map((m) => {
           const mine = m.senderId === currentUser?.id;
+          const key = dayKey(m.createdAt);
+          const showSep = key !== lastDay;
+          lastDay = key;
           return (
-            <div
-              key={m.id}
-              className={mine ? "chat-bubble chat-bubble--mine" : "chat-bubble"}
-            >
-              <p>{m.body}</p>
-              <time dateTime={m.createdAt}>
-                {new Date(m.createdAt).toLocaleTimeString("ko-KR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </time>
+            <div key={m.id} className="chat-thread__item">
+              {showSep ? (
+                <div className="chat-day-sep">
+                  <span>{dayLabel(m.createdAt)}</span>
+                </div>
+              ) : null}
+              <div
+                className={mine ? "chat-bubble chat-bubble--mine" : "chat-bubble"}
+              >
+                <p>{m.body}</p>
+                <time dateTime={m.createdAt}>
+                  {new Date(m.createdAt).toLocaleTimeString("ko-KR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </time>
+              </div>
             </div>
           );
         })}

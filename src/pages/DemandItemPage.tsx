@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
@@ -34,6 +35,9 @@ export function DemandItemPage() {
     getPublicProfile,
   } = useDan();
   const demand = getDemand(demandId);
+  useDeepHeader({
+    title: demand?.title ?? ko.viewDemand,
+  });
   const [composerOpen, setComposerOpen] = useState(false);
   const [offerPrice, setOfferPrice] = useState("");
   const [availability, setAvailability] = useState("");
@@ -136,7 +140,6 @@ export function DemandItemPage() {
             ? ` · ${demand.status === "CLOSED" ? ko.statusClosed : ko.statusMatched}`
             : ""}
         </p>
-        <h1 className="page-title">{demand.title}</h1>
         <p className="section-desc">{ko.demandFirstLead}</p>
         <p className="section-desc">{demand.description}</p>
       </header>

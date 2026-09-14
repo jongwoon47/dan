@@ -33,11 +33,11 @@ export default function App() {
       <DataProvider>
         <BrowserRouter>
           <Routes>
+            <Route path="login" element={<LoginPage />} />
             <Route element={<AppShell />}>
               <Route index element={<HomePage />} />
               <Route path="feed" element={<DemandFeedPage />} />
               <Route path="create" element={<CreateDemandPage />} />
-              <Route path="login" element={<LoginPage />} />
               <Route path="activity" element={<ActivityPage />} />
               <Route path="profile/:userId" element={<ProfilePage />} />
               <Route path="match/:matchId" element={<MatchChatPage />} />

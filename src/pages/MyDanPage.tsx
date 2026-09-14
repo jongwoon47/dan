@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { MatchList } from "@/components/MatchCard";
 import { Button } from "@/components/ui/Button";
@@ -21,6 +21,38 @@ function demandHref(d: { id: string; type: string }) {
   return `/demand/item/${d.id}`;
 }
 
+function RowLink({
+  to,
+  title,
+  meta,
+  trailing,
+  leading,
+}: {
+  to: string;
+  title: string;
+  meta?: string;
+  trailing?: ReactNode;
+  leading?: ReactNode;
+}) {
+  return (
+    <Link to={to} className="app-row">
+      {leading ? <span className="app-row__leading">{leading}</span> : null}
+      <span className="app-row__body">
+        <strong>{title}</strong>
+        {meta ? <span className="app-row__meta">{meta}</span> : null}
+      </span>
+      {trailing ? <span className="app-row__trail">{trailing}</span> : null}
+      <span className="app-row__chevron" aria-hidden>
+        ›
+      </span>
+    </Link>
+  );
+}
+
+function initialOf(name: string) {
+  return (name.trim().slice(0, 1) || "?").toUpperCase();
+}
+
 export function MyDanPage() {
   const {
     isLoggedIn,
@@ -41,6 +73,7 @@ export function MyDanPage() {
   } = useDan();
   const dataMode = getDataMode();
   const [peerNames, setPeerNames] = useState<Record<string, string>>({});
+  const [vaultOpen, setVaultOpen] = useState(false);
 
   const connected = myMatches.filter((m) => m.status === "CONNECTED");
   const peerKey = useMemo(
@@ -150,7 +183,6 @@ export function MyDanPage() {
             <Link to={`/profile/${currentUser?.id}`} className="text-link">
               {currentUser?.name}
             </Link>
-            {ko.myDescSuffix}
           </p>
         </div>
         <Button to="/activity" variant="secondary" size="sm">
@@ -160,20 +192,20 @@ export function MyDanPage() {
       </header>
 
       <section className="section-stack">
-        <h2 className="section-title">{ko.myNow}</h2>
+        <h2 className="section-title">{ko.attentionTitle}</h2>
         {nowItems.length === 0 ? (
           <p className="section-desc">{ko.activityEmpty}</p>
         ) : (
-          <ul className="signal-list">
+          <div className="app-row-list">
             {nowItems.map((item) => (
-              <li key={item.key}>
-                <Link to={item.to}>
-                  <strong>{item.text}</strong>
-                  {item.sub ? <span className="muted"> · {item.sub}</span> : null}
-                </Link>
-              </li>
+              <RowLink
+                key={item.key}
+                to={item.to}
+                title={item.text}
+                meta={item.sub}
+              />
             ))}
-          </ul>
+          </div>
         )}
       </section>
 
@@ -187,32 +219,42 @@ export function MyDanPage() {
             </Link>
           </p>
         ) : (
-          activeDemands.map((d) => (
-            <Link key={d.id} className="simple-row" to={demandHref(d)}>
-              <strong>{d.title}</strong>
-              <span>{formatWon(d.budget)}</span>
-            </Link>
-          ))
+          <div className="app-row-list">
+            {activeDemands.map((d) => (
+              <RowLink
+                key={d.id}
+                to={demandHref(d)}
+                title={d.title}
+                meta={ko.statusActive}
+                trailing={d.budget > 0 ? formatWon(d.budget) : undefined}
+              />
+            ))}
+          </div>
         )}
       </section>
 
       <section className="section-stack" id="connections">
         <h2 className="section-title">{ko.connectedPeople}</h2>
         {connected.length > 0 ? (
-          <div className="section-stack">
+          <div className="app-row-list">
             {connected.map((m) => {
               const peerId =
                 currentUser?.id === m.buyerId ? m.sellerId : m.buyerId;
               const demand = getDemand(m.demandId);
               const peer = peerNames[peerId] ?? "상대";
               return (
-                <Link key={m.id} className="simple-row" to={`/match/${m.id}`}>
-                  <strong>
-                    {peer}
-                    {demand?.title ? ` · ${demand.title}` : ""}
-                  </strong>
-                  <span>{ko.openChat}</span>
-                </Link>
+                <RowLink
+                  key={m.id}
+                  to={`/match/${m.id}`}
+                  title={peer}
+                  meta={demand?.title}
+                  leading={
+                    <span className="avatar-initial" aria-hidden>
+                      {initialOf(peer)}
+                    </span>
+                  }
+                  trailing={ko.openChat}
+                />
               );
             })}
           </div>
@@ -222,45 +264,57 @@ export function MyDanPage() {
         />
       </section>
 
-      <details className="my-vault">
-        <summary>{ko.myVault}</summary>
-        <div className="section-stack">
-          <h3 className="section-title">{ko.myItems}</h3>
-          {myOwnerships.length === 0 ? (
-            <p className="section-desc">{ko.missingOwnBody}</p>
-          ) : (
-            myOwnerships.map((o) => {
-              const product = getProduct(o.productId);
-              const sell = mySellIntents.find(
-                (s) => s.ownershipId === o.id && s.status === "OPEN",
-              );
-              return (
-                <div key={o.id} className="simple-row">
-                  <strong>{product?.name ?? o.productId}</strong>
-                  <Link to={`/ownership/${o.id}/sell-intent`}>
-                    {sell ? formatWon(sell.minimumPrice) : ko.sellCta}
-                  </Link>
-                </div>
-              );
-            })
-          )}
-          <h3 className="section-title">{ko.myResponses}</h3>
-          {openResponses.length === 0 ? (
-            <p className="section-desc">{ko.noMatchBody}</p>
-          ) : (
-            openResponses.map((r) => (
-              <Link
-                key={r.id}
-                className="simple-row"
-                to={`/demand/item/${r.demandId}`}
-              >
-                <strong>{r.message}</strong>
-                <span>{responseLabel(r.status)}</span>
-              </Link>
-            ))
-          )}
-        </div>
-      </details>
+      <section className="section-stack">
+        <button
+          type="button"
+          className="disclosure-row"
+          aria-expanded={vaultOpen}
+          onClick={() => setVaultOpen((v) => !v)}
+        >
+          <span>{ko.myVault}</span>
+          <span aria-hidden>{vaultOpen ? "∧" : "›"}</span>
+        </button>
+        {vaultOpen ? (
+          <div className="section-stack vault-panel">
+            <h3 className="section-title">{ko.myItems}</h3>
+            {myOwnerships.length === 0 ? (
+              <p className="section-desc">{ko.missingOwnBody}</p>
+            ) : (
+              myOwnerships.map((o) => {
+                const product = getProduct(o.productId);
+                const sell = mySellIntents.find(
+                  (s) => s.ownershipId === o.id && s.status === "OPEN",
+                );
+                return (
+                  <RowLink
+                    key={o.id}
+                    to={`/ownership/${o.id}/sell-intent`}
+                    title={product?.name ?? o.productId}
+                    trailing={
+                      sell && sell.minimumPrice > 0
+                        ? formatWon(sell.minimumPrice)
+                        : ko.sellCta
+                    }
+                  />
+                );
+              })
+            )}
+            <h3 className="section-title">{ko.myResponses}</h3>
+            {openResponses.length === 0 ? (
+              <p className="section-desc">{ko.noMatchBody}</p>
+            ) : (
+              openResponses.map((r) => (
+                <RowLink
+                  key={r.id}
+                  to={`/demand/item/${r.demandId}`}
+                  title={r.message || ko.respondCta}
+                  trailing={responseLabel(r.status)}
+                />
+              ))
+            )}
+          </div>
+        ) : null}
+      </section>
 
       {dataMode === "demo" ? (
         <Button variant="ghost" onClick={resetDemo}>

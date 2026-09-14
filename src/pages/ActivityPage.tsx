@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import type { ActivityEvent, Demand } from "@/domain/types";
 import { getDataMode } from "@/data/mode";
-import { formatWon } from "@/lib/format";
+import { formatRelativeTime, formatWon } from "@/lib/format";
 import "./pages.css";
 
 function kindVerb(kind: ActivityEvent["kind"]) {
@@ -26,7 +27,7 @@ function kindVerb(kind: ActivityEvent["kind"]) {
     case "DEMAND_CLOSED":
       return "요청이 마감됐어요";
     default:
-      return kind;
+      return "알림이 있어요";
   }
 }
 
@@ -55,6 +56,10 @@ export function ActivityPage() {
   } = useDan();
   const dataMode = getDataMode();
   const [names, setNames] = useState<Record<string, string>>({});
+
+  useDeepHeader({
+    title: ko.activityTitle,
+  });
 
   useEffect(() => {
     if (isLoggedIn) void refreshActivities();
@@ -106,23 +111,19 @@ export function ActivityPage() {
 
   return (
     <div className="page-stack page-narrow">
-      <header className="page-header page-header--row">
-        <div>
-          <h1 className="page-title">{ko.activityTitle}</h1>
-        </div>
-        {unreadActivityCount > 0 ? (
-          <Button
-            size="sm"
-            variant="secondary"
+      {unreadActivityCount > 0 ? (
+        <div className="section-toolbar">
+          <button
+            type="button"
+            className="text-link text-link--muted"
             onClick={() => void markActivityRead()}
           >
             {ko.markAllRead}
-          </Button>
-        ) : null}
-      </header>
-
+          </button>
+        </div>
+      ) : null}
       {activities.length === 0 ? (
-        <p className="section-desc">{ko.activityEmpty}</p>
+        <EmptyState title={ko.activityEmpty} />
       ) : (
         <ul className="activity-list">
           {activities.map((ev) => {
@@ -143,13 +144,14 @@ export function ActivityPage() {
               : kindVerb(ev.kind);
             const bits = [
               demand?.title,
-              response?.offeredPrice != null
+              response?.offeredPrice != null && response.offeredPrice > 0
                 ? formatWon(response.offeredPrice)
-                : demand?.type === "BUY"
+                : demand?.type === "BUY" && demand.budget > 0
                   ? formatWon(demand.budget)
                   : null,
               response?.availabilityText,
             ].filter(Boolean);
+            const initial = (actor ?? "·").slice(0, 1);
 
             return (
               <li key={ev.id} className={ev.readAt ? undefined : "is-unread"}>
@@ -158,21 +160,21 @@ export function ActivityPage() {
                   onClick={() => void markActivityRead(ev.id)}
                 >
                   <span className="activity-list__avatar" aria-hidden>
-                    {(actor ?? "알").slice(0, 1)}
+                    {actor ? initial : "●"}
                   </span>
                   <span className="activity-list__main">
                     <strong>{title}</strong>
                     {bits.length ? (
-                      <span className="activity-list__meta">{bits.join(" · ")}</span>
+                      <span className="activity-list__meta">
+                        {bits.join(" · ")}
+                      </span>
                     ) : null}
                   </span>
                   <span className="activity-list__time">
-                    {new Date(ev.createdAt).toLocaleString("ko-KR", {
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {!ev.readAt ? (
+                      <span className="activity-list__dot" aria-label="안 읽음" />
+                    ) : null}
+                    {formatRelativeTime(ev.createdAt)}
                   </span>
                 </Link>
               </li>

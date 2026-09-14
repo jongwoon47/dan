@@ -21,7 +21,13 @@ import {
   type CreateDraft,
 } from "@/lib/createDraft";
 import { fromDatetimeLocalValue, isBorrowRangeValid, isDatetimeLocalNotPast } from "@/lib/datetime";
-import { budgetLabelForType } from "@/lib/format";
+import {
+  budgetLabelForType,
+  digitsOnly,
+  formatDigitsGrouped,
+  formatPriceThought,
+  parseMoneyInput,
+} from "@/lib/format";
 import { findProductByMatchKey, productMatchKey } from "@/domain/productName";
 import "./pages.css";
 import "@/components/feedCards.css";
@@ -39,6 +45,33 @@ function parseType(raw: string | null): DemandType | null {
   return null;
 }
 
+function MoneyInput({
+  value,
+  onChange,
+  label,
+  hint,
+  placeholder,
+}: {
+  value: string;
+  onChange: (digits: string) => void;
+  label: string;
+  hint?: string;
+  placeholder?: string;
+}) {
+  const thought = formatPriceThought(parseMoneyInput(value));
+  return (
+    <Field label={label} hint={hint}>
+      <TextInput
+        inputMode="numeric"
+        value={formatDigitsGrouped(value)}
+        onChange={(e) => onChange(digitsOnly(e.target.value))}
+        placeholder={placeholder}
+      />
+      {thought ? <p className="price-thought">{thought}</p> : null}
+    </Field>
+  );
+}
+
 export function CreateDemandPage() {
   const { products, createDemand, ensureProduct, currentUser, isLoggedIn } = useDan();
   const navigate = useNavigate();
@@ -53,8 +86,12 @@ export function CreateDemandPage() {
   const [productId, setProductId] = useState(draft?.productId ?? "");
   const [productQuery, setProductQuery] = useState(draft?.productQuery ?? "");
   const [suggestOpen, setSuggestOpen] = useState(false);
-  const [maxPrice, setMaxPrice] = useState(draft?.maxPrice ?? "1000000");
-  const [budget, setBudget] = useState(draft?.budget ?? "20000");
+  const [maxPrice, setMaxPrice] = useState(
+    draft?.maxPrice && draft.maxPrice !== "1000000" ? draft.maxPrice : "",
+  );
+  const [budget, setBudget] = useState(
+    draft?.budget && draft.budget !== "20000" ? draft.budget : "",
+  );
   const [condition, setCondition] = useState<ConditionPreference>(
     draft?.condition ?? "any",
   );
@@ -152,9 +189,7 @@ export function CreateDemandPage() {
   ]);
 
   const selected = products.find((p) => p.id === productId);
-  const price = Number(
-    ((type === "BUY" ? maxPrice : budget) || "0").replace(/,/g, ""),
-  );
+  const price = type === "BUY" ? parseMoneyInput(maxPrice) : parseMoneyInput(budget);
 
   const suggestions = useMemo(() => {
     const q = productQuery.trim();
@@ -368,29 +403,31 @@ export function CreateDemandPage() {
       setSubmitting(false);
     }
   }
+
   return (
     <div className="page-stack page-narrow create-page">
-      <header className="page-header">
-        <h1 className="page-title">{ko.createTitle}</h1>
-        <p className="section-desc">{ko.createDesc}</p>
-      </header>
+      <section className="create-page__body section-stack">
+        <h2 className="section-title">
+          {phase === 1 ? ko.whatNeeded : "어디서 · 언제 필요하세요?"}
+        </h2>
 
-      <section className="section-stack create-panel">
-        <h2 className="section-title">{ko.whatNeeded}</h2>
-        <ChipGroup>
+        <div className="type-segment" role="radiogroup" aria-label="요청 유형">
           {TYPES.map((t) => (
-            <Chip
+            <button
               key={t}
-              selected={type === t}
+              type="button"
+              role="radio"
+              aria-checked={type === t}
+              className={type === t ? "type-segment__btn is-selected" : "type-segment__btn"}
               onClick={() => {
                 setType(t);
                 setPhase(1);
               }}
             >
               {DEMAND_TYPE_LABEL[t]}
-            </Chip>
+            </button>
           ))}
-        </ChipGroup>
+        </div>
 
         {!type ? (
           <p className="section-desc">{ko.pickDemandType}</p>
@@ -403,13 +440,15 @@ export function CreateDemandPage() {
 
             {phase === 1 ? (
               <>
-                <Field label={ko.titleLabel}>
-                  <TextInput
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder={ko.composerPlaceholder}
-                  />
-                </Field>
+                {type !== "BUY" ? (
+                  <Field label={ko.titleLabel}>
+                    <TextInput
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder={ko.composerPlaceholder}
+                    />
+                  </Field>
+                ) : null}
 
                 {type === "BUY" ? (
                   <>
@@ -456,49 +495,66 @@ export function CreateDemandPage() {
                         </ul>
                       ) : null}
                     </div>
-                    <Field label={ko.maxPrice} hint={ko.maxPriceHint}>
-                      <TextInput
-                        inputMode="numeric"
-                        value={maxPrice}
-                        onChange={(e) => setMaxPrice(e.target.value.replace(/[^\d]/g, ""))}
-                      />
-                    </Field>
+                    <MoneyInput
+                      label={ko.maxPrice}
+                      hint={ko.maxPriceHint}
+                      value={maxPrice}
+                      onChange={setMaxPrice}
+                      placeholder="예: 800,000"
+                    />
+                    <div>
+                      <p className="field-inline-label">{ko.condition}</p>
+                      <ChipGroup>
+                        {CONDITIONS.map((c) => (
+                          <Chip
+                            key={c}
+                            selected={condition === c}
+                            onClick={() => setCondition(c)}
+                          >
+                            {CONDITION_LABEL[c]}
+                          </Chip>
+                        ))}
+                      </ChipGroup>
+                    </div>
                   </>
                 ) : null}
 
                 {type === "BORROW" ? (
                   <>
                     <Field label={ko.itemName}>
-                      <TextInput value={itemName} onChange={(e) => setItemName(e.target.value)} />
-                    </Field>
-                    <Field label={budgetLabelForType(type)} hint={ko.borrowBudgetHint}>
                       <TextInput
-                        inputMode="numeric"
-                        value={budget}
-                        onChange={(e) => setBudget(e.target.value.replace(/[^\d]/g, ""))}
+                        value={itemName}
+                        onChange={(e) => setItemName(e.target.value)}
+                        placeholder="예: 캠핑 텐트"
                       />
                     </Field>
+                    <MoneyInput
+                      label={budgetLabelForType(type)}
+                      hint={ko.borrowBudgetHint}
+                      value={budget}
+                      onChange={setBudget}
+                      placeholder="예: 30,000"
+                    />
                   </>
                 ) : null}
 
                 {type === "TASK" || type === "SERVICE" ? (
                   <>
                     <Field label={ko.descLabel}>
-                      <TextInput value={detail} onChange={(e) => setDetail(e.target.value)} />
-                    </Field>
-                    <Field label={budgetLabelForType(type)}>
                       <TextInput
-                        inputMode="numeric"
-                        value={budget}
-                        onChange={(e) => setBudget(e.target.value.replace(/[^\d]/g, ""))}
+                        value={detail}
+                        onChange={(e) => setDetail(e.target.value)}
+                        placeholder="예: 평택역에서 짐 옮겨주세요"
                       />
                     </Field>
+                    <MoneyInput
+                      label={budgetLabelForType(type)}
+                      value={budget}
+                      onChange={setBudget}
+                      placeholder="예: 20,000"
+                    />
                   </>
                 ) : null}
-
-                <Button fullWidth size="lg" disabled={!canCore} onClick={() => setPhase(2)}>
-                  {ko.stepNext}
-                </Button>
               </>
             ) : null}
 
@@ -507,22 +563,18 @@ export function CreateDemandPage() {
                 {type === "BUY" ? (
                   <>
                     <div>
-                      <p className="field-inline-label">{ko.condition}</p>
-                      <ChipGroup>
-                        {CONDITIONS.map((c) => (
-                          <Chip key={c} selected={condition === c} onClick={() => setCondition(c)}>
-                            {CONDITION_LABEL[c]}
-                          </Chip>
-                        ))}
-                      </ChipGroup>
-                    </div>
-                    <div>
                       <p className="field-inline-label">{ko.tradeMethod}</p>
                       <ChipGroup>
-                        <Chip selected={buyShipping} onClick={() => setBuyShipping((v) => !v)}>
+                        <Chip
+                          selected={buyShipping}
+                          onClick={() => setBuyShipping((v) => !v)}
+                        >
                           {ko.buyShippingOpt}
                         </Chip>
-                        <Chip selected={buyMeetup} onClick={() => setBuyMeetup((v) => !v)}>
+                        <Chip
+                          selected={buyMeetup}
+                          onClick={() => setBuyMeetup((v) => !v)}
+                        >
                           {ko.buyMeetupOpt}
                         </Chip>
                       </ChipGroup>
@@ -563,43 +615,72 @@ export function CreateDemandPage() {
                       />
                     </Field>
                     <Field label={ko.descLabel}>
-                      <TextInput value={detail} onChange={(e) => setDetail(e.target.value)} />
+                      <TextInput
+                        value={detail}
+                        onChange={(e) => setDetail(e.target.value)}
+                      />
                     </Field>
                   </>
                 ) : null}
 
                 {type === "TASK" ? (
-                  <div>
-                    <p className="field-inline-label">{ko.fulfillHow}</p>
-                    <ChipGroup>
-                      <Chip selected={taskMode === "onsite"} onClick={() => setTaskMode("onsite")}>
-                        {ko.taskModeOnsite}
-                      </Chip>
-                      <Chip selected={taskMode === "pickup"} onClick={() => setTaskMode("pickup")}>
-                        {ko.taskModePickup}
-                      </Chip>
-                      <Chip selected={taskMode === "route"} onClick={() => setTaskMode("route")}>
-                        {ko.taskModeRoute}
-                      </Chip>
-                      <Chip selected={taskMode === "remote"} onClick={() => setTaskMode("remote")}>
-                        {ko.taskModeRemote}
-                      </Chip>
-                    </ChipGroup>
+                  <div className="section-stack">
+                    <div>
+                      <p className="field-inline-label">{ko.fulfillHow}</p>
+                      <ChipGroup>
+                        <Chip
+                          selected={taskMode === "onsite"}
+                          onClick={() => setTaskMode("onsite")}
+                        >
+                          {ko.taskModeOnsite}
+                        </Chip>
+                        <Chip
+                          selected={taskMode === "pickup"}
+                          onClick={() => setTaskMode("pickup")}
+                        >
+                          {ko.taskModePickup}
+                        </Chip>
+                        <Chip
+                          selected={taskMode === "route"}
+                          onClick={() => setTaskMode("route")}
+                        >
+                          {ko.taskModeRoute}
+                        </Chip>
+                        <Chip
+                          selected={taskMode === "remote"}
+                          onClick={() => setTaskMode("remote")}
+                        >
+                          {ko.taskModeRemote}
+                        </Chip>
+                      </ChipGroup>
+                    </div>
                     {taskMode === "route" ? (
                       <div className="route-fields">
                         <Field label={ko.taskRouteFrom}>
-                          <TextInput value={routeFrom} onChange={(e) => setRouteFrom(e.target.value)} />
+                          <TextInput
+                            value={routeFrom}
+                            onChange={(e) => setRouteFrom(e.target.value)}
+                            placeholder={ko.placePh}
+                          />
                         </Field>
                         <span className="route-arrow" aria-hidden>
                           {ko.routeArrow}
                         </span>
                         <Field label={ko.taskRouteTo}>
-                          <TextInput value={routeTo} onChange={(e) => setRouteTo(e.target.value)} />
+                          <TextInput
+                            value={routeTo}
+                            onChange={(e) => setRouteTo(e.target.value)}
+                            placeholder={ko.placePh}
+                          />
                         </Field>
                       </div>
                     ) : null}
                     {taskMode === "onsite" || taskMode === "pickup" ? (
-                      <Field label={taskMode === "pickup" ? ko.taskPickupPlace : ko.taskPlace}>
+                      <Field
+                        label={
+                          taskMode === "pickup" ? ko.taskPickupPlace : ko.taskPlace
+                        }
+                      >
                         <TextInput
                           value={taskPlace}
                           onChange={(e) => setTaskPlace(e.target.value)}
@@ -618,16 +699,24 @@ export function CreateDemandPage() {
                 ) : null}
 
                 {type === "SERVICE" ? (
-                  <div>
-                    <p className="field-inline-label">{ko.fulfillHow}</p>
-                    <ChipGroup>
-                      <Chip selected={serviceMode === "onsite"} onClick={() => setServiceMode("onsite")}>
-                        {ko.serviceOnsite}
-                      </Chip>
-                      <Chip selected={serviceMode === "remote"} onClick={() => setServiceMode("remote")}>
-                        {ko.serviceRemote}
-                      </Chip>
-                    </ChipGroup>
+                  <div className="section-stack">
+                    <div>
+                      <p className="field-inline-label">{ko.fulfillHow}</p>
+                      <ChipGroup>
+                        <Chip
+                          selected={serviceMode === "onsite"}
+                          onClick={() => setServiceMode("onsite")}
+                        >
+                          {ko.serviceOnsite}
+                        </Chip>
+                        <Chip
+                          selected={serviceMode === "remote"}
+                          onClick={() => setServiceMode("remote")}
+                        >
+                          {ko.serviceRemote}
+                        </Chip>
+                      </ChipGroup>
+                    </div>
                     {serviceMode === "onsite" ? (
                       <Field label={ko.servicePlace}>
                         <TextInput
@@ -650,29 +739,39 @@ export function CreateDemandPage() {
                 {formError || scheduleError ? (
                   <p className="form-error">{formError ?? scheduleError}</p>
                 ) : null}
-
-                <div className="action-row">
-                  <Button variant="secondary" fullWidth onClick={() => setPhase(1)}>
-                    {ko.stepPrev}
-                  </Button>
-                  <Button
-                    fullWidth
-                    size="lg"
-                    onClick={() => void submit()}
-                    disabled={!canSubmit || submitting}
-                  >
-                    {submitting
-                      ? ko.saving
-                      : isLoggedIn
-                        ? ko.submitDemand
-                        : ko.submitNeedLogin}
-                  </Button>
-                </div>
               </>
             ) : null}
           </>
         )}
       </section>
+
+      {type ? (
+        <div className="create-page__footer">
+          {phase === 1 ? (
+            <Button fullWidth size="lg" disabled={!canCore} onClick={() => setPhase(2)}>
+              {ko.stepNext}
+            </Button>
+          ) : (
+            <div className="action-row create-page__actions">
+              <Button variant="secondary" fullWidth onClick={() => setPhase(1)}>
+                {ko.stepPrev}
+              </Button>
+              <Button
+                fullWidth
+                size="lg"
+                onClick={() => void submit()}
+                disabled={!canSubmit || submitting}
+              >
+                {submitting
+                  ? ko.saving
+                  : isLoggedIn
+                    ? ko.submitDemand
+                    : ko.submitNeedLogin}
+              </Button>
+            </div>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

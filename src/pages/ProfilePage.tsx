@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import type { PublicProfile } from "@/domain/types";
@@ -25,11 +26,16 @@ export function ProfilePage() {
   const [area, setArea] = useState("");
   const [bio, setBio] = useState("");
   const [confirm, setConfirm] = useState<"block" | "report" | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [reportReason, setReportReason] = useState<
     "spam" | "fraud" | "abuse" | "other"
   >("spam");
   const [toast, setToast] = useState<string | null>(null);
   const isSelf = currentUser?.id === userId;
+
+  useDeepHeader({
+    title: profile?.displayName ?? ko.profileTitle,
+  });
 
   useEffect(() => {
     let alive = true;
@@ -87,17 +93,59 @@ export function ProfilePage() {
     }
   }
 
+  const initial = (profile.displayName.trim().slice(0, 1) || "?").toUpperCase();
+
   return (
-    <div className="page-stack">
-      <header className="page-header">
-        <h1 className="page-title">{profile.displayName}</h1>
+    <div className="page-stack page-narrow profile-page">
+      {!isSelf ? (
+        <div className="profile-menu-wrap">
+          <button
+            type="button"
+            className="chat-menu__trigger"
+            aria-label={ko.moreActions}
+            onClick={() => setMenuOpen((v) => !v)}
+          >
+            ⋯
+          </button>
+          {menuOpen ? (
+            <div className="chat-menu__panel" role="menu">
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setConfirm("block");
+                }}
+              >
+                {ko.block}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setConfirm("report");
+                }}
+              >
+                {ko.report}
+              </button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      <section className="profile-identity">
+        <span className="avatar-initial avatar-initial--lg" aria-hidden>
+          {initial}
+        </span>
+        <h2 className="profile-identity__name">{profile.displayName}</h2>
         <p className="section-desc">
-          {profile.defaultArea || "—"}
+          {profile.defaultArea || ko.profileArea}
           {" · "}
           {ko.profileConnections} {profile.connectionCount}
           {ko.timesSuffix}
         </p>
-      </header>
+      </section>
 
       {toast ? <p className="section-desc">{toast}</p> : null}
 
@@ -105,10 +153,15 @@ export function ProfilePage() {
         <form className="composer-sheet" onSubmit={(e) => void onSave(e)}>
           <label className="field">
             <span>{ko.displayName}</span>
-            <input value={name} onChange={(e) => setName(e.target.value)} required />
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              maxLength={20}
+            />
           </label>
           <label className="field">
-            <span>{ko.defaultAreaHint}</span>
+            <span>{ko.profileArea}</span>
             <input value={area} onChange={(e) => setArea(e.target.value)} />
           </label>
           <label className="field">
@@ -121,15 +174,13 @@ export function ProfilePage() {
             />
           </label>
           <Button type="submit" disabled={busy}>
-            {busy ? ko.saving : ko.saveDemand}
+            {busy ? ko.saving : ko.profileSave}
           </Button>
         </form>
       ) : (
         <>
-          <p className="section-desc">
-            {profile.bio || "아직 소개가 없어요."}
-          </p>
-          <p className="muted">
+          <p className="section-desc">{profile.bio || ko.emptyBio}</p>
+          <p className="muted profile-joined">
             {ko.profileJoined}{" "}
             {new Date(profile.createdAt).toLocaleDateString("ko-KR")}
           </p>
@@ -137,16 +188,7 @@ export function ProfilePage() {
             <Button variant="secondary" onClick={() => setEditing(true)}>
               {ko.profileEdit}
             </Button>
-          ) : (
-            <div className="action-row">
-              <Button variant="secondary" onClick={() => setConfirm("block")}>
-                {ko.block}
-              </Button>
-              <Button variant="secondary" onClick={() => setConfirm("report")}>
-                {ko.report}
-              </Button>
-            </div>
-          )}
+          ) : null}
         </>
       )}
 

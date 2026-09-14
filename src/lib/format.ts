@@ -6,6 +6,46 @@ export function formatWon(value: number): string {
   return `${value.toLocaleString("ko-KR")}${ko.won}`;
 }
 
+/** Digits-only storage ↔ comma display for price inputs. */
+export function digitsOnly(raw: string): string {
+  return raw.replace(/[^\d]/g, "");
+}
+
+export function formatDigitsGrouped(digits: string): string {
+  if (!digits) return "";
+  const n = Number(digits);
+  if (!Number.isFinite(n)) return "";
+  return n.toLocaleString("ko-KR");
+}
+
+export function parseMoneyInput(raw: string): number {
+  const n = Number(digitsOnly(raw));
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** e.g. "최대 80만원까지 생각하고 있어요" */
+export function formatPriceThought(value: number): string {
+  if (!Number.isFinite(value) || value <= 0) return "";
+  return `최대 ${formatWonShort(value)}까지 생각하고 있어요`;
+}
+
+export function formatRelativeTime(iso: string, nowMs: number = Date.now()): string {
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return "";
+  const diff = nowMs - t;
+  if (diff < 45_000) return "방금";
+  if (diff < 3_600_000) return `${Math.max(1, Math.floor(diff / 60_000))}분 전`;
+  if (diff < 86_400_000) return `${Math.max(1, Math.floor(diff / 3_600_000))}시간 전`;
+  const day = new Date(t);
+  const yesterday = new Date(nowMs);
+  yesterday.setHours(0, 0, 0, 0);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const dayStart = new Date(day);
+  dayStart.setHours(0, 0, 0, 0);
+  if (dayStart.getTime() === yesterday.getTime()) return "어제";
+  return day.toLocaleDateString("ko-KR", { month: "long", day: "numeric" });
+}
+
 export function formatWonShort(value: number): string {
   if (value >= 10_000) {
     const man = value / 10_000;

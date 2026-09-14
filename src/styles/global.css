@@ -17,13 +17,13 @@
   --dan-danger: #b42318;
   --dan-success: #067647;
 
-  /* Spacing inspired by PAN density (4/8/12/16/20/28/40) */
+  /* Spacing rhythm: 4 / 8 / 12 / 16 / 24 / 32 / 40 */
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 12px;
   --space-lg: 16px;
-  --space-xl: 20px;
-  --space-xxl: 28px;
+  --space-xl: 24px;
+  --space-xxl: 32px;
   --space-xxxl: 40px;
 
   /* Radius inspired by PAN (10/12/16/22/28) */

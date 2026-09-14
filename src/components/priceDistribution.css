@@ -24,10 +24,17 @@
   overflow: hidden;
 }
 
+.price-dist__empty {
+  margin: 0;
+  color: var(--dan-ink-muted);
+  font-size: 0.875rem;
+}
+
 .price-dist__bar {
   height: 100%;
   border-radius: inherit;
   background: var(--dan-accent);
+  min-width: 0;
 }
 
 .price-dist__count {

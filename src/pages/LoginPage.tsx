@@ -60,14 +60,16 @@ export function LoginPage() {
   const shownError = localError || (error ? ko.genericError : null);
 
   return (
-    <div className="page-stack page-narrow" style={{ maxWidth: 420 }}>
-      <header className="page-header">
-        <h1 className="page-title">{isSignUp ? ko.signup : ko.login}</h1>
+    <div className="auth-screen">
+      <div className="auth-screen__brand">
+        <img src="/dan-logo.png" alt="" width={56} height={56} />
+        <p className="auth-screen__mark">DAN</p>
+        <h1 className="auth-screen__headline">{ko.authHeadline}</h1>
         <p className="section-desc">
           {isSignUp ? ko.signupLead : ko.loginLead}
           {next === "/create" ? ` ${ko.loginToContinue}` : ""}
         </p>
-      </header>
+      </div>
 
       <form className="section-stack" onSubmit={(e) => void onSubmit(e)}>
         {isSignUp ? (
@@ -76,6 +78,7 @@ export function LoginPage() {
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               autoComplete="nickname"
+              maxLength={20}
             />
           </Field>
         ) : null}
@@ -103,7 +106,7 @@ export function LoginPage() {
             {shownError}
           </p>
         ) : null}
-        <Button fullWidth type="submit" disabled={busy}>
+        <Button fullWidth type="submit" disabled={busy} size="lg">
           {busy ? ko.saving : isSignUp ? ko.createAccount : ko.login}
         </Button>
       </form>
@@ -119,7 +122,7 @@ export function LoginPage() {
       >
         {isSignUp ? ko.haveAccount : ko.needAccount}
       </button>
-      <Link to="/" className="text-link">
+      <Link to="/" className="text-link text-link--muted">
         {ko.goBack}
       </Link>
     </div>

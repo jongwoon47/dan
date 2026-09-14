@@ -2,8 +2,8 @@ import { Link, useParams } from "react-router-dom";
 import { PriceDistribution } from "@/components/PriceDistribution";
 import { ProductVisual, CategoryPill } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import { formatRelativeCount, formatWon, formatWonShort } from "@/lib/format";
@@ -24,6 +24,11 @@ export function DemandDetailPage() {
       d.details.productId === productId,
   );
 
+  useDeepHeader({
+    title: product?.name ?? ko.seekingOnly,
+    hide: !product,
+  });
+
   if (!product || !aggregate) {
     return (
       <EmptyState
@@ -34,62 +39,90 @@ export function DemandDetailPage() {
     );
   }
 
+  const showTrend = aggregate.recent7dDelta !== 0;
+  const showHighest = aggregate.highestIntentPrice > 0;
+  const showAvg = aggregate.avgPrice > 0;
+
   return (
-    <div className="page-stack page-narrow">
+    <div className="page-stack page-narrow detail-page">
       <section className="detail-top">
         <div className="detail-top__identity">
           <CategoryPill category={product.category} />
-          <h1 className="page-title">{product.name}</h1>
-          <p className="section-desc">{ko.demandFirstLead}</p>
           <p className="detail-hero__count">
-            <strong>
-              {aggregate.seekerCount}
-              {ko.myung}
-            </strong>
-            {ko.seekingDetailSuffix.replace(ko.myung, "")}
+            {aggregate.seekerCount > 0 ? (
+              <>
+                <strong>
+                  {aggregate.seekerCount}
+                  {ko.myung}
+                </strong>
+                {ko.seekingDetailSuffix.replace(ko.myung, "")}
+              </>
+            ) : (
+              <span className="muted">{ko.emptyFeed}</span>
+            )}
           </p>
+          <p className="section-desc">{ko.demandFirstLead}</p>
         </div>
         <ProductVisual product={product} size="md" />
       </section>
 
-      <div className="kpi-strip">
-        <div className="kpi-strip__item">
-          <span>{ko.highestHopeShort}</span>
-          <strong>{formatWonShort(aggregate.highestIntentPrice)}</strong>
+      {showHighest || showAvg || showTrend ? (
+        <div className="kpi-strip kpi-strip--compact">
+          {showHighest ? (
+            <div className="kpi-strip__item">
+              <span>{ko.highestHopeShort}</span>
+              <strong>{formatWonShort(aggregate.highestIntentPrice)}</strong>
+            </div>
+          ) : null}
+          {showAvg ? (
+            <div className="kpi-strip__item">
+              <span>{ko.avgHope}</span>
+              <strong>{formatWonShort(aggregate.avgPrice)}</strong>
+            </div>
+          ) : null}
+          {showTrend ? (
+            <div className="kpi-strip__item">
+              <span>{ko.thisWeek}</span>
+              <strong className="demand-card__trend">
+                {formatRelativeCount(aggregate.recent7dDelta)}
+              </strong>
+            </div>
+          ) : null}
         </div>
-        <div className="kpi-strip__item">
-          <span>{ko.avgHope}</span>
-          <strong>{formatWonShort(aggregate.avgPrice)}</strong>
-        </div>
-        <div className="kpi-strip__item">
-          <span>{ko.thisWeek}</span>
-          <strong className="demand-card__trend">
-            {formatRelativeCount(aggregate.recent7dDelta)}
-          </strong>
-        </div>
-      </div>
-
-      {aggregate.fulfillmentSummary ? (
-        <p className="section-desc">{aggregate.fulfillmentSummary}</p>
       ) : null}
 
-      <Card className="section-stack">
-        <h2 className="section-title">{ko.priceDist}</h2>
-        <PriceDistribution buckets={aggregate.priceBuckets} />
-      </Card>
+      {aggregate.fulfillmentSummary ? (
+        <section className="detail-section">
+          <h2 className="section-title">{ko.tradeMethod}</h2>
+          <p className="section-desc">{aggregate.fulfillmentSummary}</p>
+        </section>
+      ) : null}
 
-      <Card className="holder-cta">
+      <section className="detail-section">
+        <h2 className="section-title">{ko.priceDist}</h2>
+        <PriceDistribution
+          buckets={aggregate.priceBuckets}
+          seekerCount={aggregate.seekerCount}
+        />
+      </section>
+
+      <section className="holder-cta">
         <h2 className="section-title">{ko.haveItTitle}</h2>
         <p className="section-desc">{ko.haveItBody}</p>
         {owned ? (
           <div className="holder-cta__owned">
             <p>
-              {ko.alreadyOwnedPrefix} {ko.seekersLabel}{" "}
-              <strong>
-                {aggregate.seekerCount}
-                {ko.myung}
-              </strong>
-              .
+              {ko.alreadyOwnedPrefix}{" "}
+              {aggregate.seekerCount > 0 ? (
+                <>
+                  {ko.seekersLabel}{" "}
+                  <strong>
+                    {aggregate.seekerCount}
+                    {ko.myung}
+                  </strong>
+                  .
+                </>
+              ) : null}
             </p>
             <Button to={`/ownership/${owned.id}/sell-intent`} fullWidth>
               {ko.leaveSellIntent}
@@ -104,25 +137,24 @@ export function DemandDetailPage() {
           </Button>
         )}
         <p className="holder-cta__note">{ko.ownershipNote}</p>
-      </Card>
+      </section>
 
       {myBuy ? (
-        <Card className="section-stack">
+        <section className="detail-section">
           <h2 className="section-title">{ko.myBuyManage}</h2>
           <p className="section-desc">
             {ko.maxPrice} {formatWon(myBuy.budget)}
           </p>
-          <Button to={`/demand/item/${myBuy.id}`} fullWidth>
+          <Button to={`/demand/item/${myBuy.id}`} fullWidth variant="secondary">
             {ko.editDemand} / {ko.closeDemand}
           </Button>
-        </Card>
+        </section>
       ) : null}
 
       <p className="detail-foot">
         {ko.buyerSide}
         <Link to="/create?type=BUY">{ko.registerSame}</Link>
       </p>
-      <span className="sr-only">{formatWon(aggregate.highestIntentPrice)}</span>
     </div>
   );
 }
