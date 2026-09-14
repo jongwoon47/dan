@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { ko } from "@/copy/ko";
 import type { DemandAggregate, Product } from "@/domain/types";
-import { CATEGORY_LABEL } from "@/domain/types";
 import { formatWon } from "@/lib/format";
 import "./feedCards.css";
 
@@ -15,9 +14,7 @@ export function AggregatedDemandCard({
   return (
     <Link to={`/demand/${product.id}`} className="feed-row feed-row--agg">
       <div className="feed-row__meta">
-        <span className="feed-row__type">
-          {CATEGORY_LABEL[product.category]} · {ko.typeBuy}
-        </span>
+        <span className="feed-row__type">{ko.typeBuy}</span>
         <h3 className="feed-row__title">{product.name}</h3>
         <p className="feed-row__signal">
           <strong>
@@ -35,13 +32,15 @@ export function AggregatedDemandCard({
           <span>{ko.maxBudget}</span>
           <strong>{formatWon(aggregate.highestIntentPrice)}</strong>
         </div>
-        <div>
-          <span>{ko.thisWeek}</span>
-          <strong className="feed-row__trend">
-            +{aggregate.recent7dDelta}
-            {ko.myung}
-          </strong>
-        </div>
+        {aggregate.recent7dDelta > 0 ? (
+          <div>
+            <span>{ko.thisWeek}</span>
+            <strong className="feed-row__trend">
+              +{aggregate.recent7dDelta}
+              {ko.myung}
+            </strong>
+          </div>
+        ) : null}
       </div>
     </Link>
   );

@@ -97,7 +97,7 @@ export function ActivityPage() {
           dataMode === "supabase" ? (
             <Button to="/login">{ko.login}</Button>
           ) : (
-            <Button onClick={() => login()}>{ko.demoLogin}</Button>
+            <Button onClick={() => login()}>{ko.login}</Button>
           )
         }
       />
@@ -105,11 +105,10 @@ export function ActivityPage() {
   }
 
   return (
-    <div className="page-stack">
+    <div className="page-stack page-narrow">
       <header className="page-header page-header--row">
         <div>
           <h1 className="page-title">{ko.activityTitle}</h1>
-          <p className="section-desc">{ko.demandFirstLead}</p>
         </div>
         {unreadActivityCount > 0 ? (
           <Button
@@ -158,6 +157,9 @@ export function ActivityPage() {
                   to={hrefFor(ev, demand)}
                   onClick={() => void markActivityRead(ev.id)}
                 >
+                  <span className="activity-list__avatar" aria-hidden>
+                    {(actor ?? "알").slice(0, 1)}
+                  </span>
                   <span className="activity-list__main">
                     <strong>{title}</strong>
                     {bits.length ? (

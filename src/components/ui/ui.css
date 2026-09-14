@@ -76,7 +76,7 @@
   background: var(--dan-surface);
   border: 1px solid var(--dan-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
+  box-shadow: none;
 }
 
 .dan-card--padded {

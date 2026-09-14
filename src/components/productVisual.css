@@ -2,57 +2,73 @@
   position: relative;
   border-radius: var(--radius-md);
   overflow: hidden;
-  color: #fff;
+  color: var(--dan-ink-secondary);
+  background: var(--dan-bg-elevated);
+  border: 1px solid var(--dan-border);
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  padding: 12px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px;
   flex-shrink: 0;
 }
 
 .product-visual--sm {
-  width: 64px;
-  height: 64px;
+  width: 52px;
+  height: 52px;
+  padding: 0;
 }
 
 .product-visual--md {
-  width: 88px;
-  height: 88px;
+  width: 72px;
+  height: 72px;
 }
 
 .product-visual--lg {
   width: 100%;
   aspect-ratio: 16 / 10;
-  min-height: 160px;
+  min-height: 140px;
   border-radius: var(--radius-lg);
   padding: 16px;
 }
 
-.product-visual__mark {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  font-size: 0.6875rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  opacity: 0.7;
-}
-
-.product-visual__brand {
+.product-visual__initial {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 0.8125rem;
+  font-size: 1.25rem;
   letter-spacing: -0.02em;
+  color: var(--dan-ink-muted);
+  line-height: 1;
+}
+
+.product-visual--sm .product-visual__initial {
+  font-size: 1rem;
+}
+
+.product-visual--lg .product-visual__initial {
+  font-size: 2rem;
+}
+
+.product-visual__caption {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--dan-ink-muted);
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .category-pill {
   display: inline-flex;
   align-items: center;
-  min-height: 24px;
-  padding: 2px 10px;
-  border-radius: var(--radius-full);
+  min-height: 22px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
   background: var(--dan-bg-elevated);
   color: var(--dan-ink-secondary);
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 600;
 }

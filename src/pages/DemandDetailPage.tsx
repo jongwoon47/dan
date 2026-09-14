@@ -35,7 +35,7 @@ export function DemandDetailPage() {
   }
 
   return (
-    <div className="page-stack">
+    <div className="page-stack page-narrow">
       <section className="detail-top">
         <div className="detail-top__identity">
           <CategoryPill category={product.category} />

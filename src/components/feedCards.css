@@ -1,8 +1,9 @@
 .feed-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-  padding: var(--space-xl) 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-md) var(--space-lg);
+  align-items: start;
+  padding: var(--space-lg) 0;
   border-bottom: 1px solid var(--dan-border);
   color: inherit;
 }
@@ -13,11 +14,11 @@
 
 .feed-row__type {
   display: inline-block;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   color: var(--dan-accent-text);
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .feed-row__title {
@@ -26,38 +27,52 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.35;
+  color: var(--dan-ink);
 }
 
-.feed-row__signal,
 .feed-row__place {
   margin-top: 6px;
   color: var(--dan-ink-secondary);
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.feed-row__signal {
+  margin-top: 4px;
+  color: var(--dan-ink-secondary);
+  font-size: 0.8125rem;
 }
 
 .feed-row__signal strong {
   color: var(--dan-ink);
-  margin-right: 4px;
+  font-weight: 700;
 }
 
 .feed-row__stats {
-  display: flex;
-  gap: var(--space-xl);
+  text-align: right;
+  min-width: 5.5rem;
 }
 
 .feed-row__stats span {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   color: var(--dan-ink-muted);
   margin-bottom: 2px;
 }
 
 .feed-row__stats strong {
-  font-size: 0.9375rem;
+  display: block;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--dan-ink);
+  font-variant-numeric: tabular-nums;
 }
 
 .feed-row__trend {
-  color: var(--dan-accent-text);
+  color: var(--dan-accent-text) !important;
+  font-size: 0.8125rem !important;
+  font-weight: 700 !important;
 }
 
 .feed-list {
@@ -69,12 +84,12 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  padding: var(--space-lg) 0 var(--space-xl);
+  padding: var(--space-md) 0 var(--space-xl);
 }
 
 .composer__title {
   font-family: var(--font-display);
-  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-size: clamp(1.5rem, 5vw, 1.85rem);
   font-weight: 800;
   letter-spacing: -0.04em;
 }
@@ -84,26 +99,8 @@
   font-size: 0.9375rem;
 }
 
-.composer__cta {
-  display: block;
-}
-
 .type-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-@media (min-width: 720px) {
-  .feed-row {
-    flex-direction: row;
-    align-items: flex-end;
-    justify-content: space-between;
-  }
-
-  .feed-row__meta {
-    flex: 1;
-    min-width: 0;
-    padding-right: var(--space-xl);
-  }
 }

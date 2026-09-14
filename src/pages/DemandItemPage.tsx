@@ -128,7 +128,7 @@ export function DemandItemPage() {
   }
 
   return (
-    <div className="page-stack">
+    <div className="page-stack page-narrow">
       <header className="page-header">
         <p className="feed-row__type">
           {CATEGORY_LABEL[demand.category]} · {DEMAND_TYPE_LABEL[demand.type]}

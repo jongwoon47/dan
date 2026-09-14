@@ -2,15 +2,6 @@ import type { Product, ProductCategory } from "@/domain/types";
 import { CATEGORY_LABEL } from "@/domain/types";
 import "./productVisual.css";
 
-const CATEGORY_MARK: Record<ProductCategory, string> = {
-  camera: "CAM",
-  lens: "LENS",
-  electronics: "GEAR",
-  furniture: "HOME",
-  camping: "OUT",
-  other: "ITEM",
-};
-
 export function ProductVisual({
   product,
   size = "md",
@@ -18,16 +9,16 @@ export function ProductVisual({
   product: Product;
   size?: "sm" | "md" | "lg";
 }) {
+  const initial = (product.name.trim()[0] ?? "?").toUpperCase();
   return (
     <div
       className={`product-visual product-visual--${size}`}
-      style={{
-        background: `linear-gradient(145deg, hsl(${product.imageHue} 28% 22%), hsl(${product.imageHue} 18% 12%))`,
-      }}
       aria-hidden
     >
-      <span className="product-visual__mark">{CATEGORY_MARK[product.category]}</span>
-      <span className="product-visual__brand">{product.brand}</span>
+      <span className="product-visual__initial">{initial}</span>
+      {size !== "sm" ? (
+        <span className="product-visual__caption">{product.brand || product.name}</span>
+      ) : null}
     </div>
   );
 }

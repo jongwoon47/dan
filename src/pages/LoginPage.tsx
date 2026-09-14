@@ -60,7 +60,7 @@ export function LoginPage() {
   const shownError = localError || (error ? ko.genericError : null);
 
   return (
-    <div className="page-stack" style={{ maxWidth: 420 }}>
+    <div className="page-stack page-narrow" style={{ maxWidth: 420 }}>
       <header className="page-header">
         <h1 className="page-title">{isSignUp ? ko.signup : ko.login}</h1>
         <p className="section-desc">

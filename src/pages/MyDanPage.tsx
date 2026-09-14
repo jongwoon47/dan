@@ -134,7 +134,7 @@ export function MyDanPage() {
           dataMode === "supabase" ? (
             <Button to="/login">{ko.login}</Button>
           ) : (
-            <Button onClick={() => login()}>{ko.demoLogin}</Button>
+            <Button onClick={() => login()}>{ko.login}</Button>
           )
         }
       />
@@ -160,7 +160,7 @@ export function MyDanPage() {
       </header>
 
       <section className="section-stack">
-        <h2 className="section-title">{ko.attentionTitle}</h2>
+        <h2 className="section-title">{ko.myNow}</h2>
         {nowItems.length === 0 ? (
           <p className="section-desc">{ko.activityEmpty}</p>
         ) : (
@@ -197,7 +197,7 @@ export function MyDanPage() {
       </section>
 
       <section className="section-stack" id="connections">
-        <h2 className="section-title">{ko.myConnections}</h2>
+        <h2 className="section-title">{ko.connectedPeople}</h2>
         {connected.length > 0 ? (
           <div className="section-stack">
             {connected.map((m) => {
@@ -223,9 +223,7 @@ export function MyDanPage() {
       </section>
 
       <details className="my-vault">
-        <summary>
-          {ko.myItems} · {ko.myResponses}
-        </summary>
+        <summary>{ko.myVault}</summary>
         <div className="section-stack">
           <h3 className="section-title">{ko.myItems}</h3>
           {myOwnerships.length === 0 ? (

@@ -38,6 +38,7 @@ export function MatchChatPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [peerName, setPeerName] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
   const [confirm, setConfirm] = useState<"block" | "report" | null>(null);
   const [reportReason, setReportReason] = useState<
     "spam" | "fraud" | "abuse" | "other"
@@ -107,13 +108,13 @@ export function MatchChatPage() {
   }
 
   return (
-    <div className="chat-page">
+    <div className="chat-page page-narrow">
       <header className="chat-page__header">
-        <div>
+        <div className="chat-page__identity">
           <h1 className="page-title">
             {peerId ? (
               <Link to={`/profile/${peerId}`} className="text-link">
-                {peerName || "…"}
+                {(peerName || "상대") + ko.chatWith}
               </Link>
             ) : (
               ko.chatTitle
@@ -122,13 +123,40 @@ export function MatchChatPage() {
           <p className="section-desc">{demandTitle}</p>
         </div>
         {peerId ? (
-          <div className="action-row">
-            <Button size="sm" variant="secondary" onClick={() => setConfirm("block")}>
-              {ko.block}
-            </Button>
-            <Button size="sm" variant="secondary" onClick={() => setConfirm("report")}>
-              {ko.report}
-            </Button>
+          <div className="chat-menu">
+            <button
+              type="button"
+              className="chat-menu__trigger"
+              aria-label={ko.moreActions}
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((v) => !v)}
+            >
+              ⋯
+            </button>
+            {menuOpen ? (
+              <div className="chat-menu__panel" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setConfirm("block");
+                  }}
+                >
+                  {ko.block}
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setConfirm("report");
+                  }}
+                >
+                  {ko.report}
+                </button>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </header>
@@ -137,7 +165,7 @@ export function MatchChatPage() {
       {toast ? <p className="section-desc">{toast}</p> : null}
 
       <div className="chat-thread" aria-live="polite">
-        {loading ? <p className="muted">{ko.saving}</p> : null}
+        {loading ? <p className="muted">{ko.loadingChat}</p> : null}
         {!loading && messages.length === 0 ? (
           <p className="section-desc">{ko.chatEmpty}</p>
         ) : null}

@@ -4,13 +4,72 @@ import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import "./layout.css";
 
+function IconHome({ active }: { active?: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z"
+        stroke="currentColor"
+        strokeWidth={active ? 2.2 : 1.8}
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function IconFeed({ active }: { active?: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M5 7h14M5 12h14M5 17h9"
+        stroke="currentColor"
+        strokeWidth={active ? 2.2 : 1.8}
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function IconPlus() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M12 5v14M5 12h14"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function IconMy({ active }: { active?: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle
+        cx="12"
+        cy="9"
+        r="3.25"
+        stroke="currentColor"
+        strokeWidth={active ? 2.2 : 1.8}
+      />
+      <path
+        d="M5.5 19.5c1.4-3 3.7-4.5 6.5-4.5s5.1 1.5 6.5 4.5"
+        stroke="currentColor"
+        strokeWidth={active ? 2.2 : 1.8}
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export function AppShell() {
   const { currentUser, isLoggedIn, login, logout, unreadActivityCount } = useDan();
   return (
     <div className="app-shell">
       <header className="top-nav">
         <div className="top-nav__inner">
-          <NavLink to="/" className="brand" aria-label="DAN home">
+          <NavLink to="/" className="brand" aria-label="DAN 홈">
             <img
               className="brand__logo"
               src="/dan-logo.png"
@@ -23,7 +82,7 @@ export function AppShell() {
               <span className="brand__tag">{ko.brandTag}</span>
             </span>
           </NavLink>
-          <nav className="top-nav__links" aria-label="primary">
+          <nav className="top-nav__links" aria-label="주요 메뉴">
             <NavLink to="/feed">{ko.navFeed}</NavLink>
             <NavLink to="/create">{ko.navCreate}</NavLink>
             <NavLink to="/my">{ko.navMy}</NavLink>
@@ -59,26 +118,41 @@ export function AppShell() {
       <main className="app-main">
         <Outlet />
       </main>
-      <nav className="bottom-nav" aria-label="mobile">
+      <nav className="bottom-nav" aria-label="하단 메뉴">
         <NavLink to="/" end>
-          <span>{ko.navHome}</span>
+          {({ isActive }) => (
+            <>
+              <IconHome active={isActive} />
+              <span>{ko.navHome}</span>
+            </>
+          )}
         </NavLink>
         <NavLink to="/feed">
-          <span>{ko.navDemand}</span>
+          {({ isActive }) => (
+            <>
+              <IconFeed active={isActive} />
+              <span>{ko.navDemand}</span>
+            </>
+          )}
         </NavLink>
         <NavLink to="/create" className="bottom-nav__create">
           <span className="bottom-nav__plus" aria-hidden>
-            +
+            <IconPlus />
           </span>
           <span>{ko.navCreateShort}</span>
         </NavLink>
         <NavLink to="/my" className="bottom-nav__my">
-          <span>
-            {ko.navMy}
-            {unreadActivityCount > 0 ? (
-              <span className="nav-badge">{unreadActivityCount}</span>
-            ) : null}
-          </span>
+          {({ isActive }) => (
+            <>
+              <span className="bottom-nav__icon-wrap">
+                <IconMy active={isActive} />
+                {unreadActivityCount > 0 ? (
+                  <span className="nav-badge nav-badge--float">{unreadActivityCount}</span>
+                ) : null}
+              </span>
+              <span>{ko.navMy}</span>
+            </>
+          )}
         </NavLink>
       </nav>
     </div>

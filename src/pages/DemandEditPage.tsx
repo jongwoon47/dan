@@ -209,7 +209,7 @@ export function DemandEditPage() {
   }
 
   return (
-    <div className="page-stack">
+    <div className="page-stack page-narrow">
       <header className="page-header">
         <h1 className="page-title">{ko.editDemand}</h1>
         <p className="section-desc">
