@@ -5,13 +5,13 @@
   --dan-surface: #ffffff;
   --dan-ink: #14161a;
   --dan-ink-secondary: #4b5563;
-  --dan-ink-muted: #8b93a1;
+  --dan-ink-muted: #6b7280;
   --dan-border: #e8eaee;
   --dan-border-strong: #d5dae0;
-  --dan-accent: #0d9f8a;
-  --dan-accent-pressed: #0b8573;
-  --dan-accent-soft: #e8faf6;
-  --dan-accent-text: #0a7a69;
+  --dan-accent: #0b8573;
+  --dan-accent-pressed: #097564;
+  --dan-accent-soft: #e6f7f3;
+  --dan-accent-text: #086656;
   --dan-warn: #b54708;
   --dan-warn-soft: #fffaeb;
   --dan-danger: #b42318;
@@ -38,8 +38,8 @@
   --shadow-md: none;
   --shadow-card: none;
 
-  --font-sans: "Manrope", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
-  --font-display: "Outfit", "Manrope", sans-serif;
+  --font-sans: "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --font-display: "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
 
   --nav-height: 56px;
   --bottom-nav-height: 64px;
@@ -122,7 +122,7 @@ p {
 .type-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 36px;
+  min-height: 44px;
   padding: 8px 12px;
   border-radius: var(--radius-md);
   border: 1px solid var(--dan-border-strong);

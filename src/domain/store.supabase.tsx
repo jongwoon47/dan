@@ -9,6 +9,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import * as api from "@/data/supabase/api";
 import { ko } from "@/copy/ko";
 import { buildFeedItems } from "@/domain/feed";
+import { mergeBuyAggregate } from "@/domain/mergeAggregate";
 import { buildVisibleMatches, parsePotentialMatchId } from "@/domain/matchLifecycle";
 import {
   DanContext,
@@ -25,6 +26,7 @@ import type {
   Response,
   SellIntent,
 } from "@/domain/types";
+import { assignLogin } from "@/lib/loginNext";
 
 type LoadState = "idle" | "loading" | "ready" | "error";
 
@@ -171,7 +173,7 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
       currentUser,
       isLoggedIn: Boolean(currentUser),
       login: () => {
-        window.location.assign("/login");
+        assignLogin();
       },
       logout: () => {
         void auth.signOut();
@@ -190,56 +192,56 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
       },
       createOwnership: async (payload) => {
         if (!currentUser) {
-          window.location.assign("/login");
+          assignLogin();
           return null;
         }
         return run(() => api.createOwnershipRemote(payload));
       },
       createSellIntent: async (payload) => {
         if (!currentUser) {
-          window.location.assign("/login");
+          assignLogin();
           return null;
         }
         return run(() => api.upsertSellIntentRemote(payload));
       },
       createResponse: async (payload) => {
         if (!currentUser) {
-          window.location.assign("/login");
+          assignLogin();
           return null;
         }
         return run(() => api.createResponseRemote(payload));
       },
       withdrawResponse: async (responseId) => {
         if (!currentUser) {
-          window.location.assign("/login");
+          assignLogin();
           return null;
         }
         return run(() => api.withdrawResponseRemote(responseId));
       },
       declineResponse: async (responseId) => {
         if (!currentUser) {
-          window.location.assign("/login");
+          assignLogin();
           return null;
         }
         return run(() => api.declineResponseRemote(responseId));
       },
       updateDemand: async (payload) => {
         if (!currentUser) {
-          window.location.assign("/login");
+          assignLogin();
           return null;
         }
         return run(() => api.updateDemandRemote(payload));
       },
       closeDemand: async (demandId) => {
         if (!currentUser) {
-          window.location.assign("/login");
+          assignLogin();
           return null;
         }
         return run(() => api.closeDemandRemote(demandId));
       },
       acceptResponse: async (responseId) => {
         if (!currentUser) {
-          window.location.assign("/login");
+          assignLogin();
           return null;
         }
         return run(() => api.acceptResponseRemote(responseId));
@@ -255,7 +257,7 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
       },
       sendMessage: async (matchId, body) => {
         if (!currentUser) {
-          window.location.assign("/login");
+          assignLogin();
           return null;
         }
         return run(() => api.sendMessageRemote(matchId, body));
@@ -299,14 +301,14 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
       },
       updateMyProfile: async (payload) => {
         if (!currentUser) {
-          window.location.assign("/login");
+          assignLogin();
           return null;
         }
         return run(() => api.updateMyProfileRemote(payload));
       },
       blockUser: async (userId) => {
         if (!currentUser) {
-          window.location.assign("/login");
+          assignLogin();
           return false;
         }
         const ok = await run(() => api.blockUserRemote(userId));
@@ -314,7 +316,7 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
       },
       reportUser: async (payload) => {
         if (!currentUser) {
-          window.location.assign("/login");
+          assignLogin();
           return false;
         }
         const ok = await run(() => api.reportUserRemote(payload));
@@ -324,7 +326,7 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
       loadError: error,
       expressBuyerInterest: async (matchId) => {
         if (!currentUser) {
-          window.location.assign("/login");
+          assignLogin();
           return false;
         }
         const visible = buildVisibleMatches(state, currentUser.id);
@@ -344,7 +346,7 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
       },
       connectAsSeller: async (matchId) => {
         if (!currentUser) {
-          window.location.assign("/login");
+          assignLogin();
           return false;
         }
         const result = await run(() => api.sellerConnectRemote(matchId));
@@ -353,8 +355,8 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
       getProduct: (id) => products.find((p) => p.id === id),
       getDemand: (id) => demands.find((d) => d.id === id),
       getAggregate: (productId) => {
-        const row = aggregates.find((a) => a.productId === productId);
-        return row ?? null;
+        const remote = aggregates.find((a) => a.productId === productId);
+        return mergeBuyAggregate(productId, demands, remote);
       },
       demandFeed,
       myDemands,
@@ -407,11 +409,6 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
 
   return (
     <DanContext.Provider value={value}>
-      {busy ? (
-        <div className="mutation-bar" aria-live="polite">
-          {ko.saving}
-        </div>
-      ) : null}
       {error ? (
         <div className="mutation-error" role="alert">
           {ko.genericError}

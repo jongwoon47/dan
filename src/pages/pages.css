@@ -464,7 +464,7 @@
 .composer-sheet input,
 .composer-sheet textarea {
   width: 100%;
-  border: 1px solid var(--dan-line);
+  border: 1px solid var(--dan-border);
   border-radius: 12px;
   padding: 12px 14px;
   font: inherit;
@@ -475,7 +475,7 @@
   display: grid;
   gap: 8px;
   padding: var(--space-md) 0;
-  border-bottom: 1px solid var(--dan-line);
+  border-bottom: 1px solid var(--dan-border);
 }
 
 .response-card__head {
@@ -557,7 +557,7 @@
 }
 
 .my-vault {
-  border-top: 1px solid var(--dan-line);
+  border-top: 1px solid var(--dan-border);
   padding-top: var(--space-md);
 }
 
@@ -666,7 +666,7 @@
 }
 
 .chat-composer input {
-  border: 1px solid var(--dan-line);
+  border: 1px solid var(--dan-border);
   border-radius: 999px;
   padding: 12px 16px;
   font: inherit;
@@ -733,7 +733,7 @@
   background: color-mix(in srgb, var(--dan-accent, #0d9488) 12%, white);
 }
 
-/* —— Shipping detail pass —— */
+/* ????Shipping detail pass ????*/
 .create-page {
   padding-bottom: 96px;
 }
@@ -979,11 +979,13 @@
 .chat-page {
   display: flex;
   flex-direction: column;
-  min-height: calc(100dvh - 16px);
+  height: 100dvh;
+  max-height: 100dvh;
   margin: calc(var(--space-xl) * -1) calc(var(--space-lg) * -1) 0;
   padding: 0;
   gap: 0;
   background: var(--dan-bg);
+  overflow: hidden;
 }
 
 .chat-page__header {
@@ -1038,11 +1040,23 @@
 
 .chat-thread {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
   overflow-y: auto;
   padding: var(--space-md) var(--space-lg) var(--space-lg);
+}
+
+.dan-textarea {
+  min-height: 88px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.detail-product-title {
+  font-size: clamp(1.35rem, 4vw, 1.75rem);
+  overflow-wrap: anywhere;
 }
 
 .chat-thread__item {

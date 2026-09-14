@@ -86,7 +86,9 @@ export function MatchCard({ match }: { match: Match }) {
         <ProductVisual product={product} size="sm" />
         <div>
           <div className="match-card__badges">
-            <CategoryPill category={product.category} />
+            {product.category !== "other" ? (
+              <CategoryPill category={product.category} />
+            ) : null}
             <Badge tone="accent">{MATCH_STATUS_LABEL[match.status]}</Badge>
           </div>
           <h3>{product.name}</h3>
@@ -102,7 +104,7 @@ export function MatchCard({ match }: { match: Match }) {
           </strong>
         </div>
         <div className="match-card__compare-divider" aria-hidden>
-          =
+          ↔
         </div>
         <div>
           <span>{ko.sellFrom}</span>
@@ -156,8 +158,15 @@ export function MatchCard({ match }: { match: Match }) {
   );
 }
 
-export function MatchList({ matches }: { matches: Match[] }) {
+export function MatchList({
+  matches,
+  emptyWhenZero = true,
+}: {
+  matches: Match[];
+  emptyWhenZero?: boolean;
+}) {
   if (matches.length === 0) {
+    if (!emptyWhenZero) return null;
     return (
       <EmptyState
         title={ko.noMatch}

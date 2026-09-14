@@ -18,12 +18,12 @@ export type CreateDraft = {
   borrowPlace: string;
   borrowStart: string;
   borrowEnd: string;
-  taskMode: "onsite" | "pickup" | "route" | "remote";
+  taskMode: "onsite" | "pickup" | "route" | "remote" | null;
   taskPlace: string;
   routeFrom: string;
   routeTo: string;
   dueAt: string;
-  serviceMode: "onsite" | "remote";
+  serviceMode: "onsite" | "remote" | null;
   servicePlace: string;
   preferredAt: string;
 };

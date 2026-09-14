@@ -47,7 +47,7 @@
 
 .confirm-sheet__choice {
   text-align: left;
-  border: 1px solid var(--dan-line);
+  border: 1px solid var(--dan-border);
   border-radius: 12px;
   padding: 12px 14px;
   background: #fff;

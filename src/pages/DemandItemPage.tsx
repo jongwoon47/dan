@@ -7,7 +7,7 @@ import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
-import { CATEGORY_LABEL, DEMAND_TYPE_LABEL } from "@/domain/types";
+import { DEMAND_TYPE_LABEL } from "@/domain/types";
 import { formatDemandWhen, formatWon } from "@/lib/format";
 import "./pages.css";
 
@@ -135,7 +135,7 @@ export function DemandItemPage() {
     <div className="page-stack page-narrow">
       <header className="page-header">
         <p className="feed-row__type">
-          {CATEGORY_LABEL[demand.category]} · {DEMAND_TYPE_LABEL[demand.type]}
+          {DEMAND_TYPE_LABEL[demand.type]}
           {demand.status !== "ACTIVE"
             ? ` · ${demand.status === "CLOSED" ? ko.statusClosed : ko.statusMatched}`
             : ""}
@@ -146,7 +146,15 @@ export function DemandItemPage() {
 
       <div className="detail-facts">
         <div>
-          <span>{ko.detailWhere}</span>
+          <span>
+            {demand.type === "BUY"
+              ? ko.whereLabelBuy
+              : demand.type === "BORROW"
+                ? ko.whereLabelBorrow
+                : demand.type === "SERVICE"
+                  ? ko.whereLabelService
+                  : ko.whereLabelTask}
+          </span>
           <strong>{formatFulfillmentSummary(demand.fulfillmentOptions)}</strong>
         </div>
         <div>
@@ -242,7 +250,11 @@ export function DemandItemPage() {
                   inputMode="numeric"
                   value={offerPrice}
                   onChange={(e) => setOfferPrice(e.target.value)}
-                  placeholder={String(demand.budget)}
+                  placeholder={
+                    demand.budget > 0
+                      ? `요청 예산 ${demand.budget.toLocaleString("ko-KR")}원`
+                      : ko.offerPriceOptional
+                  }
                 />
               </label>
               <label className="field">
@@ -283,7 +295,7 @@ export function DemandItemPage() {
                       ? ko.respondService
                       : ko.respondCta,
                 );
-                setOfferPrice(String(demand.budget));
+                setOfferPrice("");
                 setComposerOpen(true);
               }}
             >

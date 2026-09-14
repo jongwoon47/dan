@@ -24,5 +24,6 @@ export function ProductVisual({
 }
 
 export function CategoryPill({ category }: { category: ProductCategory }) {
+  if (category === "other") return null;
   return <span className="category-pill">{CATEGORY_LABEL[category]}</span>;
 }

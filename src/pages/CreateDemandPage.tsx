@@ -51,14 +51,16 @@ function MoneyInput({
   label,
   hint,
   placeholder,
+  kind = "buy",
 }: {
   value: string;
   onChange: (digits: string) => void;
   label: string;
   hint?: string;
   placeholder?: string;
+  kind?: "buy" | "borrow" | "reward";
 }) {
-  const thought = formatPriceThought(parseMoneyInput(value));
+  const thought = formatPriceThought(parseMoneyInput(value), kind);
   return (
     <Field label={label} hint={hint}>
       <TextInput
@@ -113,27 +115,51 @@ export function CreateDemandPage() {
   );
   const [borrowStart, setBorrowStart] = useState(draft?.borrowStart ?? "");
   const [borrowEnd, setBorrowEnd] = useState(draft?.borrowEnd ?? "");
-  const [taskMode, setTaskMode] = useState<TaskMode>(draft?.taskMode ?? "pickup");
+  const [taskMode, setTaskMode] = useState<TaskMode | null>(
+    draft?.taskMode ?? null,
+  );
   const [taskPlace, setTaskPlace] = useState(draft?.taskPlace ?? profileArea);
   const [routeFrom, setRouteFrom] = useState(draft?.routeFrom ?? "");
   const [routeTo, setRouteTo] = useState(draft?.routeTo ?? "");
   const [dueAt, setDueAt] = useState(draft?.dueAt ?? "");
-  const [serviceMode, setServiceMode] = useState<ServiceMode>(
-    draft?.serviceMode ?? "onsite",
+  const [serviceMode, setServiceMode] = useState<ServiceMode | null>(
+    draft?.serviceMode ?? null,
   );
   const [servicePlace, setServicePlace] = useState(
     draft?.servicePlace ?? profileArea,
   );
   const [preferredAt, setPreferredAt] = useState(draft?.preferredAt ?? "");
   const [phase, setPhase] = useState<1 | 2>(1);
+  const [scheduleTouched, setScheduleTouched] = useState(false);
 
   useEffect(() => {
     if (paramType) setType(paramType);
   }, [paramType]);
 
-  useEffect(() => {
+  function selectType(next: DemandType) {
+    if (next === type) return;
+    setType(next);
     setPhase(1);
-  }, [type]);
+    setScheduleTouched(false);
+    setFormError(null);
+    // Drop fields that belong to another type so hidden state cannot leak into submit.
+    if (next === "BUY") {
+      setTitle("");
+      setItemName("");
+      setDetail("");
+      setBudget("");
+    } else if (next === "BORROW") {
+      setProductQuery("");
+      setProductId("");
+      setMaxPrice("");
+      setDetail("");
+    } else {
+      setProductQuery("");
+      setProductId("");
+      setMaxPrice("");
+      setItemName("");
+    }
+  }
 
   useEffect(() => {
     const next: CreateDraft = {
@@ -224,6 +250,7 @@ export function CreateDemandPage() {
       return [{ mode: "PICKUP", place: placeFromLabel(borrowPlace) }];
     }
     if (type === "TASK") {
+      if (!taskMode) return [];
       if (taskMode === "remote") return [{ mode: "REMOTE" }];
       if (taskMode === "route") {
         return [
@@ -239,6 +266,7 @@ export function CreateDemandPage() {
       }
       return [{ mode: "PICKUP", place: placeFromLabel(taskPlace) }];
     }
+    if (!serviceMode) return [];
     if (serviceMode === "remote") return [{ mode: "REMOTE" }];
     return [{ mode: "ONSITE", place: placeFromLabel(servicePlace) }];
   }, [
@@ -289,6 +317,8 @@ export function CreateDemandPage() {
 
   const canSubmit = useMemo(() => {
     if (!canCore) return false;
+    if (type === "TASK" && !taskMode) return false;
+    if (type === "SERVICE" && !serviceMode) return false;
     if (!areFulfillmentOptionsValid(fulfillmentOptions)) return false;
     if (scheduleError) return false;
     if (type === "BUY") return buyShipping || buyMeetup;
@@ -300,9 +330,12 @@ export function CreateDemandPage() {
     type,
     buyShipping,
     buyMeetup,
+    taskMode,
+    serviceMode,
   ]);
 
   async function submit() {
+    setScheduleTouched(true);
     if (!canSubmit || submitting || !type) return;
     if (scheduleError) {
       setFormError(scheduleError);
@@ -335,7 +368,7 @@ export function CreateDemandPage() {
         }
         const created = await createDemand({
           type: "BUY",
-          title: title.trim() || productName || rawName,
+          title: productName || rawName,
           productId: pid,
           maxPrice: price,
           conditionPreference: condition,
@@ -419,10 +452,7 @@ export function CreateDemandPage() {
               role="radio"
               aria-checked={type === t}
               className={type === t ? "type-segment__btn is-selected" : "type-segment__btn"}
-              onClick={() => {
-                setType(t);
-                setPhase(1);
-              }}
+              onClick={() => selectType(t)}
             >
               {DEMAND_TYPE_LABEL[t]}
             </button>
@@ -501,6 +531,7 @@ export function CreateDemandPage() {
                       value={maxPrice}
                       onChange={setMaxPrice}
                       placeholder="예: 800,000"
+                      kind="buy"
                     />
                     <div>
                       <p className="field-inline-label">{ko.condition}</p>
@@ -534,6 +565,7 @@ export function CreateDemandPage() {
                       value={budget}
                       onChange={setBudget}
                       placeholder="예: 30,000"
+                      kind="borrow"
                     />
                   </>
                 ) : null}
@@ -541,10 +573,12 @@ export function CreateDemandPage() {
                 {type === "TASK" || type === "SERVICE" ? (
                   <>
                     <Field label={ko.descLabel}>
-                      <TextInput
+                      <textarea
+                        className="dan-input dan-textarea"
                         value={detail}
                         onChange={(e) => setDetail(e.target.value)}
                         placeholder="예: 평택역에서 짐 옮겨주세요"
+                        rows={3}
                       />
                     </Field>
                     <MoneyInput
@@ -552,6 +586,7 @@ export function CreateDemandPage() {
                       value={budget}
                       onChange={setBudget}
                       placeholder="예: 20,000"
+                      kind="reward"
                     />
                   </>
                 ) : null}
@@ -736,7 +771,7 @@ export function CreateDemandPage() {
                   </div>
                 ) : null}
 
-                {formError || scheduleError ? (
+                {formError || (scheduleTouched && scheduleError) ? (
                   <p className="form-error">{formError ?? scheduleError}</p>
                 ) : null}
               </>

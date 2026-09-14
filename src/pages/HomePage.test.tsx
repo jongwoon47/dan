@@ -16,8 +16,8 @@ describe("HomePage", () => {
     );
 
     expect(screen.getByRole("heading", { name: ko.composerTitle })).toBeInTheDocument();
-    expect(screen.getByText(ko.typeBuy)).toBeInTheDocument();
-    expect(screen.getByText(ko.typeTask)).toBeInTheDocument();
+    expect(screen.getAllByText(ko.typeBuy).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(ko.typeTask).length).toBeGreaterThan(0);
     expect(screen.getByText(ko.feedNowTitle)).toBeInTheDocument();
   });
 });

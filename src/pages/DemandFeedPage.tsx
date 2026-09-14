@@ -23,6 +23,8 @@ export function DemandFeedPage() {
   const [areaFilter, setAreaFilter] = useState<FeedAreaFilter>("all");
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  const hasArea = Boolean(currentUser?.defaultArea?.trim());
+
   const areaFeed = useMemo(
     () =>
       buildFeedItems(products, state.demands, {
@@ -97,25 +99,33 @@ export function DemandFeedPage() {
         </button>
       </div>
 
-      {filtersOpen ? (
-        <div className="feed-filter-scroll" role="toolbar" aria-label="지역 필터">
-          <Chip selected={areaFilter === "all"} onClick={() => setAreaFilter("all")}>
-            {ko.all}
-          </Chip>
-          <Chip
-            selected={areaFilter === "nearby"}
-            onClick={() => setAreaFilter("nearby")}
-          >
-            {ko.filterNearby}
-          </Chip>
-          <Chip
-            selected={areaFilter === "online"}
-            onClick={() => setAreaFilter("online")}
-          >
-            {ko.filterOnline}
-          </Chip>
-        </div>
-      ) : null}
+          {filtersOpen ? (
+            <div className="feed-filter-scroll" role="toolbar" aria-label="지역 필터">
+              <Chip selected={areaFilter === "all"} onClick={() => setAreaFilter("all")}>
+                {ko.all}
+              </Chip>
+              <Chip
+                selected={areaFilter === "nearby"}
+                disabled={!hasArea}
+                title={!hasArea ? ko.setAreaForNearby : undefined}
+                onClick={() => {
+                  if (!hasArea) return;
+                  setAreaFilter("nearby");
+                }}
+              >
+                {ko.filterNearby}
+              </Chip>
+              <Chip
+                selected={areaFilter === "online"}
+                onClick={() => setAreaFilter("online")}
+              >
+                {ko.filterOnline}
+              </Chip>
+            </div>
+          ) : null}
+          {filtersOpen && !hasArea ? (
+            <p className="section-desc">{ko.setAreaForNearby}</p>
+          ) : null}
 
       {filtered.length === 0 ? (
         <EmptyState

@@ -48,6 +48,7 @@ export function DemandDetailPage() {
       <section className="detail-top">
         <div className="detail-top__identity">
           <CategoryPill category={product.category} />
+          <h1 className="page-title detail-product-title">{product.name}</h1>
           <p className="detail-hero__count">
             {aggregate.seekerCount > 0 ? (
               <>
@@ -151,10 +152,12 @@ export function DemandDetailPage() {
         </section>
       ) : null}
 
-      <p className="detail-foot">
-        {ko.buyerSide}
-        <Link to="/create?type=BUY">{ko.registerSame}</Link>
-      </p>
+      {myBuy ? null : (
+        <p className="detail-foot">
+          {ko.buyerSide}
+          <Link to="/create?type=BUY">{ko.registerSame}</Link>
+        </p>
+      )}
     </div>
   );
 }

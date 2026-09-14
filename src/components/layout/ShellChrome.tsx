@@ -12,6 +12,8 @@ export type DeepHeaderConfig = {
   title?: string;
   subtitle?: string;
   right?: ReactNode;
+  /** Change this when `right` should re-sync (e.g. menu open). */
+  rightKey?: string | number | boolean;
   /** Hide AppShell deep header — page renders its own (e.g. chat). */
   hide?: boolean;
 };
@@ -50,11 +52,16 @@ export function useDeepHeader(config: DeepHeaderConfig) {
   const title = config.title ?? "";
   const subtitle = config.subtitle ?? "";
   const hide = Boolean(config.hide);
+  const rightKey = config.rightKey;
 
   useEffect(() => {
-    setHeader({ title: config.title, subtitle: config.subtitle, hide, right: config.right });
+    setHeader({
+      title: config.title,
+      subtitle: config.subtitle,
+      hide,
+      right: config.right,
+    });
     return () => setHeader(null);
-    // right intentionally omitted from deps to avoid render loops from inline nodes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setHeader, title, subtitle, hide]);
+  }, [setHeader, title, subtitle, hide, rightKey]);
 }

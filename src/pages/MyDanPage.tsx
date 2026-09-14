@@ -258,9 +258,16 @@ export function MyDanPage() {
               );
             })}
           </div>
-        ) : null}
+        ) : (
+          <p className="section-desc">아직 연결된 사람이 없어요.</p>
+        )}
+      </section>
+
+      <section className="section-stack">
+        <h2 className="section-title">{ko.pendingMatches}</h2>
         <MatchList
           matches={myMatches.filter((m) => m.status !== "CONNECTED")}
+          emptyWhenZero
         />
       </section>
 

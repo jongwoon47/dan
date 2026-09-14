@@ -112,7 +112,7 @@ function AppShellInner() {
               <NavLink to="/create">{ko.navCreate}</NavLink>
               <NavLink to="/my">{ko.navMy}</NavLink>
             </nav>
-            <div className="top-nav__auth">
+            <div className="top-nav__auth top-nav__auth--desktop">
               {isLoggedIn && currentUser ? (
                 <>
                   <NavLink
@@ -193,13 +193,16 @@ function AppShellInner() {
               )}
             </NavLink>
           </nav>
-          <NavLink
-            to="/create"
-            className="create-fab"
-            aria-label={ko.navCreate}
-          >
-            <IconPlus />
-          </NavLink>
+          {pathname !== "/" ? (
+            <NavLink
+              to="/create"
+              className="create-fab"
+              aria-label={ko.navCreate}
+            >
+              <IconPlus />
+              <span className="create-fab__label">{ko.fabCreate}</span>
+            </NavLink>
+          ) : null}
         </>
       ) : null}
     </div>

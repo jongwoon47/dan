@@ -27,7 +27,7 @@
 }
 
 .dan-btn--sm {
-  min-height: 40px;
+  min-height: 44px;
   padding: 8px 12px;
   font-size: 0.875rem;
   border-radius: var(--radius-md);
@@ -142,7 +142,7 @@
 }
 
 .dan-chip {
-  min-height: 40px;
+  min-height: 44px;
   padding: 8px 14px;
   border-radius: var(--radius-full);
   border: 1px solid var(--dan-border-strong);
@@ -164,20 +164,6 @@
   border: 0;
   border-radius: 0;
   background: transparent;
-}
-
-.dan-empty__icon {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto var(--space-md);
-  border-radius: 16px;
-  background: var(--dan-bg-elevated);
-  color: var(--dan-ink-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
-  font-weight: 700;
 }
 
 .dan-empty__title {

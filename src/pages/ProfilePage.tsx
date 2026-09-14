@@ -9,6 +9,42 @@ import { useDan } from "@/domain/danContext";
 import type { PublicProfile } from "@/domain/types";
 import "./pages.css";
 
+function MoreMenu({
+  open,
+  onToggle,
+  onBlock,
+  onReport,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  onBlock: () => void;
+  onReport: () => void;
+}) {
+  return (
+    <div className="chat-menu">
+      <button
+        type="button"
+        className="chat-menu__trigger"
+        aria-label={ko.moreActions}
+        aria-expanded={open}
+        onClick={onToggle}
+      >
+        ⋯
+      </button>
+      {open ? (
+        <div className="chat-menu__panel" role="menu">
+          <button type="button" role="menuitem" onClick={onBlock}>
+            {ko.block}
+          </button>
+          <button type="button" role="menuitem" onClick={onReport}>
+            {ko.report}
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function ProfilePage() {
   const { userId = "" } = useParams();
   const {
@@ -18,6 +54,7 @@ export function ProfilePage() {
     blockUser,
     reportUser,
     busy,
+    logout,
   } = useDan();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,6 +72,21 @@ export function ProfilePage() {
 
   useDeepHeader({
     title: profile?.displayName ?? ko.profileTitle,
+    rightKey: `${isSelf}-${menuOpen}`,
+    right: !isSelf ? (
+      <MoreMenu
+        open={menuOpen}
+        onToggle={() => setMenuOpen((v) => !v)}
+        onBlock={() => {
+          setMenuOpen(false);
+          setConfirm("block");
+        }}
+        onReport={() => {
+          setMenuOpen(false);
+          setConfirm("report");
+        }}
+      />
+    ) : undefined,
   });
 
   useEffect(() => {
@@ -94,53 +146,19 @@ export function ProfilePage() {
   }
 
   const initial = (profile.displayName.trim().slice(0, 1) || "?").toUpperCase();
+  const areaLine = profile.defaultArea.trim()
+    ? profile.defaultArea
+    : ko.areaUnset;
 
   return (
     <div className="page-stack page-narrow profile-page">
-      {!isSelf ? (
-        <div className="profile-menu-wrap">
-          <button
-            type="button"
-            className="chat-menu__trigger"
-            aria-label={ko.moreActions}
-            onClick={() => setMenuOpen((v) => !v)}
-          >
-            ⋯
-          </button>
-          {menuOpen ? (
-            <div className="chat-menu__panel" role="menu">
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  setMenuOpen(false);
-                  setConfirm("block");
-                }}
-              >
-                {ko.block}
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  setMenuOpen(false);
-                  setConfirm("report");
-                }}
-              >
-                {ko.report}
-              </button>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
       <section className="profile-identity">
         <span className="avatar-initial avatar-initial--lg" aria-hidden>
           {initial}
         </span>
         <h2 className="profile-identity__name">{profile.displayName}</h2>
         <p className="section-desc">
-          {profile.defaultArea || ko.profileArea}
+          {areaLine}
           {" · "}
           {ko.profileConnections} {profile.connectionCount}
           {ko.timesSuffix}
@@ -185,9 +203,14 @@ export function ProfilePage() {
             {new Date(profile.createdAt).toLocaleDateString("ko-KR")}
           </p>
           {isSelf ? (
-            <Button variant="secondary" onClick={() => setEditing(true)}>
-              {ko.profileEdit}
-            </Button>
+            <div className="action-row">
+              <Button variant="secondary" onClick={() => setEditing(true)}>
+                {ko.profileEdit}
+              </Button>
+              <Button variant="ghost" onClick={logout}>
+                {ko.logout}
+              </Button>
+            </div>
           ) : null}
         </>
       )}

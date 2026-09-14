@@ -235,11 +235,20 @@ export async function createDemandRemote(input: CreateDemandInput): Promise<Dema
     const locationSummary = formatFulfillmentSummary(input.fulfillmentOptions);
     const tradeMethod =
       input.tradeMethod ?? tradeMethodFromFulfillment(input.fulfillmentOptions);
+    const { data: productRow } = await sb
+      .from("products")
+      .select("category")
+      .eq("id", input.productId)
+      .maybeSingle();
+    const category =
+      typeof productRow?.category === "string" && productRow.category
+        ? productRow.category
+        : "other";
     const { data, error } = await sb.rpc("upsert_buy_demand", {
       p_product_id: input.productId,
       p_title: input.title,
       p_description: input.description ?? input.title,
-      p_category: "electronics",
+      p_category: category,
       p_max_price: input.maxPrice,
       p_location: locationSummary,
       p_condition_preference: input.conditionPreference,

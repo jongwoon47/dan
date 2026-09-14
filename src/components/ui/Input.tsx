@@ -33,9 +33,11 @@ type ChipProps = {
   selected?: boolean;
   onClick?: () => void;
   children: ReactNode;
+  disabled?: boolean;
+  title?: string;
 };
 
-export function Chip({ selected, onClick, children }: ChipProps) {
+export function Chip({ selected, onClick, children, disabled, title }: ChipProps) {
   return (
     <button
       type="button"
@@ -44,6 +46,8 @@ export function Chip({ selected, onClick, children }: ChipProps) {
         .join(" ")}
       onClick={onClick}
       aria-pressed={selected}
+      disabled={disabled}
+      title={title}
     >
       {children}
     </button>

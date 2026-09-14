@@ -23,10 +23,16 @@ export function parseMoneyInput(raw: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-/** e.g. "최대 80만원까지 생각하고 있어요" */
-export function formatPriceThought(value: number): string {
+/** e.g. BUY: "최대 80만원까지 생각하고 있어요" */
+export function formatPriceThought(
+  value: number,
+  kind: "buy" | "borrow" | "reward" = "buy",
+): string {
   if (!Number.isFinite(value) || value <= 0) return "";
-  return `최대 ${formatWonShort(value)}까지 생각하고 있어요`;
+  const price = formatWonShort(value);
+  if (kind === "borrow") return `총 ${price}까지 쓸 수 있어요`;
+  if (kind === "reward") return `보상은 ${price} 정도예요`;
+  return `최대 ${price}까지 생각하고 있어요`;
 }
 
 export function formatRelativeTime(iso: string, nowMs: number = Date.now()): string {

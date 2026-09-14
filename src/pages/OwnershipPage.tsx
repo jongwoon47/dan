@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { Chip, ChipGroup } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ko } from "@/copy/ko";
@@ -17,10 +16,10 @@ const CONDITIONS: ItemCondition[] = ["sealed", "like_new", "lightly_used"];
 export function OwnershipPage() {
   const { productId = "" } = useParams();
   const navigate = useNavigate();
-  const { getProduct, getAggregate, createOwnership } = useDan();
+  const { getProduct, getAggregate, createOwnership, isLoggedIn } = useDan();
   const product = getProduct(productId);
   const aggregate = getAggregate(productId);
-  const [condition, setCondition] = useState<ItemCondition>("lightly_used");
+  const [condition, setCondition] = useState<ItemCondition | null>(null);
   const [doneId, setDoneId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -34,7 +33,10 @@ export function OwnershipPage() {
   }
 
   async function register() {
-    if (busy) return;
+    if (busy || !condition) return;
+    if (!isLoggedIn) {
+      // createOwnership redirects with next= current path
+    }
     setBusy(true);
     try {
       const ownership = await createOwnership({ productId, condition });
@@ -45,74 +47,98 @@ export function OwnershipPage() {
   }
 
   if (doneId) {
+    const seekers = aggregate?.seekerCount ?? 0;
+    const highest = aggregate?.highestIntentPrice ?? 0;
+    const delta = aggregate?.recent7dDelta ?? 0;
     return (
-      <div className="page-stack">
-        <Card className="section-stack success-card aha-card">
-          <p className="hero__eyebrow">Aha</p>
-          <h1 className="page-title">{product.name}</h1>
-          <p className="detail-hero__count">
-            <strong>
-              {aggregate?.seekerCount ?? 0}
-              {ko.myung}
-            </strong>
-            {ko.seekingDetailSuffix.replace(ko.myung, "")}
-          </p>
-          <div className="kpi-strip">
-            <div className="kpi-strip__item">
-              <span>{ko.ownAhaHigh}</span>
-              <strong>{formatWon(aggregate?.highestIntentPrice ?? 0)}</strong>
-            </div>
-            <div className="kpi-strip__item">
-              <span>{ko.thisWeek}</span>
-              <strong className="demand-card__trend">
-                +{aggregate?.recent7dDelta ?? 0}
+      <div className="page-stack page-narrow">
+        <section className="section-stack">
+          <h1 className="page-title">{ko.ownDoneTitle}</h1>
+          <p className="section-title">{product.name}</p>
+          {seekers > 0 ? (
+            <p className="detail-hero__count">
+              <strong>
+                {seekers}
                 {ko.myung}
               </strong>
+              {ko.seekingDetailSuffix.replace(ko.myung, "")}
+            </p>
+          ) : (
+            <p className="section-desc">{ko.ownDoneBody}</p>
+          )}
+          {(highest > 0 || delta > 0) && (
+            <div className="kpi-strip kpi-strip--compact">
+              {highest > 0 ? (
+                <div className="kpi-strip__item">
+                  <span>{ko.highestHopeShort}</span>
+                  <strong>{formatWon(highest)}</strong>
+                </div>
+              ) : null}
+              {delta > 0 ? (
+                <div className="kpi-strip__item">
+                  <span>{ko.thisWeek}</span>
+                  <strong className="demand-card__trend">
+                    +{delta}
+                    {ko.myung}
+                  </strong>
+                </div>
+              ) : null}
             </div>
-          </div>
-          <p className="section-desc">{ko.ownDoneBody}</p>
-          <Button fullWidth size="lg" onClick={() => navigate(`/ownership/${doneId}/sell-intent`)}>
+          )}
+          {seekers > 0 ? <p className="section-desc">{ko.ownDoneBody}</p> : null}
+          <Button
+            fullWidth
+            size="lg"
+            onClick={() => navigate(`/ownership/${doneId}/sell-intent`)}
+          >
             {ko.sellCta}
           </Button>
           <Button to={`/demand/${productId}`} variant="secondary" fullWidth>
             {ko.reviewDemand}
           </Button>
-        </Card>
+        </section>
       </div>
     );
   }
 
   return (
-    <div className="page-stack">
-      <header className="page-header">
-        <h1 className="page-title">{ko.ownTitle}</h1>
-        <p className="section-desc">{ko.ownDesc}</p>
-      </header>
-      <Card className="section-stack">
+    <div className="page-stack page-narrow">
+      <section className="section-stack">
         <div className="own-product">
           <ProductVisual product={product} size="sm" />
           <div>
             <h2 className="section-title">{product.name}</h2>
-            <p className="section-desc">
-              {ko.seekersLabel} {aggregate?.seekerCount ?? 0}
-              {ko.myung}
-            </p>
+            {aggregate && aggregate.seekerCount > 0 ? (
+              <p className="section-desc">
+                {ko.seekersLabel} {aggregate.seekerCount}
+                {ko.myung}
+              </p>
+            ) : null}
           </div>
         </div>
         <div>
           <p className="field-inline-label">{ko.condition}</p>
           <ChipGroup>
             {CONDITIONS.map((c) => (
-              <Chip key={c} selected={condition === c} onClick={() => setCondition(c)}>
+              <Chip
+                key={c}
+                selected={condition === c}
+                onClick={() => setCondition(c)}
+              >
                 {CONDITION_LABEL[c]}
               </Chip>
             ))}
           </ChipGroup>
         </div>
-        <Button fullWidth size="lg" onClick={() => void register()} disabled={busy}>
-          {busy ? "..." : ko.registerOwned}
+        <Button
+          fullWidth
+          size="lg"
+          onClick={() => void register()}
+          disabled={busy || !condition}
+        >
+          {busy ? ko.saving : ko.registerOwned}
         </Button>
-      </Card>
+      </section>
     </div>
   );
 }

@@ -79,9 +79,15 @@
 
 .top-nav__auth {
   margin-left: auto;
-  display: flex;
+  display: none;
   align-items: center;
   gap: var(--space-sm);
+}
+
+@media (min-width: 860px) {
+  .top-nav__auth--desktop {
+    display: flex;
+  }
 }
 
 .top-nav__user {
@@ -170,15 +176,23 @@
   right: 16px;
   bottom: calc(var(--bottom-nav-height) + 12px + env(safe-area-inset-bottom, 0px));
   z-index: 31;
-  width: 56px;
+  min-width: 56px;
   height: 56px;
+  padding: 0 18px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   background: var(--dan-accent);
   color: #fff;
-  box-shadow: 0 8px 20px rgba(13, 159, 138, 0.28);
+  box-shadow: 0 8px 20px rgba(11, 133, 115, 0.28);
+  font-weight: 800;
+  font-size: 0.875rem;
+}
+
+.create-fab__label {
+  line-height: 1;
 }
 
 .create-fab.active {

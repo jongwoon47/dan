@@ -67,6 +67,8 @@ export function MatchChatPage() {
   >("spam");
   const [toast, setToast] = useState<string | null>(null);
   const threadRef = useRef<HTMLDivElement>(null);
+  const stickToBottomRef = useRef(true);
+  const initialScrollDone = useRef(false);
 
   useDeepHeader({ hide: true });
 
@@ -106,10 +108,20 @@ export function MatchChatPage() {
     };
   }, [getPublicProfile, peerId]);
 
-  useEffect(() => {
+  function onThreadScroll() {
     const el = threadRef.current;
     if (!el) return;
-    el.scrollTop = el.scrollHeight;
+    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+    stickToBottomRef.current = distance < 80;
+  }
+
+  useEffect(() => {
+    const el = threadRef.current;
+    if (!el || loading) return;
+    if (!initialScrollDone.current || stickToBottomRef.current) {
+      el.scrollTop = el.scrollHeight;
+      initialScrollDone.current = true;
+    }
   }, [messages, loading]);
 
   const demandTitle = useMemo(() => demand?.title ?? ko.chatTitle, [demand]);
@@ -135,6 +147,7 @@ export function MatchChatPage() {
     if (busy || !body.trim()) return;
     const text = body.trim();
     setBody("");
+    stickToBottomRef.current = true;
     const result = await sendMessage(matchId, text);
     if (!result) {
       setError(ko.genericError);
@@ -212,7 +225,12 @@ export function MatchChatPage() {
       {error ? <p className="form-error">{error}</p> : null}
       {toast ? <p className="section-desc">{toast}</p> : null}
 
-      <div className="chat-thread" ref={threadRef} aria-live="polite">
+      <div
+        className="chat-thread"
+        ref={threadRef}
+        aria-live="polite"
+        onScroll={onThreadScroll}
+      >
         {loading ? <p className="muted">{ko.loadingChat}</p> : null}
         {!loading && messages.length === 0 ? (
           <p className="section-desc">{ko.chatEmpty}</p>
