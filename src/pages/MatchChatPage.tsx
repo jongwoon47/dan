@@ -11,6 +11,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
@@ -62,6 +63,9 @@ export function MatchChatPage() {
   const [loading, setLoading] = useState(true);
   const [peerName, setPeerName] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const onMenuOpenChange = useCallback((open: boolean) => {
+    setMenuOpen(open);
+  }, []);
   const [confirm, setConfirm] = useState<"block" | "report" | null>(null);
   const [reportReason, setReportReason] = useState<
     "spam" | "fraud" | "abuse" | "other"
@@ -102,7 +106,7 @@ export function MatchChatPage() {
     if (!peerId) return;
     let cancelled = false;
     void getPublicProfile(peerId).then((p) => {
-      if (!cancelled) setPeerName(p?.displayName ?? "");
+      if (!cancelled) setPeerName(p?.displayName?.trim() ?? "");
     });
     return () => {
       cancelled = true;
@@ -184,41 +188,21 @@ export function MatchChatPage() {
           <p className="chat-page__demand">{demandTitle}</p>
         </div>
         {peerId ? (
-          <div className="chat-menu">
-            <button
-              type="button"
-              className="chat-menu__trigger"
-              aria-label={ko.moreActions}
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((v) => !v)}
-            >
-              ⋯
-            </button>
-            {menuOpen ? (
-              <div className="chat-menu__panel" role="menu">
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setConfirm("block");
-                  }}
-                >
-                  {ko.block}
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setConfirm("report");
-                  }}
-                >
-                  {ko.report}
-                </button>
-              </div>
-            ) : null}
-          </div>
+          <OverflowMenu
+            open={menuOpen}
+            onOpenChange={onMenuOpenChange}
+            items={[
+              {
+                label: ko.block,
+                danger: true,
+                onSelect: () => setConfirm("block"),
+              },
+              {
+                label: ko.report,
+                onSelect: () => setConfirm("report"),
+              },
+            ]}
+          />
         ) : null}
       </header>
 

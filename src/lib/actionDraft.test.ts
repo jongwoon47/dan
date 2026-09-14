@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach, vi, afterEach } from "vitest";
 import {
   clearOwnDraft,
   clearResponseDraft,
@@ -12,6 +12,12 @@ describe("actionDraft", () => {
   beforeEach(() => {
     clearOwnDraft();
     clearResponseDraft();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-15T00:00:00Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("restores ownership condition for the same product only", () => {
@@ -34,5 +40,18 @@ describe("actionDraft", () => {
       message: "가능합니다",
     });
     expect(loadResponseDraft("d2")).toBeNull();
+  });
+
+  it("expires stale drafts instead of resurrecting them", () => {
+    saveOwnDraft({ productId: "p1", condition: "like_new" });
+    saveResponseDraft({
+      demandId: "d1",
+      offerPrice: "",
+      availability: "",
+      message: "남김",
+    });
+    vi.setSystemTime(new Date("2026-09-15T03:00:01Z"));
+    expect(loadOwnDraft("p1")).toBeNull();
+    expect(loadResponseDraft("d1")).toBeNull();
   });
 });

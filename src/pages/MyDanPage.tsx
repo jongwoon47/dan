@@ -219,7 +219,7 @@ export function MyDanPage() {
       <section className="section-stack">
         <h2 className="section-title">{ko.attentionTitle}</h2>
         {nowItems.length === 0 ? (
-          <p className="section-desc">{ko.activityEmpty}</p>
+          <p className="section-desc">{ko.nowEmpty}</p>
         ) : (
           <div className="app-row-list">
             {nowItems.map((item) => (

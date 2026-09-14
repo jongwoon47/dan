@@ -93,7 +93,8 @@ export function DemandItemPage() {
       await Promise.all(
         ids.map(async (id) => {
           const p = await getPublicProfile(id);
-          next[id] = p?.displayName ?? "DAN";
+          const name = p?.displayName?.trim();
+          if (name) next[id] = name;
         }),
       );
       if (!cancelled) setNames((prev) => ({ ...prev, ...next }));
@@ -116,14 +117,18 @@ export function DemandItemPage() {
     e.preventDefault();
     if (busy || !demand) return;
     setLocalError(null);
-    const msg = message.trim() || ko.respondCta;
+    const msg = message.trim();
+    if (!msg) {
+      setLocalError(ko.genericError);
+      return;
+    }
     const price = offerPrice.trim() ? Number(offerPrice.replace(/,/g, "")) : undefined;
     // Preserve composer inputs across login redirect (full page assign).
     saveResponseDraft({
       demandId: demand.id,
       offerPrice,
       availability,
-      message,
+      message: msg,
     });
     const result = await createResponse({
       demandId: demand.id,
@@ -288,7 +293,13 @@ export function DemandItemPage() {
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder={ko.responseMessagePh}
+                  placeholder={
+                    demand.type === "BORROW"
+                      ? `예: ${ko.respondBorrow}`
+                      : demand.type === "SERVICE"
+                        ? `예: ${ko.respondService}`
+                        : ko.responseMessagePh
+                  }
                   rows={3}
                   required
                 />
@@ -304,14 +315,10 @@ export function DemandItemPage() {
               fullWidth
               size="lg"
               onClick={() => {
-                setMessage(
-                  demand.type === "BORROW"
-                    ? ko.respondBorrow
-                    : demand.type === "SERVICE"
-                      ? ko.respondService
-                      : ko.respondCta,
-                );
+                clearResponseDraft();
+                setMessage("");
                 setOfferPrice("");
+                setAvailability("");
                 setComposerOpen(true);
               }}
             >
@@ -336,9 +343,18 @@ export function DemandItemPage() {
             ownerResponses.map((r) => (
               <div key={r.id} className="response-card">
                 <div className="response-card__head">
-                  <Link to={`/profile/${r.userId}`} className="text-link">
-                    {names[r.userId] ?? "…"}
-                  </Link>
+                  {names[r.userId] ? (
+                    <Link to={`/profile/${r.userId}`} className="text-link">
+                      {names[r.userId]}
+                    </Link>
+                  ) : (
+                    <Link
+                      to={`/profile/${r.userId}`}
+                      className="text-link muted"
+                    >
+                      상대
+                    </Link>
+                  )}
                   <span className="muted">{responseStatusLabel(r.status)}</span>
                 </div>
                 {r.offeredPrice != null ? (

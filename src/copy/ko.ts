@@ -334,6 +334,7 @@ export const ko = {
   "openChat": "대화하기",
   "activityTitle": "알림",
   "activityEmpty": "새로운 알림이 없어요.",
+  "nowEmpty": "지금 확인할 일이 없어요.",
   "activityNewResponse": "새 응답이 도착했어요",
   "activityAccepted": "응답이 수락됐어요",
   "activityDeclined": "응답이 거절됐어요",

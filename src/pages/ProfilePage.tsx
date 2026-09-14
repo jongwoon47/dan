@@ -1,49 +1,14 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import type { PublicProfile } from "@/domain/types";
 import "./pages.css";
-
-function MoreMenu({
-  open,
-  onToggle,
-  onBlock,
-  onReport,
-}: {
-  open: boolean;
-  onToggle: () => void;
-  onBlock: () => void;
-  onReport: () => void;
-}) {
-  return (
-    <div className="chat-menu">
-      <button
-        type="button"
-        className="chat-menu__trigger"
-        aria-label={ko.moreActions}
-        aria-expanded={open}
-        onClick={onToggle}
-      >
-        ⋯
-      </button>
-      {open ? (
-        <div className="chat-menu__panel" role="menu">
-          <button type="button" role="menuitem" onClick={onBlock}>
-            {ko.block}
-          </button>
-          <button type="button" role="menuitem" onClick={onReport}>
-            {ko.report}
-          </button>
-        </div>
-      ) : null}
-    </div>
-  );
-}
 
 export function ProfilePage() {
   const { userId = "" } = useParams();
@@ -70,21 +35,28 @@ export function ProfilePage() {
   const [toast, setToast] = useState<string | null>(null);
   const isSelf = currentUser?.id === userId;
 
+  const onMenuOpenChange = useCallback((open: boolean) => {
+    setMenuOpen(open);
+  }, []);
+
   useDeepHeader({
     title: profile?.displayName ?? ko.profileTitle,
     rightKey: `${isSelf}-${menuOpen}`,
     right: !isSelf ? (
-      <MoreMenu
+      <OverflowMenu
         open={menuOpen}
-        onToggle={() => setMenuOpen((v) => !v)}
-        onBlock={() => {
-          setMenuOpen(false);
-          setConfirm("block");
-        }}
-        onReport={() => {
-          setMenuOpen(false);
-          setConfirm("report");
-        }}
+        onOpenChange={onMenuOpenChange}
+        items={[
+          {
+            label: ko.block,
+            danger: true,
+            onSelect: () => setConfirm("block"),
+          },
+          {
+            label: ko.report,
+            onSelect: () => setConfirm("report"),
+          },
+        ]}
       />
     ) : undefined,
   });

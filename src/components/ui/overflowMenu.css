@@ -1,0 +1,46 @@
+.overflow-menu {
+  position: relative;
+}
+
+.overflow-menu__trigger {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--dan-border);
+  border-radius: 12px;
+  background: var(--dan-surface);
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--dan-ink-secondary);
+}
+
+.overflow-menu__panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  min-width: 140px;
+  padding: 6px;
+  border: 1px solid var(--dan-border);
+  border-radius: 12px;
+  background: var(--dan-surface);
+  display: grid;
+  gap: 2px;
+  z-index: 5;
+}
+
+.overflow-menu__item {
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font: inherit;
+  min-height: 44px;
+}
+
+.overflow-menu__item:hover {
+  background: var(--dan-bg-elevated);
+}
+
+.overflow-menu__item.is-danger {
+  color: var(--dan-danger);
+}
