@@ -8,6 +8,7 @@ import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import type { ItemCondition } from "@/domain/types";
 import { CONDITION_LABEL } from "@/domain/types";
+import { clearOwnDraft, loadOwnDraft, saveOwnDraft } from "@/lib/actionDraft";
 import { formatWon } from "@/lib/format";
 import "./pages.css";
 
@@ -16,10 +17,12 @@ const CONDITIONS: ItemCondition[] = ["sealed", "like_new", "lightly_used"];
 export function OwnershipPage() {
   const { productId = "" } = useParams();
   const navigate = useNavigate();
-  const { getProduct, getAggregate, createOwnership, isLoggedIn } = useDan();
+  const { getProduct, getAggregate, createOwnership } = useDan();
   const product = getProduct(productId);
   const aggregate = getAggregate(productId);
-  const [condition, setCondition] = useState<ItemCondition | null>(null);
+  const [condition, setCondition] = useState<ItemCondition | null>(() =>
+    loadOwnDraft(productId),
+  );
   const [doneId, setDoneId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -32,15 +35,21 @@ export function OwnershipPage() {
     );
   }
 
+  function pickCondition(next: ItemCondition) {
+    setCondition(next);
+    saveOwnDraft({ productId, condition: next });
+  }
+
   async function register() {
     if (busy || !condition) return;
-    if (!isLoggedIn) {
-      // createOwnership redirects with next= current path
-    }
+    saveOwnDraft({ productId, condition });
     setBusy(true);
     try {
       const ownership = await createOwnership({ productId, condition });
-      if (ownership) setDoneId(ownership.id);
+      if (ownership) {
+        clearOwnDraft();
+        setDoneId(ownership.id);
+      }
     } finally {
       setBusy(false);
     }
@@ -123,7 +132,7 @@ export function OwnershipPage() {
               <Chip
                 key={c}
                 selected={condition === c}
-                onClick={() => setCondition(c)}
+                onClick={() => pickCondition(c)}
               >
                 {CONDITION_LABEL[c]}
               </Chip>

@@ -1,3 +1,4 @@
+import { navigateBack } from "@/lib/navBack";
 import { useNavigate } from "react-router-dom";
 import type { ReactNode } from "react";
 import "./layout.css";
@@ -12,21 +13,13 @@ type Props = {
 export function DeepHeader({ title, subtitle, right, fallbackTo = "/" }: Props) {
   const navigate = useNavigate();
 
-  function goBack() {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      navigate(-1);
-      return;
-    }
-    navigate(fallbackTo);
-  }
-
   return (
     <header className="deep-header">
       <button
         type="button"
         className="deep-header__back"
         aria-label="뒤로가기"
-        onClick={goBack}
+        onClick={() => navigateBack(navigate, fallbackTo)}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
           <path

@@ -28,6 +28,10 @@ export function ConfirmSheet({
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
+  const onCancelRef = useRef(onCancel);
+  const onConfirmRef = useRef(onConfirm);
+  onCancelRef.current = onCancel;
+  onConfirmRef.current = onConfirm;
 
   useEffect(() => {
     if (!open) return;
@@ -41,7 +45,7 @@ export function ConfirmSheet({
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
         e.preventDefault();
-        onCancel();
+        onCancelRef.current();
         return;
       }
       if (e.key !== "Tab" || !panel) return;
@@ -65,12 +69,16 @@ export function ConfirmSheet({
       document.removeEventListener("keydown", onKeyDown);
       previouslyFocused.current?.focus?.();
     };
-  }, [open, onCancel]);
+  }, [open]);
 
   if (!open) return null;
 
   return (
-    <div className="confirm-sheet" role="presentation" onClick={onCancel}>
+    <div
+      className="confirm-sheet"
+      role="presentation"
+      onClick={() => onCancelRef.current()}
+    >
       <div
         ref={panelRef}
         className="confirm-sheet__panel"
@@ -85,13 +93,17 @@ export function ConfirmSheet({
         {body ? <p className="confirm-sheet__body">{body}</p> : null}
         {children}
         <div className="confirm-sheet__actions">
-          <Button variant="secondary" fullWidth onClick={onCancel}>
+          <Button
+            variant="secondary"
+            fullWidth
+            onClick={() => onCancelRef.current()}
+          >
             {cancelLabel}
           </Button>
           <Button
             fullWidth
             variant={danger ? "danger" : "primary"}
-            onClick={onConfirm}
+            onClick={() => onConfirmRef.current()}
           >
             {confirmLabel}
           </Button>

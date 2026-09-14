@@ -8,6 +8,11 @@ import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
 import { DEMAND_TYPE_LABEL } from "@/domain/types";
+import {
+  clearResponseDraft,
+  loadResponseDraft,
+  saveResponseDraft,
+} from "@/lib/actionDraft";
 import { formatDemandWhen, formatWon } from "@/lib/format";
 import "./pages.css";
 
@@ -38,10 +43,13 @@ export function DemandItemPage() {
   useDeepHeader({
     title: demand?.title ?? ko.viewDemand,
   });
-  const [composerOpen, setComposerOpen] = useState(false);
-  const [offerPrice, setOfferPrice] = useState("");
-  const [availability, setAvailability] = useState("");
-  const [message, setMessage] = useState("");
+  const restored = loadResponseDraft(demandId);
+  const [composerOpen, setComposerOpen] = useState(Boolean(restored));
+  const [offerPrice, setOfferPrice] = useState(restored?.offerPrice ?? "");
+  const [availability, setAvailability] = useState(
+    restored?.availability ?? "",
+  );
+  const [message, setMessage] = useState(restored?.message ?? "");
   const [sent, setSent] = useState(false);
   const [names, setNames] = useState<Record<string, string>>({});
   const [localError, setLocalError] = useState<string | null>(null);
@@ -110,6 +118,13 @@ export function DemandItemPage() {
     setLocalError(null);
     const msg = message.trim() || ko.respondCta;
     const price = offerPrice.trim() ? Number(offerPrice.replace(/,/g, "")) : undefined;
+    // Preserve composer inputs across login redirect (full page assign).
+    saveResponseDraft({
+      demandId: demand.id,
+      offerPrice,
+      availability,
+      message,
+    });
     const result = await createResponse({
       demandId: demand.id,
       message: msg,
@@ -120,6 +135,7 @@ export function DemandItemPage() {
       setLocalError(ko.genericError);
       return;
     }
+    clearResponseDraft();
     setSent(true);
     setComposerOpen(false);
   }

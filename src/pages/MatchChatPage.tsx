@@ -1,3 +1,4 @@
+import { navigateBack } from "@/lib/navBack";
 import {
   useCallback,
   useEffect,
@@ -128,8 +129,7 @@ export function MatchChatPage() {
   const displayPeer = peerName || "상대";
 
   function goBack() {
-    if (window.history.length > 1) navigate(-1);
-    else navigate("/my");
+    navigateBack(navigate, "/my");
   }
 
   if (!match || match.status !== "CONNECTED") {

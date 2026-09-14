@@ -145,8 +145,9 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         const result = await fn();
         await refresh();
         return result;
-      } catch (e) {
-        setError(ko.genericError);
+      } catch {
+        // Leave error ownership to the calling screen (inline/form).
+        // Avoid stacking a global banner on the same mutation failure.
         return null;
       } finally {
         setBusy(false);

@@ -107,7 +107,16 @@ export function MyDanPage() {
 
   const nowItems = useMemo(() => {
     const items: { key: string; text: string; sub?: string; to: string }[] = [];
-    for (const ev of activities.filter((a) => !a.readAt).slice(0, 3)) {
+    const unread = activities.filter((a) => !a.readAt);
+    const seenTo = new Set<string>();
+
+    function push(item: { key: string; text: string; sub?: string; to: string }) {
+      if (seenTo.has(item.to)) return;
+      seenTo.add(item.to);
+      items.push(item);
+    }
+
+    for (const ev of unread.slice(0, 5)) {
       const demand = ev.demandId ? getDemand(ev.demandId) : undefined;
       const to =
         ev.matchId &&
@@ -118,7 +127,7 @@ export function MyDanPage() {
             : ev.demandId
               ? `/demand/item/${ev.demandId}`
               : "/activity";
-      items.push({
+      push({
         key: ev.id,
         text:
           ev.kind === "NEW_RESPONSE"
@@ -134,26 +143,42 @@ export function MyDanPage() {
         to,
       });
     }
-    if (myMatches.some((m) => m.status === "BUYER_INTERESTED")) {
-      items.push({
+
+    const hasUnreadBuyerInterest = unread.some(
+      (a) => a.kind === "BUYER_INTEREST",
+    );
+    if (
+      myMatches.some((m) => m.status === "BUYER_INTERESTED") &&
+      !hasUnreadBuyerInterest
+    ) {
+      push({
         key: "interest",
         text: ko.signalMatch,
         to: "/my#connections",
       });
     }
+
     for (const own of myOwnerships) {
       const agg = getAggregate(own.productId);
-      if (agg && agg.seekerCount > 0) {
-        items.push({
-          key: own.id,
-          text: `${ko.signalOwned} (${agg.seekerCount}${ko.myung})`,
-          to: `/demand/${own.productId}`,
-        });
-        break;
-      }
+      const to = `/demand/${own.productId}`;
+      if (!agg || agg.seekerCount <= 0) continue;
+      // Same product already covered by unread BUYER_INTEREST activity.
+      if (seenTo.has(to)) continue;
+      push({
+        key: own.id,
+        text: `${ko.signalOwned} (${agg.seekerCount}${ko.myung})`,
+        to,
+      });
+      break;
     }
+
     return items.slice(0, 4);
   }, [activities, myMatches, myOwnerships, getAggregate, getDemand]);
+
+  const pendingMatches = useMemo(
+    () => myMatches.filter((m) => m.status !== "CONNECTED"),
+    [myMatches],
+  );
 
   const activeDemands = myDemands.filter((d) => d.status === "ACTIVE");
   const openResponses = myResponses.filter((r) => r.status === "OPEN");
@@ -263,13 +288,12 @@ export function MyDanPage() {
         )}
       </section>
 
-      <section className="section-stack">
-        <h2 className="section-title">{ko.pendingMatches}</h2>
-        <MatchList
-          matches={myMatches.filter((m) => m.status !== "CONNECTED")}
-          emptyWhenZero
-        />
-      </section>
+      {pendingMatches.length > 0 ? (
+        <section className="section-stack">
+          <h2 className="section-title">{ko.pendingMatches}</h2>
+          <MatchList matches={pendingMatches} emptyWhenZero={false} />
+        </section>
+      ) : null}
 
       <section className="section-stack">
         <button
