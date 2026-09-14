@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-1. Supabase project with migrations `0001`–`0005` applied
+1. Supabase project with migrations `0001`–`0006` applied
 2. Auth: Email provider enabled; confirm email disabled for local test (optional)
 3. Local `.env.local`:
 
@@ -41,6 +41,12 @@ Until credentials exist: treat automated live E2E as **BLOCKED**. Domain unit te
 2. Third account cannot SELECT the A–B match → empty / deny
 3. **B** cannot call `seller_connect_match` on a pair that is only POTENTIAL (no row) / wrong status → reject
 
-## Automation note
+## Automation (remote)
 
-`src/data/supabase/*.integration.test.ts` skips unless live env vars are present. Do not point integration tests at production data.
+```bash
+# Requires .env.local with VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_DATA_MODE=supabase
+npm run test:e2e:remote
+```
+
+Creates ephemeral A/B/C users, runs TASK + BUY + Security against live Postgres/RLS/RPC.
+Does **not** use demo mode. Asserts no `POTENTIAL` rows in `matches`.

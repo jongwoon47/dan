@@ -17,7 +17,11 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     css: true,
     env: {
+      // Unit tests always use demo adapter; ignore developer .env.local Supabase mode.
+      VITE_DATA_MODE: "demo",
       VITE_DAN_DATA_MODE: "demo",
+      VITE_SUPABASE_URL: "",
+      VITE_SUPABASE_ANON_KEY: "",
     },
   },
 });
