@@ -7,6 +7,7 @@ import {
 } from "react";
 import { useAuth } from "@/auth/AuthProvider";
 import * as api from "@/data/supabase/api";
+import { ko } from "@/copy/ko";
 import { buildFeedItems } from "@/domain/feed";
 import { buildVisibleMatches, parsePotentialMatchId } from "@/domain/matchLifecycle";
 import {
@@ -111,7 +112,7 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         setActivities([]);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load");
+      setError(ko.loadFailed);
       setLoadState("error");
     }
   }, [auth.user]);
@@ -143,7 +144,7 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         await refresh();
         return result;
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Mutation failed");
+        setError(ko.genericError);
         return null;
       } finally {
         setBusy(false);
@@ -177,14 +178,12 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
       },
       createDemand: async (payload: CreateDemandInput) => {
         if (!currentUser) {
-          window.location.assign("/login");
           return null;
         }
         return run(() => api.createDemandRemote(payload));
       },
       ensureProduct: async (name) => {
         if (!currentUser) {
-          window.location.assign("/login");
           return null;
         }
         return run(() => api.ensureProductRemote(name));
@@ -250,7 +249,7 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         try {
           return await api.listMessagesRemote(matchId);
         } catch (e) {
-          setError(e instanceof Error ? e.message : "채팅을 불러오지 못했어요");
+          setError(ko.genericError);
           return [];
         }
       },
@@ -398,9 +397,9 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
   if (loadState === "error") {
     return (
       <div className="app-main page-stack">
-        <p role="alert">{error ?? "Failed to load"}</p>
+        <p role="alert">{ko.loadFailed}</p>
         <button type="button" className="text-link" onClick={() => void refresh()}>
-          Retry
+          {ko.retry}
         </button>
       </div>
     );
@@ -410,14 +409,14 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
     <DanContext.Provider value={value}>
       {busy ? (
         <div className="mutation-bar" aria-live="polite">
-          Saving…
+          {ko.saving}
         </div>
       ) : null}
       {error ? (
         <div className="mutation-error" role="alert">
-          {error}
+          {ko.genericError}
           <button type="button" className="text-link" onClick={() => setError(null)}>
-            Dismiss
+            {ko.dismiss}
           </button>
         </div>
       ) : null}

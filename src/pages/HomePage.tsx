@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { AggregatedDemandCard } from "@/components/AggregatedDemandCard";
 import { IndividualDemandCard } from "@/components/IndividualDemandCard";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import type { DemandType } from "@/domain/types";
@@ -19,9 +21,10 @@ export function HomePage() {
       <section className="composer">
         <h1 className="composer__title">{ko.composerTitle}</h1>
         <p className="composer__hint">{ko.composerHint}</p>
-        <Link to="/create" className="composer__box">
-          {ko.composerPlaceholder}
-        </Link>
+        <p className="section-desc">{ko.homeCtaHint}</p>
+        <Button to="/create" fullWidth size="lg">
+          {ko.homeCta}
+        </Button>
         <div className="type-row" aria-label="demand types">
           {TYPES.map((type) => (
             <Link key={type} to={`/create?type=${type}`} className="type-chip">
@@ -36,22 +39,36 @@ export function HomePage() {
           <h2 className="section-title">{ko.feedNowTitle}</h2>
           <p className="section-desc">{ko.feedNowDesc}</p>
         </div>
-        <div className="feed-list">
-          {featured.map((item) =>
-            item.kind === "aggregated" ? (
-              <AggregatedDemandCard
-                key={item.id}
-                product={item.product}
-                aggregate={item.aggregate}
-              />
-            ) : (
-              <IndividualDemandCard key={item.id} demand={item.demand} />
-            ),
-          )}
-        </div>
-        <Link to="/feed" className="text-link">
-          {ko.viewAllDemand}
-        </Link>
+        {featured.length === 0 ? (
+          <EmptyState
+            title={ko.emptyHomeTitle}
+            body={ko.emptyHomeBody}
+            action={
+              <Button to="/create" variant="secondary">
+                {ko.ctaCreate}
+              </Button>
+            }
+          />
+        ) : (
+          <>
+            <div className="feed-list">
+              {featured.map((item) =>
+                item.kind === "aggregated" ? (
+                  <AggregatedDemandCard
+                    key={item.id}
+                    product={item.product}
+                    aggregate={item.aggregate}
+                  />
+                ) : (
+                  <IndividualDemandCard key={item.id} demand={item.demand} />
+                ),
+              )}
+            </div>
+            <Link to="/feed" className="text-link">
+              {ko.viewAllDemand}
+            </Link>
+          </>
+        )}
       </section>
     </div>
   );

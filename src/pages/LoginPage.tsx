@@ -1,14 +1,25 @@
 import { useState, type FormEvent } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Input";
 import { ko } from "@/copy/ko";
+import { safeReturnPath } from "@/lib/createDraft";
 import "@/pages/pages.css";
+
+function authErrorMessage(err: unknown): string {
+  const msg = err instanceof Error ? err.message : "";
+  if (/invalid login|invalid credentials/i.test(msg)) return ko.authInvalid;
+  if (/already registered|user already/i.test(msg)) return ko.authExists;
+  if (/password/i.test(msg) && /6|least|weak/i.test(msg)) return ko.authWeakPassword;
+  return ko.genericError;
+}
 
 export function LoginPage() {
   const { mode, status, signIn, signUp, error, clearError } = useAuth();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const next = safeReturnPath(params.get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -17,10 +28,10 @@ export function LoginPage() {
   const [localError, setLocalError] = useState<string | null>(null);
 
   if (mode === "demo") {
-    return <Navigate to="/my" replace />;
+    return <Navigate to={next} replace />;
   }
   if (status === "authenticated") {
-    return <Navigate to="/my" replace />;
+    return <Navigate to={next} replace />;
   }
 
   async function onSubmit(e: FormEvent) {
@@ -30,34 +41,45 @@ export function LoginPage() {
     setBusy(true);
     try {
       if (isSignUp) {
-        await signUp(email.trim(), password, displayName.trim() || email.split("@")[0]!);
+        await signUp(
+          email.trim(),
+          password,
+          displayName.trim() || email.split("@")[0]!,
+        );
       } else {
         await signIn(email.trim(), password);
       }
-      navigate("/my");
+      navigate(next);
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : "Auth failed");
+      setLocalError(authErrorMessage(err));
     } finally {
       setBusy(false);
     }
   }
 
+  const shownError = localError || (error ? ko.genericError : null);
+
   return (
     <div className="page-stack" style={{ maxWidth: 420 }}>
       <header className="page-header">
-        <h1 className="page-title">{isSignUp ? "Sign up" : ko.login}</h1>
+        <h1 className="page-title">{isSignUp ? ko.signup : ko.login}</h1>
         <p className="section-desc">
-          Email + password. Google/Kakao/Apple OAuth is not enabled in V1.
+          {isSignUp ? ko.signupLead : ko.loginLead}
+          {next === "/create" ? ` ${ko.loginToContinue}` : ""}
         </p>
       </header>
 
-      <form className="section-stack" onSubmit={onSubmit}>
+      <form className="section-stack" onSubmit={(e) => void onSubmit(e)}>
         {isSignUp ? (
-          <Field label="Display name">
-            <TextInput value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+          <Field label={ko.displayNameLabel}>
+            <TextInput
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              autoComplete="nickname"
+            />
           </Field>
         ) : null}
-        <Field label="Email">
+        <Field label={ko.emailLabel}>
           <TextInput
             type="email"
             autoComplete="email"
@@ -66,7 +88,7 @@ export function LoginPage() {
             required
           />
         </Field>
-        <Field label="Password">
+        <Field label={ko.passwordLabel}>
           <TextInput
             type="password"
             autoComplete={isSignUp ? "new-password" : "current-password"}
@@ -76,13 +98,13 @@ export function LoginPage() {
             minLength={6}
           />
         </Field>
-        {(localError || error) && (
+        {shownError ? (
           <p className="form-error" role="alert">
-            {localError || error}
+            {shownError}
           </p>
-        )}
+        ) : null}
         <Button fullWidth type="submit" disabled={busy}>
-          {busy ? "..." : isSignUp ? "Create account" : ko.login}
+          {busy ? ko.saving : isSignUp ? ko.createAccount : ko.login}
         </Button>
       </form>
 
@@ -95,7 +117,7 @@ export function LoginPage() {
           setLocalError(null);
         }}
       >
-        {isSignUp ? "Already have an account? Log in" : "Need an account? Sign up"}
+        {isSignUp ? ko.haveAccount : ko.needAccount}
       </button>
       <Link to="/" className="text-link">
         {ko.goBack}

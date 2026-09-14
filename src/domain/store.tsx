@@ -17,7 +17,6 @@ import {
 import {
   CURRENT_USER_ID,
   DEMO_USERS,
-  DISPLAY_SEEKER_OVERRIDES,
   PRODUCTS,
   SEED_DEMANDS,
   SEED_MATCHES,
@@ -391,10 +390,7 @@ export function DanProvider({ children }: { children: ReactNode }) {
       (r) => r.userId === state.currentUserId,
     );
     const myMatches = buildVisibleMatches(state, state.currentUserId);
-    const demandFeed = buildFeedItems(products, state.demands, {
-      displaySeekerOverrides: DISPLAY_SEEKER_OVERRIDES,
-      displayRecentDeltaFloor: { "prod-iphone-15-pro": 6 },
-    });
+    const demandFeed = buildFeedItems(products, state.demands);
 
     return {
       state,

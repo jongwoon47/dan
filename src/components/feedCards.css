@@ -84,23 +84,8 @@
   font-size: 0.9375rem;
 }
 
-.composer__box {
+.composer__cta {
   display: block;
-  width: 100%;
-  min-height: 56px;
-  padding: 16px 18px;
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--dan-border-strong);
-  background: var(--dan-surface);
-  color: var(--dan-ink-muted);
-  text-align: left;
-  font-weight: 600;
-  box-shadow: var(--shadow-sm);
-}
-
-.composer__box:hover {
-  border-color: var(--dan-accent);
-  color: var(--dan-ink);
 }
 
 .type-row {

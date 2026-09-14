@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Chip, ChipGroup, Field, TextInput } from "@/components/ui/Input";
@@ -14,6 +14,12 @@ import type {
   DemandType,
 } from "@/domain/types";
 import { CONDITION_LABEL, DEMAND_TYPE_LABEL } from "@/domain/types";
+import {
+  clearCreateDraft,
+  loadCreateDraft,
+  saveCreateDraft,
+  type CreateDraft,
+} from "@/lib/createDraft";
 import { fromDatetimeLocalValue, isBorrowRangeValid, isDatetimeLocalNotPast } from "@/lib/datetime";
 import { budgetLabelForType } from "@/lib/format";
 import { findProductByMatchKey, productMatchKey } from "@/domain/productName";
@@ -34,37 +40,111 @@ function parseType(raw: string | null): DemandType | null {
 }
 
 export function CreateDemandPage() {
-  const { products, createDemand, ensureProduct, currentUser } = useDan();
+  const { products, createDemand, ensureProduct, currentUser, isLoggedIn } = useDan();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const [type, setType] = useState<DemandType | null>(parseType(params.get("type")));
-  const [title, setTitle] = useState("");
-  const [productId, setProductId] = useState("");
-  const [productQuery, setProductQuery] = useState("");
+  const draft = loadCreateDraft();
+  const paramType = parseType(params.get("type"));
+
+  const [type, setType] = useState<DemandType | null>(
+    paramType ?? draft?.type ?? null,
+  );
+  const [title, setTitle] = useState(draft?.title ?? "");
+  const [productId, setProductId] = useState(draft?.productId ?? "");
+  const [productQuery, setProductQuery] = useState(draft?.productQuery ?? "");
   const [suggestOpen, setSuggestOpen] = useState(false);
-  const [maxPrice, setMaxPrice] = useState("1000000");
-  const [budget, setBudget] = useState("20000");
-  const [condition, setCondition] = useState<ConditionPreference>("any");
-  const [itemName, setItemName] = useState("");
-  const [detail, setDetail] = useState("");
+  const [maxPrice, setMaxPrice] = useState(draft?.maxPrice ?? "1000000");
+  const [budget, setBudget] = useState(draft?.budget ?? "20000");
+  const [condition, setCondition] = useState<ConditionPreference>(
+    draft?.condition ?? "any",
+  );
+  const [itemName, setItemName] = useState(draft?.itemName ?? "");
+  const [detail, setDetail] = useState(draft?.detail ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   const profileArea = currentUser?.defaultArea?.trim() ?? "";
-  const [buyShipping, setBuyShipping] = useState(true);
-  const [buyMeetup, setBuyMeetup] = useState(() => Boolean(profileArea));
-  const [meetupPlace, setMeetupPlace] = useState(profileArea);
-  const [borrowPlace, setBorrowPlace] = useState(profileArea);
-  const [borrowStart, setBorrowStart] = useState("");
-  const [borrowEnd, setBorrowEnd] = useState("");
-  const [taskMode, setTaskMode] = useState<TaskMode>("pickup");
-  const [taskPlace, setTaskPlace] = useState(profileArea);
-  const [routeFrom, setRouteFrom] = useState("");
-  const [routeTo, setRouteTo] = useState("");
-  const [dueAt, setDueAt] = useState("");
-  const [serviceMode, setServiceMode] = useState<ServiceMode>("onsite");
-  const [servicePlace, setServicePlace] = useState(profileArea);
-  const [preferredAt, setPreferredAt] = useState("");
+  const [buyShipping, setBuyShipping] = useState(draft?.buyShipping ?? true);
+  const [buyMeetup, setBuyMeetup] = useState(
+    () => draft?.buyMeetup ?? Boolean(profileArea),
+  );
+  const [meetupPlace, setMeetupPlace] = useState(
+    draft?.meetupPlace ?? profileArea,
+  );
+  const [borrowPlace, setBorrowPlace] = useState(
+    draft?.borrowPlace ?? profileArea,
+  );
+  const [borrowStart, setBorrowStart] = useState(draft?.borrowStart ?? "");
+  const [borrowEnd, setBorrowEnd] = useState(draft?.borrowEnd ?? "");
+  const [taskMode, setTaskMode] = useState<TaskMode>(draft?.taskMode ?? "pickup");
+  const [taskPlace, setTaskPlace] = useState(draft?.taskPlace ?? profileArea);
+  const [routeFrom, setRouteFrom] = useState(draft?.routeFrom ?? "");
+  const [routeTo, setRouteTo] = useState(draft?.routeTo ?? "");
+  const [dueAt, setDueAt] = useState(draft?.dueAt ?? "");
+  const [serviceMode, setServiceMode] = useState<ServiceMode>(
+    draft?.serviceMode ?? "onsite",
+  );
+  const [servicePlace, setServicePlace] = useState(
+    draft?.servicePlace ?? profileArea,
+  );
+  const [preferredAt, setPreferredAt] = useState(draft?.preferredAt ?? "");
+
+  useEffect(() => {
+    if (paramType) setType(paramType);
+  }, [paramType]);
+
+  useEffect(() => {
+    const next: CreateDraft = {
+      type,
+      title,
+      productQuery,
+      productId,
+      maxPrice,
+      budget,
+      condition,
+      itemName,
+      detail,
+      buyShipping,
+      buyMeetup,
+      meetupPlace,
+      borrowPlace,
+      borrowStart,
+      borrowEnd,
+      taskMode,
+      taskPlace,
+      routeFrom,
+      routeTo,
+      dueAt,
+      serviceMode,
+      servicePlace,
+      preferredAt,
+    };
+    saveCreateDraft(next);
+  }, [
+    type,
+    title,
+    productQuery,
+    productId,
+    maxPrice,
+    budget,
+    condition,
+    itemName,
+    detail,
+    buyShipping,
+    buyMeetup,
+    meetupPlace,
+    borrowPlace,
+    borrowStart,
+    borrowEnd,
+    taskMode,
+    taskPlace,
+    routeFrom,
+    routeTo,
+    dueAt,
+    serviceMode,
+    servicePlace,
+    preferredAt,
+  ]);
 
   const selected = products.find((p) => p.id === productId);
   const price = Number(
@@ -190,6 +270,10 @@ export function CreateDemandPage() {
       setFormError(scheduleError);
       return;
     }
+    if (!isLoggedIn) {
+      navigate("/login?next=/create");
+      return;
+    }
     setFormError(null);
     setSubmitting(true);
     try {
@@ -204,7 +288,10 @@ export function CreateDemandPage() {
         let productName = picked?.name;
         if (!pid) {
           const createdProduct = await ensureProduct(rawName);
-          if (!createdProduct) return;
+          if (!createdProduct) {
+            setFormError(ko.genericError);
+            return;
+          }
           pid = createdProduct.id;
           productName = createdProduct.name;
         }
@@ -217,7 +304,10 @@ export function CreateDemandPage() {
           fulfillmentOptions,
         });
         if (created && created.type === "BUY") {
+          clearCreateDraft();
           navigate(`/demand/item/${created.id}`);
+        } else {
+          setFormError(ko.genericError);
         }
         return;
       }
@@ -232,7 +322,12 @@ export function CreateDemandPage() {
           startAt: fromDatetimeLocalValue(borrowStart),
           endAt: fromDatetimeLocalValue(borrowEnd),
         });
-        if (created) navigate(`/demand/item/${created.id}`);
+        if (created) {
+          clearCreateDraft();
+          navigate(`/demand/item/${created.id}`);
+        } else {
+          setFormError(ko.genericError);
+        }
         return;
       }
       if (type === "TASK") {
@@ -244,7 +339,12 @@ export function CreateDemandPage() {
           fulfillmentOptions,
           dueAt: fromDatetimeLocalValue(dueAt),
         });
-        if (created) navigate(`/demand/item/${created.id}`);
+        if (created) {
+          clearCreateDraft();
+          navigate(`/demand/item/${created.id}`);
+        } else {
+          setFormError(ko.genericError);
+        }
         return;
       }
       const created = await createDemand({
@@ -255,7 +355,12 @@ export function CreateDemandPage() {
         fulfillmentOptions,
         preferredAt: fromDatetimeLocalValue(preferredAt),
       });
-      if (created) navigate(`/demand/item/${created.id}`);
+      if (created) {
+        clearCreateDraft();
+        navigate(`/demand/item/${created.id}`);
+      } else {
+        setFormError(ko.genericError);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -512,7 +617,11 @@ export function CreateDemandPage() {
           onClick={() => void submit()}
           disabled={!canSubmit || submitting}
         >
-          {submitting ? "..." : ko.submitDemand}
+          {submitting
+            ? ko.saving
+            : isLoggedIn
+              ? ko.submitDemand
+              : ko.submitNeedLogin}
         </Button>
           </>
         )}

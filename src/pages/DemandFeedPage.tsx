@@ -9,9 +9,6 @@ import { useDan } from "@/domain/danContext";
 import { buildFeedItems } from "@/domain/feed";
 import type { FeedAreaFilter } from "@/domain/fulfillment";
 import { formatFulfillmentCardLine } from "@/domain/fulfillment";
-import {
-  DISPLAY_SEEKER_OVERRIDES,
-} from "@/domain/mockData";
 import type { DemandType } from "@/domain/types";
 import { DEMAND_TYPE_LABEL } from "@/domain/types";
 import "./pages.css";
@@ -28,8 +25,6 @@ export function DemandFeedPage() {
   const areaFeed = useMemo(
     () =>
       buildFeedItems(products, state.demands, {
-        displaySeekerOverrides: DISPLAY_SEEKER_OVERRIDES,
-        displayRecentDeltaFloor: { "prod-iphone-15-pro": 6 },
         areaFilter,
         viewerDefaultArea: currentUser?.defaultArea ?? "",
       }),

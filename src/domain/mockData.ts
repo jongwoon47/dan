@@ -347,15 +347,6 @@ export const SEED_DEMANDS: Demand[] = [
   ...SEED_SERVICE,
 ];
 
-/** DEMO DISPLAY ONLY ? never import into production domain logic. */
-export const DISPLAY_SEEKER_OVERRIDES: Record<string, number> = {
-  "prod-iphone-15-pro": 28,
-};
-
-const DISPLAY_RECENT_DELTA_FLOOR: Record<string, number> = {
-  "prod-iphone-15-pro": 6,
-};
-
 export const SEED_OWNERSHIPS: Ownership[] = [
   {
     id: "own-jun-a7iv",
@@ -399,19 +390,6 @@ export const SEED_SELL_INTENTS: SellIntent[] = [
 export const SEED_RESPONSES: Response[] = [];
 export const SEED_MATCHES: Match[] = [];
 
-function applyDemoDisplayOverride(agg: DemandAggregate): DemandAggregate {
-  const seekerOverride = DISPLAY_SEEKER_OVERRIDES[agg.productId];
-  const recentFloor = DISPLAY_RECENT_DELTA_FLOOR[agg.productId];
-  return {
-    ...agg,
-    seekerCount: seekerOverride ?? agg.seekerCount,
-    recent7dDelta:
-      recentFloor == null
-        ? agg.recent7dDelta
-        : Math.max(agg.recent7dDelta, recentFloor),
-  };
-}
-
 export function aggregateDemandsDomainOnly(
   productId: string,
   demands: Demand[],
@@ -425,8 +403,7 @@ export function aggregateDemands(
   demands: Demand[],
   nowMs?: number,
 ): DemandAggregate | null {
-  const agg = aggregateDemandsDomain(productId, demands, { nowMs });
-  return agg ? applyDemoDisplayOverride(agg) : null;
+  return aggregateDemandsDomain(productId, demands, { nowMs });
 }
 
 export function listDemandAggregates(
@@ -434,15 +411,9 @@ export function listDemandAggregates(
   demands: Demand[],
   nowMs?: number,
 ) {
-  return listDemandAggregatesDomain(products, demands, { nowMs }).map((row) => ({
-    ...applyDemoDisplayOverride(row),
-    product: row.product,
-  }));
+  return listDemandAggregatesDomain(products, demands, { nowMs });
 }
 
 export function listDemoFeed(demands: Demand[] = SEED_DEMANDS) {
-  return buildFeedItems(PRODUCTS, demands, {
-    displaySeekerOverrides: DISPLAY_SEEKER_OVERRIDES,
-    displayRecentDeltaFloor: DISPLAY_RECENT_DELTA_FLOOR,
-  });
+  return buildFeedItems(PRODUCTS, demands);
 }

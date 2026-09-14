@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await api.signUp(email, password, displayName);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Sign up failed");
+      setError("auth");
       throw e;
     }
   }, []);
@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await api.signIn(email, password);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Login failed");
+      setError("auth");
       throw e;
     }
   }, []);
