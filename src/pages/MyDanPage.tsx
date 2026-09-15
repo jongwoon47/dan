@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ko } from "@/copy/ko";
 import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
+import { dedupeConnectedMatches } from "@/domain/matchLifecycle";
 import { formatWon } from "@/lib/format";
 import "./pages.css";
 
@@ -75,7 +76,10 @@ export function MyDanPage() {
   const [peerNames, setPeerNames] = useState<Record<string, string>>({});
   const [vaultOpen, setVaultOpen] = useState(false);
 
-  const connected = myMatches.filter((m) => m.status === "CONNECTED");
+  const connected = useMemo(
+    () => dedupeConnectedMatches(myMatches, currentUser?.id ?? null),
+    [myMatches, currentUser?.id],
+  );
   const peerKey = useMemo(
     () =>
       connected

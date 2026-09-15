@@ -6,6 +6,7 @@ import { buildFeedItems, classifyFeedItem } from "@/domain/feed";
 import {
   canExpressBuyerInterest,
   canSellerConnect,
+  dedupeConnectedMatches,
   listMatchCandidates,
   mergeVisibleMatches,
   transitionBuyerInterest,
@@ -189,6 +190,27 @@ describe("match lifecycle", () => {
     expect(interested?.status).toBe("BUYER_INTERESTED");
     expect(canSellerConnect(interested!, "seller")).toBe(true);
     expect(transitionSellerConnect(interested!, "seller")?.status).toBe("CONNECTED");
+  });
+
+  it("dedupes CONNECTED rows for the same demand and peer", () => {
+    const a: Match = {
+      id: "m1",
+      demandId: "d1",
+      responseId: "r1",
+      buyerId: "owner",
+      sellerId: "peer",
+      status: "CONNECTED",
+      createdAt: "2026-09-13T00:00:00.000Z",
+    };
+    const b: Match = {
+      ...a,
+      id: "m2",
+      responseId: "r2",
+      createdAt: "2026-09-14T00:00:00.000Z",
+    };
+    expect(dedupeConnectedMatches([b, a], "owner").map((m) => m.id)).toEqual([
+      "m1",
+    ]);
   });
 
   it("keeps POTENTIAL derived and progressive matches persisted in merge", () => {

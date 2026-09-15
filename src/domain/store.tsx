@@ -296,9 +296,21 @@ function reducer(state: DanState, action: Action): DanState {
       if (!response || response.status !== "OPEN") return state;
       const demand = state.demands.find((d) => d.id === response.demandId);
       if (!demand || demand.userId !== actorId) return state;
-      const responses = state.responses.map((r) =>
-        r.id === response.id ? { ...r, status: "ACCEPTED" as const } : r,
-      );
+      if (demand.status !== "ACTIVE") return state;
+      if (
+        state.matches.some(
+          (m) => m.demandId === demand.id && m.status === "CONNECTED",
+        )
+      ) {
+        return state;
+      }
+      const responses = state.responses.map((r) => {
+        if (r.id === response.id) return { ...r, status: "ACCEPTED" as const };
+        if (r.demandId === demand.id && r.status === "OPEN") {
+          return { ...r, status: "DECLINED" as const };
+        }
+        return r;
+      });
       const match: Match = {
         id: createId("match"),
         demandId: demand.id,
@@ -308,8 +320,12 @@ function reducer(state: DanState, action: Action): DanState {
         status: "CONNECTED",
         createdAt: new Date().toISOString(),
       };
+      const demands = state.demands.map((d) =>
+        d.id === demand.id ? { ...d, status: "MATCHED" as const } : d,
+      );
       const next = {
         ...state,
+        demands,
         responses,
         matches: [match, ...state.matches],
       };

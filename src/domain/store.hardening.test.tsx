@@ -150,4 +150,70 @@ describe("store mutations / login race", () => {
       result.current.state.matches.find((m) => m.id === interested!.id)?.status,
     ).toBe("CONNECTED");
   });
+
+  it("accepting one TASK response connects once and declines the other", async () => {
+    const { result } = renderHook(() => useDan(), { wrapper });
+
+    act(() => {
+      result.current.login("user-you");
+    });
+    let demandId = "";
+    await act(async () => {
+      const created = await result.current.createDemand({
+        type: "TASK",
+        title: "케이크 픽업",
+        taskDescription: "강남역 픽업",
+        budget: 15000,
+        dueAt: new Date(Date.now() + 86_400_000).toISOString(),
+        fulfillmentOptions: [{ mode: "REMOTE" }],
+      });
+      demandId = created!.id;
+    });
+
+    act(() => {
+      result.current.login("user-jun");
+    });
+    let firstResponseId = "";
+    await act(async () => {
+      const r = await result.current.createResponse({
+        demandId,
+        message: "제가 할게요",
+      });
+      firstResponseId = r!.id;
+    });
+
+    act(() => {
+      result.current.login("user-mina");
+    });
+    let secondResponseId = "";
+    await act(async () => {
+      const r = await result.current.createResponse({
+        demandId,
+        message: "저도 가능해요",
+      });
+      secondResponseId = r!.id;
+    });
+
+    act(() => {
+      result.current.login("user-you");
+    });
+    await act(async () => {
+      await result.current.acceptResponse(firstResponseId);
+    });
+    await act(async () => {
+      await result.current.acceptResponse(secondResponseId);
+    });
+
+    const connected = result.current.state.matches.filter(
+      (m) => m.demandId === demandId && m.status === "CONNECTED",
+    );
+    expect(connected).toHaveLength(1);
+    expect(connected[0]?.responseId).toBe(firstResponseId);
+    expect(
+      result.current.state.responses.find((r) => r.id === secondResponseId)?.status,
+    ).toBe("DECLINED");
+    expect(
+      result.current.state.demands.find((d) => d.id === demandId)?.status,
+    ).toBe("MATCHED");
+  });
 });

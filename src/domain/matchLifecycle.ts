@@ -190,3 +190,25 @@ export function buildVisibleMatches(
     nowIso: new Date(nowMs).toISOString(),
   });
 }
+
+/** One chat row per demand+peer (keeps earliest CONNECTED). */
+export function dedupeConnectedMatches(
+  matches: Match[],
+  userId: string | null,
+): Match[] {
+  const connected = matches.filter((m) => m.status === "CONNECTED");
+  const seen = new Set<string>();
+  const out: Match[] = [];
+  const sorted = [...connected].sort((a, b) =>
+    a.createdAt.localeCompare(b.createdAt),
+  );
+  for (const m of sorted) {
+    const peerId =
+      userId && userId === m.buyerId ? m.sellerId : m.buyerId;
+    const key = `${m.demandId}::${peerId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(m);
+  }
+  return out;
+}
