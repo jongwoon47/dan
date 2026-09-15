@@ -44,6 +44,14 @@ test("two-user TASK and BUY flows against live Supabase", async ({ browser }) =>
   await expect(pageA.getByRole("button", { name: "보내기" })).toBeVisible();
   await expect(pageA.getByText(taskTitle)).toBeVisible();
 
+  const taskMatchUrl = pageA.url();
+  await pageA.getByLabel("메시지 입력").fill("E2E hello");
+  await pageA.getByRole("button", { name: "보내기" }).click();
+  await expect(pageA.getByText("E2E hello")).toBeVisible({ timeout: 20_000 });
+  await pageB.goto(taskMatchUrl);
+  await pageB.reload();
+  await expect(pageB.getByText("E2E hello")).toBeVisible({ timeout: 20_000 });
+
   // --- BUY: A creates → B owns + sell intent → A interest → B connect ---
   await createBuyDemand(pageA, productName, "500000");
 
