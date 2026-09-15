@@ -81,6 +81,40 @@ export function formatPlace(p: Place): string {
   return p.publicLabel.trim();
 }
 
+/** First place-bearing option for detail/location rows (coords never included). */
+export function primaryPublicPlace(options: FulfillmentOption[]): Place | null {
+  for (const o of options) {
+    if (o.mode === "MEETUP" || o.mode === "ONSITE" || o.mode === "PICKUP") {
+      return o.place;
+    }
+    if (o.mode === "ROUTE") return o.from;
+  }
+  return null;
+}
+
+/** Mode-only labels for detail “진행 방식” (place shown separately). */
+export function formatFulfillmentModes(options: FulfillmentOption[]): string {
+  if (!options.length) return "";
+  return options
+    .map((option) => {
+      switch (option.mode) {
+        case "REMOTE":
+          return ko.fulfillRemote;
+        case "SHIPPING":
+          return ko.fulfillShipping;
+        case "MEETUP":
+          return ko.fulfillMeetup;
+        case "ONSITE":
+          return ko.fulfillOnsite;
+        case "PICKUP":
+          return ko.fulfillPickup;
+        case "ROUTE":
+          return `${formatPlace(option.from)} → ${formatPlace(option.to)}`;
+      }
+    })
+    .join(" · ");
+}
+
 export function formatFulfillmentOption(option: FulfillmentOption): string {
   switch (option.mode) {
     case "REMOTE":

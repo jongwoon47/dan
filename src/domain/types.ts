@@ -88,6 +88,8 @@ export interface TaskDemandDetails {
 export interface ServiceDemandDetails {
   serviceDescription: string;
   preferredAt?: string;
+  /** Optional structured duration in minutes (matching / display). */
+  estimatedDurationMinutes?: number;
 }
 
 export type BuyDemand = DemandBase & {

@@ -13,6 +13,7 @@ Apply in order against a Supabase project (SQL editor or CLI):
 7. `0007_usability_v1.sql` — chat, activity, block/report, accept auto-decline
 8. `0008_prevent_duplicate_connections.sql` — unique CONNECTED + accept guard
 9. `0009_security_p0_hardening.sql` — RPC-only response/demand writes, sell_intent integrity
+10. `0010_service_duration.sql` — optional `estimated_duration_minutes` for SERVICE
 
 See [MIGRATION_APPLY.md](./MIGRATION_APPLY.md) for remote verify steps.
 

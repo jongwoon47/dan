@@ -88,9 +88,20 @@ export function formatDemandWhen(demand: Demand): string | null {
   return null;
 }
 
+export function formatDurationMinutes(minutes?: number | null): string | null {
+  if (minutes == null || !Number.isFinite(minutes) || minutes <= 0) return null;
+  const m = Math.round(minutes);
+  if (m < 60) return `약 ${m}${ko.estimatedDurationUnit}`;
+  const h = Math.floor(m / 60);
+  const rem = m % 60;
+  if (rem === 0) return `약 ${h}시간`;
+  return `약 ${h}시간 ${rem}${ko.estimatedDurationUnit}`;
+}
+
 export function budgetLabelForType(type: Demand["type"]): string {
   if (type === "BUY") return ko.maxPrice;
   if (type === "BORROW") return ko.borrowBudgetTotal;
   if (type === "TASK" || type === "SERVICE") return ko.reward;
   return ko.budgetLabel;
 }
+

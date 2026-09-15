@@ -25,6 +25,8 @@ export type CreateDraft = {
   dueAt: string;
   serviceMode: "onsite" | "remote" | null;
   servicePlace: string;
+  servicePlaceNote: string;
+  estimatedDuration: string;
   preferredAt: string;
 };
 

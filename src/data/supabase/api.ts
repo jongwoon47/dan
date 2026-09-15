@@ -301,6 +301,7 @@ export async function createDemandRemote(input: CreateDemandInput): Promise<Dema
             budget: input.budget,
             service_description: input.serviceDescription,
             preferred_at: input.preferredAt ?? null,
+            estimated_duration_minutes: input.estimatedDurationMinutes ?? null,
           };
 
   const { data, error } = await sb
@@ -449,6 +450,7 @@ export async function updateDemandRemote(input: {
   maxPrice?: number;
   conditionPreference?: string;
   tradeMethod?: string;
+  estimatedDurationMinutes?: number | null;
 }): Promise<Demand> {
   const locationSummary = formatFulfillmentSummary(input.fulfillmentOptions);
   const { data, error } = await getSupabase().rpc("update_demand", {
@@ -469,6 +471,7 @@ export async function updateDemandRemote(input: {
     p_start_at: input.startAt ?? null,
     p_end_at: input.endAt ?? null,
     p_preferred_at: input.preferredAt ?? null,
+    p_estimated_duration_minutes: input.estimatedDurationMinutes ?? null,
   });
   if (error) throw error;
   return mapDemand(data as DbDemand);

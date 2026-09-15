@@ -6,14 +6,18 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
-import { formatFulfillmentSummary } from "@/domain/fulfillment";
+import { formatFulfillmentModes, primaryPublicPlace } from "@/domain/fulfillment";
 import { DEMAND_TYPE_LABEL } from "@/domain/types";
 import {
   clearResponseDraft,
   loadResponseDraft,
   saveResponseDraft,
 } from "@/lib/actionDraft";
-import { formatDemandWhen, formatWon } from "@/lib/format";
+import {
+  formatDemandWhen,
+  formatDurationMinutes,
+  formatWon,
+} from "@/lib/format";
 import "./pages.css";
 
 function responseStatusLabel(status: string) {
@@ -179,8 +183,16 @@ export function DemandItemPage() {
                   ? ko.whereLabelService
                   : ko.whereLabelTask}
           </span>
-          <strong>{formatFulfillmentSummary(demand.fulfillmentOptions)}</strong>
+          <strong>{formatFulfillmentModes(demand.fulfillmentOptions)}</strong>
         </div>
+        {primaryPublicPlace(demand.fulfillmentOptions) ? (
+          <div>
+            <span>{ko.detailLocation}</span>
+            <strong>
+              {primaryPublicPlace(demand.fulfillmentOptions)!.publicLabel}
+            </strong>
+          </div>
+        ) : null}
         <div>
           <span>
             {demand.type === "BORROW"
@@ -195,6 +207,15 @@ export function DemandItemPage() {
           <div>
             <span>{ko.detailWhen}</span>
             <strong>{formatDemandWhen(demand)}</strong>
+          </div>
+        ) : null}
+        {demand.type === "SERVICE" &&
+        formatDurationMinutes(demand.details.estimatedDurationMinutes) ? (
+          <div>
+            <span>{ko.detailDuration}</span>
+            <strong>
+              {formatDurationMinutes(demand.details.estimatedDurationMinutes)}
+            </strong>
           </div>
         ) : null}
       </div>

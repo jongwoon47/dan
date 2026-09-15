@@ -220,6 +220,7 @@ function buildDemandFromInput(
     details: {
       serviceDescription: payload.serviceDescription,
       preferredAt: payload.preferredAt,
+      estimatedDurationMinutes: payload.estimatedDurationMinutes,
     },
   };
 }

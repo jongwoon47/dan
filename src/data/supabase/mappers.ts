@@ -67,6 +67,7 @@ export type DbDemand = {
   task_description: string | null;
   service_description: string | null;
   preferred_at: string | null;
+  estimated_duration_minutes?: number | null;
   due_at: string | null;
   expires_at: string | null;
   created_at: string;
@@ -190,6 +191,10 @@ export function mapDemand(row: DbDemand): Demand {
     details: {
       serviceDescription: row.service_description ?? row.description,
       preferredAt: row.preferred_at ?? undefined,
+      estimatedDurationMinutes:
+        row.estimated_duration_minutes == null
+          ? undefined
+          : Number(row.estimated_duration_minutes),
     },
   };
 }

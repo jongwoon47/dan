@@ -28,6 +28,12 @@ Public Demand never stores apartment unit / street address as a dedicated field.
 Public labels only (e.g. "평택역 근처", "성수동"). Exact address handoff after
 CONNECTED is **not** implemented in V1.
 
+`Place.geo` may be stored when the user opts into **현재 위치 사용**.
+Coordinates are for internal distance / nearby matching only — never shown in
+feed or demand detail. Public UI uses `publicLabel` (e.g. `평택시 · 부대 근처`).
+
+See also `docs/REQUEST_CREATE_UX.md`.
+
 ## FulfillmentOption
 
 `REMOTE | SHIPPING | MEETUP | ONSITE | PICKUP | ROUTE` discriminated union.

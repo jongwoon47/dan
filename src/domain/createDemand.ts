@@ -40,6 +40,7 @@ export type CreateDemandInput =
       budget: number;
       fulfillmentOptions: FulfillmentOption[];
       preferredAt?: string;
+      estimatedDurationMinutes?: number;
     };
 
 export type { DemandType };

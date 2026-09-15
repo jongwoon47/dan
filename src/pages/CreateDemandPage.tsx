@@ -8,6 +8,7 @@ import {
   areFulfillmentOptionsValid,
   placeFromLabel,
   type FulfillmentOption,
+  type Place,
 } from "@/domain/fulfillment";
 import type {
   ConditionPreference,
@@ -28,6 +29,7 @@ import {
   formatPriceThought,
   parseMoneyInput,
 } from "@/lib/format";
+import { requestCurrentPlace } from "@/lib/geolocation";
 import {
   findProductByMatchKey,
   filterProductSuggestions,
@@ -41,6 +43,13 @@ const CONDITIONS: ConditionPreference[] = ["sealed", "like_new", "lightly_used",
 
 type TaskMode = "onsite" | "pickup" | "route" | "remote";
 type ServiceMode = "onsite" | "remote";
+
+function composePublicPlaceLabel(area: string, note: string): string {
+  const a = area.trim();
+  const n = note.trim();
+  if (a && n) return `${a} · ${n}`;
+  return a || n;
+}
 
 function parseType(raw: string | null): DemandType | null {
   if (raw === "BUY" || raw === "BORROW" || raw === "TASK" || raw === "SERVICE") {
@@ -132,6 +141,15 @@ export function CreateDemandPage() {
   const [servicePlace, setServicePlace] = useState(
     draft?.servicePlace ?? profileArea,
   );
+  const [servicePlaceNote, setServicePlaceNote] = useState(
+    draft?.servicePlaceNote ?? "",
+  );
+  const [serviceGeoPlace, setServiceGeoPlace] = useState<Place | null>(null);
+  const [estimatedDuration, setEstimatedDuration] = useState(
+    draft?.estimatedDuration ?? "",
+  );
+  const [geoBusy, setGeoBusy] = useState(false);
+  const [geoError, setGeoError] = useState<string | null>(null);
   const [preferredAt, setPreferredAt] = useState(draft?.preferredAt ?? "");
   const [phase, setPhase] = useState<1 | 2>(1);
   const [scheduleTouched, setScheduleTouched] = useState(false);
@@ -155,6 +173,10 @@ export function CreateDemandPage() {
     setSuggestOpen(false);
     setMaxPrice("");
     setBudget("");
+    setEstimatedDuration("");
+    setServicePlaceNote("");
+    setServiceGeoPlace(null);
+    setGeoError(null);
   }
 
   useEffect(() => {
@@ -181,6 +203,8 @@ export function CreateDemandPage() {
       dueAt,
       serviceMode,
       servicePlace,
+      servicePlaceNote,
+      estimatedDuration,
       preferredAt,
     };
     saveCreateDraft(next);
@@ -207,6 +231,8 @@ export function CreateDemandPage() {
     dueAt,
     serviceMode,
     servicePlace,
+    servicePlaceNote,
+    estimatedDuration,
     preferredAt,
   ]);
 
@@ -257,7 +283,22 @@ export function CreateDemandPage() {
     }
     if (!serviceMode) return [];
     if (serviceMode === "remote") return [{ mode: "REMOTE" }];
-    return [{ mode: "ONSITE", place: placeFromLabel(servicePlace) }];
+    const label = composePublicPlaceLabel(
+      serviceGeoPlace?.region2 ?? serviceGeoPlace?.publicLabel ?? servicePlace,
+      servicePlaceNote,
+    );
+    if (serviceGeoPlace) {
+      return [
+        {
+          mode: "ONSITE",
+          place: {
+            ...serviceGeoPlace,
+            publicLabel: label || serviceGeoPlace.publicLabel,
+          },
+        },
+      ];
+    }
+    return [{ mode: "ONSITE", place: placeFromLabel(label) }];
   }, [
     type,
     buyShipping,
@@ -270,6 +311,8 @@ export function CreateDemandPage() {
     routeTo,
     serviceMode,
     servicePlace,
+    servicePlaceNote,
+    serviceGeoPlace,
   ]);
 
   const scheduleError = useMemo(() => {
@@ -301,6 +344,7 @@ export function CreateDemandPage() {
     if (!type || !Number.isFinite(price) || price <= 0) return false;
     if (type === "BUY") return Boolean(productQuery.trim());
     if (type === "BORROW") return Boolean(title.trim() || itemName.trim());
+    if (type === "SERVICE") return Boolean(title.trim());
     return Boolean(title.trim() || detail.trim());
   }, [type, price, productQuery, title, itemName, detail]);
 
@@ -407,13 +451,22 @@ export function CreateDemandPage() {
         }
         return;
       }
+      const durationDigits = digitsOnly(estimatedDuration);
+      const durationMinutes = durationDigits
+        ? Number.parseInt(durationDigits, 10)
+        : undefined;
       const created = await createDemand({
         type: "SERVICE",
-        title: title.trim() || detail.trim(),
+        title: title.trim(),
         serviceDescription: detail.trim() || title.trim(),
+        description: detail.trim() || undefined,
         budget: price,
         fulfillmentOptions,
         preferredAt: fromDatetimeLocalValue(preferredAt),
+        estimatedDurationMinutes:
+          durationMinutes && Number.isFinite(durationMinutes)
+            ? durationMinutes
+            : undefined,
       });
       if (created) {
         clearCreateDraft();
@@ -459,7 +512,7 @@ export function CreateDemandPage() {
 
             {phase === 1 ? (
               <>
-                {type !== "BUY" ? (
+                {type !== "BUY" && type !== "SERVICE" ? (
                   <Field label={ko.titleLabel}>
                     <TextInput
                       value={title}
@@ -567,7 +620,7 @@ export function CreateDemandPage() {
                   </>
                 ) : null}
 
-                {type === "TASK" || type === "SERVICE" ? (
+                {type === "TASK" ? (
                   <>
                     <Field label={ko.descLabel}>
                       <textarea
@@ -585,6 +638,47 @@ export function CreateDemandPage() {
                       placeholder="예: 20,000"
                       kind="reward"
                     />
+                  </>
+                ) : null}
+
+                {type === "SERVICE" ? (
+                  <>
+                    <Field label={ko.serviceTaskLabel}>
+                      <TextInput
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder={ko.serviceTaskPh}
+                      />
+                    </Field>
+                    <MoneyInput
+                      label={ko.reward}
+                      value={budget}
+                      onChange={setBudget}
+                      placeholder="예: 1,000"
+                      kind="reward"
+                    />
+                    <Field
+                      label={ko.estimatedDuration}
+                      hint={ko.estimatedDurationHint}
+                    >
+                      <TextInput
+                        inputMode="numeric"
+                        value={estimatedDuration}
+                        onChange={(e) =>
+                          setEstimatedDuration(digitsOnly(e.target.value))
+                        }
+                        placeholder={ko.estimatedDurationPh}
+                      />
+                    </Field>
+                    <Field label={ko.serviceExtraLabel}>
+                      <textarea
+                        className="dan-input dan-textarea"
+                        value={detail}
+                        onChange={(e) => setDetail(e.target.value)}
+                        placeholder={ko.serviceExtraPh}
+                        rows={2}
+                      />
+                    </Field>
                   </>
                 ) : null}
               </>
@@ -744,13 +838,74 @@ export function CreateDemandPage() {
                       </ChipGroup>
                     </div>
                     {serviceMode === "onsite" ? (
-                      <Field label={ko.servicePlace}>
-                        <TextInput
-                          value={servicePlace}
-                          onChange={(e) => setServicePlace(e.target.value)}
-                          placeholder={ko.locationPh}
-                        />
-                      </Field>
+                      <>
+                        <div>
+                          <p className="field-inline-label">{ko.whereNeeded}</p>
+                          <div className="action-row action-row--split">
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              fullWidth
+                              disabled={geoBusy}
+                              onClick={() => {
+                                setGeoError(null);
+                                setGeoBusy(true);
+                                void requestCurrentPlace(servicePlaceNote).then(
+                                  (result) => {
+                                    setGeoBusy(false);
+                                    if (!result.ok) {
+                                      setGeoError(
+                                        result.reason === "denied"
+                                          ? ko.geoDenied
+                                          : ko.geoFailed,
+                                      );
+                                      return;
+                                    }
+                                    setServiceGeoPlace(result.place);
+                                    setServicePlace(
+                                      result.place.region2 ??
+                                        result.place.publicLabel,
+                                    );
+                                  },
+                                );
+                              }}
+                            >
+                              {geoBusy ? ko.geoLocating : ko.useCurrentLocation}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              fullWidth
+                              onClick={() => {
+                                setServiceGeoPlace(null);
+                                setGeoError(null);
+                              }}
+                            >
+                              {ko.searchPlace}
+                            </Button>
+                          </div>
+                          {geoError ? (
+                            <p className="form-error">{geoError}</p>
+                          ) : null}
+                        </div>
+                        <Field label={ko.searchPlace}>
+                          <TextInput
+                            value={servicePlace}
+                            onChange={(e) => {
+                              setServicePlace(e.target.value);
+                              setServiceGeoPlace(null);
+                            }}
+                            placeholder={ko.locationPh}
+                          />
+                        </Field>
+                        <Field label={ko.placeNoteLabel}>
+                          <TextInput
+                            value={servicePlaceNote}
+                            onChange={(e) => setServicePlaceNote(e.target.value)}
+                            placeholder={ko.placeNotePh}
+                          />
+                        </Field>
+                      </>
                     ) : null}
                     <Field label={ko.preferredAt}>
                       <DatetimeLocalInput

@@ -80,6 +80,10 @@ await runSql(
   "0009",
 );
 await runSql(
+  readFileSync("supabase/migrations/0010_service_duration.sql", "utf8"),
+  "0010",
+);
+await runSql(
   `
 select indexname as name from pg_indexes
 where schemaname = 'public'
