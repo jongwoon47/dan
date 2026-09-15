@@ -78,16 +78,21 @@ test("two-user TASK and BUY flows against live Supabase", async ({ browser }) =>
   await pageB.goto("/my");
   await pageB.reload();
   await pageB.getByRole("button", { name: "연결하기" }).click();
-  // CONNECTED rows leave "확인할 거래" and land under "연결된 사람".
-  await expect(
-    pageB.getByRole("link", { name: new RegExp(`${productName}.*대화하기`) }),
-  ).toBeVisible({ timeout: 20_000 });
+  await pageB.goto("/chats");
+  await pageB.reload();
+  await expect(pageB.getByText(productName).first()).toBeVisible({
+    timeout: 20_000,
+  });
+  await pageB.getByText(productName).first().click();
+  await expect(pageB.getByRole("button", { name: "보내기" })).toBeVisible({
+    timeout: 20_000,
+  });
 
-  await pageA.goto("/my");
+  await pageA.goto("/chats");
   await pageA.reload();
-  await expect(
-    pageA.getByRole("link", { name: new RegExp(`${productName}.*대화하기`) }),
-  ).toBeVisible({ timeout: 20_000 });
+  await expect(pageA.getByText(productName).first()).toBeVisible({
+    timeout: 20_000,
+  });
 
   await contextA.close();
   await contextB.close();

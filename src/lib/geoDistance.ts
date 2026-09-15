@@ -64,16 +64,21 @@ export function formatApproxDistance(meters: number): string {
 
 /**
  * Public place line before CONNECTED.
- * Geo demands → distance (if viewer geo) or coarse region only.
+ * Prefer server approx meters; never render coordinates.
  * Text-entered → publicLabel as-is (already approximate).
  */
 export function formatPublicPlaceLine(
   place: Place,
   viewer?: { lat: number; lng: number } | null,
-  opts?: { revealDetail?: boolean },
+  opts?: { revealDetail?: boolean; approxMeters?: number | null },
 ): string {
   if (opts?.revealDetail) return place.publicLabel.trim();
 
+  if (opts?.approxMeters != null && Number.isFinite(opts.approxMeters)) {
+    return formatApproxDistance(opts.approxMeters);
+  }
+
+  // Legacy client-side path (should not receive geo after privacy scrub).
   if (place.geo && viewer) {
     const meters = distanceMeters(viewer, place.geo);
     return formatApproxDistance(meters);

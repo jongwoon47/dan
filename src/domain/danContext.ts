@@ -78,6 +78,10 @@ export interface DanContextValue {
   markMessagesRead: (matchId: string) => Promise<void>;
   activities: ActivityEvent[];
   unreadActivityCount: number;
+  /** Unread NEW_MESSAGE only — for 대화 badge. */
+  unreadChatCount: number;
+  /** Unread non-message activity — for My DAN badge. */
+  unreadMyDanCount: number;
   refreshActivities: () => Promise<void>;
   markActivityRead: (activityId?: string) => Promise<void>;
   getPublicProfile: (userId: string) => Promise<PublicProfile | null>;

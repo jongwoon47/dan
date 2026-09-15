@@ -96,11 +96,21 @@ function formatUnreadBadge(count: number): string {
 }
 
 function AppShellInner() {
-  const { currentUser, isLoggedIn, login, logout, unreadActivityCount } = useDan();
+  const {
+    currentUser,
+    isLoggedIn,
+    login,
+    logout,
+    unreadActivityCount,
+    unreadChatCount,
+    unreadMyDanCount,
+  } = useDan();
   const { pathname } = useLocation();
   const mode = getShellMode(pathname);
   const { header } = useShellChrome();
-  const unreadLabel = formatUnreadBadge(unreadActivityCount);
+  const bellBadge = formatUnreadBadge(unreadActivityCount);
+  const chatBadge = formatUnreadBadge(unreadChatCount);
+  const myBadge = formatUnreadBadge(unreadMyDanCount);
 
   const showDeepHeader = mode === "deep" && !header?.hide;
   const deepTitle = header?.title ?? defaultDeepTitle(pathname);
@@ -154,9 +164,9 @@ function AppShellInner() {
                     {({ isActive }) => (
                       <span className="top-nav__bell-wrap">
                         <IconBell active={isActive} />
-                        {unreadLabel ? (
+                        {bellBadge ? (
                           <span className="nav-badge nav-badge--float">
-                            {unreadLabel}
+                            {bellBadge}
                           </span>
                         ) : null}
                       </span>
@@ -209,7 +219,14 @@ function AppShellInner() {
             <NavLink to="/chats">
               {({ isActive }) => (
                 <>
-                  <IconChat active={isActive} />
+                  <span className="bottom-nav__icon-wrap">
+                    <IconChat active={isActive} />
+                    {chatBadge ? (
+                      <span className="nav-badge nav-badge--float">
+                        {chatBadge}
+                      </span>
+                    ) : null}
+                  </span>
                   <span>{ko.navChats}</span>
                 </>
               )}
@@ -219,9 +236,9 @@ function AppShellInner() {
                 <>
                   <span className="bottom-nav__icon-wrap">
                     <IconMy active={isActive} />
-                    {unreadLabel ? (
+                    {myBadge ? (
                       <span className="nav-badge nav-badge--float">
-                        {unreadLabel}
+                        {myBadge}
                       </span>
                     ) : null}
                   </span>

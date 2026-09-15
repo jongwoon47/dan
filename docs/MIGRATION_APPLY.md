@@ -15,6 +15,8 @@ Migrations are additive SQL under `supabase/migrations/`.
 | `0009_security_p0_hardening.sql` | RPC-only responses/demand updates, sell_intent integrity, activity read-only |
 | `0010_service_duration.sql` | SERVICE duration fields |
 | `0011_public_profile_trust.sql` | Public profile trust-card stats RPC (counts + redacted recent activity) |
+| `0012_gps_privacy.sql` | Private exact geo table + distance RPC; scrub geo from public fulfillment_options |
+| `0013_buy_seller_connect_lifecycle.sql` | BUY seller connect → demand/sellIntent MATCHED + one CONNECTED per demand |
 
 ## Verify applied
 

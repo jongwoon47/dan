@@ -25,9 +25,10 @@ ACTIVE (모집 중)
 
 ## 위치
 
-- 현재 위치 사용 시: 카드에 `약 800m` / `약 2.3km` (뷰어 좌표가 있을 때)
+- 현재 위치 사용 시: 카드에 `약 800m` / `약 2.3km` (뷰어 좌표가 있을 때, **거리 RPC**)
 - 연결 전: 상세 장소 설명·좌표 숨김 (지역명 또는 거리만)
 - 직접 입력: `평택역 근처` 그대로
+- **exact lat/lng는 `demand_exact_geo` private table만** — `demands.fulfillment_options`에 geo 저장 금지
 
 ## 만료 (V0 고정)
 

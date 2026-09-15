@@ -15,6 +15,7 @@ import type {
 import {
   areFulfillmentOptionsValid,
   fulfillmentFromLegacyLocation,
+  stripGeoFromFulfillmentOptions,
   type FulfillmentOption,
 } from "@/domain/fulfillment";
 
@@ -31,7 +32,7 @@ export function parseFulfillmentOptions(
     }
   }
   if (Array.isArray(parsed) && areFulfillmentOptionsValid(parsed as FulfillmentOption[])) {
-    return parsed as FulfillmentOption[];
+    return stripGeoFromFulfillmentOptions(parsed as FulfillmentOption[]);
   }
   return fulfillmentFromLegacyLocation(legacyLocation ?? "");
 }

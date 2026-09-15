@@ -6,8 +6,13 @@ import { Chip, ChipGroup, DatetimeLocalInput, Field, TextInput } from "@/compone
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import {
+  defaultExpiresAtIso,
+  normalizeScheduleExpiryIso,
+} from "@/domain/demandLifecycle";
+import {
   areFulfillmentOptionsValid,
   placeFromLabel,
+  stripGeoFromFulfillmentOptions,
   type FulfillmentOption,
 } from "@/domain/fulfillment";
 import type { ConditionPreference } from "@/domain/types";
@@ -266,12 +271,29 @@ export function DemandEditPage() {
       return;
     }
 
+    const scheduleRaw =
+      current.type === "BORROW"
+        ? fromDatetimeLocalValue(borrowEnd)
+        : current.type === "TASK"
+          ? fromDatetimeLocalValue(dueAt)
+          : current.type === "SERVICE"
+            ? fromDatetimeLocalValue(preferredAt)
+            : null;
+    const scheduleIso = scheduleRaw
+      ? normalizeScheduleExpiryIso(scheduleRaw)
+      : null;
+    const expiresAt =
+      current.type === "BUY"
+        ? undefined
+        : defaultExpiresAtIso(current.type, scheduleIso);
+
     const result = await updateDemand({
       demandId: current.id,
       title: title.trim(),
       description: description.trim(),
       budget: price,
-      fulfillmentOptions,
+      fulfillmentOptions: stripGeoFromFulfillmentOptions(fulfillmentOptions),
+      expiresAt,
       maxPrice: current.type === "BUY" ? price : undefined,
       itemName:
         current.type === "BORROW" ? itemName.trim() || title.trim() : undefined,
@@ -287,13 +309,10 @@ export function DemandEditPage() {
         current.type === "BORROW"
           ? fromDatetimeLocalValue(borrowStart)
           : undefined,
-      endAt:
-        current.type === "BORROW" ? fromDatetimeLocalValue(borrowEnd) : undefined,
-      dueAt: current.type === "TASK" ? fromDatetimeLocalValue(dueAt) : undefined,
+      endAt: current.type === "BORROW" ? scheduleIso ?? undefined : undefined,
+      dueAt: current.type === "TASK" ? scheduleIso ?? undefined : undefined,
       preferredAt:
-        current.type === "SERVICE"
-          ? fromDatetimeLocalValue(preferredAt)
-          : undefined,
+        current.type === "SERVICE" ? scheduleIso ?? undefined : undefined,
       conditionPreference: current.type === "BUY" ? condition : undefined,
       tradeMethod:
         current.type === "BUY"

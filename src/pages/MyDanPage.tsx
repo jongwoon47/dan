@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { MatchList } from "@/components/MatchCard";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ko } from "@/copy/ko";
@@ -205,11 +206,19 @@ export function MyDanPage() {
     return items.slice(0, 5);
   }, [activities, getDemand, myDemands]);
 
-  const openDemands = myDemands.filter((d) => isDemandOpen(d));
+  const openDemands = myDemands.filter((d) => {
+    const s = effectiveDemandStatus(d);
+    return s === "ACTIVE" || s === "MATCHED";
+  });
   const archivedDemands = myDemands.filter((d) => {
     const s = effectiveDemandStatus(d);
     return s === "EXPIRED" || s === "CLOSED";
   });
+
+  const pendingMatches = useMemo(
+    () => myMatches.filter((m) => m.status !== "CONNECTED"),
+    [myMatches],
+  );
 
   const responseRows = useMemo(() => {
     return [...myResponses]
@@ -263,6 +272,12 @@ export function MyDanPage() {
               />
             ))}
           </div>
+        </MyBlock>
+      ) : null}
+
+      {pendingMatches.length > 0 ? (
+        <MyBlock title={ko.pendingMatches}>
+          <MatchList matches={pendingMatches} emptyWhenZero={false} />
         </MyBlock>
       ) : null}
 

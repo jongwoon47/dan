@@ -298,6 +298,12 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
       },
       activities,
       unreadActivityCount: activities.filter((a) => !a.readAt).length,
+      unreadChatCount: activities.filter(
+        (a) => !a.readAt && a.kind === "NEW_MESSAGE",
+      ).length,
+      unreadMyDanCount: activities.filter(
+        (a) => !a.readAt && a.kind !== "NEW_MESSAGE",
+      ).length,
       refreshActivities: async () => {
         if (!currentUser) {
           setActivities([]);

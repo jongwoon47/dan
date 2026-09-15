@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   areFulfillmentOptionsValid,
+  extractExactGeo,
   formatFulfillmentCardLine,
   isFulfillmentCompatibleWithArea,
   placeFromLabel,
+  stripGeoFromFulfillmentOptions,
   type FulfillmentOption,
 } from "@/domain/fulfillment";
 import { buildFeedItems } from "@/domain/feed";
@@ -165,5 +167,24 @@ describe("mixed feed ranking", () => {
     });
     expect(feed[0]?.kind).toBe("aggregated");
     expect(feed[1]?.kind).toBe("individual");
+  });
+});
+
+describe("GPS privacy helpers", () => {
+  it("strips geo from public fulfillment options", () => {
+    const raw: FulfillmentOption[] = [
+      {
+        mode: "ONSITE",
+        place: {
+          publicLabel: "평택시 · 부대 근처",
+          region2: "평택시",
+          geo: { lat: 36.99, lng: 127.09 },
+        },
+      },
+    ];
+    expect(extractExactGeo(raw)).toEqual({ lat: 36.99, lng: 127.09 });
+    const publicOpts = stripGeoFromFulfillmentOptions(raw);
+    expect(extractExactGeo(publicOpts)).toBeNull();
+    expect(JSON.stringify(publicOpts)).not.toContain("geo");
   });
 });

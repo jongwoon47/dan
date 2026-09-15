@@ -7,6 +7,9 @@ import {
 import {
   formatFulfillmentSummary,
   tradeMethodFromFulfillment,
+  stripGeoFromFulfillmentOptions,
+  extractExactGeo,
+  type FulfillmentOption,
 } from "@/domain/fulfillment";
 import {
   displayProductName,
@@ -235,10 +238,13 @@ export async function createDemandRemote(input: CreateDemandInput): Promise<Dema
   const { data: auth } = await sb.auth.getUser();
   if (!auth.user) throw new Error("login required");
 
+  const rawOptions = input.fulfillmentOptions;
+  const publicOptions = stripGeoFromFulfillmentOptions(rawOptions);
+
   if (input.type === "BUY") {
-    const locationSummary = formatFulfillmentSummary(input.fulfillmentOptions);
+    const locationSummary = formatFulfillmentSummary(publicOptions);
     const tradeMethod =
-      input.tradeMethod ?? tradeMethodFromFulfillment(input.fulfillmentOptions);
+      input.tradeMethod ?? tradeMethodFromFulfillment(publicOptions);
     const { data: productRow } = await sb
       .from("products")
       .select("category")
@@ -258,13 +264,15 @@ export async function createDemandRemote(input: CreateDemandInput): Promise<Dema
       p_condition_preference: input.conditionPreference,
       p_trade_method: tradeMethod,
       p_expires_at: defaultExpiresAtIso("BUY"),
-      p_fulfillment_options: input.fulfillmentOptions,
+      p_fulfillment_options: publicOptions,
     });
     if (error) throw error;
-    return mapDemand(data as DbDemand);
+    const demand = mapDemand(data as DbDemand);
+    await upsertDemandExactGeoRemote(demand.id, rawOptions);
+    return demand;
   }
 
-  const locationSummary = formatFulfillmentSummary(input.fulfillmentOptions);
+  const locationSummary = formatFulfillmentSummary(publicOptions);
   const rawSchedule =
     input.type === "BORROW"
       ? input.endAt
@@ -277,7 +285,7 @@ export async function createDemandRemote(input: CreateDemandInput): Promise<Dema
   const shared = {
     user_id: auth.user.id,
     location: locationSummary,
-    fulfillment_options: input.fulfillmentOptions,
+    fulfillment_options: publicOptions,
     status: "ACTIVE",
     expires_at: defaultExpiresAtIso(input.type, scheduleIso),
   };
@@ -323,7 +331,43 @@ export async function createDemandRemote(input: CreateDemandInput): Promise<Dema
     .select("*")
     .single();
   if (error) throw error;
-  return mapDemand(data as DbDemand);
+  const demand = mapDemand(data as DbDemand);
+  await upsertDemandExactGeoRemote(demand.id, rawOptions);
+  return demand;
+}
+
+async function upsertDemandExactGeoRemote(
+  demandId: string,
+  options: FulfillmentOption[],
+) {
+  const geo = extractExactGeo(options);
+  const { error } = await getSupabase().rpc("upsert_demand_exact_geo", {
+    p_demand_id: demandId,
+    p_lat: geo?.lat ?? null,
+    p_lng: geo?.lng ?? null,
+  });
+  // Soft-fail when migration 0012 is not applied yet.
+  if (error && !/upsert_demand_exact_geo|schema cache/i.test(error.message)) {
+    throw error;
+  }
+}
+
+export async function fetchApproxDistancesRemote(
+  demandIds: string[],
+  viewer: { lat: number; lng: number },
+): Promise<Record<string, number>> {
+  if (demandIds.length === 0) return {};
+  const { data, error } = await getSupabase().rpc("approx_demand_distances", {
+    p_lat: viewer.lat,
+    p_lng: viewer.lng,
+    p_demand_ids: demandIds,
+  });
+  if (error) return {};
+  const out: Record<string, number> = {};
+  for (const row of (data ?? []) as Array<{ id: string; meters: number }>) {
+    if (row?.id && Number.isFinite(row.meters)) out[row.id] = row.meters;
+  }
+  return out;
 }
 
 export async function createOwnershipRemote(input: {
@@ -465,13 +509,15 @@ export async function updateDemandRemote(input: {
   tradeMethod?: string;
   estimatedDurationMinutes?: number | null;
 }): Promise<Demand> {
-  const locationSummary = formatFulfillmentSummary(input.fulfillmentOptions);
+  const rawOptions = input.fulfillmentOptions;
+  const publicOptions = stripGeoFromFulfillmentOptions(rawOptions);
+  const locationSummary = formatFulfillmentSummary(publicOptions);
   const { data, error } = await getSupabase().rpc("update_demand", {
     p_demand_id: input.demandId,
     p_title: input.title,
     p_description: input.description,
     p_budget: input.budget,
-    p_fulfillment_options: input.fulfillmentOptions,
+    p_fulfillment_options: publicOptions,
     p_expires_at: input.expiresAt ?? null,
     p_due_at: input.dueAt ?? null,
     p_item_name: input.itemName ?? null,
@@ -487,7 +533,9 @@ export async function updateDemandRemote(input: {
     p_estimated_duration_minutes: input.estimatedDurationMinutes ?? null,
   });
   if (error) throw error;
-  return mapDemand(data as DbDemand);
+  const demand = mapDemand(data as DbDemand);
+  await upsertDemandExactGeoRemote(input.demandId, rawOptions);
+  return demand;
 }
 
 export async function listMessagesRemote(matchId: string) {

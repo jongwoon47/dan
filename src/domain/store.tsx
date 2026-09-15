@@ -33,6 +33,7 @@ import {
 } from "./mockData";
 import { buildPublicProfileStats } from "./profileTrust";
 import { canRespondToDemand, upsertOpenResponse } from "./responses";
+import { stripGeoFromFulfillmentOptions } from "./fulfillment";
 import { upsertOpenSellIntent } from "./sellIntents";
 import {
   displayProductName,
@@ -159,9 +160,11 @@ function buildDemandFromInput(
     ? normalizeScheduleExpiryIso(rawSchedule)
     : null;
   const expiresAt = defaultExpiresAtIso(payload.type, scheduleIso);
+  const fulfillmentOptions = stripGeoFromFulfillmentOptions(
+    payload.fulfillmentOptions,
+  );
   if (payload.type === "BUY") {
     const product = PRODUCTS.find((p) => p.id === payload.productId);
-    const fulfillmentOptions = payload.fulfillmentOptions;
     const demand: BuyDemand = {
       id: existingBuy?.id ?? createId("demand"),
       userId: actorId,
@@ -193,7 +196,7 @@ function buildDemandFromInput(
       description: payload.description ?? payload.title,
       category: "rental",
       budget: payload.budget,
-      fulfillmentOptions: payload.fulfillmentOptions,
+      fulfillmentOptions,
       status: "ACTIVE",
       createdAt: now,
       expiresAt,
@@ -213,7 +216,7 @@ function buildDemandFromInput(
       description: payload.description ?? payload.taskDescription,
       category: "errand",
       budget: payload.budget,
-      fulfillmentOptions: payload.fulfillmentOptions,
+      fulfillmentOptions,
       status: "ACTIVE",
       createdAt: now,
       expiresAt,
@@ -231,7 +234,7 @@ function buildDemandFromInput(
     description: payload.description ?? payload.serviceDescription,
     category: "service",
     budget: payload.budget,
-    fulfillmentOptions: payload.fulfillmentOptions,
+    fulfillmentOptions,
     status: "ACTIVE",
     createdAt: now,
     expiresAt,
@@ -566,7 +569,10 @@ export function DanProvider({ children }: { children: ReactNode }) {
           title: payload.title,
           description: payload.description,
           budget: payload.budget,
-          fulfillmentOptions: payload.fulfillmentOptions,
+          fulfillmentOptions: stripGeoFromFulfillmentOptions(
+            payload.fulfillmentOptions,
+          ),
+          expiresAt: payload.expiresAt ?? demand.expiresAt,
         };
         if (next.type === "BUY") {
           next = {
@@ -661,6 +667,8 @@ export function DanProvider({ children }: { children: ReactNode }) {
       markMessagesRead: async () => undefined,
       activities: [],
       unreadActivityCount: 0,
+      unreadChatCount: 0,
+      unreadMyDanCount: 0,
       refreshActivities: async () => undefined,
       markActivityRead: async () => undefined,
       getPublicProfile: async (userId) => {

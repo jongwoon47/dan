@@ -258,6 +258,60 @@ export function placeFromLabel(
   };
 }
 
+/** Remove exact coordinates before any public persist/read. */
+export function placeWithoutGeo(p: Place): Place {
+  const { geo: _geo, ...rest } = p;
+  return rest;
+}
+
+export function stripGeoFromFulfillmentOptions(
+  options: FulfillmentOption[],
+): FulfillmentOption[] {
+  return options.map((option) => {
+    switch (option.mode) {
+      case "REMOTE":
+      case "SHIPPING":
+        return option;
+      case "ROUTE":
+        return {
+          mode: "ROUTE",
+          from: placeWithoutGeo(option.from),
+          to: placeWithoutGeo(option.to),
+        };
+      default:
+        return {
+          ...option,
+          place: placeWithoutGeo(option.place),
+        };
+    }
+  });
+}
+
+/** First exact geo found in options (for private storage only). */
+export function extractExactGeo(
+  options: FulfillmentOption[],
+): { lat: number; lng: number } | null {
+  for (const option of options) {
+    if (
+      option.mode === "MEETUP" ||
+      option.mode === "ONSITE" ||
+      option.mode === "PICKUP"
+    ) {
+      const g = option.place.geo;
+      if (g && Number.isFinite(g.lat) && Number.isFinite(g.lng)) {
+        return { lat: g.lat, lng: g.lng };
+      }
+    }
+    if (option.mode === "ROUTE") {
+      const g = option.from.geo ?? option.to.geo;
+      if (g && Number.isFinite(g.lat) && Number.isFinite(g.lng)) {
+        return { lat: g.lat, lng: g.lng };
+      }
+    }
+  }
+  return null;
+}
+
 function inferRegion2(label: string): string | undefined {
   if (label.includes("평택")) return "평택시";
   if (label.includes("강남")) return "강남구";
