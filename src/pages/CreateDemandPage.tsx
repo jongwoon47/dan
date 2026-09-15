@@ -750,7 +750,7 @@ export function CreateDemandPage() {
                 {type === "TASK" ? (
                   <div className="section-stack">
                     <div>
-                      <p className="field-inline-label">{ko.fulfillHow}</p>
+                      <p className="field-inline-label">{ko.taskHow}</p>
                       <ChipGroup>
                         <Chip
                           selected={taskMode === "onsite"}
