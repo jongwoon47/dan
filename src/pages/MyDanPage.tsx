@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { MatchList } from "@/components/MatchCard";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ko } from "@/copy/ko";
 import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
+import {
+  effectiveDemandStatus,
+  isDemandOpen,
+} from "@/domain/demandLifecycle";
 import { dedupeConnectedMatches } from "@/domain/matchLifecycle";
+import { DEMAND_TYPE_LABEL } from "@/domain/types";
 import { formatWon } from "@/lib/format";
 import "./pages.css";
 
@@ -20,6 +25,39 @@ function responseLabel(status: string) {
 
 function demandHref(d: { id: string; type: string }) {
   return `/demand/item/${d.id}`;
+}
+
+function demandStatusLabel(d: Parameters<typeof effectiveDemandStatus>[0]) {
+  const s = effectiveDemandStatus(d);
+  if (s === "ACTIVE") return ko.statusActive;
+  if (s === "MATCHED") return ko.statusMatched;
+  if (s === "EXPIRED") return ko.statusExpired;
+  return ko.statusClosed;
+}
+
+function IconBell() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M6.5 10.5a5.5 5.5 0 0 1 11 0c0 3.2.9 4.6 1.6 5.5H4.9c.7-.9 1.6-2.3 1.6-5.5Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M10 18.5a2 2 0 0 0 4 0"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function formatUnreadBadge(count: number): string {
+  if (count <= 0) return "";
+  if (count > 9) return "9+";
+  return String(count);
 }
 
 function RowLink({
@@ -52,6 +90,28 @@ function RowLink({
 
 function initialOf(name: string) {
   return (name.trim().slice(0, 1) || "?").toUpperCase();
+}
+
+function MySection({
+  title,
+  children,
+  id,
+  action,
+}: {
+  title: string;
+  children: ReactNode;
+  id?: string;
+  action?: ReactNode;
+}) {
+  return (
+    <section className="my-section" id={id}>
+      <div className="my-section__head">
+        <h2 className="my-section__title">{title}</h2>
+        {action}
+      </div>
+      <div className="my-section__body">{children}</div>
+    </section>
+  );
 }
 
 export function MyDanPage() {
@@ -184,8 +244,9 @@ export function MyDanPage() {
     [myMatches],
   );
 
-  const activeDemands = myDemands.filter((d) => d.status === "ACTIVE");
+  const openDemands = myDemands.filter((d) => isDemandOpen(d));
   const openResponses = myResponses.filter((r) => r.status === "OPEN");
+  const unreadLabel = formatUnreadBadge(unreadActivityCount);
 
   if (!isLoggedIn) {
     return (
@@ -204,28 +265,37 @@ export function MyDanPage() {
   }
 
   return (
-    <div className="page-stack">
-      <header className="page-header page-header--row">
-        <div>
+    <div className="page-stack my-dan">
+      <header className="my-dan__header">
+        <div className="my-dan__identity">
           <h1 className="page-title">{ko.myDan}</h1>
-          <p className="section-desc">
-            <Link to={`/profile/${currentUser?.id}`} className="text-link">
-              {currentUser?.name}
-            </Link>
-          </p>
+          <Link to={`/profile/${currentUser?.id}`} className="my-dan__name">
+            {currentUser?.name}
+          </Link>
         </div>
-        <Button to="/activity" variant="secondary" size="sm">
-          {ko.navActivity}
-          {unreadActivityCount > 0 ? ` ${unreadActivityCount}` : ""}
-        </Button>
+        <NavLink
+          to="/activity"
+          className="my-dan__bell"
+          aria-label={
+            unreadActivityCount > 0
+              ? `${ko.navActivity} ${unreadActivityCount}`
+              : ko.navActivity
+          }
+        >
+          <span className="my-dan__bell-wrap">
+            <IconBell />
+            {unreadLabel ? (
+              <span className="nav-badge nav-badge--float">{unreadLabel}</span>
+            ) : null}
+          </span>
+        </NavLink>
       </header>
 
-      <section className="section-stack">
-        <h2 className="section-title">{ko.attentionTitle}</h2>
+      <MySection title={ko.attentionTitle}>
         {nowItems.length === 0 ? (
-          <p className="section-desc">{ko.nowEmpty}</p>
+          <p className="my-section__empty">{ko.nowEmpty}</p>
         ) : (
-          <div className="app-row-list">
+          <div className="app-row-list app-row-list--inset">
             {nowItems.map((item) => (
               <RowLink
                 key={item.key}
@@ -236,36 +306,41 @@ export function MyDanPage() {
             ))}
           </div>
         )}
-      </section>
+      </MySection>
 
-      <section className="section-stack">
-        <h2 className="section-title">{ko.myRequests}</h2>
-        {activeDemands.length === 0 ? (
-          <p className="section-desc">
+      <MySection
+        title={ko.myRequests}
+        action={
+          <Link to="/create" className="my-section__action">
+            {ko.navCreate}
+          </Link>
+        }
+      >
+        {openDemands.length === 0 ? (
+          <p className="my-section__empty">
             {ko.emptyFeedBody}{" "}
             <Link to="/create" className="text-link">
               {ko.navCreate}
             </Link>
           </p>
         ) : (
-          <div className="app-row-list">
-            {activeDemands.map((d) => (
+          <div className="app-row-list app-row-list--inset">
+            {openDemands.map((d) => (
               <RowLink
                 key={d.id}
                 to={demandHref(d)}
                 title={d.title}
-                meta={ko.statusActive}
+                meta={`${DEMAND_TYPE_LABEL[d.type]} · ${demandStatusLabel(d)}`}
                 trailing={d.budget > 0 ? formatWon(d.budget) : undefined}
               />
             ))}
           </div>
         )}
-      </section>
+      </MySection>
 
-      <section className="section-stack" id="connections">
-        <h2 className="section-title">{ko.connectedPeople}</h2>
+      <MySection title={ko.connectedPeople} id="connections">
         {connected.length > 0 ? (
-          <div className="app-row-list">
+          <div className="app-row-list app-row-list--inset">
             {connected.map((m) => {
               const peerId =
                 currentUser?.id === m.buyerId ? m.sellerId : m.buyerId;
@@ -282,27 +357,30 @@ export function MyDanPage() {
                       {initialOf(peer)}
                     </span>
                   }
-                  trailing={ko.openChat}
+                  trailing={
+                    <span className="app-row__trail-cta">{ko.openChat}</span>
+                  }
                 />
               );
             })}
           </div>
         ) : (
-          <p className="section-desc">아직 연결된 사람이 없어요.</p>
+          <p className="my-section__empty">아직 연결된 사람이 없어요.</p>
         )}
-      </section>
+      </MySection>
 
       {pendingMatches.length > 0 ? (
-        <section className="section-stack">
-          <h2 className="section-title">{ko.pendingMatches}</h2>
-          <MatchList matches={pendingMatches} emptyWhenZero={false} />
-        </section>
+        <MySection title={ko.pendingMatches}>
+          <div className="my-section__pad">
+            <MatchList matches={pendingMatches} emptyWhenZero={false} />
+          </div>
+        </MySection>
       ) : null}
 
-      <section className="section-stack">
+      <section className="my-section my-section--quiet">
         <button
           type="button"
-          className="disclosure-row"
+          className="disclosure-row disclosure-row--panel"
           aria-expanded={vaultOpen}
           onClick={() => setVaultOpen((v) => !v)}
         >
@@ -310,42 +388,46 @@ export function MyDanPage() {
           <span aria-hidden>{vaultOpen ? "∧" : "›"}</span>
         </button>
         {vaultOpen ? (
-          <div className="section-stack vault-panel">
-            <h3 className="section-title">{ko.myItems}</h3>
+          <div className="vault-panel">
+            <h3 className="my-section__subtitle">{ko.myItems}</h3>
             {myOwnerships.length === 0 ? (
-              <p className="section-desc">{ko.missingOwnBody}</p>
+              <p className="my-section__empty">{ko.missingOwnBody}</p>
             ) : (
-              myOwnerships.map((o) => {
-                const product = getProduct(o.productId);
-                const sell = mySellIntents.find(
-                  (s) => s.ownershipId === o.id && s.status === "OPEN",
-                );
-                return (
-                  <RowLink
-                    key={o.id}
-                    to={`/ownership/${o.id}/sell-intent`}
-                    title={product?.name ?? o.productId}
-                    trailing={
-                      sell && sell.minimumPrice > 0
-                        ? formatWon(sell.minimumPrice)
-                        : ko.sellCta
-                    }
-                  />
-                );
-              })
+              <div className="app-row-list app-row-list--inset">
+                {myOwnerships.map((o) => {
+                  const product = getProduct(o.productId);
+                  const sell = mySellIntents.find(
+                    (s) => s.ownershipId === o.id && s.status === "OPEN",
+                  );
+                  return (
+                    <RowLink
+                      key={o.id}
+                      to={`/ownership/${o.id}/sell-intent`}
+                      title={product?.name ?? o.productId}
+                      trailing={
+                        sell && sell.minimumPrice > 0
+                          ? formatWon(sell.minimumPrice)
+                          : ko.sellCta
+                      }
+                    />
+                  );
+                })}
+              </div>
             )}
-            <h3 className="section-title">{ko.myResponses}</h3>
+            <h3 className="my-section__subtitle">{ko.myResponses}</h3>
             {openResponses.length === 0 ? (
-              <p className="section-desc">{ko.noMatchBody}</p>
+              <p className="my-section__empty">{ko.noMatchBody}</p>
             ) : (
-              openResponses.map((r) => (
-                <RowLink
-                  key={r.id}
-                  to={`/demand/item/${r.demandId}`}
-                  title={r.message || ko.respondCta}
-                  trailing={responseLabel(r.status)}
-                />
-              ))
+              <div className="app-row-list app-row-list--inset">
+                {openResponses.map((r) => (
+                  <RowLink
+                    key={r.id}
+                    to={`/demand/item/${r.demandId}`}
+                    title={r.message || ko.respondCta}
+                    trailing={responseLabel(r.status)}
+                  />
+                ))}
+              </div>
             )}
           </div>
         ) : null}
