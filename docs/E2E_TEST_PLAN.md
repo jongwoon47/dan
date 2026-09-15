@@ -16,6 +16,15 @@ VITE_SUPABASE_ANON_KEY=YOUR_ANON_KEY
 
 Until credentials exist: treat automated live E2E as **BLOCKED**. Domain unit tests still cover demo lifecycle.
 
+## Browser automation (Playwright)
+
+```bash
+# Needs Chromium once: npx playwright install chromium
+npm run test:e2e:browser
+```
+
+Starts Vite if needed, signs up two ephemeral users, and runs TASK (create → respond → accept) plus BUY (create → ownership → sell intent → interest → connect) in real browsers against live Supabase.
+
 ---
 
 ## Scenario A — TASK → Response → CONNECTED

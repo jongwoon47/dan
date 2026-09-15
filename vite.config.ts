@@ -16,6 +16,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
     css: true,
+    exclude: ["**/node_modules/**", "**/dist/**", "**/e2e/**"],
     env: {
       // Unit tests always use demo adapter; ignore developer .env.local Supabase mode.
       VITE_DATA_MODE: "demo",
