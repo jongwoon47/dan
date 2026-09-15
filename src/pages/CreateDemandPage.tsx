@@ -158,8 +158,33 @@ export function CreateDemandPage() {
     if (paramType) setType(paramType);
   }, [paramType]);
 
+  function hasWritableContent() {
+    return Boolean(
+      title.trim() ||
+        detail.trim() ||
+        itemName.trim() ||
+        productQuery.trim() ||
+        productId ||
+        maxPrice ||
+        budget ||
+        estimatedDuration.trim() ||
+        servicePlaceNote.trim() ||
+        serviceGeoPlace ||
+        borrowStart ||
+        borrowEnd ||
+        dueAt ||
+        preferredAt ||
+        taskMode ||
+        serviceMode ||
+        routeFrom.trim() ||
+        routeTo.trim() ||
+        phase === 2,
+    );
+  }
+
   function selectType(next: DemandType) {
     if (next === type) return;
+    if (hasWritableContent() && !window.confirm(ko.typeSwitchConfirm)) return;
     setType(next);
     setPhase(1);
     setScheduleTouched(false);
@@ -177,6 +202,19 @@ export function CreateDemandPage() {
     setServicePlaceNote("");
     setServiceGeoPlace(null);
     setGeoError(null);
+  }
+
+  function phase2Title(demandType: DemandType) {
+    switch (demandType) {
+      case "BUY":
+        return ko.phase2Buy;
+      case "BORROW":
+        return ko.phase2Borrow;
+      case "TASK":
+        return ko.phase2Task;
+      case "SERVICE":
+        return ko.phase2Service;
+    }
   }
 
   useEffect(() => {
@@ -483,7 +521,11 @@ export function CreateDemandPage() {
     <div className="page-stack page-narrow create-page">
       <section className="create-page__body section-stack">
         <h2 className="section-title">
-          {phase === 1 ? ko.whatNeeded : "어디서 · 언제 필요하세요?"}
+          {phase === 1
+            ? ko.whatNeeded
+            : type
+              ? phase2Title(type)
+              : ko.phase2Task}
         </h2>
 
         <div className="type-segment" role="radiogroup" aria-label="글 유형">
@@ -881,14 +923,14 @@ export function CreateDemandPage() {
                                 setGeoError(null);
                               }}
                             >
-                              {ko.searchPlace}
+                              {ko.enterPlaceManually}
                             </Button>
                           </div>
                           {geoError ? (
                             <p className="form-error">{geoError}</p>
                           ) : null}
                         </div>
-                        <Field label={ko.searchPlace}>
+                        <Field label={ko.placeAreaLabel}>
                           <TextInput
                             value={servicePlace}
                             onChange={(e) => {

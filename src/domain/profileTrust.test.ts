@@ -6,12 +6,11 @@ function demand(partial: Partial<Demand> & Pick<Demand, "id" | "userId" | "statu
   return {
     title: partial.title ?? "테스트",
     description: "",
-    area: "과천",
     createdAt: partial.createdAt ?? "2026-09-01T00:00:00.000Z",
     budgetMax: null,
     currency: "KRW",
     ...partial,
-  } as Demand;
+  } as unknown as Demand;
 }
 
 describe("buildPublicProfileStats", () => {
