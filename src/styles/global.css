@@ -148,10 +148,30 @@ p {
   padding: var(--space-lg) 0;
 }
 
+.detail-facts--stack {
+  grid-template-columns: 1fr;
+  gap: var(--space-md);
+  padding: var(--space-md) 0 var(--space-lg);
+}
+
 .detail-facts span {
   display: block;
   font-size: 0.75rem;
   color: var(--dan-ink-muted);
+}
+
+.detail-facts strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.action-row--split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
 }
 
 .signal-list {

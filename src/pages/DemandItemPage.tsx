@@ -161,11 +161,14 @@ export function DemandItemPage() {
             ? ` · ${demand.status === "CLOSED" ? ko.statusClosed : ko.statusMatched}`
             : ""}
         </p>
-        <p className="section-desc">{ko.demandFirstLead}</p>
-        <p className="section-desc">{demand.description}</p>
+        <h1 className="page-title">{demand.title}</h1>
+        {demand.description.trim() &&
+        demand.description.trim() !== demand.title.trim() ? (
+          <p className="section-desc">{demand.description}</p>
+        ) : null}
       </header>
 
-      <div className="detail-facts">
+      <div className="detail-facts detail-facts--stack">
         <div>
           <span>
             {demand.type === "BUY"
@@ -197,11 +200,20 @@ export function DemandItemPage() {
       </div>
 
       {isOwner && demand.status === "ACTIVE" ? (
-        <div className="action-row">
-          <Button variant="secondary" to={`/demand/item/${demand.id}/edit`}>
+        <div className="action-row action-row--split">
+          <Button
+            fullWidth
+            variant="secondary"
+            to={`/demand/item/${demand.id}/edit`}
+          >
             {ko.editDemand}
           </Button>
-          <Button variant="secondary" onClick={() => setCloseOpen(true)} disabled={busy}>
+          <Button
+            fullWidth
+            variant="secondary"
+            onClick={() => setCloseOpen(true)}
+            disabled={busy}
+          >
             {ko.closeDemand}
           </Button>
         </div>
@@ -338,7 +350,7 @@ export function DemandItemPage() {
               </Button>
             </p>
           ) : ownerResponses.length === 0 ? (
-            <p className="section-desc">{ko.noMatchBody}</p>
+            <p className="section-desc">{ko.ownerResponsesEmpty}</p>
           ) : (
             ownerResponses.map((r) => (
               <div key={r.id} className="response-card">

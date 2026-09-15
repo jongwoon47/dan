@@ -8,6 +8,7 @@ export const ko = {
   "demandFirstLead": "필요한 사람이 먼저 남긴 요청이에요.",
   "respondToThisNeed": "이 필요에 응답하기",
   "ownerResponsesLead": "이 요청에 도착한 응답",
+  "ownerResponsesEmpty": "아직 도착한 응답이 없어요.",
   "chatWith": "님과 대화",
   "logout": "로그아웃",
   "login": "로그인",
