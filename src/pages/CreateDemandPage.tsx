@@ -486,7 +486,7 @@ export function CreateDemandPage() {
           {phase === 1 ? ko.whatNeeded : "어디서 · 언제 필요하세요?"}
         </h2>
 
-        <div className="type-segment" role="radiogroup" aria-label="요청 유형">
+        <div className="type-segment" role="radiogroup" aria-label="글 유형">
           {TYPES.map((t) => (
             <button
               key={t}

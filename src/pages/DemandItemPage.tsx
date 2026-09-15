@@ -359,7 +359,7 @@ export function DemandItemPage() {
                   onChange={(e) => setOfferPrice(e.target.value)}
                   placeholder={
                     demand.budget > 0
-                      ? `요청 예산 ${demand.budget.toLocaleString("ko-KR")}원`
+                      ? `희망 ${demand.budget.toLocaleString("ko-KR")}원`
                       : ko.offerPriceOptional
                   }
                 />

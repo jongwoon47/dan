@@ -25,7 +25,7 @@ function kindVerb(kind: ActivityEvent["kind"]) {
     case "NEW_MESSAGE":
       return "메시지를 보냈어요";
     case "DEMAND_CLOSED":
-      return "요청이 마감됐어요";
+      return "글이 마감됐어요";
     default:
       return "알림이 있어요";
   }
