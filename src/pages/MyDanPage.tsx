@@ -8,6 +8,7 @@ import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
 import {
   effectiveDemandStatus,
+  formatExpiredOn,
   isDemandOpen,
 } from "@/domain/demandLifecycle";
 import { dedupeConnectedMatches } from "@/domain/matchLifecycle";
@@ -100,6 +101,8 @@ export function MyDanPage() {
     getDemand,
     getPublicProfile,
     resetDemo,
+    extendBuyDemand,
+    busy,
   } = useDan();
   const dataMode = getDataMode();
   const [peerNames, setPeerNames] = useState<Record<string, string>>({});
@@ -213,6 +216,9 @@ export function MyDanPage() {
   );
 
   const openDemands = myDemands.filter((d) => isDemandOpen(d));
+  const expiredDemands = myDemands.filter(
+    (d) => effectiveDemandStatus(d) === "EXPIRED",
+  );
   const openResponses = myResponses.filter((r) => r.status === "OPEN");
 
   if (!isLoggedIn) {
@@ -277,6 +283,47 @@ export function MyDanPage() {
           </div>
         )}
       </MyBlock>
+
+      {expiredDemands.length > 0 ? (
+        <MyBlock title={ko.expiredSection}>
+          <div className="expired-list">
+            {expiredDemands.map((d) => {
+              const onDate = formatExpiredOn(d);
+              const isBuy = d.type === "BUY";
+              return (
+                <article key={d.id} className="expired-card">
+                  <Link to={demandHref(d)} className="expired-card__title">
+                    {d.title}
+                  </Link>
+                  <p className="expired-card__meta">
+                    {isBuy
+                      ? `${ko.expiredOnPrefix}${onDate ? ` · ${onDate}` : ""}`
+                      : ko.expiredTimedBody}
+                  </p>
+                  {isBuy ? (
+                    <p className="expired-card__ask">{ko.expiredBuyAsk}</p>
+                  ) : null}
+                  <div className="expired-card__actions">
+                    {isBuy ? (
+                      <Button
+                        size="sm"
+                        disabled={busy}
+                        onClick={() => void extendBuyDemand(d.id)}
+                      >
+                        {ko.extend30d}
+                      </Button>
+                    ) : (
+                      <Button size="sm" to={`/create?type=${d.type}`}>
+                        {ko.recreateSimilar}
+                      </Button>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </MyBlock>
+      ) : null}
 
       <MyBlock title={ko.connectedPeople} id="connections">
         {connected.length > 0 ? (

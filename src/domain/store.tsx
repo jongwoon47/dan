@@ -6,7 +6,12 @@ import {
   areFulfillmentOptionsValid,
   tradeMethodFromFulfillment,
 } from "./fulfillment";
-import { defaultExpiresAtIso, isDemandOpen } from "./demandLifecycle";
+import {
+  defaultExpiresAtIso,
+  extendBuyExpiresAt,
+  isDemandOpen,
+  normalizeScheduleExpiryIso,
+} from "./demandLifecycle";
 import {
   buildVisibleMatches,
   listMatchCandidates,
@@ -142,7 +147,7 @@ function buildDemandFromInput(
   existingBuy?: BuyDemand,
 ): Demand {
   const now = new Date().toISOString();
-  const scheduleIso =
+  const rawSchedule =
     payload.type === "BUY"
       ? null
       : payload.type === "BORROW"
@@ -150,6 +155,9 @@ function buildDemandFromInput(
         : payload.type === "TASK"
           ? payload.dueAt
           : payload.preferredAt;
+  const scheduleIso = rawSchedule
+    ? normalizeScheduleExpiryIso(rawSchedule)
+    : null;
   const expiresAt = defaultExpiresAtIso(payload.type, scheduleIso);
   if (payload.type === "BUY") {
     const product = PRODUCTS.find((p) => p.id === payload.productId);
@@ -192,7 +200,7 @@ function buildDemandFromInput(
       details: {
         itemName: payload.itemName,
         startAt: payload.startAt,
-        endAt: payload.endAt,
+        endAt: scheduleIso ?? payload.endAt,
       },
     };
   }
@@ -211,7 +219,7 @@ function buildDemandFromInput(
       expiresAt,
       details: {
         taskDescription: payload.taskDescription,
-        dueAt: payload.dueAt,
+        dueAt: scheduleIso ?? payload.dueAt,
       },
     };
   }
@@ -229,7 +237,7 @@ function buildDemandFromInput(
     expiresAt,
     details: {
       serviceDescription: payload.serviceDescription,
-      preferredAt: payload.preferredAt,
+      preferredAt: scheduleIso ?? payload.preferredAt,
       estimatedDurationMinutes: payload.estimatedDurationMinutes,
     },
   };
@@ -614,6 +622,19 @@ export function DanProvider({ children }: { children: ReactNode }) {
         if (!demand || demand.userId !== state.currentUserId) return null;
         dispatch({ type: "CLOSE_DEMAND", demandId });
         return { ...demand, status: "CLOSED" as const };
+      },
+      extendBuyDemand: async (demandId) => {
+        const demand = state.demands.find((d) => d.id === demandId);
+        if (!demand || demand.userId !== state.currentUserId) return null;
+        if (demand.type !== "BUY") return null;
+        if (demand.status === "MATCHED" || demand.status === "CLOSED") return null;
+        const next = {
+          ...demand,
+          status: "ACTIVE" as const,
+          expiresAt: extendBuyExpiresAt(),
+        };
+        dispatch({ type: "REPLACE_DEMAND", demand: next });
+        return next;
       },
       acceptResponse: async (responseId) => {
         const before = state.matches.length;

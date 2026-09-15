@@ -628,6 +628,44 @@
   color: var(--dan-ink-muted);
 }
 
+.expired-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding-top: var(--space-sm);
+}
+
+.expired-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-md) 0;
+  border-top: 1px solid var(--dan-border);
+}
+
+.expired-card:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.expired-card__title {
+  font-weight: 800;
+  color: var(--dan-ink);
+  text-decoration: none;
+}
+
+.expired-card__meta,
+.expired-card__ask {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--dan-ink-muted);
+  line-height: 1.4;
+}
+
+.expired-card__actions {
+  padding-top: 4px;
+}
+
 .my-block .app-row-list {
   border-top: 1px solid var(--dan-border);
 }

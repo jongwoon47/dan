@@ -46,6 +46,7 @@ export function DemandItemPage() {
     declineResponse,
     withdrawResponse,
     closeDemand,
+    extendBuyDemand,
     currentUser,
     state,
     busy,
@@ -278,6 +279,31 @@ export function DemandItemPage() {
           >
             {ko.closeDemand}
           </Button>
+        </div>
+      ) : null}
+
+      {isOwner && viewStatus === "EXPIRED" ? (
+        <div className="section-stack">
+          {demand.type === "BUY" ? (
+            <>
+              <p className="section-desc">{ko.expiredBuyAsk}</p>
+              <Button
+                fullWidth
+                size="lg"
+                disabled={busy}
+                onClick={() => void extendBuyDemand(demand.id)}
+              >
+                {ko.extend30d}
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="section-desc">{ko.expiredTimedBody}</p>
+              <Button fullWidth size="lg" to={`/create?type=${demand.type}`}>
+                {ko.recreateSimilar}
+              </Button>
+            </>
+          )}
         </div>
       ) : null}
 

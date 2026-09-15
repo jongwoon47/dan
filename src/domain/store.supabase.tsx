@@ -27,6 +27,7 @@ import type {
   SellIntent,
 } from "@/domain/types";
 import { assignLogin } from "@/lib/loginNext";
+import { extendBuyExpiresAt } from "@/domain/demandLifecycle";
 
 type LoadState = "idle" | "loading" | "ready" | "error";
 
@@ -241,6 +242,28 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
           return null;
         }
         return run(() => api.closeDemandRemote(demandId));
+      },
+      extendBuyDemand: async (demandId) => {
+        if (!currentUser) {
+          assignLogin();
+          return null;
+        }
+        const demand = demands.find((d) => d.id === demandId);
+        if (!demand || demand.type !== "BUY") return null;
+        if (demand.status === "MATCHED" || demand.status === "CLOSED") return null;
+        return run(() =>
+          api.updateDemandRemote({
+            demandId: demand.id,
+            title: demand.title,
+            description: demand.description,
+            budget: demand.budget,
+            fulfillmentOptions: demand.fulfillmentOptions,
+            expiresAt: extendBuyExpiresAt(),
+            maxPrice: demand.details.maxPrice,
+            conditionPreference: demand.details.conditionPreference,
+            tradeMethod: demand.details.tradeMethod,
+          }),
+        );
       },
       acceptResponse: async (responseId) => {
         if (!currentUser) {

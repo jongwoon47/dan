@@ -1,5 +1,5 @@
 import type { CreateDemandInput } from "@/domain/danContext";
-import { defaultExpiresAtIso, isDemandOpen } from "@/domain/demandLifecycle";
+import { defaultExpiresAtIso, normalizeScheduleExpiryIso } from "@/domain/demandLifecycle";
 import {
   formatFulfillmentSummary,
   tradeMethodFromFulfillment,
@@ -261,12 +261,15 @@ export async function createDemandRemote(input: CreateDemandInput): Promise<Dema
   }
 
   const locationSummary = formatFulfillmentSummary(input.fulfillmentOptions);
-  const scheduleIso =
+  const rawSchedule =
     input.type === "BORROW"
       ? input.endAt
       : input.type === "TASK"
         ? input.dueAt
         : input.preferredAt;
+  const scheduleIso = rawSchedule
+    ? normalizeScheduleExpiryIso(rawSchedule)
+    : null;
   const shared = {
     user_id: auth.user.id,
     location: locationSummary,
@@ -285,7 +288,7 @@ export async function createDemandRemote(input: CreateDemandInput): Promise<Dema
           budget: input.budget,
           item_name: input.itemName,
           start_at: input.startAt ?? null,
-          end_at: input.endAt ?? null,
+          end_at: scheduleIso ?? input.endAt ?? null,
         }
       : input.type === "TASK"
         ? {
@@ -296,7 +299,7 @@ export async function createDemandRemote(input: CreateDemandInput): Promise<Dema
             category: "errand",
             budget: input.budget,
             task_description: input.taskDescription,
-            due_at: input.dueAt ?? null,
+            due_at: scheduleIso ?? input.dueAt ?? null,
           }
         : {
             ...shared,
@@ -306,7 +309,7 @@ export async function createDemandRemote(input: CreateDemandInput): Promise<Dema
             category: "service",
             budget: input.budget,
             service_description: input.serviceDescription,
-            preferred_at: input.preferredAt ?? null,
+            preferred_at: scheduleIso ?? input.preferredAt ?? null,
             estimated_duration_minutes: input.estimatedDurationMinutes ?? null,
           };
 

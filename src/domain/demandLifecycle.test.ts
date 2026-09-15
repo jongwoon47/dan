@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   defaultExpiresAtIso,
   effectiveDemandStatus,
+  extendBuyExpiresAt,
   isDemandOpen,
+  normalizeScheduleExpiryIso,
 } from "@/domain/demandLifecycle";
 import type { ServiceDemand } from "@/domain/types";
 import {
@@ -56,6 +58,20 @@ describe("demandLifecycle", () => {
     });
     expect(effectiveDemandStatus(d, Date.parse("2026-09-15T12:00:00.000Z"))).toBe(
       "MATCHED",
+    );
+  });
+
+  it("date-only midnight schedule expires end of local day", () => {
+    const midnight = new Date(2026, 8, 15, 0, 0, 0, 0).toISOString();
+    const end = new Date(normalizeScheduleExpiryIso(midnight));
+    expect(end.getHours()).toBe(23);
+    expect(end.getDate()).toBe(15);
+  });
+
+  it("extendBuyExpiresAt adds 30 days", () => {
+    const now = Date.parse("2026-09-15T00:00:00.000Z");
+    expect(extendBuyExpiresAt(now)).toBe(
+      new Date(now + 30 * 86400000).toISOString(),
     );
   });
 });
