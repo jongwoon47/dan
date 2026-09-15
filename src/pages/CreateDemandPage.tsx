@@ -28,7 +28,11 @@ import {
   formatPriceThought,
   parseMoneyInput,
 } from "@/lib/format";
-import { findProductByMatchKey, productMatchKey } from "@/domain/productName";
+import {
+  findProductByMatchKey,
+  filterProductSuggestions,
+  productMatchKey,
+} from "@/domain/productName";
 import "./pages.css";
 import "@/components/feedCards.css";
 
@@ -217,19 +221,12 @@ export function CreateDemandPage() {
   const selected = products.find((p) => p.id === productId);
   const price = type === "BUY" ? parseMoneyInput(maxPrice) : parseMoneyInput(budget);
 
-  const suggestions = useMemo(() => {
-    const q = productQuery.trim();
-    if (q.length < 1) return [];
-    const qKey = productMatchKey(q);
-    const qLower = q.toLowerCase();
-    return products
-      .filter(
-        (p) =>
-          p.name.toLowerCase().includes(qLower) ||
-          (qKey.length > 0 && productMatchKey(p.name).includes(qKey)),
-      )
-      .slice(0, 5);
-  }, [products, productQuery]);
+  const suggestions = useMemo(
+    () => filterProductSuggestions(products, productQuery, 5),
+    [products, productQuery],
+  );
+  const showProductSuggestions =
+    suggestOpen && productQuery.trim().length > 0 && suggestions.length > 0;
 
   const exactMatch = useMemo(
     () => findProductByMatchKey(products, productQuery),
@@ -482,16 +479,24 @@ export function CreateDemandPage() {
 
                 {type === "BUY" ? (
                   <>
-                    <div className="product-suggest">
+                    <div
+                      className={
+                        showProductSuggestions
+                          ? "product-suggest is-open"
+                          : "product-suggest"
+                      }
+                    >
                       <Field label={ko.productSearch} hint={ko.productSearchHint}>
                         <TextInput
                           value={productQuery}
                           onChange={(e) => {
                             setProductQuery(e.target.value);
                             setProductId("");
-                            setSuggestOpen(true);
+                            setSuggestOpen(e.target.value.trim().length > 0);
                           }}
-                          onFocus={() => setSuggestOpen(true)}
+                          onFocus={() => {
+                            if (productQuery.trim().length > 0) setSuggestOpen(true);
+                          }}
                           onBlur={() => {
                             window.setTimeout(() => setSuggestOpen(false), 120);
                           }}
@@ -499,7 +504,7 @@ export function CreateDemandPage() {
                           autoComplete="off"
                         />
                       </Field>
-                      {suggestOpen && suggestions.length > 0 ? (
+                      {showProductSuggestions ? (
                         <ul className="product-suggest__list" role="listbox">
                           {suggestions.map((p) => (
                             <li key={p.id}>

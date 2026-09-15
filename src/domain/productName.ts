@@ -27,3 +27,22 @@ export function findProductByMatchKey<T extends { name: string }>(
   if (!key) return undefined;
   return products.find((p) => productMatchKey(p.name) === key);
 }
+
+/** Search-first BUY suggestions — never browse/catalog when query is empty. */
+export function filterProductSuggestions<T extends { name: string }>(
+  products: T[],
+  query: string,
+  limit = 5,
+): T[] {
+  const q = query.trim();
+  if (!q) return [];
+  const qKey = productMatchKey(q);
+  const qLower = q.toLowerCase();
+  return products
+    .filter((p) => {
+      if (p.name.toLowerCase().includes(qLower)) return true;
+      if (!qKey) return false;
+      return productMatchKey(p.name).includes(qKey);
+    })
+    .slice(0, limit);
+}
