@@ -32,7 +32,9 @@ export default function App() {
   return (
     <AuthProvider>
       <DataProvider>
-        <BrowserRouter>
+        <BrowserRouter
+          basename={import.meta.env.BASE_URL.replace(/\/$/, "") || undefined}
+        >
           <Routes>
             <Route path="login" element={<LoginPage />} />
             <Route element={<AppShell />}>

@@ -6,6 +6,8 @@ import { defineConfig } from "vitest/config";
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  // GitHub Pages project site uses /dan/; Cloudflare/root stays /.
+  base: process.env.VITE_BASE || "/",
   plugins: [react()],
   resolve: {
     alias: {
