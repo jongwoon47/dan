@@ -53,7 +53,7 @@ export function DemandItemPage() {
   } = useDan();
   const demand = getDemand(demandId);
   useDeepHeader({
-    title: demand?.title ?? ko.viewDemand,
+    title: demand ? DEMAND_TYPE_LABEL[demand.type] : ko.viewDemand,
   });
   const restored = loadResponseDraft(demandId);
   const [composerOpen, setComposerOpen] = useState(Boolean(restored));
@@ -182,22 +182,46 @@ export function DemandItemPage() {
   }
 
   return (
-    <div className="page-stack page-narrow">
-      <header className="page-header">
-        <p className="feed-row__type">
-          {DEMAND_TYPE_LABEL[demand.type]}
-          {viewStatus !== "ACTIVE" ? ` · ${statusBadgeLabel(viewStatus)}` : ""}
-        </p>
-        <h1 className="page-title">{demand.title}</h1>
+    <div className="page-stack page-narrow demand-item">
+      <header className="demand-item__header">
+        <div className="demand-item__badges">
+          <span className="demand-chip">{DEMAND_TYPE_LABEL[demand.type]}</span>
+          {viewStatus !== "ACTIVE" ? (
+            <span
+              className={
+                viewStatus === "EXPIRED"
+                  ? "demand-chip demand-chip--expired"
+                  : viewStatus === "MATCHED"
+                    ? "demand-chip demand-chip--matched"
+                    : "demand-chip demand-chip--closed"
+              }
+            >
+              {statusBadgeLabel(viewStatus)}
+            </span>
+          ) : (
+            <span className="demand-chip demand-chip--open">{ko.statusActive}</span>
+          )}
+        </div>
+        <h1 className="page-title demand-item__title">{demand.title}</h1>
         {demand.description.trim() &&
         demand.description.trim() !== demand.title.trim() ? (
-          <p className="section-desc">{demand.description}</p>
+          <p className="section-desc demand-item__desc">{demand.description}</p>
         ) : null}
       </header>
 
-      <div className="detail-facts detail-facts--stack">
-        <div>
-          <span>
+      <dl className="detail-facts detail-facts--panel">
+        <div className="detail-facts__row detail-facts__row--reward">
+          <dt>
+            {demand.type === "BORROW"
+              ? ko.borrowBudgetTotal
+              : demand.type === "TASK" || demand.type === "SERVICE"
+                ? ko.reward
+                : ko.detailBudget}
+          </dt>
+          <dd>{formatWon(demand.budget)}</dd>
+        </div>
+        <div className="detail-facts__row">
+          <dt>
             {demand.type === "BUY"
               ? ko.whereLabelBuy
               : demand.type === "BORROW"
@@ -205,47 +229,37 @@ export function DemandItemPage() {
                 : demand.type === "SERVICE"
                   ? ko.whereLabelService
                   : ko.whereLabelTask}
-          </span>
-          <strong>{formatFulfillmentModes(demand.fulfillmentOptions)}</strong>
+          </dt>
+          <dd>{formatFulfillmentModes(demand.fulfillmentOptions)}</dd>
         </div>
         {primaryPublicPlace(demand.fulfillmentOptions) ? (
-          <div>
-            <span>{ko.detailLocation}</span>
-            <strong>
+          <div className="detail-facts__row">
+            <dt>{ko.detailLocation}</dt>
+            <dd>
               {formatPublicPlaceLine(
                 primaryPublicPlace(demand.fulfillmentOptions)!,
                 loadViewerGeo(),
                 { revealDetail: revealLocation },
               )}
-            </strong>
+            </dd>
           </div>
         ) : null}
-        <div>
-          <span>
-            {demand.type === "BORROW"
-              ? ko.borrowBudgetTotal
-              : demand.type === "TASK" || demand.type === "SERVICE"
-                ? ko.reward
-                : ko.detailBudget}
-          </span>
-          <strong>{formatWon(demand.budget)}</strong>
-        </div>
         {formatDemandWhen(demand) ? (
-          <div>
-            <span>{ko.detailWhen}</span>
-            <strong>{formatDemandWhen(demand)}</strong>
+          <div className="detail-facts__row">
+            <dt>{ko.detailWhen}</dt>
+            <dd>{formatDemandWhen(demand)}</dd>
           </div>
         ) : null}
         {demand.type === "SERVICE" &&
         formatDurationMinutes(demand.details.estimatedDurationMinutes) ? (
-          <div>
-            <span>{ko.detailDuration}</span>
-            <strong>
+          <div className="detail-facts__row">
+            <dt>{ko.detailDuration}</dt>
+            <dd>
               {formatDurationMinutes(demand.details.estimatedDurationMinutes)}
-            </strong>
+            </dd>
           </div>
         ) : null}
-      </div>
+      </dl>
 
       {isOwner && demandOpen ? (
         <div className="action-row action-row--split">
@@ -401,7 +415,7 @@ export function DemandItemPage() {
       ) : null}
 
       {isOwner ? (
-        <div className="section-stack">
+        <div className="section-stack demand-item__responses">
           <h2 className="section-title">{ko.ownerResponsesLead}</h2>
           {demand.type === "BUY" ? (
             <p className="section-desc">
@@ -410,7 +424,9 @@ export function DemandItemPage() {
               </Button>
             </p>
           ) : ownerResponses.length === 0 ? (
-            <p className="section-desc">{ko.ownerResponsesEmpty}</p>
+            <div className="demand-item__empty">
+              <p className="section-desc">{ko.ownerResponsesEmpty}</p>
+            </div>
           ) : (
             ownerResponses.map((r) => (
               <div key={r.id} className="response-card">
