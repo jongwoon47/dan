@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { MatchList } from "@/components/MatchCard";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -35,31 +35,6 @@ function demandStatusLabel(d: Parameters<typeof effectiveDemandStatus>[0]) {
   return ko.statusClosed;
 }
 
-function IconBell() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M6.5 10.5a5.5 5.5 0 0 1 11 0c0 3.2.9 4.6 1.6 5.5H4.9c.7-.9 1.6-2.3 1.6-5.5Z"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M10 18.5a2 2 0 0 0 4 0"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function formatUnreadBadge(count: number): string {
-  if (count <= 0) return "";
-  if (count > 9) return "9+";
-  return String(count);
-}
-
 function RowLink({
   to,
   title,
@@ -92,24 +67,19 @@ function initialOf(name: string) {
   return (name.trim().slice(0, 1) || "?").toUpperCase();
 }
 
-function MySection({
+function MyBlock({
   title,
   children,
   id,
-  action,
 }: {
   title: string;
   children: ReactNode;
   id?: string;
-  action?: ReactNode;
 }) {
   return (
-    <section className="my-section" id={id}>
-      <div className="my-section__head">
-        <h2 className="my-section__title">{title}</h2>
-        {action}
-      </div>
-      <div className="my-section__body">{children}</div>
+    <section className="my-block" id={id}>
+      <h2 className="my-block__title">{title}</h2>
+      {children}
     </section>
   );
 }
@@ -127,7 +97,6 @@ export function MyDanPage() {
     getProduct,
     getAggregate,
     activities,
-    unreadActivityCount,
     getDemand,
     getPublicProfile,
     resetDemo,
@@ -226,7 +195,6 @@ export function MyDanPage() {
       const agg = getAggregate(own.productId);
       const to = `/demand/${own.productId}`;
       if (!agg || agg.seekerCount <= 0) continue;
-      // Same product already covered by unread BUYER_INTEREST activity.
       if (seenTo.has(to)) continue;
       push({
         key: own.id,
@@ -246,7 +214,6 @@ export function MyDanPage() {
 
   const openDemands = myDemands.filter((d) => isDemandOpen(d));
   const openResponses = myResponses.filter((r) => r.status === "OPEN");
-  const unreadLabel = formatUnreadBadge(unreadActivityCount);
 
   if (!isLoggedIn) {
     return (
@@ -267,35 +234,15 @@ export function MyDanPage() {
   return (
     <div className="page-stack my-dan">
       <header className="my-dan__header">
-        <div className="my-dan__identity">
-          <h1 className="page-title">{ko.myDan}</h1>
-          <Link to={`/profile/${currentUser?.id}`} className="my-dan__name">
-            {currentUser?.name}
-          </Link>
-        </div>
-        <NavLink
-          to="/activity"
-          className="my-dan__bell"
-          aria-label={
-            unreadActivityCount > 0
-              ? `${ko.navActivity} ${unreadActivityCount}`
-              : ko.navActivity
-          }
-        >
-          <span className="my-dan__bell-wrap">
-            <IconBell />
-            {unreadLabel ? (
-              <span className="nav-badge nav-badge--float">{unreadLabel}</span>
-            ) : null}
-          </span>
-        </NavLink>
+        <h1 className="page-title">{ko.myDan}</h1>
+        <Link to={`/profile/${currentUser?.id}`} className="my-dan__name">
+          {currentUser?.name}
+        </Link>
       </header>
 
-      <MySection title={ko.attentionTitle}>
-        {nowItems.length === 0 ? (
-          <p className="my-section__empty">{ko.nowEmpty}</p>
-        ) : (
-          <div className="app-row-list app-row-list--inset">
+      {nowItems.length > 0 ? (
+        <MyBlock title={ko.attentionTitle}>
+          <div className="app-row-list">
             {nowItems.map((item) => (
               <RowLink
                 key={item.key}
@@ -305,26 +252,19 @@ export function MyDanPage() {
               />
             ))}
           </div>
-        )}
-      </MySection>
+        </MyBlock>
+      ) : null}
 
-      <MySection
-        title={ko.myRequests}
-        action={
-          <Link to="/create" className="my-section__action">
-            {ko.navCreate}
-          </Link>
-        }
-      >
+      <MyBlock title={ko.myRequests}>
         {openDemands.length === 0 ? (
-          <p className="my-section__empty">
-            {ko.emptyFeedBody}{" "}
-            <Link to="/create" className="text-link">
+          <div className="my-block__empty">
+            <p>{ko.emptyFeedBody}</p>
+            <Button to="/create" size="sm">
               {ko.navCreate}
-            </Link>
-          </p>
+            </Button>
+          </div>
         ) : (
-          <div className="app-row-list app-row-list--inset">
+          <div className="app-row-list">
             {openDemands.map((d) => (
               <RowLink
                 key={d.id}
@@ -336,11 +276,11 @@ export function MyDanPage() {
             ))}
           </div>
         )}
-      </MySection>
+      </MyBlock>
 
-      <MySection title={ko.connectedPeople} id="connections">
+      <MyBlock title={ko.connectedPeople} id="connections">
         {connected.length > 0 ? (
-          <div className="app-row-list app-row-list--inset">
+          <div className="app-row-list">
             {connected.map((m) => {
               const peerId =
                 currentUser?.id === m.buyerId ? m.sellerId : m.buyerId;
@@ -365,22 +305,20 @@ export function MyDanPage() {
             })}
           </div>
         ) : (
-          <p className="my-section__empty">아직 연결된 사람이 없어요.</p>
+          <p className="my-block__hint">아직 연결된 사람이 없어요.</p>
         )}
-      </MySection>
+      </MyBlock>
 
       {pendingMatches.length > 0 ? (
-        <MySection title={ko.pendingMatches}>
-          <div className="my-section__pad">
-            <MatchList matches={pendingMatches} emptyWhenZero={false} />
-          </div>
-        </MySection>
+        <MyBlock title={ko.pendingMatches}>
+          <MatchList matches={pendingMatches} emptyWhenZero={false} />
+        </MyBlock>
       ) : null}
 
-      <section className="my-section my-section--quiet">
+      <div className="my-vault">
         <button
           type="button"
-          className="disclosure-row disclosure-row--panel"
+          className="my-vault__toggle"
           aria-expanded={vaultOpen}
           onClick={() => setVaultOpen((v) => !v)}
         >
@@ -388,12 +326,12 @@ export function MyDanPage() {
           <span aria-hidden>{vaultOpen ? "∧" : "›"}</span>
         </button>
         {vaultOpen ? (
-          <div className="vault-panel">
-            <h3 className="my-section__subtitle">{ko.myItems}</h3>
+          <div className="my-vault__panel">
+            <h3 className="my-block__subtitle">{ko.myItems}</h3>
             {myOwnerships.length === 0 ? (
-              <p className="my-section__empty">{ko.missingOwnBody}</p>
+              <p className="my-block__hint">{ko.missingOwnBody}</p>
             ) : (
-              <div className="app-row-list app-row-list--inset">
+              <div className="app-row-list">
                 {myOwnerships.map((o) => {
                   const product = getProduct(o.productId);
                   const sell = mySellIntents.find(
@@ -414,11 +352,11 @@ export function MyDanPage() {
                 })}
               </div>
             )}
-            <h3 className="my-section__subtitle">{ko.myResponses}</h3>
+            <h3 className="my-block__subtitle">{ko.myResponses}</h3>
             {openResponses.length === 0 ? (
-              <p className="my-section__empty">{ko.noMatchBody}</p>
+              <p className="my-block__hint">{ko.noMatchBody}</p>
             ) : (
-              <div className="app-row-list app-row-list--inset">
+              <div className="app-row-list">
                 {openResponses.map((r) => (
                   <RowLink
                     key={r.id}
@@ -431,7 +369,7 @@ export function MyDanPage() {
             )}
           </div>
         ) : null}
-      </section>
+      </div>
 
       {dataMode === "demo" ? (
         <Button variant="ghost" onClick={resetDemo}>
