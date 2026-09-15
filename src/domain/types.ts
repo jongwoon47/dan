@@ -186,6 +186,12 @@ export interface ChatMessage {
   readAt?: string;
 }
 
+export interface PublicProfileActivity {
+  id: string;
+  label: string;
+  href?: string;
+}
+
 export interface PublicProfile {
   id: string;
   displayName: string;
@@ -193,6 +199,13 @@ export interface PublicProfile {
   bio: string;
   createdAt: string;
   connectionCount: number;
+  /** Owned demands that finished (MATCHED / CLOSED). */
+  completedDemandCount: number;
+  /** CONNECTED matches where this user was the responder. */
+  responseConnectionCount: number;
+  /** Only real auth providers — never invent verification. */
+  authLabel?: string | null;
+  recentActivity: PublicProfileActivity[];
 }
 
 export interface DemandAggregate {

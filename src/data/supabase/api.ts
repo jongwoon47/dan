@@ -576,11 +576,46 @@ export async function fetchPublicProfile(userId: string) {
     .maybeSingle();
   if (error) throw error;
   if (!profile) return null;
-  const { count } = await sb
-    .from("matches")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "CONNECTED")
-    .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`);
+
+  const { data: auth } = await sb.auth.getUser();
+  const viewerIsSelf = auth.user?.id === userId;
+  let authLabel: string | null = null;
+  if (viewerIsSelf && auth.user) {
+    const provider =
+      (auth.user.app_metadata?.provider as string | undefined) ||
+      auth.user.identities?.[0]?.provider;
+    if (provider === "google") authLabel = "Google로 가입";
+    else if (provider === "email") authLabel = "이메일로 가입";
+  }
+
+  const { data: trustRaw, error: trustError } = await sb.rpc(
+    "get_public_profile_trust",
+    { p_user_id: userId },
+  );
+  if (trustError) throw trustError;
+
+  const trust = (trustRaw ?? {}) as {
+    completedDemandCount?: number;
+    responseConnectionCount?: number;
+    connectionCount?: number;
+    recentActivity?: Array<{
+      id: string;
+      type: string;
+      status: string;
+      title?: string | null;
+    }>;
+    viewerIsSelf?: boolean;
+  };
+
+  const typeLabel: Record<string, string> = {
+    BUY: "물건 구매",
+    BORROW: "빌리기",
+    TASK: "심부름",
+    SERVICE: "서비스",
+  };
+
+  const isSelf = trust.viewerIsSelf ?? viewerIsSelf;
+
   return {
     id: profile.id as string,
     displayName: (profile.display_name as string) || "DAN user",
@@ -590,7 +625,27 @@ export async function fetchPublicProfile(userId: string) {
       "",
     bio: (profile.bio as string) || "",
     createdAt: profile.created_at as string,
-    connectionCount: count ?? 0,
+    connectionCount: trust.connectionCount ?? 0,
+    completedDemandCount: trust.completedDemandCount ?? 0,
+    responseConnectionCount: trust.responseConnectionCount ?? 0,
+    authLabel,
+    recentActivity: (trust.recentActivity ?? []).map((row) => {
+      const statusKo =
+        row.status === "MATCHED"
+          ? "연결됨"
+          : row.status === "CLOSED"
+            ? "마감"
+            : row.status;
+      const title = row.title?.trim();
+      return {
+        id: row.id,
+        label:
+          isSelf && title
+            ? `${title} · ${statusKo}`
+            : `${typeLabel[row.type] ?? row.type} · ${statusKo}`,
+        href: isSelf ? `/demand/item/${row.id}` : undefined,
+      };
+    }),
   };
 }
 

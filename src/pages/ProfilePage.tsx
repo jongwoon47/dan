@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { useParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { Link, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -9,6 +9,16 @@ import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import type { PublicProfile } from "@/domain/types";
 import "./pages.css";
+
+function formatJoined(iso: string): string {
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return "";
+  return d.toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  });
+}
 
 export function ProfilePage() {
   const { userId = "" } = useParams();
@@ -20,6 +30,7 @@ export function ProfilePage() {
     reportUser,
     busy,
     logout,
+    myMatches,
   } = useDan();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,6 +45,17 @@ export function ProfilePage() {
   >("spam");
   const [toast, setToast] = useState<string | null>(null);
   const isSelf = currentUser?.id === userId;
+
+  const connectedMatch = useMemo(
+    () =>
+      myMatches.find(
+        (m) =>
+          m.status === "CONNECTED" &&
+          (m.buyerId === userId || m.sellerId === userId) &&
+          (m.buyerId === currentUser?.id || m.sellerId === currentUser?.id),
+      ),
+    [myMatches, userId, currentUser?.id],
+  );
 
   const onMenuOpenChange = useCallback((open: boolean) => {
     setMenuOpen(open);
@@ -82,7 +104,7 @@ export function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="page-stack">
+      <div className="page-stack page-narrow">
         <div className="skeleton-line skeleton-line--lg" />
         <div className="skeleton-line" />
       </div>
@@ -118,69 +140,159 @@ export function ProfilePage() {
   }
 
   const initial = (profile.displayName.trim().slice(0, 1) || "?").toUpperCase();
-  const areaLine = profile.defaultArea.trim()
-    ? profile.defaultArea
-    : ko.areaUnset;
+  const areaLine = profile.defaultArea.trim();
+  const bioTrim = profile.bio.trim();
+  const showStats =
+    profile.completedDemandCount > 0 || profile.responseConnectionCount > 0;
+  const activityBits: string[] = [];
+  if (profile.completedDemandCount > 0) {
+    activityBits.push(
+      `${ko.profileCompleted} ${profile.completedDemandCount}`,
+    );
+  }
+  if (profile.responseConnectionCount > 0) {
+    activityBits.push(
+      `${ko.profileResponded} ${profile.responseConnectionCount}`,
+    );
+  }
 
   return (
     <div className="page-stack page-narrow profile-page">
-      <section className="profile-identity">
-        <span className="avatar-initial avatar-initial--lg" aria-hidden>
-          {initial}
-        </span>
-        <h2 className="profile-identity__name">{profile.displayName}</h2>
-        <p className="section-desc">{areaLine}</p>
-      </section>
+      <section className="trust-card">
+        <div className="trust-card__identity">
+          <span className="avatar-initial avatar-initial--lg" aria-hidden>
+            {initial}
+          </span>
+          <div className="trust-card__meta">
+            <h1 className="trust-card__name">{profile.displayName}</h1>
+            {areaLine ? <p className="trust-card__area">{areaLine}</p> : null}
+            {profile.authLabel ? (
+              <p className="trust-card__auth">{profile.authLabel}</p>
+            ) : null}
+          </div>
+        </div>
 
-      {toast ? <p className="section-desc">{toast}</p> : null}
-
-      {editing ? (
-        <form className="composer-sheet" onSubmit={(e) => void onSave(e)}>
-          <label className="field">
-            <span>{ko.displayName}</span>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              maxLength={20}
-            />
-          </label>
-          <label className="field">
-            <span>{ko.profileArea}</span>
-            <input value={area} onChange={(e) => setArea(e.target.value)} />
-          </label>
-          <label className="field">
-            <span>{ko.profileBio}</span>
-            <textarea
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder={ko.profileBioPh}
-              rows={3}
-            />
-          </label>
-          <Button type="submit" disabled={busy}>
-            {busy ? ko.saving : ko.profileSave}
-          </Button>
-        </form>
-      ) : (
-        <>
-          <p className="section-desc">{profile.bio || ko.emptyBio}</p>
-          <p className="muted profile-joined">
-            {ko.profileJoined}{" "}
-            {new Date(profile.createdAt).toLocaleDateString("ko-KR")}
-          </p>
-          {isSelf ? (
+        {editing ? (
+          <form className="composer-sheet" onSubmit={(e) => void onSave(e)}>
+            <label className="field">
+              <span>{ko.displayName}</span>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                maxLength={20}
+              />
+            </label>
+            <label className="field">
+              <span>{ko.profileArea}</span>
+              <input
+                value={area}
+                onChange={(e) => setArea(e.target.value)}
+                placeholder={ko.defaultAreaHint}
+              />
+            </label>
+            <label className="field">
+              <span>{ko.profileBio}</span>
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder={ko.profileBioPh}
+                rows={3}
+                maxLength={80}
+              />
+            </label>
             <div className="action-row">
-              <Button variant="secondary" onClick={() => setEditing(true)}>
-                {ko.profileEdit}
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setEditing(false)}
+              >
+                {ko.cancel}
               </Button>
-              <Button variant="ghost" onClick={logout}>
-                {ko.logout}
+              <Button type="submit" disabled={busy}>
+                {busy ? ko.saving : ko.profileSave}
               </Button>
             </div>
-          ) : null}
-        </>
-      )}
+          </form>
+        ) : (
+          <>
+            {bioTrim ? (
+              <p className="trust-card__bio">“{bioTrim}”</p>
+            ) : isSelf ? (
+              <button
+                type="button"
+                className="trust-card__bio-cta"
+                onClick={() => setEditing(true)}
+              >
+                {ko.emptyBioSelf}
+              </button>
+            ) : null}
+
+            <p className="trust-card__joined">
+              {ko.profileJoined} {formatJoined(profile.createdAt)}
+            </p>
+
+            {showStats ? (
+              <div className="trust-card__stats">
+                <p className="trust-card__stats-label">{ko.profileActivity}</p>
+                <p className="trust-card__stats-value">
+                  {activityBits.join(" · ")}
+                </p>
+              </div>
+            ) : null}
+
+            {profile.recentActivity.length > 0 ? (
+              <div className="trust-card__recent">
+                <p className="trust-card__stats-label">{ko.profileRecent}</p>
+                <ul className="trust-card__recent-list">
+                  {profile.recentActivity.map((row) => (
+                    <li key={row.id}>
+                      {row.href ? (
+                        <Link to={row.href} className="text-link">
+                          {row.label}
+                        </Link>
+                      ) : (
+                        <span>{row.label}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {toast ? <p className="section-desc">{toast}</p> : null}
+
+            {isSelf ? (
+              <div className="trust-card__actions">
+                <Button
+                  fullWidth
+                  variant="secondary"
+                  onClick={() => setEditing(true)}
+                >
+                  {ko.profileEdit}
+                </Button>
+                <div className="action-row action-row--split">
+                  <Button fullWidth variant="ghost" to="/my">
+                    {ko.profileMyPosts}
+                  </Button>
+                  <Button fullWidth variant="ghost" to="/my#connections">
+                    {ko.profileMyConnections}
+                  </Button>
+                </div>
+                <Button fullWidth variant="ghost" onClick={logout}>
+                  {ko.logout}
+                </Button>
+              </div>
+            ) : connectedMatch ? (
+              <div className="trust-card__actions">
+                <Button to={`/match/${connectedMatch.id}`} fullWidth size="lg">
+                  {ko.openChat}
+                </Button>
+              </div>
+            ) : null}
+          </>
+        )}
+      </section>
 
       <ConfirmSheet
         open={confirm === "block"}

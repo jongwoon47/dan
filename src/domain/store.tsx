@@ -26,6 +26,7 @@ import {
   SEED_SELL_INTENTS,
   aggregateDemands,
 } from "./mockData";
+import { buildPublicProfileStats } from "./profileTrust";
 import { canRespondToDemand, upsertOpenResponse } from "./responses";
 import { upsertOpenSellIntent } from "./sellIntents";
 import {
@@ -644,14 +645,17 @@ export function DanProvider({ children }: { children: ReactNode }) {
       getPublicProfile: async (userId) => {
         const u = DEMO_USERS.find((x) => x.id === userId);
         if (!u) return null;
-        return {
-          id: u.id,
+        return buildPublicProfileStats({
+          userId: u.id,
           displayName: u.name,
           defaultArea: u.defaultArea,
           bio: u.bio ?? "",
           createdAt: u.createdAt ?? new Date().toISOString(),
-          connectionCount: 0,
-        };
+          demands: state.demands,
+          matches: state.matches,
+          viewerIsSelf: state.currentUserId === userId,
+          authLabel: null,
+        });
       },
       updateMyProfile: async () => currentUser,
       blockUser: async () => false,

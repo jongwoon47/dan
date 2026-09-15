@@ -1357,6 +1357,120 @@
   position: relative;
 }
 
+.trust-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg) 0;
+}
+
+.trust-card__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.trust-card__meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.trust-card__name {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.trust-card__area {
+  margin: 0;
+  color: var(--dan-ink-muted);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.trust-card__auth {
+  margin: 0;
+  color: var(--dan-ink-muted);
+  font-size: 0.8125rem;
+}
+
+.trust-card__bio {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.45;
+  color: var(--dan-ink);
+}
+
+.trust-card__bio-cta {
+  align-self: flex-start;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--dan-ink-muted);
+  font: inherit;
+  font-size: 0.9375rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.trust-card__joined {
+  margin: 0;
+  color: var(--dan-ink-muted);
+  font-size: 0.875rem;
+}
+
+.trust-card__stats,
+.trust-card__recent {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: var(--space-sm);
+  border-top: 1px solid color-mix(in srgb, var(--dan-border) 80%, transparent);
+}
+
+.trust-card__stats-label {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--dan-ink-muted);
+}
+
+.trust-card__stats-value {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--dan-ink);
+}
+
+.trust-card__recent-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trust-card__recent-list li {
+  font-size: 0.9375rem;
+  color: var(--dan-ink);
+}
+
+.trust-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding-top: var(--space-sm);
+}
+
 .feed-row {
   border-bottom-color: color-mix(in srgb, var(--dan-border) 70%, transparent);
 }
