@@ -599,9 +599,10 @@ export async function fetchPublicProfile(userId: string) {
     "get_public_profile_trust",
     { p_user_id: userId },
   );
-  if (trustError) throw trustError;
-
-  const trust = (trustRaw ?? {}) as {
+  // Migration 0011 may not be applied yet — still show the trust card shell.
+  const trust = (
+    trustError ? {} : ((trustRaw ?? {}) as Record<string, unknown>)
+  ) as {
     completedDemandCount?: number;
     responseConnectionCount?: number;
     connectionCount?: number;
