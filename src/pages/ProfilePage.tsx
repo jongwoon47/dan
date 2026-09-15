@@ -129,12 +129,7 @@ export function ProfilePage() {
           {initial}
         </span>
         <h2 className="profile-identity__name">{profile.displayName}</h2>
-        <p className="section-desc">
-          {areaLine}
-          {" · "}
-          {ko.profileConnections} {profile.connectionCount}
-          {ko.timesSuffix}
-        </p>
+        <p className="section-desc">{areaLine}</p>
       </section>
 
       {toast ? <p className="section-desc">{toast}</p> : null}
