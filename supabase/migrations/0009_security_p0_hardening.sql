@@ -186,6 +186,7 @@ create policy sell_intents_update_own
 -- 4) activity_events: read-state only via RPC
 -- ---------------------------------------------------------------------------
 drop policy if exists activity_update_own_read on public.activity_events;
+drop policy if exists activity_no_direct_update on public.activity_events;
 create policy activity_no_direct_update
   on public.activity_events for update to authenticated
   using (false)
