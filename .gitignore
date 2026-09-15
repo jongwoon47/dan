@@ -51,3 +51,4 @@ test-results/
 playwright-report/
 blob-report/
 playwright/.cache/
+qa-screenshots/
