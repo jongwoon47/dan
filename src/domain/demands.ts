@@ -1,10 +1,10 @@
 import type { BuyDemand, Demand } from "./types";
 import { isBuyDemand } from "./types";
+import { isDemandOpen } from "./demandLifecycle";
 
-/** ACTIVE + not past expiresAt. */
+/** ACTIVE + not past schedule/expiresAt. */
 export function isDemandLive(demand: Demand, nowMs: number): boolean {
-  if (demand.status !== "ACTIVE") return false;
-  return new Date(demand.expiresAt).getTime() > nowMs;
+  return isDemandOpen(demand, nowMs);
 }
 
 export function asBuyDemand(demand: Demand): BuyDemand | null {

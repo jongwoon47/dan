@@ -1,5 +1,6 @@
 import type { Place } from "@/domain/fulfillment";
 import { placeFromLabel } from "@/domain/fulfillment";
+import { saveViewerGeo } from "@/lib/geoDistance";
 
 export type GeoLocateResult =
   | { ok: true; place: Place }
@@ -69,6 +70,7 @@ export function requestCurrentPlace(
               geo: { lat, lng },
             },
           });
+          saveViewerGeo(lat, lng);
         })();
       },
       (err) => resolve({ ok: false, reason: mapGeoError(err) }),

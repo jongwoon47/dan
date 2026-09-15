@@ -1,15 +1,31 @@
 import { Link } from "react-router-dom";
 import { ko } from "@/copy/ko";
-import { formatFulfillmentCardLine } from "@/domain/fulfillment";
+import { primaryPublicPlace } from "@/domain/fulfillment";
 import type { Demand } from "@/domain/types";
 import { DEMAND_TYPE_LABEL } from "@/domain/types";
 import { formatDemandWhen, formatWon } from "@/lib/format";
+import {
+  formatPublicPlaceLine,
+  loadViewerGeo,
+} from "@/lib/geoDistance";
 import "./feedCards.css";
 
+function feedPlaceLine(demand: Demand): string {
+  const place = primaryPublicPlace(demand.fulfillmentOptions);
+  if (place) {
+    return formatPublicPlaceLine(place, loadViewerGeo());
+  }
+  const remote = demand.fulfillmentOptions.some((o) => o.mode === "REMOTE");
+  const shipping = demand.fulfillmentOptions.some((o) => o.mode === "SHIPPING");
+  if (remote) return ko.fulfillRemote;
+  if (shipping) return ko.fulfillShippingShort;
+  return "";
+}
+
 export function IndividualDemandCard({ demand }: { demand: Demand }) {
-  const fulfillLine = formatFulfillmentCardLine(demand.fulfillmentOptions);
+  const placeLine = feedPlaceLine(demand);
   const when = formatDemandWhen(demand);
-  const meta = [fulfillLine, when].filter(Boolean).join(" · ");
+  const meta = [placeLine, when].filter(Boolean).join(" · ");
   const showPrice = demand.budget > 0;
   const priceLabel =
     demand.type === "TASK" || demand.type === "SERVICE"

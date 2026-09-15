@@ -338,6 +338,7 @@ export const ko = {
   "closeDemandConfirm": "이 요청을 마감할까요? 새 응답을 받지 않아요.",
   "saveDemand": "저장",
   "demandClosed": "마감된 요청",
+  "statusExpired": "기간 만료",
   "statusOpen": "대기 중",
   "statusAccepted": "수락됨",
   "statusDeclined": "거절됨",

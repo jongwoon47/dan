@@ -6,6 +6,7 @@ import {
   areFulfillmentOptionsValid,
   tradeMethodFromFulfillment,
 } from "./fulfillment";
+import { defaultExpiresAtIso, isDemandOpen } from "./demandLifecycle";
 import {
   buildVisibleMatches,
   listMatchCandidates,
@@ -140,7 +141,15 @@ function buildDemandFromInput(
   existingBuy?: BuyDemand,
 ): Demand {
   const now = new Date().toISOString();
-  const expiresAt = new Date(Date.now() + 30 * 86400000).toISOString();
+  const scheduleIso =
+    payload.type === "BUY"
+      ? null
+      : payload.type === "BORROW"
+        ? payload.endAt
+        : payload.type === "TASK"
+          ? payload.dueAt
+          : payload.preferredAt;
+  const expiresAt = defaultExpiresAtIso(payload.type, scheduleIso);
   if (payload.type === "BUY") {
     const product = PRODUCTS.find((p) => p.id === payload.productId);
     const fulfillmentOptions = payload.fulfillmentOptions;
@@ -297,7 +306,7 @@ function reducer(state: DanState, action: Action): DanState {
       if (!response || response.status !== "OPEN") return state;
       const demand = state.demands.find((d) => d.id === response.demandId);
       if (!demand || demand.userId !== actorId) return state;
-      if (demand.status !== "ACTIVE") return state;
+      if (!isDemandOpen(demand)) return state;
       if (
         state.matches.some(
           (m) => m.demandId === demand.id && m.status === "CONNECTED",
@@ -542,7 +551,7 @@ export function DanProvider({ children }: { children: ReactNode }) {
       updateDemand: async (payload) => {
         const demand = state.demands.find((d) => d.id === payload.demandId);
         if (!demand || demand.userId !== state.currentUserId) return null;
-        if (demand.status !== "ACTIVE") return null;
+        if (!isDemandOpen(demand)) return null;
         let next: Demand = {
           ...demand,
           title: payload.title,

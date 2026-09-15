@@ -1,4 +1,5 @@
 import type { CreateDemandInput } from "@/domain/danContext";
+import { defaultExpiresAtIso, isDemandOpen } from "@/domain/demandLifecycle";
 import {
   formatFulfillmentSummary,
   tradeMethodFromFulfillment,
@@ -96,10 +97,9 @@ export async function listActiveDemands(): Promise<Demand[]> {
     .eq("status", "ACTIVE")
     .order("created_at", { ascending: false });
   if (error) throw error;
-  const now = Date.now();
   return ((data ?? []) as DbDemand[])
     .map(mapDemand)
-    .filter((d) => new Date(d.expiresAt).getTime() > now);
+    .filter((d) => isDemandOpen(d));
 }
 
 export async function listMyDemands(userId: string): Promise<Demand[]> {
@@ -253,7 +253,7 @@ export async function createDemandRemote(input: CreateDemandInput): Promise<Dema
       p_location: locationSummary,
       p_condition_preference: input.conditionPreference,
       p_trade_method: tradeMethod,
-      p_expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
+      p_expires_at: defaultExpiresAtIso("BUY"),
       p_fulfillment_options: input.fulfillmentOptions,
     });
     if (error) throw error;
@@ -261,12 +261,18 @@ export async function createDemandRemote(input: CreateDemandInput): Promise<Dema
   }
 
   const locationSummary = formatFulfillmentSummary(input.fulfillmentOptions);
+  const scheduleIso =
+    input.type === "BORROW"
+      ? input.endAt
+      : input.type === "TASK"
+        ? input.dueAt
+        : input.preferredAt;
   const shared = {
     user_id: auth.user.id,
     location: locationSummary,
     fulfillment_options: input.fulfillmentOptions,
     status: "ACTIVE",
-    expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
+    expires_at: defaultExpiresAtIso(input.type, scheduleIso),
   };
   const row =
     input.type === "BORROW"

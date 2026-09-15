@@ -6,7 +6,11 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
-import { formatFulfillmentModes, primaryPublicPlace } from "@/domain/fulfillment";
+import { effectiveDemandStatus, isDemandOpen } from "@/domain/demandLifecycle";
+import {
+  formatFulfillmentModes,
+  primaryPublicPlace,
+} from "@/domain/fulfillment";
 import { DEMAND_TYPE_LABEL } from "@/domain/types";
 import {
   clearResponseDraft,
@@ -18,6 +22,10 @@ import {
   formatDurationMinutes,
   formatWon,
 } from "@/lib/format";
+import {
+  formatPublicPlaceLine,
+  loadViewerGeo,
+} from "@/lib/geoDistance";
 import "./pages.css";
 
 function responseStatusLabel(status: string) {
@@ -79,12 +87,29 @@ export function DemandItemPage() {
   );
 
   const isOwner = currentUser?.id === demand?.userId;
-  const canRespond = Boolean(
-    demand &&
-      demand.type !== "BUY" &&
-      demand.status === "ACTIVE" &&
-      !isOwner,
+  const viewStatus = demand ? effectiveDemandStatus(demand) : "CLOSED";
+  const demandOpen = demand ? isDemandOpen(demand) : false;
+  const myConnectedMatch = useMemo(
+    () =>
+      state.matches.find(
+        (m) =>
+          m.demandId === demandId &&
+          m.status === "CONNECTED" &&
+          (m.buyerId === currentUser?.id || m.sellerId === currentUser?.id),
+      ),
+    [state.matches, demandId, currentUser?.id],
   );
+  const revealLocation = Boolean(isOwner || myConnectedMatch);
+  const canRespond = Boolean(
+    demand && demand.type !== "BUY" && demandOpen && !isOwner,
+  );
+
+  function statusBadgeLabel(status: typeof viewStatus): string {
+    if (status === "CLOSED") return ko.statusClosed;
+    if (status === "MATCHED") return ko.statusMatched;
+    if (status === "EXPIRED") return ko.statusExpired;
+    return "";
+  }
 
   const ownerResponderKey = ownerResponses.map((r) => r.userId).join(",");
 
@@ -161,9 +186,7 @@ export function DemandItemPage() {
       <header className="page-header">
         <p className="feed-row__type">
           {DEMAND_TYPE_LABEL[demand.type]}
-          {demand.status !== "ACTIVE"
-            ? ` · ${demand.status === "CLOSED" ? ko.statusClosed : ko.statusMatched}`
-            : ""}
+          {viewStatus !== "ACTIVE" ? ` · ${statusBadgeLabel(viewStatus)}` : ""}
         </p>
         <h1 className="page-title">{demand.title}</h1>
         {demand.description.trim() &&
@@ -189,7 +212,11 @@ export function DemandItemPage() {
           <div>
             <span>{ko.detailLocation}</span>
             <strong>
-              {primaryPublicPlace(demand.fulfillmentOptions)!.publicLabel}
+              {formatPublicPlaceLine(
+                primaryPublicPlace(demand.fulfillmentOptions)!,
+                loadViewerGeo(),
+                { revealDetail: revealLocation },
+              )}
             </strong>
           </div>
         ) : null}
@@ -220,7 +247,7 @@ export function DemandItemPage() {
         ) : null}
       </div>
 
-      {isOwner && demand.status === "ACTIVE" ? (
+      {isOwner && demandOpen ? (
         <div className="action-row action-row--split">
           <Button
             fullWidth
@@ -240,9 +267,21 @@ export function DemandItemPage() {
         </div>
       ) : null}
 
+      {!isOwner && !demandOpen ? (
+        <div className="section-stack">
+          {myConnectedMatch ? (
+            <Button to={`/match/${myConnectedMatch.id}`} fullWidth size="lg">
+              {ko.openChat}
+            </Button>
+          ) : (
+            <p className="section-desc">{ko.demandClosed}</p>
+          )}
+        </div>
+      ) : null}
+
       {localError ? <p className="form-error">{localError}</p> : null}
 
-      {!isOwner && demand.type === "BUY" ? (
+      {!isOwner && demandOpen && demand.type === "BUY" ? (
         <div className="section-stack">
           <p className="section-desc">{ko.haveItBody}</p>
           <Button to={`/demand/${demand.details.productId}`} fullWidth size="lg">
@@ -355,7 +394,7 @@ export function DemandItemPage() {
                 setComposerOpen(true);
               }}
             >
-              {ko.respondToThisNeed}
+              {ko.respondCta}
             </Button>
           ) : null}
         </>
@@ -395,7 +434,7 @@ export function DemandItemPage() {
                 ) : null}
                 {r.availabilityText ? <p>{r.availabilityText}</p> : null}
                 <p>{r.message}</p>
-                {r.status === "OPEN" && demand.status === "ACTIVE" ? (
+                {r.status === "OPEN" && demandOpen ? (
                   <div className="action-row">
                     <Button
                       disabled={busy}
