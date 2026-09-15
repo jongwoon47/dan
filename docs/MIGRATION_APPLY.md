@@ -27,10 +27,10 @@ where schemaname = 'public'
     'matches_parties_demand_connected_uidx'
   );
 
-select polname, tablename
+select policyname, tablename
 from pg_policies
 where schemaname = 'public'
-  and polname in (
+  and policyname in (
     'responses_no_direct_insert',
     'responses_no_direct_update',
     'demands_no_direct_update',
