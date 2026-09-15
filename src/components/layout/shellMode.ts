@@ -1,5 +1,7 @@
 /** ROOT keeps global chrome; DEEP hides bottom nav; AUTH is standalone. */
 
+import { ko } from "@/copy/ko";
+
 export type ShellMode = "root" | "deep" | "auth";
 
 export function getShellMode(pathname: string): ShellMode {
@@ -25,14 +27,14 @@ export function deepFallback(pathname: string): string {
 }
 
 export function defaultDeepTitle(pathname: string): string {
-  if (pathname.startsWith("/create")) return "글 올리기";
-  if (pathname.startsWith("/activity")) return "알림";
-  if (pathname.includes("/edit")) return "글 수정";
-  if (pathname.includes("/own")) return "내 물건 등록";
-  if (pathname.includes("/sell-intent")) return "판매 의향";
-  if (pathname.startsWith("/match/")) return "대화";
-  if (pathname.startsWith("/profile/")) return "프로필";
-  if (pathname.startsWith("/demand/item/")) return "글";
-  if (pathname.startsWith("/demand/")) return "글";
+  if (pathname.startsWith("/create")) return ko.createTitle;
+  if (pathname.startsWith("/activity")) return ko.navActivity;
+  if (pathname.includes("/edit")) return "요청 수정";
+  if (pathname.includes("/own")) return ko.ownTitle;
+  if (pathname.includes("/sell-intent")) return ko.sellTitle;
+  if (pathname.startsWith("/match/")) return ko.chatTitle;
+  if (pathname.startsWith("/profile/")) return ko.profileTitle;
+  if (pathname.startsWith("/demand/item/")) return "요청";
+  if (pathname.startsWith("/demand/")) return "요청";
   return "";
 }
