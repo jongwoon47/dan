@@ -146,23 +146,15 @@ export function CreateDemandPage() {
     setPhase(1);
     setScheduleTouched(false);
     setFormError(null);
-    // Drop fields that belong to another type so hidden state cannot leak into submit.
-    if (next === "BUY") {
-      setTitle("");
-      setItemName("");
-      setDetail("");
-      setBudget("");
-    } else if (next === "BORROW") {
-      setProductQuery("");
-      setProductId("");
-      setMaxPrice("");
-      setDetail("");
-    } else {
-      setProductQuery("");
-      setProductId("");
-      setMaxPrice("");
-      setItemName("");
-    }
+    // Type switch starts a new ask — do not carry previous title/product copy.
+    setTitle("");
+    setDetail("");
+    setItemName("");
+    setProductQuery("");
+    setProductId("");
+    setSuggestOpen(false);
+    setMaxPrice("");
+    setBudget("");
   }
 
   useEffect(() => {
