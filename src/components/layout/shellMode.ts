@@ -33,6 +33,6 @@ export function defaultDeepTitle(pathname: string): string {
   if (pathname.startsWith("/match/")) return "대화";
   if (pathname.startsWith("/profile/")) return "프로필";
   if (pathname.startsWith("/demand/item/")) return "요청";
-  if (pathname.startsWith("/demand/")) return "수요";
+  if (pathname.startsWith("/demand/")) return "요청";
   return "";
 }
