@@ -1,5 +1,9 @@
 import type { CreateDemandInput } from "@/domain/danContext";
-import { defaultExpiresAtIso, normalizeScheduleExpiryIso } from "@/domain/demandLifecycle";
+import {
+  defaultExpiresAtIso,
+  isDemandOpen,
+  normalizeScheduleExpiryIso,
+} from "@/domain/demandLifecycle";
 import {
   formatFulfillmentSummary,
   tradeMethodFromFulfillment,
