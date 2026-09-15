@@ -125,6 +125,73 @@
   box-shadow: 0 0 0 3px var(--dan-accent-soft);
 }
 
+.datetime-local {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.datetime-local__ph {
+  position: absolute;
+  left: 14px;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--dan-ink-muted);
+  font-size: 16px;
+  line-height: 1.3;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 1;
+}
+
+.datetime-local__input {
+  width: 100%;
+  color-scheme: light;
+}
+
+.datetime-local.is-empty .datetime-local__input {
+  color: transparent;
+  caret-color: transparent;
+}
+
+.datetime-local.is-empty .datetime-local__input::-webkit-datetime-edit,
+.datetime-local.is-empty .datetime-local__input::-webkit-datetime-edit-fields-wrapper,
+.datetime-local.is-empty .datetime-local__input::-webkit-datetime-edit-text,
+.datetime-local.is-empty .datetime-local__input::-webkit-datetime-edit-month-field,
+.datetime-local.is-empty .datetime-local__input::-webkit-datetime-edit-day-field,
+.datetime-local.is-empty .datetime-local__input::-webkit-datetime-edit-year-field,
+.datetime-local.is-empty .datetime-local__input::-webkit-datetime-edit-hour-field,
+.datetime-local.is-empty .datetime-local__input::-webkit-datetime-edit-minute-field,
+.datetime-local.is-empty .datetime-local__input::-webkit-datetime-edit-ampm-field {
+  color: transparent;
+}
+
+.datetime-local.is-empty:focus-within .datetime-local__ph {
+  opacity: 0;
+}
+
+.datetime-local.is-empty:focus-within .datetime-local__input,
+.datetime-local.is-empty:focus-within .datetime-local__input::-webkit-datetime-edit,
+.datetime-local.is-empty:focus-within .datetime-local__input::-webkit-datetime-edit-fields-wrapper,
+.datetime-local.is-empty:focus-within .datetime-local__input::-webkit-datetime-edit-text,
+.datetime-local.is-empty:focus-within .datetime-local__input::-webkit-datetime-edit-month-field,
+.datetime-local.is-empty:focus-within .datetime-local__input::-webkit-datetime-edit-day-field,
+.datetime-local.is-empty:focus-within .datetime-local__input::-webkit-datetime-edit-year-field,
+.datetime-local.is-empty:focus-within .datetime-local__input::-webkit-datetime-edit-hour-field,
+.datetime-local.is-empty:focus-within .datetime-local__input::-webkit-datetime-edit-minute-field,
+.datetime-local.is-empty:focus-within .datetime-local__input::-webkit-datetime-edit-ampm-field {
+  color: var(--dan-ink);
+  caret-color: var(--dan-ink);
+}
+
+.datetime-local__input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.55;
+}
+
 .dan-select {
   appearance: none;
   background-image: linear-gradient(45deg, transparent 50%, var(--dan-ink-muted) 50%),

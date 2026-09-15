@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
-import { Chip, ChipGroup, Field, TextInput } from "@/components/ui/Input";
+import { Chip, ChipGroup, DatetimeLocalInput, Field, TextInput } from "@/components/ui/Input";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import {
@@ -641,17 +641,15 @@ export function CreateDemandPage() {
                       />
                     </Field>
                     <Field label={ko.borrowStart}>
-                      <TextInput
-                        type="datetime-local"
+                      <DatetimeLocalInput
                         value={borrowStart}
-                        onChange={(e) => setBorrowStart(e.target.value)}
+                        onChange={setBorrowStart}
                       />
                     </Field>
                     <Field label={ko.borrowEnd}>
-                      <TextInput
-                        type="datetime-local"
+                      <DatetimeLocalInput
                         value={borrowEnd}
-                        onChange={(e) => setBorrowEnd(e.target.value)}
+                        onChange={setBorrowEnd}
                       />
                     </Field>
                     <Field label={ko.descLabel}>
@@ -729,11 +727,7 @@ export function CreateDemandPage() {
                       </Field>
                     ) : null}
                     <Field label={ko.dueAt}>
-                      <TextInput
-                        type="datetime-local"
-                        value={dueAt}
-                        onChange={(e) => setDueAt(e.target.value)}
-                      />
+                      <DatetimeLocalInput value={dueAt} onChange={setDueAt} />
                     </Field>
                   </div>
                 ) : null}
@@ -767,10 +761,9 @@ export function CreateDemandPage() {
                       </Field>
                     ) : null}
                     <Field label={ko.preferredAt}>
-                      <TextInput
-                        type="datetime-local"
+                      <DatetimeLocalInput
                         value={preferredAt}
-                        onChange={(e) => setPreferredAt(e.target.value)}
+                        onChange={setPreferredAt}
                       />
                     </Field>
                   </div>

@@ -107,6 +107,7 @@ export const ko = {
   "borrowEnd": "반납 예정",
   "dueAt": "마감 시간",
   "preferredAt": "희망 시간",
+  "datetimePh": "날짜와 시간을 선택해 주세요",
   "whenNeeded": "언제 필요하세요?",
   "pickDemandType": "먼저 요청 유형을 골라 주세요.",
   "timePastError": "과거 시간은 선택할 수 없어요.",

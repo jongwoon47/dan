@@ -2,7 +2,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Chip, ChipGroup, Field, TextInput } from "@/components/ui/Input";
+import { Chip, ChipGroup, DatetimeLocalInput, Field, TextInput } from "@/components/ui/Input";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import {
@@ -419,18 +419,16 @@ export function DemandEditPage() {
               />
             </Field>
             <Field label={ko.borrowStart}>
-              <TextInput
-                type="datetime-local"
+              <DatetimeLocalInput
                 value={borrowStart}
-                onChange={(e) => setBorrowStart(e.target.value)}
+                onChange={setBorrowStart}
                 required
               />
             </Field>
             <Field label={ko.borrowEnd}>
-              <TextInput
-                type="datetime-local"
+              <DatetimeLocalInput
                 value={borrowEnd}
-                onChange={(e) => setBorrowEnd(e.target.value)}
+                onChange={setBorrowEnd}
                 required
               />
             </Field>
@@ -503,10 +501,9 @@ export function DemandEditPage() {
               </Field>
             ) : null}
             <Field label={ko.dueAt}>
-              <TextInput
-                type="datetime-local"
+              <DatetimeLocalInput
                 value={dueAt}
-                onChange={(e) => setDueAt(e.target.value)}
+                onChange={setDueAt}
                 required
               />
             </Field>
@@ -542,10 +539,9 @@ export function DemandEditPage() {
               </Field>
             ) : null}
             <Field label={ko.preferredAt}>
-              <TextInput
-                type="datetime-local"
+              <DatetimeLocalInput
                 value={preferredAt}
-                onChange={(e) => setPreferredAt(e.target.value)}
+                onChange={setPreferredAt}
                 required
               />
             </Field>

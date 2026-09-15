@@ -1,4 +1,9 @@
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react";
+import type {
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+} from "react";
+import { ko } from "@/copy/ko";
 import "./ui.css";
 
 type FieldProps = {
@@ -19,6 +24,44 @@ export function Field({ label, hint, children }: FieldProps) {
 
 export function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
   return <input className="dan-input" {...props} />;
+}
+
+type DatetimeLocalInputProps = {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  required?: boolean;
+  min?: string;
+};
+
+/** Native datetime-local with Korean empty placeholder (hides mm/dd/yyyy ghost). */
+export function DatetimeLocalInput({
+  value,
+  onChange,
+  placeholder = ko.datetimePh,
+  required,
+  min,
+}: DatetimeLocalInputProps) {
+  const empty = !value.trim();
+  return (
+    <span className={empty ? "datetime-local is-empty" : "datetime-local"}>
+      {empty ? (
+        <span className="datetime-local__ph" aria-hidden="true">
+          {placeholder}
+        </span>
+      ) : null}
+      <input
+        className="dan-input datetime-local__input"
+        type="datetime-local"
+        lang="ko-KR"
+        step={60}
+        value={value}
+        min={min}
+        required={required}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </span>
+  );
 }
 
 export function TextSelect(props: SelectHTMLAttributes<HTMLSelectElement>) {
