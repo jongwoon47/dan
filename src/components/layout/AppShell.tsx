@@ -70,11 +70,37 @@ function IconMy({ active }: { active?: boolean }) {
   );
 }
 
+function IconBell({ active }: { active?: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M6.5 10.5a5.5 5.5 0 0 1 11 0c0 3.2.9 4.6 1.6 5.5H4.9c.7-.9 1.6-2.3 1.6-5.5Z"
+        stroke="currentColor"
+        strokeWidth={active ? 2.1 : 1.8}
+        strokeLinejoin="round"
+      />
+      <path
+        d="M10 18.5a2 2 0 0 0 4 0"
+        stroke="currentColor"
+        strokeWidth={active ? 2.1 : 1.8}
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function formatUnreadBadge(count: number): string {
+  if (count <= 0) return "";
+  if (count > 9) return "9+";
+  return String(count);
+}
+
 function AppShellInner() {
   const { currentUser, isLoggedIn, login, logout, unreadActivityCount } = useDan();
   const { pathname } = useLocation();
   const mode = getShellMode(pathname);
   const { header } = useShellChrome();
+  const unreadLabel = formatUnreadBadge(unreadActivityCount);
 
   const showDeepHeader = mode === "deep" && !header?.hide;
   const deepTitle = header?.title ?? defaultDeepTitle(pathname);
@@ -118,12 +144,22 @@ function AppShellInner() {
                   <NavLink
                     to="/activity"
                     className="top-nav__bell"
-                    aria-label={ko.navActivity}
+                    aria-label={
+                      unreadActivityCount > 0
+                        ? `${ko.navActivity} ${unreadActivityCount}`
+                        : ko.navActivity
+                    }
                   >
-                    {ko.navActivity}
-                    {unreadActivityCount > 0 ? (
-                      <span className="nav-badge">{unreadActivityCount}</span>
-                    ) : null}
+                    {({ isActive }) => (
+                      <span className="top-nav__bell-wrap">
+                        <IconBell active={isActive} />
+                        {unreadLabel ? (
+                          <span className="nav-badge nav-badge--float">
+                            {unreadLabel}
+                          </span>
+                        ) : null}
+                      </span>
+                    )}
                   </NavLink>
                   <NavLink
                     to={`/profile/${currentUser.id}`}
@@ -182,9 +218,9 @@ function AppShellInner() {
                 <>
                   <span className="bottom-nav__icon-wrap">
                     <IconMy active={isActive} />
-                    {unreadActivityCount > 0 ? (
+                    {unreadLabel ? (
                       <span className="nav-badge nav-badge--float">
-                        {unreadActivityCount}
+                        {unreadLabel}
                       </span>
                     ) : null}
                   </span>
