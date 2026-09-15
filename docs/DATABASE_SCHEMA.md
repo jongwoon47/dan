@@ -10,6 +10,11 @@ Apply in order against a Supabase project (SQL editor or CLI):
 4. `0004_seed_products.sql` — product catalog seed
 5. `0005_grants.sql` — grants for anon/authenticated
 6. `0006_fulfillment_options.sql` — `fulfillment_options` JSONB + profile `default_area_label`
+7. `0007_usability_v1.sql` — chat, activity, block/report, accept auto-decline
+8. `0008_prevent_duplicate_connections.sql` — unique CONNECTED + accept guard
+9. `0009_security_p0_hardening.sql` — RPC-only response/demand writes, sell_intent integrity
+
+See [MIGRATION_APPLY.md](./MIGRATION_APPLY.md) for remote verify steps.
 
 ## Tables (center = demands)
 

@@ -466,27 +466,11 @@ export async function updateDemandRemote(input: {
     p_condition_preference: input.conditionPreference ?? null,
     p_trade_method: input.tradeMethod ?? null,
     p_location: locationSummary,
+    p_start_at: input.startAt ?? null,
+    p_end_at: input.endAt ?? null,
+    p_preferred_at: input.preferredAt ?? null,
   });
   if (error) throw error;
-
-  // Owner RLS allows patching schedule fields not yet on update_demand RPC.
-  const schedule: Record<string, string | null> = {};
-  if (input.startAt !== undefined) schedule.start_at = input.startAt ?? null;
-  if (input.endAt !== undefined) schedule.end_at = input.endAt ?? null;
-  if (input.preferredAt !== undefined) {
-    schedule.preferred_at = input.preferredAt ?? null;
-  }
-  if (Object.keys(schedule).length > 0) {
-    const { data: patched, error: patchErr } = await getSupabase()
-      .from("demands")
-      .update(schedule)
-      .eq("id", input.demandId)
-      .select("*")
-      .single();
-    if (patchErr) throw patchErr;
-    return mapDemand(patched as DbDemand);
-  }
-
   return mapDemand(data as DbDemand);
 }
 

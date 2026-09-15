@@ -10,6 +10,7 @@
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
     "test:e2e:remote": "node --env-file=.env.local scripts/e2e-two-user.mjs",
+    "test:e2e:security": "node --env-file=.env.local scripts/e2e-security.mjs",
     "test:e2e:browser": "node --env-file=.env.local scripts/e2e-browser.mjs",
     "test:qa:mobile": "npx playwright test --config=playwright.visual.config.ts",
     "test:watch": "vitest",

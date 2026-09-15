@@ -53,9 +53,8 @@ Starts Vite if needed, signs up two ephemeral users, and runs TASK (create → r
 ## Automation (remote)
 
 ```bash
-# Requires .env.local with VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_DATA_MODE=supabase
 npm run test:e2e:remote
+npm run test:e2e:security
 ```
 
-Creates ephemeral A/B/C users, runs TASK + BUY + Security against live Postgres/RLS/RPC.
-Does **not** use demo mode. Asserts no `POTENTIAL` rows in `matches`.
+Creates ephemeral users, runs TASK + BUY happy paths, and asserts forbidden direct REST (foreign demand update, match writes, response bypass, forged sell_intent, duplicate CONNECTED, blocked pair) fail under RLS/RPC.

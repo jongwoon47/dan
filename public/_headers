@@ -1,0 +1,8 @@
+# Cloudflare Pages security headers (SPA)
+# CSP intentionally omitted until connect-src allowlist is verified for Supabase Auth.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-Frame-Options: DENY
