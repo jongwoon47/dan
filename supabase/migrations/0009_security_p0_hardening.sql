@@ -6,6 +6,8 @@
 -- ---------------------------------------------------------------------------
 drop policy if exists responses_insert_own on public.responses;
 drop policy if exists responses_update_own_or_demand_owner on public.responses;
+drop policy if exists responses_no_direct_insert on public.responses;
+drop policy if exists responses_no_direct_update on public.responses;
 
 -- Explicit deny policies (RLS default deny is enough; named for clarity)
 create policy responses_no_direct_insert
@@ -29,6 +31,7 @@ create policy demands_insert_own
   with check (user_id = auth.uid() and status = 'ACTIVE');
 
 drop policy if exists demands_update_own on public.demands;
+drop policy if exists demands_no_direct_update on public.demands;
 -- No direct UPDATE. Content edits go through update_demand; close/accept via RPC.
 create policy demands_no_direct_update
   on public.demands for update to authenticated
