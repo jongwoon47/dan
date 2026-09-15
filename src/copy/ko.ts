@@ -334,6 +334,7 @@ export const ko = {
   "offerPrice": "제안 금액",
   "offerPriceOptional": "선택",
   "availability": "가능한 시간/조건",
+  "availabilityShort": "가능 시간",
   "availabilityPh": "예: 오늘 19:30 이후",
   "responseMessage": "메시지",
   "responseMessagePh": "어떻게 도와드릴 수 있는지 짧게 적어주세요",

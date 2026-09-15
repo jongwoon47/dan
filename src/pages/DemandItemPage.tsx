@@ -339,12 +339,25 @@ export function DemandItemPage() {
                 <>
                   <div className="response-card">
                     {myOpen.offeredPrice != null ? (
-                      <p>
-                        <strong>{formatWon(myOpen.offeredPrice)}</strong>
-                      </p>
+                      <div className="response-card__fact">
+                        <span className="response-card__label">{ko.offerPrice}</span>
+                        <strong className="response-card__price">
+                          {formatWon(myOpen.offeredPrice)}
+                        </strong>
+                      </div>
                     ) : null}
-                    {myOpen.availabilityText ? <p>{myOpen.availabilityText}</p> : null}
-                    <p>{myOpen.message}</p>
+                    {myOpen.availabilityText ? (
+                      <div className="response-card__fact">
+                        <span className="response-card__label">
+                          {ko.availabilityShort}
+                        </span>
+                        <span>{myOpen.availabilityText}</span>
+                      </div>
+                    ) : null}
+                    <div className="response-card__fact">
+                      <span className="response-card__label">{ko.responseMessage}</span>
+                      <span>{myOpen.message}</span>
+                    </div>
                     <p className="muted">{responseStatusLabel(myOpen.status)}</p>
                   </div>
                   <div className="action-row">
@@ -472,10 +485,25 @@ export function DemandItemPage() {
                   <span className="muted">{responseStatusLabel(r.status)}</span>
                 </div>
                 {r.offeredPrice != null ? (
-                  <p className="response-card__price">{formatWon(r.offeredPrice)}</p>
+                  <div className="response-card__fact">
+                    <span className="response-card__label">{ko.offerPrice}</span>
+                    <strong className="response-card__price">
+                      {formatWon(r.offeredPrice)}
+                    </strong>
+                  </div>
                 ) : null}
-                {r.availabilityText ? <p>{r.availabilityText}</p> : null}
-                <p>{r.message}</p>
+                {r.availabilityText ? (
+                  <div className="response-card__fact">
+                    <span className="response-card__label">
+                      {ko.availabilityShort}
+                    </span>
+                    <span>{r.availabilityText}</span>
+                  </div>
+                ) : null}
+                <div className="response-card__fact">
+                  <span className="response-card__label">{ko.responseMessage}</span>
+                  <span>{r.message}</span>
+                </div>
                 {r.status === "OPEN" && demandOpen ? (
                   <div className="action-row">
                     <Button
