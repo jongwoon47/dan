@@ -9,6 +9,7 @@ export function getShellMode(pathname: string): ShellMode {
   if (
     pathname === "/" ||
     pathname === "/feed" ||
+    pathname === "/chats" ||
     pathname === "/my"
   ) {
     return "root";
@@ -17,7 +18,7 @@ export function getShellMode(pathname: string): ShellMode {
 }
 
 export function deepFallback(pathname: string): string {
-  if (pathname.startsWith("/match/")) return "/my";
+  if (pathname.startsWith("/match/")) return "/chats";
   if (pathname.startsWith("/activity")) return "/my";
   if (pathname.startsWith("/profile/")) return "/my";
   if (pathname.startsWith("/create")) return "/";

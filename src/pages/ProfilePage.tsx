@@ -275,8 +275,8 @@ export function ProfilePage() {
                   <Button fullWidth variant="ghost" to="/my">
                     {ko.profileMyPosts}
                   </Button>
-                  <Button fullWidth variant="ghost" to="/my#connections">
-                    {ko.profileMyConnections}
+                  <Button fullWidth variant="ghost" to="/chats">
+                    {ko.navChats}
                   </Button>
                 </div>
                 <Button fullWidth variant="ghost" onClick={logout}>

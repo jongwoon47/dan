@@ -133,7 +133,7 @@ export function MatchChatPage() {
   const displayPeer = peerName || "상대";
 
   function goBack() {
-    navigateBack(navigate, "/my");
+    navigateBack(navigate, "/chats");
   }
 
   if (!match || match.status !== "CONNECTED") {
@@ -141,7 +141,7 @@ export function MatchChatPage() {
       <EmptyState
         title={ko.chatTitle}
         body={ko.genericError}
-        action={<Button to="/my" variant="secondary">{ko.navMy}</Button>}
+        action={<Button to="/chats" variant="secondary">{ko.navChats}</Button>}
       />
     );
   }
@@ -186,6 +186,14 @@ export function MatchChatPage() {
             )}
           </h1>
           <p className="chat-page__demand">{demandTitle}</p>
+          {demand ? (
+            <Link
+              to={`/demand/item/${demand.id}`}
+              className="chat-page__view-demand"
+            >
+              {ko.viewRequest}
+            </Link>
+          ) : null}
         </div>
         {peerId ? (
           <OverflowMenu

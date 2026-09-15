@@ -60,7 +60,7 @@ export function SellIntentPage() {
         if (related?.status === "CONNECTED") {
           navigate(`/match/${related.id}`);
         } else {
-          navigate("/my#connections");
+          navigate("/chats");
         }
       }
     } finally {

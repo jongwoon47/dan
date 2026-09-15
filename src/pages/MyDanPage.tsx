@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { MatchList } from "@/components/MatchCard";
 import { Button } from "@/components/ui/Button";
@@ -11,7 +11,6 @@ import {
   formatExpiredOn,
   isDemandOpen,
 } from "@/domain/demandLifecycle";
-import { dedupeConnectedMatches } from "@/domain/matchLifecycle";
 import { DEMAND_TYPE_LABEL } from "@/domain/types";
 import { formatWon } from "@/lib/format";
 import "./pages.css";
@@ -41,17 +40,14 @@ function RowLink({
   title,
   meta,
   trailing,
-  leading,
 }: {
   to: string;
   title: string;
   meta?: string;
   trailing?: ReactNode;
-  leading?: ReactNode;
 }) {
   return (
     <Link to={to} className="app-row">
-      {leading ? <span className="app-row__leading">{leading}</span> : null}
       <span className="app-row__body">
         <strong>{title}</strong>
         {meta ? <span className="app-row__meta">{meta}</span> : null}
@@ -62,10 +58,6 @@ function RowLink({
       </span>
     </Link>
   );
-}
-
-function initialOf(name: string) {
-  return (name.trim().slice(0, 1) || "?").toUpperCase();
 }
 
 function MyBlock({
@@ -99,47 +91,12 @@ export function MyDanPage() {
     getAggregate,
     activities,
     getDemand,
-    getPublicProfile,
     resetDemo,
     extendBuyDemand,
     busy,
   } = useDan();
   const dataMode = getDataMode();
-  const [peerNames, setPeerNames] = useState<Record<string, string>>({});
   const [vaultOpen, setVaultOpen] = useState(false);
-
-  const connected = useMemo(
-    () => dedupeConnectedMatches(myMatches, currentUser?.id ?? null),
-    [myMatches, currentUser?.id],
-  );
-  const peerKey = useMemo(
-    () =>
-      connected
-        .map((m) =>
-          currentUser?.id === m.buyerId ? m.sellerId : m.buyerId,
-        )
-        .join(","),
-    [connected, currentUser?.id],
-  );
-
-  useEffect(() => {
-    if (!peerKey) return;
-    const ids = [...new Set(peerKey.split(",").filter(Boolean))];
-    let cancelled = false;
-    void (async () => {
-      const next: Record<string, string> = {};
-      await Promise.all(
-        ids.map(async (id) => {
-          const p = await getPublicProfile(id);
-          next[id] = p?.displayName ?? "상대";
-        }),
-      );
-      if (!cancelled) setPeerNames((prev) => ({ ...prev, ...next }));
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [peerKey, getPublicProfile]);
 
   const nowItems = useMemo(() => {
     const items: { key: string; text: string; sub?: string; to: string }[] = [];
@@ -190,7 +147,7 @@ export function MyDanPage() {
       push({
         key: "interest",
         text: ko.signalMatch,
-        to: "/my#connections",
+        to: "/chats",
       });
     }
 
@@ -325,34 +282,20 @@ export function MyDanPage() {
         </MyBlock>
       ) : null}
 
-      <MyBlock title={ko.connectedPeople} id="connections">
-        {connected.length > 0 ? (
-          <div className="app-row-list">
-            {connected.map((m) => {
-              const peerId =
-                currentUser?.id === m.buyerId ? m.sellerId : m.buyerId;
-              const demand = getDemand(m.demandId);
-              const peer = peerNames[peerId] ?? "상대";
-              return (
-                <RowLink
-                  key={m.id}
-                  to={`/match/${m.id}`}
-                  title={peer}
-                  meta={demand?.title}
-                  leading={
-                    <span className="avatar-initial" aria-hidden>
-                      {initialOf(peer)}
-                    </span>
-                  }
-                  trailing={
-                    <span className="app-row__trail-cta">{ko.openChat}</span>
-                  }
-                />
-              );
-            })}
-          </div>
+      <MyBlock title={ko.myResponses}>
+        {openResponses.length === 0 ? (
+          <p className="my-block__hint">{ko.noMatchBody}</p>
         ) : (
-          <p className="my-block__hint">아직 연결된 사람이 없어요.</p>
+          <div className="app-row-list">
+            {openResponses.map((r) => (
+              <RowLink
+                key={r.id}
+                to={`/demand/item/${r.demandId}`}
+                title={getDemand(r.demandId)?.title || r.message || ko.respondCta}
+                meta={responseLabel(r.status)}
+              />
+            ))}
+          </div>
         )}
       </MyBlock>
 
@@ -397,21 +340,6 @@ export function MyDanPage() {
                     />
                   );
                 })}
-              </div>
-            )}
-            <h3 className="my-block__subtitle">{ko.myResponses}</h3>
-            {openResponses.length === 0 ? (
-              <p className="my-block__hint">{ko.noMatchBody}</p>
-            ) : (
-              <div className="app-row-list">
-                {openResponses.map((r) => (
-                  <RowLink
-                    key={r.id}
-                    to={`/demand/item/${r.demandId}`}
-                    title={r.message || ko.respondCta}
-                    trailing={responseLabel(r.status)}
-                  />
-                ))}
               </div>
             )}
           </div>

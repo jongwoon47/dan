@@ -7,6 +7,7 @@ import { getDataMode } from "@/data/mode";
 import { DanProvider } from "@/domain/store";
 import { SupabaseDanProvider } from "@/domain/store.supabase";
 import { ActivityPage } from "@/pages/ActivityPage";
+import { ConversationsPage } from "@/pages/ConversationsPage";
 import { CreateDemandPage } from "@/pages/CreateDemandPage";
 import { DemandDetailPage } from "@/pages/DemandDetailPage";
 import { DemandEditPage } from "@/pages/DemandEditPage";
@@ -38,6 +39,7 @@ export default function App() {
               <Route index element={<HomePage />} />
               <Route path="feed" element={<DemandFeedPage />} />
               <Route path="create" element={<CreateDemandPage />} />
+              <Route path="chats" element={<ConversationsPage />} />
               <Route path="activity" element={<ActivityPage />} />
               <Route path="profile/:userId" element={<ProfilePage />} />
               <Route path="match/:matchId" element={<MatchChatPage />} />

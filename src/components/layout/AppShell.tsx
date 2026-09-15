@@ -11,19 +11,6 @@ import {
 } from "./shellMode";
 import "./layout.css";
 
-function IconHome({ active }: { active?: boolean }) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z"
-        stroke="currentColor"
-        strokeWidth={active ? 2.2 : 1.8}
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 function IconFeed({ active }: { active?: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -45,6 +32,19 @@ function IconPlus() {
         stroke="currentColor"
         strokeWidth="2.4"
         strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function IconChat({ active }: { active?: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H11l-4.2 3.2c-.7.5-1.8 0-1.8-.9V6.5Z"
+        stroke="currentColor"
+        strokeWidth={active ? 2.1 : 1.8}
+        strokeLinejoin="round"
       />
     </svg>
   );
@@ -136,6 +136,7 @@ function AppShellInner() {
             <nav className="top-nav__links" aria-label="주요 메뉴">
               <NavLink to="/feed">{ko.navFeed}</NavLink>
               <NavLink to="/create">{ko.navCreate}</NavLink>
+              <NavLink to="/chats">{ko.navChats}</NavLink>
               <NavLink to="/my">{ko.navMy}</NavLink>
             </nav>
             <div className="top-nav__auth top-nav__auth--desktop">
@@ -197,19 +198,19 @@ function AppShellInner() {
       {mode === "root" ? (
         <>
           <nav className="bottom-nav" aria-label="하단 메뉴">
-            <NavLink to="/" end>
-              {({ isActive }) => (
-                <>
-                  <IconHome active={isActive} />
-                  <span>{ko.navHome}</span>
-                </>
-              )}
-            </NavLink>
             <NavLink to="/feed">
               {({ isActive }) => (
                 <>
                   <IconFeed active={isActive} />
-                  <span>{ko.navDemand}</span>
+                  <span>{ko.navFeed}</span>
+                </>
+              )}
+            </NavLink>
+            <NavLink to="/chats">
+              {({ isActive }) => (
+                <>
+                  <IconChat active={isActive} />
+                  <span>{ko.navChats}</span>
                 </>
               )}
             </NavLink>
