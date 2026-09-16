@@ -15,10 +15,11 @@ import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
-import type { ChatMessage } from "@/domain/types";
+import type { ChatMessage, Demand, Match } from "@/domain/types";
 import "./pages.css";
 
 const POLL_MS = 8000;
+const CHAT_STATUSES = new Set(["CONNECTED", "COMPLETED", "CLOSED"]);
 
 function dayKey(iso: string) {
   const d = new Date(iso);
@@ -33,6 +34,43 @@ function dayLabel(iso: string) {
   });
 }
 
+function tradeConfirmBody(demand?: Demand) {
+  if (!demand) return ko.tradeConfirmTitle;
+  switch (demand.type) {
+    case "BUY":
+      return ko.tradeConfirmBuy;
+    case "BORROW":
+      return ko.tradeConfirmBorrow;
+    case "TASK":
+      return ko.tradeConfirmTask;
+    case "SERVICE":
+      return ko.tradeConfirmService;
+    default:
+      return ko.tradeConfirmTitle;
+  }
+}
+
+function formatCompletedDate(iso?: string) {
+  if (!iso) return "";
+  return new Date(iso).toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  });
+}
+
+function iConfirmed(match: Match, userId: string) {
+  return userId === match.buyerId
+    ? Boolean(match.buyerCompletedAt)
+    : Boolean(match.sellerCompletedAt);
+}
+
+function peerConfirmed(match: Match, userId: string) {
+  return userId === match.buyerId
+    ? Boolean(match.sellerCompletedAt)
+    : Boolean(match.buyerCompletedAt);
+}
+
 export function MatchChatPage() {
   const { matchId = "" } = useParams();
   const navigate = useNavigate();
@@ -43,6 +81,8 @@ export function MatchChatPage() {
     listMessages,
     sendMessage,
     markMessagesRead,
+    confirmMatchCompletion,
+    closeMatch,
     blockUser,
     reportUser,
     getPublicProfile,
@@ -66,7 +106,9 @@ export function MatchChatPage() {
   const onMenuOpenChange = useCallback((open: boolean) => {
     setMenuOpen(open);
   }, []);
-  const [confirm, setConfirm] = useState<"block" | "report" | null>(null);
+  const [confirm, setConfirm] = useState<
+    "block" | "report" | "complete" | "cancel" | null
+  >(null);
   const [reportReason, setReportReason] = useState<
     "spam" | "fraud" | "abuse" | "other"
   >("spam");
@@ -127,16 +169,18 @@ export function MatchChatPage() {
       el.scrollTop = el.scrollHeight;
       initialScrollDone.current = true;
     }
-  }, [messages, loading]);
+  }, [messages, loading, match?.status, match?.buyerCompletedAt, match?.sellerCompletedAt]);
 
   const demandTitle = useMemo(() => demand?.title ?? ko.chatTitle, [demand]);
   const displayPeer = peerName || "상대";
+  const canSend =
+    match?.status === "CONNECTED" || match?.status === "COMPLETED";
 
   function goBack() {
     navigateBack(navigate, "/chats");
   }
 
-  if (!match || match.status !== "CONNECTED") {
+  if (!match || !CHAT_STATUSES.has(match.status)) {
     return (
       <EmptyState
         title={ko.chatTitle}
@@ -148,7 +192,7 @@ export function MatchChatPage() {
 
   async function onSend(e: FormEvent) {
     e.preventDefault();
-    if (busy || !body.trim()) return;
+    if (busy || !body.trim() || !canSend) return;
     const text = body.trim();
     setBody("");
     stickToBottomRef.current = true;
@@ -160,6 +204,9 @@ export function MatchChatPage() {
     }
     await load();
   }
+
+  const mineDone = currentUser ? iConfirmed(match, currentUser.id) : false;
+  const peerDone = currentUser ? peerConfirmed(match, currentUser.id) : false;
 
   let lastDay = "";
 
@@ -214,6 +261,67 @@ export function MatchChatPage() {
         ) : null}
       </header>
 
+      <section className="trade-status" aria-live="polite">
+        <p className="trade-status__title">{demandTitle}</p>
+        {match.status === "COMPLETED" ? (
+          <>
+            <p className="trade-status__state">✓ {ko.tradeDoneTitle}</p>
+            {match.completedAt ? (
+              <p className="trade-status__meta">
+                {formatCompletedDate(match.completedAt)}
+              </p>
+            ) : null}
+            <p className="trade-status__hint">{ko.tradeDoneHint}</p>
+          </>
+        ) : match.status === "CLOSED" ? (
+          <>
+            <p className="trade-status__state">{ko.tradeClosedTitle}</p>
+            <p className="trade-status__hint">{ko.tradePeerClosed}</p>
+          </>
+        ) : peerDone && !mineDone ? (
+          <>
+            <p className="trade-status__state">{ko.tradePeerConfirmed}</p>
+            <p className="trade-status__hint">{ko.tradePeerConfirmedHint}</p>
+            <div className="trade-status__actions">
+              <Button
+                fullWidth
+                disabled={busy}
+                onClick={() => setConfirm("complete")}
+              >
+                {ko.tradeConfirmPeerCta}
+              </Button>
+            </div>
+          </>
+        ) : mineDone && !peerDone ? (
+          <>
+            <p className="trade-status__state">{ko.tradeInProgress}</p>
+            <p className="trade-status__hint">{ko.tradeWaitingPeer}</p>
+          </>
+        ) : (
+          <>
+            <p className="trade-status__state">{ko.tradeInProgress}</p>
+            <p className="trade-status__hint">{ko.tradeInProgressHint}</p>
+            <div className="trade-status__actions">
+              <Button
+                fullWidth
+                disabled={busy}
+                onClick={() => setConfirm("complete")}
+              >
+                {ko.tradeCompleteCta}
+              </Button>
+              <Button
+                fullWidth
+                variant="secondary"
+                disabled={busy}
+                onClick={() => setConfirm("cancel")}
+              >
+                {ko.tradeCancelCta}
+              </Button>
+            </div>
+          </>
+        )}
+      </section>
+
       {error ? <p className="form-error">{error}</p> : null}
       {toast ? <p className="section-desc">{toast}</p> : null}
 
@@ -255,18 +363,53 @@ export function MatchChatPage() {
         })}
       </div>
 
-      <form className="chat-composer" onSubmit={(e) => void onSend(e)}>
-        <input
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          placeholder={ko.chatPlaceholder}
-          maxLength={2000}
-          aria-label={ko.chatPlaceholder}
-        />
-        <Button type="submit" disabled={busy || !body.trim()}>
-          {ko.chatSend}
-        </Button>
-      </form>
+      {canSend ? (
+        <form className="chat-composer" onSubmit={(e) => void onSend(e)}>
+          <input
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder={ko.chatPlaceholder}
+            maxLength={2000}
+            aria-label={ko.chatPlaceholder}
+          />
+          <Button type="submit" disabled={busy || !body.trim()}>
+            {ko.chatSend}
+          </Button>
+        </form>
+      ) : (
+        <p className="chat-composer chat-composer--closed muted">
+          {ko.tradeClosedTitle}
+        </p>
+      )}
+
+      <ConfirmSheet
+        open={confirm === "complete"}
+        title={ko.tradeConfirmTitle}
+        body={tradeConfirmBody(demand)}
+        confirmLabel={ko.tradeConfirmAction}
+        onCancel={() => setConfirm(null)}
+        onConfirm={() => {
+          void confirmMatchCompletion(matchId).then((updated) => {
+            setConfirm(null);
+            if (!updated) setError(ko.genericError);
+          });
+        }}
+      />
+
+      <ConfirmSheet
+        open={confirm === "cancel"}
+        title={ko.tradeCancelTitle}
+        body={ko.tradeCancelBody}
+        confirmLabel={ko.tradeCancelAction}
+        danger
+        onCancel={() => setConfirm(null)}
+        onConfirm={() => {
+          void closeMatch(matchId).then((updated) => {
+            setConfirm(null);
+            if (!updated) setError(ko.genericError);
+          });
+        }}
+      />
 
       <ConfirmSheet
         open={confirm === "block"}

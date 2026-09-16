@@ -384,6 +384,20 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         const result = await run(() => api.sellerConnectRemote(matchId));
         return Boolean(result);
       },
+      confirmMatchCompletion: async (matchId) => {
+        if (!currentUser) {
+          assignLogin();
+          return null;
+        }
+        return run(() => api.confirmMatchCompletionRemote(matchId));
+      },
+      closeMatch: async (matchId) => {
+        if (!currentUser) {
+          assignLogin();
+          return null;
+        }
+        return run(() => api.closeMatchRemote(matchId));
+      },
       getProduct: (id) => products.find((p) => p.id === id),
       getDemand: (id) => demands.find((d) => d.id === id),
       getAggregate: (productId) => {

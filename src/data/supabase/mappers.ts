@@ -119,6 +119,9 @@ export type DbMatch = {
   status: Exclude<MatchStatus, "POTENTIAL">;
   created_at: string;
   updated_at: string;
+  buyer_completed_at?: string | null;
+  seller_completed_at?: string | null;
+  completed_at?: string | null;
 };
 
 export function mapProduct(row: DbProduct): Product {
@@ -247,5 +250,8 @@ export function mapMatch(row: DbMatch): Match {
     sellerId: row.seller_id,
     status: row.status,
     createdAt: row.created_at,
+    buyerCompletedAt: row.buyer_completed_at ?? undefined,
+    sellerCompletedAt: row.seller_completed_at ?? undefined,
+    completedAt: row.completed_at ?? undefined,
   };
 }

@@ -687,11 +687,13 @@ export async function fetchPublicProfile(userId: string) {
     authLabel,
     recentActivity: (trust.recentActivity ?? []).map((row) => {
       const statusKo =
-        row.status === "MATCHED"
-          ? "연결됨"
-          : row.status === "CLOSED"
-            ? "마감"
-            : row.status;
+        row.status === "COMPLETED"
+          ? "거래 완료"
+          : row.status === "MATCHED"
+            ? "연결됨"
+            : row.status === "CLOSED"
+              ? "마감"
+              : row.status;
       const title = row.title?.trim();
       return {
         id: row.id,
@@ -699,7 +701,12 @@ export async function fetchPublicProfile(userId: string) {
           isSelf && title
             ? `${title} · ${statusKo}`
             : `${typeLabel[row.type] ?? row.type} · ${statusKo}`,
-        href: isSelf ? `/demand/item/${row.id}` : undefined,
+        href:
+          row.status === "COMPLETED"
+            ? `/match/${row.id}`
+            : isSelf
+              ? `/demand/item/${row.id}`
+              : undefined,
       };
     }),
   };
@@ -810,6 +817,24 @@ export async function expressBuyerInterestRemote(
 
 export async function sellerConnectRemote(matchId: string): Promise<Match> {
   const { data, error } = await getSupabase().rpc("seller_connect_match", {
+    p_match_id: matchId,
+  });
+  if (error) throw error;
+  return mapMatch(data as DbMatch);
+}
+
+export async function confirmMatchCompletionRemote(
+  matchId: string,
+): Promise<Match> {
+  const { data, error } = await getSupabase().rpc("confirm_match_completion", {
+    p_match_id: matchId,
+  });
+  if (error) throw error;
+  return mapMatch(data as DbMatch);
+}
+
+export async function closeMatchRemote(matchId: string): Promise<Match> {
+  const { data, error } = await getSupabase().rpc("close_match", {
     p_match_id: matchId,
   });
   if (error) throw error;

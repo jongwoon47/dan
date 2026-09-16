@@ -12,6 +12,7 @@ import {
 test.describe.configure({ mode: "serial" });
 
 test("two-user TASK and BUY flows against live Supabase", async ({ browser }) => {
+  test.setTimeout(240_000);
   test.skip(
     !process.env.VITE_SUPABASE_URL || !process.env.VITE_SUPABASE_ANON_KEY,
     "Missing Supabase env",
@@ -67,7 +68,7 @@ test("two-user TASK and BUY flows against live Supabase", async ({ browser }) =>
   await expect(pageB).toHaveURL(/\/ownership\/.+\/sell-intent/);
   await pageB.getByLabel("최소 희망가").fill("400000");
   await pageB.getByRole("button", { name: "이 가격이면 팔 수도 있어요" }).click();
-  await expect(pageB).toHaveURL(/\/my/, { timeout: 30_000 });
+  await expect(pageB).toHaveURL(/\/(my|chats)/, { timeout: 30_000 });
 
   await pageA.goto("/my");
   await pageA.reload();
@@ -78,19 +79,23 @@ test("two-user TASK and BUY flows against live Supabase", async ({ browser }) =>
   await pageB.goto("/my");
   await pageB.reload();
   await pageB.getByRole("button", { name: "연결하기" }).click();
-  await pageB.goto("/chats");
-  await pageB.reload();
-  await expect(pageB.getByText(productName).first()).toBeVisible({
+  await expect(pageB.getByRole("button", { name: "연결하기" })).toHaveCount(0, {
     timeout: 20_000,
   });
-  await pageB.getByText(productName).first().click();
+  await pageB.goto("/chats");
+  await pageB.reload();
+  const buyChat = pageB
+    .getByRole("link", { name: /Browser A/ })
+    .filter({ hasText: "대화를 시작해 보세요" });
+  await expect(buyChat).toBeVisible({ timeout: 30_000 });
+  await buyChat.click();
   await expect(pageB.getByRole("button", { name: "보내기" })).toBeVisible({
     timeout: 20_000,
   });
 
   await pageA.goto("/chats");
   await pageA.reload();
-  await expect(pageA.getByText(productName).first()).toBeVisible({
+  await expect(pageA.getByRole("link", { name: /Browser B/ }).first()).toBeVisible({
     timeout: 20_000,
   });
 

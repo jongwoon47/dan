@@ -191,17 +191,22 @@ export function buildVisibleMatches(
   });
 }
 
-/** One chat row per demand+peer (keeps earliest CONNECTED). */
+/** One chat row per demand+peer (CONNECTED / COMPLETED / CLOSED). */
 export function dedupeConnectedMatches(
   matches: Match[],
   userId: string | null,
 ): Match[] {
-  const connected = matches.filter((m) => m.status === "CONNECTED");
+  const chatStatuses = new Set(["CONNECTED", "COMPLETED", "CLOSED"]);
+  const connected = matches.filter((m) => chatStatuses.has(m.status));
   const seen = new Set<string>();
   const out: Match[] = [];
-  const sorted = [...connected].sort((a, b) =>
-    a.createdAt.localeCompare(b.createdAt),
-  );
+  const rank = (s: Match["status"]) =>
+    s === "CONNECTED" ? 0 : s === "COMPLETED" ? 1 : 2;
+  const sorted = [...connected].sort((a, b) => {
+    const r = rank(a.status) - rank(b.status);
+    if (r !== 0) return r;
+    return a.createdAt.localeCompare(b.createdAt);
+  });
   for (const m of sorted) {
     const peerId =
       userId && userId === m.buyerId ? m.sellerId : m.buyerId;

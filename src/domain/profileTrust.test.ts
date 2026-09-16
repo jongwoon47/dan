@@ -14,7 +14,7 @@ function demand(partial: Partial<Demand> & Pick<Demand, "id" | "userId" | "statu
 }
 
 describe("buildPublicProfileStats", () => {
-  it("hides zero counts and redacts peer recent titles", () => {
+  it("counts COMPLETED matches only and redacts peer titles", () => {
     const demands: Demand[] = [
       demand({
         id: "d1",
@@ -38,9 +38,10 @@ describe("buildPublicProfileStats", () => {
         demandId: "d1",
         buyerId: "u1",
         sellerId: "u2",
-        status: "CONNECTED",
+        status: "COMPLETED",
         createdAt: "2026-09-11T00:00:00.000Z",
-      } as Match,
+        completedAt: "2026-09-12T00:00:00.000Z",
+      },
       {
         id: "m2",
         demandId: "d9",
@@ -48,7 +49,15 @@ describe("buildPublicProfileStats", () => {
         sellerId: "u1",
         status: "CONNECTED",
         createdAt: "2026-09-12T00:00:00.000Z",
-      } as Match,
+      },
+      {
+        id: "m3",
+        demandId: "d1",
+        buyerId: "u9",
+        sellerId: "u1",
+        status: "CONNECTED",
+        createdAt: "2026-09-13T00:00:00.000Z",
+      },
     ];
 
     const self = buildPublicProfileStats({
@@ -62,9 +71,10 @@ describe("buildPublicProfileStats", () => {
       viewerIsSelf: true,
     });
     expect(self.completedDemandCount).toBe(1);
-    expect(self.responseConnectionCount).toBe(1);
+    expect(self.responseConnectionCount).toBe(2);
+    expect(self.connectionCount).toBe(3);
     expect(self.recentActivity[0]?.label).toContain("아이폰 찾기");
-    expect(self.recentActivity[0]?.href).toBe("/demand/item/d1");
+    expect(self.recentActivity[0]?.href).toBe("/match/m1");
 
     const peer = buildPublicProfileStats({
       userId: "u1",
@@ -77,7 +87,8 @@ describe("buildPublicProfileStats", () => {
       viewerIsSelf: false,
     });
     expect(peer.recentActivity[0]?.label).not.toContain("아이폰");
-    expect(peer.recentActivity[0]?.href).toBeUndefined();
+    expect(peer.recentActivity[0]?.label).toContain("거래 완료");
+    expect(peer.recentActivity[0]?.href).toBe("/match/m1");
   });
 
   it("returns zero activity when nothing finished", () => {

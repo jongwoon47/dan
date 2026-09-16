@@ -22,6 +22,10 @@ function kindVerb(kind: ActivityEvent["kind"]) {
       return "구매 관심을 표시했어요";
     case "MATCH_CONNECTED":
       return "연결됐어요";
+    case "MATCH_COMPLETED":
+      return ko.activityMatchCompleted;
+    case "MATCH_TRADE_CLOSED":
+      return ko.activityMatchTradeClosed;
     case "NEW_MESSAGE":
       return "메시지를 보냈어요";
     case "DEMAND_CLOSED":
@@ -32,7 +36,12 @@ function kindVerb(kind: ActivityEvent["kind"]) {
 }
 
 function hrefFor(ev: ActivityEvent, demand?: Demand) {
-  if (ev.kind === "NEW_MESSAGE" || ev.kind === "MATCH_CONNECTED") {
+  if (
+    ev.kind === "NEW_MESSAGE" ||
+    ev.kind === "MATCH_CONNECTED" ||
+    ev.kind === "MATCH_COMPLETED" ||
+    ev.kind === "MATCH_TRADE_CLOSED"
+  ) {
     if (ev.matchId) return `/match/${ev.matchId}`;
   }
   if (ev.kind === "BUYER_INTEREST" && demand?.type === "BUY") {
@@ -136,6 +145,8 @@ export function ActivityPage() {
               Boolean(actor) &&
               (ev.kind === "NEW_RESPONSE" ||
                 ev.kind === "MATCH_CONNECTED" ||
+                ev.kind === "MATCH_COMPLETED" ||
+                ev.kind === "MATCH_TRADE_CLOSED" ||
                 ev.kind === "BUYER_INTEREST" ||
                 ev.kind === "NEW_MESSAGE" ||
                 ev.kind === "RESPONSE_ACCEPTED");

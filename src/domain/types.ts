@@ -30,7 +30,8 @@ export type MatchStatus =
   | "SELLER_ACCEPTED"
   | "CONNECTED"
   | "DECLINED"
-  | "CLOSED";
+  | "CLOSED"
+  | "COMPLETED";
 
 export interface User {
   id: string;
@@ -154,6 +155,9 @@ export interface Match {
   sellerId: string;
   status: MatchStatus;
   createdAt: string;
+  buyerCompletedAt?: string;
+  sellerCompletedAt?: string;
+  completedAt?: string;
 }
 
 export type ActivityKind =
@@ -163,7 +167,9 @@ export type ActivityKind =
   | "BUYER_INTEREST"
   | "MATCH_CONNECTED"
   | "NEW_MESSAGE"
-  | "DEMAND_CLOSED";
+  | "DEMAND_CLOSED"
+  | "MATCH_COMPLETED"
+  | "MATCH_TRADE_CLOSED";
 
 export interface ActivityEvent {
   id: string;
@@ -199,9 +205,9 @@ export interface PublicProfile {
   bio: string;
   createdAt: string;
   connectionCount: number;
-  /** Owned demands that finished (MATCHED / CLOSED). */
+  /** COMPLETED matches involving this user (mutual trade confirm). */
   completedDemandCount: number;
-  /** CONNECTED matches where this user was the responder. */
+  /** CONNECTED/COMPLETED matches where this user was the responder/seller. */
   responseConnectionCount: number;
   /** Only real auth providers — never invent verification. */
   authLabel?: string | null;
@@ -281,6 +287,7 @@ export const MATCH_STATUS_LABEL: Record<MatchStatus, string> = {
   CONNECTED: ko.matchStatusConnected,
   DECLINED: ko.matchStatusDeclined,
   CLOSED: ko.matchStatusClosed,
+  COMPLETED: ko.matchStatusCompleted,
 };
 
 export function isBuyDemand(demand: Demand): demand is BuyDemand {

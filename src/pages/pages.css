@@ -1453,6 +1453,50 @@
   min-height: 44px;
 }
 
+.chat-composer--closed {
+  display: block;
+  text-align: center;
+  margin: 0;
+}
+
+.trade-status {
+  margin: 0 var(--space-lg);
+  padding: 14px 16px;
+  border: 1px solid var(--dan-border);
+  border-radius: 14px;
+  background: var(--dan-bg-elevated, #f7f8fa);
+  display: grid;
+  gap: 6px;
+}
+
+.trade-status__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--dan-text);
+}
+
+.trade-status__state {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--dan-text);
+}
+
+.trade-status__hint,
+.trade-status__meta {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--dan-text-muted, #667085);
+}
+
+.trade-status__actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
 .auth-screen {
   min-height: 100dvh;
   max-width: 420px;

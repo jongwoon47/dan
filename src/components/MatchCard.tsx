@@ -57,10 +57,18 @@ export function MatchCard({ match }: { match: Match }) {
             <p className="match-card__lead">{ko.matchLead}</p>
           </div>
         </div>
-        {match.status === "CONNECTED" ? (
+        {match.status === "CONNECTED" || match.status === "COMPLETED" ? (
           <div className="match-card__connected">
-            <p>{ko.connectedMsg}</p>
-            <Button to={`/match/${match.id}`} fullWidth>
+            <p>
+              {match.status === "COMPLETED"
+                ? ko.tradeDoneTitle
+                : ko.connectedMsg}
+            </p>
+            <Button
+              to={`/match/${match.id}`}
+              fullWidth
+              variant={match.status === "COMPLETED" ? "secondary" : "primary"}
+            >
               {ko.openChat}
             </Button>
           </div>
@@ -145,10 +153,18 @@ export function MatchCard({ match }: { match: Match }) {
             {busy ? "..." : ko.connect}
           </Button>
         ) : null}
-        {match.status === "CONNECTED" ? (
+        {match.status === "CONNECTED" || match.status === "COMPLETED" ? (
           <div className="match-card__connected">
-            <p>{ko.connectedMsg}</p>
-            <Button to={`/match/${match.id}`} fullWidth>
+            <p>
+              {match.status === "COMPLETED"
+                ? ko.tradeDoneTitle
+                : ko.connectedMsg}
+            </p>
+            <Button
+              to={`/match/${match.id}`}
+              fullWidth
+              variant={match.status === "COMPLETED" ? "secondary" : "primary"}
+            >
               {ko.openChat}
             </Button>
           </div>

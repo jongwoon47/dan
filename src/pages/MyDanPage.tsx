@@ -154,6 +154,8 @@ export function MyDanPage() {
       const actionable =
         ev.kind === "NEW_RESPONSE" ||
         ev.kind === "MATCH_CONNECTED" ||
+        ev.kind === "MATCH_COMPLETED" ||
+        ev.kind === "MATCH_TRADE_CLOSED" ||
         ev.kind === "RESPONSE_ACCEPTED" ||
         ev.kind === "BUYER_INTEREST" ||
         ev.kind === "RESPONSE_DECLINED";
@@ -161,7 +163,10 @@ export function MyDanPage() {
 
       const to =
         ev.matchId &&
-        (ev.kind === "MATCH_CONNECTED" || ev.kind === "RESPONSE_ACCEPTED")
+        (ev.kind === "MATCH_CONNECTED" ||
+          ev.kind === "MATCH_COMPLETED" ||
+          ev.kind === "MATCH_TRADE_CLOSED" ||
+          ev.kind === "RESPONSE_ACCEPTED")
           ? `/match/${ev.matchId}`
           : ev.kind === "BUYER_INTEREST" && demand?.type === "BUY"
             ? `/demand/${demand.details.productId}`
@@ -174,13 +179,17 @@ export function MyDanPage() {
           ? ko.activityNewResponse
           : ev.kind === "MATCH_CONNECTED"
             ? ko.activityPeerConnected
-            : ev.kind === "RESPONSE_ACCEPTED"
-              ? ko.activityAccepted
-              : ev.kind === "BUYER_INTEREST"
-                ? ko.activityInterest
-                : ev.kind === "RESPONSE_DECLINED"
-                  ? ko.activityDeclined
-                  : ko.attentionTitle;
+            : ev.kind === "MATCH_COMPLETED"
+              ? ko.activityMatchCompleted
+              : ev.kind === "MATCH_TRADE_CLOSED"
+                ? ko.activityMatchTradeClosed
+                : ev.kind === "RESPONSE_ACCEPTED"
+                  ? ko.activityAccepted
+                  : ev.kind === "BUYER_INTEREST"
+                    ? ko.activityInterest
+                    : ev.kind === "RESPONSE_DECLINED"
+                      ? ko.activityDeclined
+                      : ko.attentionTitle;
 
       push({
         key: ev.id,
@@ -216,7 +225,14 @@ export function MyDanPage() {
   });
 
   const pendingMatches = useMemo(
-    () => myMatches.filter((m) => m.status !== "CONNECTED"),
+    () =>
+      myMatches.filter(
+        (m) =>
+          m.status !== "CONNECTED" &&
+          m.status !== "COMPLETED" &&
+          m.status !== "CLOSED" &&
+          m.status !== "DECLINED",
+      ),
     [myMatches],
   );
 
@@ -229,7 +245,13 @@ export function MyDanPage() {
   const connectedMatchByDemand = useMemo(() => {
     const map = new Map<string, string>();
     for (const m of myMatches) {
-      if (m.status !== "CONNECTED") continue;
+      if (
+        m.status !== "CONNECTED" &&
+        m.status !== "COMPLETED" &&
+        m.status !== "CLOSED"
+      ) {
+        continue;
+      }
       map.set(m.demandId, m.id);
     }
     return map;

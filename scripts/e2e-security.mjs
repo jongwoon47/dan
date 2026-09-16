@@ -2,7 +2,7 @@
  * Security regression E2E against live Supabase (anon key + RLS/RPC).
  * Run: npm run test:e2e:security
  *
- * Requires migrations through 0009 applied.
+ * Requires migrations through 0014 applied.
  */
 import { createClient } from "@supabase/supabase-js";
 
@@ -72,14 +72,21 @@ async function insertActiveTask(sb, userId, title) {
 const report = {
   happyTask: "FAIL",
   happyBuy: "FAIL",
+  matchCompletion: "FAIL",
+  matchClose: "FAIL",
   foreignDemandUpdate: "FAIL",
+  directDemandDelete: "FAIL",
   directMatchWrite: "FAIL",
   forbiddenResponseWrite: "FAIL",
   blockedPair: "FAIL",
   duplicateConnected: "FAIL",
   forgedSellIntent: "FAIL",
+  ownershipDirectUpdate: "FAIL",
+  distanceRpcAuth: "FAIL",
+  distanceRpcQuantized: "FAIL",
   migration0008: "UNKNOWN",
   migration0009: "UNKNOWN",
+  migration0014: "UNKNOWN",
 };
 
 try {
@@ -136,6 +143,33 @@ try {
     .eq("id", task.id)
     .select("*");
   assert(noRows(forgeStatus), "owner must not direct-update demand status");
+
+  // Owner must not REST-delete demand (would CASCADE responses/matches)
+  const delVictim = await insertActiveTask(a, userA.id, "SEC NO DELETE");
+  const delResp = await b.rpc("upsert_response", {
+    p_demand_id: delVictim.id,
+    p_message: "keep me",
+  });
+  if (delResp.error) throw delResp.error;
+  const directDel = await a
+    .from("demands")
+    .delete()
+    .eq("id", delVictim.id)
+    .select("*");
+  assert(noRows(directDel), "owner must not direct-delete demand");
+  const stillThere = await a
+    .from("demands")
+    .select("id, status")
+    .eq("id", delVictim.id)
+    .maybeSingle();
+  assert(stillThere.data?.id === delVictim.id, "demand must survive DELETE attempt");
+  const respAlive = await a
+    .from("responses")
+    .select("id")
+    .eq("id", delResp.data.id)
+    .maybeSingle();
+  assert(respAlive.data?.id === delResp.data.id, "response must not CASCADE-delete");
+  report.directDemandDelete = "PASS";
 
   const matchInsert = await b
     .from("matches")
@@ -320,9 +354,99 @@ try {
   assert(connect.data.status === "CONNECTED", "buy connect");
   report.happyBuy = "PASS";
 
+  const confirmA = await a.rpc("confirm_match_completion", {
+    p_match_id: connect.data.id,
+  });
+  if (confirmA.error) throw confirmA.error;
+  assert(
+    confirmA.data.status === "CONNECTED",
+    "one-sided confirm stays CONNECTED",
+  );
+  assert(confirmA.data.buyer_completed_at, "buyer_completed_at set");
+  const confirmB = await b.rpc("confirm_match_completion", {
+    p_match_id: connect.data.id,
+  });
+  if (confirmB.error) throw confirmB.error;
+  assert(confirmB.data.status === "COMPLETED", "both confirms → COMPLETED");
+  assert(confirmB.data.completed_at, "completed_at set");
+  report.matchCompletion = "PASS";
+
+  const closeTask = await insertActiveTask(a, userA.id, "SEC CLOSE MATCH");
+  const closeResp = await b.rpc("upsert_response", {
+    p_demand_id: closeTask.id,
+    p_message: "close match path",
+  });
+  if (closeResp.error) throw closeResp.error;
+  const closeAccept = await a.rpc("accept_response", {
+    p_response_id: closeResp.data.id,
+  });
+  if (closeAccept.error) throw closeAccept.error;
+  const closedMatch = await a.rpc("close_match", {
+    p_match_id: closeAccept.data.id,
+  });
+  if (closedMatch.error) throw closedMatch.error;
+  assert(closedMatch.data.status === "CLOSED", "unilateral close");
+  const msgOnClosed = await b.rpc("send_message", {
+    p_match_id: closeAccept.data.id,
+    p_body: "should fail",
+  });
+  assert(msgOnClosed.error, "CLOSED match cannot send messages");
+  report.matchClose = "PASS";
+
+  // ownership: no direct UPDATE (condition forge)
+  const ownUpdate = await b
+    .from("ownerships")
+    .update({ condition: "sealed" })
+    .eq("id", ownB.data.id)
+    .select("*");
+  assert(noRows(ownUpdate), "owner must not direct-update ownership");
+  report.ownershipDirectUpdate = "PASS";
+
+  // Distance RPC: anon blocked; authenticated returns quantized meters
+  const geoTask = await insertActiveTask(a, userA.id, "SEC GEO DIST");
+  const geoUpsert = await a.rpc("upsert_demand_exact_geo", {
+    p_demand_id: geoTask.id,
+    p_lat: 37.5665,
+    p_lng: 126.978,
+  });
+  if (geoUpsert.error) throw geoUpsert.error;
+
+  const anon = client();
+  const anonDist = await anon.rpc("approx_demand_distances", {
+    p_lat: 37.57,
+    p_lng: 126.98,
+    p_demand_ids: [geoTask.id],
+  });
+  assert(
+    anonDist.error ||
+      (Array.isArray(anonDist.data) && anonDist.data.length === 0),
+    "anon must not receive distance oracles",
+  );
+  report.distanceRpcAuth = "PASS";
+
+  const authDist = await a.rpc("approx_demand_distances", {
+    p_lat: 37.57,
+    p_lng: 126.98,
+    p_demand_ids: [geoTask.id],
+  });
+  if (authDist.error) throw authDist.error;
+  const rows = authDist.data ?? [];
+  assert(Array.isArray(rows) && rows.length === 1, "auth distance row expected");
+  assert(Number.isFinite(rows[0].meters), "meters must be finite");
+  assert(rows[0].meters % 250 === 0, "meters must be 250m-quantized");
+  assert(rows[0].meters >= 250, "minimum bucket is 250m");
+  report.distanceRpcQuantized = "PASS";
+  report.migration0014 = "PASS";
+
   console.log(JSON.stringify(report, null, 2));
   const bad = Object.entries(report).filter(([k, v]) => {
-    if (k === "migration0008" || k === "migration0009") return false;
+    if (
+      k === "migration0008" ||
+      k === "migration0009" ||
+      k === "migration0014"
+    ) {
+      return false;
+    }
     return v !== "PASS";
   });
   if (bad.length) {

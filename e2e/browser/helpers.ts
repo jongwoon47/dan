@@ -25,13 +25,13 @@ export async function signUp(page: Page, email: string, displayName: string) {
 export async function createTaskDemand(page: Page, title: string) {
   await page.goto("/create?type=TASK");
   await page.getByRole("radio", { name: "심부름" }).click();
-  await page.getByLabel("요청 제목").fill(title);
+  await page.getByLabel("제목").fill(title);
   await page.getByLabel("자세히").fill("E2E TASK detail");
   await page.getByLabel("보상").fill("15000");
   await page.getByRole("button", { name: "다음" }).click();
-  await page.getByRole("button", { name: "온라인으로 가능" }).click();
+  await page.getByRole("button", { name: "온라인으로 하기" }).click();
   await page.getByLabel("마감 시간").fill(futureDatetimeLocal());
-  await page.getByRole("button", { name: "요청 등록" }).click();
+  await page.getByRole("button", { name: "요청하기" }).click();
   await expect(page).toHaveURL(/\/demand\/item\//, { timeout: 30_000 });
   return page.url();
 }
@@ -47,7 +47,7 @@ export async function createBuyDemand(page: Page, productName: string, maxPrice:
   if ((await shipping.getAttribute("aria-pressed")) !== "true") {
     await shipping.click();
   }
-  await page.getByRole("button", { name: "요청 등록" }).click();
+  await page.getByRole("button", { name: "요청하기" }).click();
   await expect(page).toHaveURL(/\/demand\/item\//, { timeout: 30_000 });
   return page.url();
 }
@@ -57,14 +57,14 @@ export async function openFeedDemandByTitle(page: Page, title: string, typeFilte
   if (typeFilter) {
     await page.getByRole("toolbar", { name: "유형 필터" }).getByRole("button", { name: typeFilter }).click();
   }
-  await page.getByPlaceholder("제목, 지역, 키워드").fill(title);
+  await page.getByPlaceholder("제품, 지역, 키워드로 찾기").fill(title);
   const link = page.getByRole("link").filter({ hasText: title }).first();
   await expect(link).toBeVisible({ timeout: 30_000 });
   await link.click();
 }
 
 export async function respondToDemand(page: Page, message: string) {
-  await page.getByRole("button", { name: "이 필요에 응답하기" }).click();
+  await page.getByRole("button", { name: "제가 할게요" }).click();
   await page.locator("textarea").fill(message);
   await page.getByRole("button", { name: "응답 보내기" }).click();
   await expect(page.getByText("응답을 보냈어요")).toBeVisible({ timeout: 20_000 });

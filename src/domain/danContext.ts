@@ -73,6 +73,8 @@ export interface DanContextValue {
   acceptResponse: (responseId: string) => Promise<Match | null>;
   expressBuyerInterest: (matchId: string) => Promise<boolean>;
   connectAsSeller: (matchId: string) => Promise<boolean>;
+  confirmMatchCompletion: (matchId: string) => Promise<Match | null>;
+  closeMatch: (matchId: string) => Promise<Match | null>;
   listMessages: (matchId: string) => Promise<ChatMessage[]>;
   sendMessage: (matchId: string, body: string) => Promise<ChatMessage | null>;
   markMessagesRead: (matchId: string) => Promise<void>;

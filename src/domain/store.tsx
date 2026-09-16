@@ -72,6 +72,8 @@ type Action =
   | { type: "ACCEPT_RESPONSE"; responseId: string }
   | { type: "BUYER_INTEREST"; match: Match }
   | { type: "SELLER_CONNECT"; matchId: string }
+  | { type: "CONFIRM_MATCH_COMPLETION"; matchId: string }
+  | { type: "CLOSE_MATCH"; matchId: string }
   | { type: "HYDRATE"; state: DanState };
 
 function defaultState(): DanState {
@@ -392,6 +394,54 @@ function reducer(state: DanState, action: Action): DanState {
       if (!transitioned) return state;
       const matches = state.matches.map((m) =>
         m.id === action.matchId ? transitioned : m,
+      );
+      const next = { ...state, matches };
+      persist(next);
+      return next;
+    }
+    case "CONFIRM_MATCH_COMPLETION": {
+      const actorId = state.currentUserId;
+      if (!actorId) return state;
+      const current = state.matches.find((m) => m.id === action.matchId);
+      if (!current || current.status !== "CONNECTED") return state;
+      if (actorId !== current.buyerId && actorId !== current.sellerId) {
+        return state;
+      }
+      const now = new Date().toISOString();
+      const isBuyer = actorId === current.buyerId;
+      let nextMatch: Match = {
+        ...current,
+        buyerCompletedAt: isBuyer
+          ? current.buyerCompletedAt ?? now
+          : current.buyerCompletedAt,
+        sellerCompletedAt: !isBuyer
+          ? current.sellerCompletedAt ?? now
+          : current.sellerCompletedAt,
+      };
+      if (nextMatch.buyerCompletedAt && nextMatch.sellerCompletedAt) {
+        nextMatch = {
+          ...nextMatch,
+          status: "COMPLETED",
+          completedAt: now,
+        };
+      }
+      const matches = state.matches.map((m) =>
+        m.id === action.matchId ? nextMatch : m,
+      );
+      const next = { ...state, matches };
+      persist(next);
+      return next;
+    }
+    case "CLOSE_MATCH": {
+      const actorId = state.currentUserId;
+      if (!actorId) return state;
+      const current = state.matches.find((m) => m.id === action.matchId);
+      if (!current || current.status !== "CONNECTED") return state;
+      if (actorId !== current.buyerId && actorId !== current.sellerId) {
+        return state;
+      }
+      const matches = state.matches.map((m) =>
+        m.id === action.matchId ? { ...m, status: "CLOSED" as const } : m,
       );
       const next = { ...state, matches };
       persist(next);
@@ -723,6 +773,18 @@ export function DanProvider({ children }: { children: ReactNode }) {
       connectAsSeller: async (matchId) => {
         dispatch({ type: "SELLER_CONNECT", matchId });
         return true;
+      },
+      confirmMatchCompletion: async (matchId) => {
+        if (!state.currentUserId) return null;
+        dispatch({ type: "CONFIRM_MATCH_COMPLETION", matchId });
+        const after = loadState();
+        return after.matches.find((m) => m.id === matchId) ?? null;
+      },
+      closeMatch: async (matchId) => {
+        if (!state.currentUserId) return null;
+        dispatch({ type: "CLOSE_MATCH", matchId });
+        const after = loadState();
+        return after.matches.find((m) => m.id === matchId) ?? null;
       },
       getProduct: (id) => products.find((p) => p.id === id),
       getDemand: (id) => state.demands.find((d) => d.id === id),
