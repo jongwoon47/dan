@@ -216,4 +216,79 @@ describe("store mutations / login race", () => {
       result.current.state.demands.find((d) => d.id === demandId)?.status,
     ).toBe("MATCHED");
   });
+
+  it("closeMatch keeps demand MATCHED; owner can reopen to ACTIVE", async () => {
+    const { result } = renderHook(() => useDan(), { wrapper });
+    act(() => {
+      result.current.login("user-you");
+    });
+
+    let demandId = "";
+    await act(async () => {
+      const d = await result.current.createDemand({
+        type: "TASK",
+        title: "재오픈 테스트",
+        taskDescription: "심부름",
+        budget: 10000,
+        dueAt: new Date(Date.now() + 86_400_000).toISOString(),
+        fulfillmentOptions: [{ mode: "REMOTE" }],
+      });
+      demandId = d!.id;
+    });
+
+    act(() => {
+      result.current.login("user-jun");
+    });
+    let responseId = "";
+    await act(async () => {
+      const r = await result.current.createResponse({
+        demandId,
+        message: "할게요",
+      });
+      responseId = r!.id;
+    });
+
+    act(() => {
+      result.current.login("user-you");
+    });
+    await act(async () => {
+      await result.current.acceptResponse(responseId);
+    });
+    const matchId = result.current.state.matches.find(
+      (m) => m.demandId === demandId && m.status === "CONNECTED",
+    )?.id;
+    expect(matchId).toBeTruthy();
+
+    await act(async () => {
+      await result.current.closeMatch(matchId!);
+    });
+    expect(
+      result.current.state.matches.find((m) => m.id === matchId)?.status,
+    ).toBe("CLOSED");
+    expect(
+      result.current.state.demands.find((d) => d.id === demandId)?.status,
+    ).toBe("MATCHED");
+
+    act(() => {
+      result.current.login("user-jun");
+    });
+    await act(async () => {
+      const denied = await result.current.reopenDemandAfterTradeClose(matchId!);
+      expect(denied).toBeNull();
+    });
+    expect(
+      result.current.state.demands.find((d) => d.id === demandId)?.status,
+    ).toBe("MATCHED");
+
+    act(() => {
+      result.current.login("user-you");
+    });
+    await act(async () => {
+      const reopened = await result.current.reopenDemandAfterTradeClose(matchId!);
+      expect(reopened?.status).toBe("ACTIVE");
+    });
+    expect(
+      result.current.state.demands.find((d) => d.id === demandId)?.status,
+    ).toBe("ACTIVE");
+  });
 });

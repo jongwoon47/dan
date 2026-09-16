@@ -83,6 +83,7 @@ export function MatchChatPage() {
     markMessagesRead,
     confirmMatchCompletion,
     closeMatch,
+    reopenDemandAfterTradeClose,
     blockUser,
     reportUser,
     getPublicProfile,
@@ -90,6 +91,16 @@ export function MatchChatPage() {
   } = useDan();
   const match = myMatches.find((m) => m.id === matchId);
   const demand = match ? getDemand(match.demandId) : undefined;
+  const isDemandOwner =
+    Boolean(currentUser && demand && demand.userId === currentUser.id);
+  const canReopenDemand =
+    match?.status === "CLOSED" &&
+    isDemandOwner &&
+    demand?.status === "MATCHED";
+  const demandAlreadyReopened =
+    match?.status === "CLOSED" &&
+    isDemandOwner &&
+    demand?.status === "ACTIVE";
   const peerId =
     match && currentUser
       ? match.buyerId === currentUser.id
@@ -107,7 +118,7 @@ export function MatchChatPage() {
     setMenuOpen(open);
   }, []);
   const [confirm, setConfirm] = useState<
-    "block" | "report" | "complete" | "cancel" | null
+    "block" | "report" | "complete" | "cancel" | "reopen" | null
   >(null);
   const [reportReason, setReportReason] = useState<
     "spam" | "fraud" | "abuse" | "other"
@@ -276,7 +287,24 @@ export function MatchChatPage() {
         ) : match.status === "CLOSED" ? (
           <>
             <p className="trade-status__state">{ko.tradeClosedTitle}</p>
-            <p className="trade-status__hint">{ko.tradePeerClosed}</p>
+            {canReopenDemand ? (
+              <>
+                <p className="trade-status__hint">{ko.tradeClosedSeekHint}</p>
+                <div className="trade-status__actions">
+                  <Button
+                    fullWidth
+                    disabled={busy}
+                    onClick={() => setConfirm("reopen")}
+                  >
+                    {ko.tradeReopenCta}
+                  </Button>
+                </div>
+              </>
+            ) : demandAlreadyReopened ? (
+              <p className="trade-status__hint">{ko.tradeReopenedHint}</p>
+            ) : (
+              <p className="trade-status__hint">{ko.tradePeerClosed}</p>
+            )}
           </>
         ) : peerDone && !mineDone ? (
           <>
@@ -407,6 +435,24 @@ export function MatchChatPage() {
           void closeMatch(matchId).then((updated) => {
             setConfirm(null);
             if (!updated) setError(ko.genericError);
+          });
+        }}
+      />
+
+      <ConfirmSheet
+        open={confirm === "reopen"}
+        title={ko.tradeClosedSeekHint}
+        body={ko.tradeReopenBody}
+        confirmLabel={ko.tradeReopenCta}
+        onCancel={() => setConfirm(null)}
+        onConfirm={() => {
+          void reopenDemandAfterTradeClose(matchId).then((updated) => {
+            setConfirm(null);
+            if (!updated) {
+              setError(ko.genericError);
+              return;
+            }
+            setToast(ko.tradeReopenedToast);
           });
         }}
       />

@@ -75,6 +75,8 @@ export interface DanContextValue {
   connectAsSeller: (matchId: string) => Promise<boolean>;
   confirmMatchCompletion: (matchId: string) => Promise<Match | null>;
   closeMatch: (matchId: string) => Promise<Match | null>;
+  /** After CLOSED match: demand owner reactivates MATCHED → ACTIVE. */
+  reopenDemandAfterTradeClose: (matchId: string) => Promise<Demand | null>;
   listMessages: (matchId: string) => Promise<ChatMessage[]>;
   sendMessage: (matchId: string, body: string) => Promise<ChatMessage | null>;
   markMessagesRead: (matchId: string) => Promise<void>;

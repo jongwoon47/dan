@@ -398,6 +398,13 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         }
         return run(() => api.closeMatchRemote(matchId));
       },
+      reopenDemandAfterTradeClose: async (matchId) => {
+        if (!currentUser) {
+          assignLogin();
+          return null;
+        }
+        return run(() => api.reopenDemandAfterTradeCloseRemote(matchId));
+      },
       getProduct: (id) => products.find((p) => p.id === id),
       getDemand: (id) => demands.find((d) => d.id === id),
       getAggregate: (productId) => {

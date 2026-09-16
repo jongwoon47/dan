@@ -1,4 +1,5 @@
 import { useMemo, useReducer, useState, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 
 import { upsertActiveDemand } from "./demands";
 import { buildFeedItems } from "./feed";
@@ -74,6 +75,7 @@ type Action =
   | { type: "SELLER_CONNECT"; matchId: string }
   | { type: "CONFIRM_MATCH_COMPLETION"; matchId: string }
   | { type: "CLOSE_MATCH"; matchId: string }
+  | { type: "REOPEN_DEMAND_AFTER_TRADE_CLOSE"; matchId: string }
   | { type: "HYDRATE"; state: DanState };
 
 function defaultState(): DanState {
@@ -246,6 +248,45 @@ function buildDemandFromInput(
       estimatedDurationMinutes: payload.estimatedDurationMinutes,
     },
   };
+}
+
+function tryReopenDemandState(
+  state: DanState,
+  matchId: string,
+): DanState | null {
+  const actorId = state.currentUserId;
+  if (!actorId) return null;
+  const current = state.matches.find((m) => m.id === matchId);
+  if (!current || current.status !== "CLOSED") return null;
+  const demand = state.demands.find((d) => d.id === current.demandId);
+  if (!demand || demand.userId !== actorId) return null;
+  if (demand.status !== "MATCHED") return null;
+  if (
+    state.matches.some(
+      (m) =>
+        m.demandId === demand.id &&
+        m.status === "CONNECTED" &&
+        m.id !== matchId,
+    )
+  ) {
+    return null;
+  }
+  const now = Date.now();
+  const expiresMs = new Date(demand.expiresAt).getTime();
+  const bumpBuy =
+    demand.type === "BUY" &&
+    Number.isFinite(expiresMs) &&
+    expiresMs <= now + 86400000;
+  const demands = state.demands.map((d) =>
+    d.id === demand.id
+      ? {
+          ...d,
+          status: "ACTIVE" as const,
+          expiresAt: bumpBuy ? extendBuyExpiresAt(now) : d.expiresAt,
+        }
+      : d,
+  );
+  return { ...state, demands };
 }
 
 function reducer(state: DanState, action: Action): DanState {
@@ -444,6 +485,12 @@ function reducer(state: DanState, action: Action): DanState {
         m.id === action.matchId ? { ...m, status: "CLOSED" as const } : m,
       );
       const next = { ...state, matches };
+      persist(next);
+      return next;
+    }
+    case "REOPEN_DEMAND_AFTER_TRADE_CLOSE": {
+      const next = tryReopenDemandState(state, action.matchId);
+      if (!next) return state;
       persist(next);
       return next;
     }
@@ -785,6 +832,19 @@ export function DanProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "CLOSE_MATCH", matchId });
         const after = loadState();
         return after.matches.find((m) => m.id === matchId) ?? null;
+      },
+      reopenDemandAfterTradeClose: async (matchId) => {
+        const snap = loadState();
+        const next = tryReopenDemandState(snap, matchId);
+        if (!next) return null;
+        persist(next);
+        // Persist + HYDRATE (not only dispatch): keeps React state in sync when
+        // called from async flows where useReducer updates may not flush in time.
+        flushSync(() => {
+          dispatch({ type: "HYDRATE", state: next });
+        });
+        const demandId = snap.matches.find((m) => m.id === matchId)?.demandId;
+        return next.demands.find((d) => d.id === demandId) ?? null;
       },
       getProduct: (id) => products.find((p) => p.id === id),
       getDemand: (id) => state.demands.find((d) => d.id === id),

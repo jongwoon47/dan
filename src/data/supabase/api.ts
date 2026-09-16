@@ -841,6 +841,17 @@ export async function closeMatchRemote(matchId: string): Promise<Match> {
   return mapMatch(data as DbMatch);
 }
 
+export async function reopenDemandAfterTradeCloseRemote(
+  matchId: string,
+): Promise<Demand> {
+  const { data, error } = await getSupabase().rpc(
+    "reopen_demand_after_trade_close",
+    { p_match_id: matchId },
+  );
+  if (error) throw error;
+  return mapDemand(data as DbDemand);
+}
+
 export async function signUp(email: string, password: string, displayName: string) {
   const { data, error } = await getSupabase().auth.signUp({
     email,

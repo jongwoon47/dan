@@ -386,11 +386,37 @@ try {
   });
   if (closedMatch.error) throw closedMatch.error;
   assert(closedMatch.data.status === "CLOSED", "unilateral close");
+  const demandAfterClose = await a
+    .from("demands")
+    .select("status")
+    .eq("id", closeTask.id)
+    .single();
+  if (demandAfterClose.error) throw demandAfterClose.error;
+  assert(
+    demandAfterClose.data.status === "MATCHED",
+    "close_match keeps demand MATCHED (no auto-reopen)",
+  );
   const msgOnClosed = await b.rpc("send_message", {
     p_match_id: closeAccept.data.id,
     p_body: "should fail",
   });
   assert(msgOnClosed.error, "CLOSED match cannot send messages");
+  const peerReopen = await b.rpc("reopen_demand_after_trade_close", {
+    p_match_id: closeAccept.data.id,
+  });
+  assert(peerReopen.error, "non-owner cannot reopen demand");
+  const ownerReopen = await a.rpc("reopen_demand_after_trade_close", {
+    p_match_id: closeAccept.data.id,
+  });
+  if (ownerReopen.error) throw ownerReopen.error;
+  assert(ownerReopen.data.status === "ACTIVE", "owner reopen → ACTIVE");
+  const demandAfterReopen = await a
+    .from("demands")
+    .select("status")
+    .eq("id", closeTask.id)
+    .single();
+  if (demandAfterReopen.error) throw demandAfterReopen.error;
+  assert(demandAfterReopen.data.status === "ACTIVE", "demand ACTIVE after reopen");
   report.matchClose = "PASS";
 
   // ownership: no direct UPDATE (condition forge)
