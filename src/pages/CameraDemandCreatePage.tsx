@@ -5,18 +5,11 @@ import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Input";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
+import { DAN_V1_CAMERA_NAMES } from "@/domain/danV1";
 import { placeFromLabel } from "@/domain/fulfillment";
 import type { ConditionPreference } from "@/domain/types";
 import { formatDigitsGrouped, digitsOnly, parseMoneyInput } from "@/lib/format";
 import "./pages.css";
-
-const PILOT_MODELS = [
-  "Fujifilm X100VI",
-  "Fujifilm X100V",
-  "Ricoh GR III",
-  "Ricoh GR IIIx",
-  "Sony RX100 VII",
-];
 
 const CONDITION_OPTIONS: Array<{ value: ConditionPreference; label: string }> = [
   { value: "any", label: "상관없음" },
@@ -29,7 +22,7 @@ export function CameraDemandCreatePage() {
   const navigate = useNavigate();
   const pilotProducts = useMemo(
     () =>
-      PILOT_MODELS.map((name) => products.find((p) => p.name === name)).filter(
+      DAN_V1_CAMERA_NAMES.map((name) => products.find((p) => p.name === name)).filter(
         (p): p is NonNullable<typeof p> => Boolean(p),
       ),
     [products],
