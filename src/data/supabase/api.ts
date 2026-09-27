@@ -19,6 +19,8 @@ import {
 import type {
   Demand,
   DemandAggregate,
+  DealEvidence,
+  DealSnapshot,
   Match,
   Ownership,
   Product,
@@ -28,12 +30,16 @@ import type {
 } from "@/domain/types";
 import { getSupabase } from "./client";
 import {
+  mapDealEvidence,
+  mapDealSnapshot,
   mapDemand,
   mapMatch,
   mapOwnership,
   mapProduct,
   mapResponse,
   mapSellIntent,
+  type DbDealEvidence,
+  type DbDealSnapshot,
   type DbDemand,
   type DbMatch,
   type DbOwnership,
@@ -404,6 +410,10 @@ export async function createOwnershipRemote(input: {
 export async function upsertSellIntentRemote(input: {
   ownershipId: string;
   minimumPrice: number;
+  targetDemandId?: string;
+  approxUsageCount?: number;
+  conditionNote?: string;
+  quickPhotoUrl?: string;
 }): Promise<SellIntent> {
   const sb = getSupabase();
   const { data: auth } = await sb.auth.getUser();
@@ -427,7 +437,13 @@ export async function upsertSellIntentRemote(input: {
   if (open) {
     const { data, error } = await sb
       .from("sell_intents")
-      .update({ minimum_price: input.minimumPrice })
+      .update({
+        minimum_price: input.minimumPrice,
+        target_demand_id: input.targetDemandId ?? null,
+        approx_usage_count: input.approxUsageCount ?? null,
+        condition_note: input.conditionNote?.trim() ?? "",
+        quick_photo_url: input.quickPhotoUrl?.trim() || null,
+      })
       .eq("id", open.id)
       .select("*")
       .single();
@@ -442,6 +458,10 @@ export async function upsertSellIntentRemote(input: {
       user_id: auth.user.id,
       product_id: ownership.product_id,
       minimum_price: input.minimumPrice,
+      target_demand_id: input.targetDemandId ?? null,
+      approx_usage_count: input.approxUsageCount ?? null,
+      condition_note: input.conditionNote?.trim() ?? "",
+      quick_photo_url: input.quickPhotoUrl?.trim() || null,
       status: "OPEN",
     })
     .select("*")
@@ -813,6 +833,78 @@ export async function expressBuyerInterestRemote(
   });
   if (error) throw error;
   return mapMatch(data as DbMatch);
+}
+
+export async function getDealEvidenceRemote(
+  matchId: string,
+): Promise<DealEvidence | null> {
+  const { data, error } = await getSupabase()
+    .from("deal_evidence")
+    .select("*")
+    .eq("match_id", matchId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? mapDealEvidence(data as DbDealEvidence) : null;
+}
+
+export async function upsertDealEvidenceRemote(input: {
+  matchId: string;
+  possessionPhotoUrl?: string;
+  serialLast4?: string;
+  usageCount?: number;
+  purchaseDate?: string;
+  warrantyUntil?: string;
+  components?: string[];
+  cosmeticNotes?: string;
+  knownIssues?: string;
+  repairHistory?: string;
+  waterDamageStatement?: string;
+  evidenceMeta?: Record<string, unknown>;
+}): Promise<DealEvidence> {
+  const { data, error } = await getSupabase().rpc("upsert_deal_evidence", {
+    p_match_id: input.matchId,
+    p_payload: {
+      possessionPhotoUrl: input.possessionPhotoUrl ?? "",
+      serialLast4: input.serialLast4 ?? "",
+      usageCount: input.usageCount ?? null,
+      purchaseDate: input.purchaseDate ?? "",
+      warrantyUntil: input.warrantyUntil ?? "",
+      components: input.components ?? [],
+      cosmeticNotes: input.cosmeticNotes ?? "",
+      knownIssues: input.knownIssues ?? "",
+      repairHistory: input.repairHistory ?? "",
+      waterDamageStatement: input.waterDamageStatement ?? "",
+      evidenceMeta: input.evidenceMeta ?? {},
+    },
+  });
+  if (error) throw error;
+  return mapDealEvidence(data as DbDealEvidence);
+}
+
+export async function getDealSnapshotRemote(
+  matchId: string,
+): Promise<DealSnapshot | null> {
+  const { data, error } = await getSupabase()
+    .from("deal_snapshots")
+    .select("*")
+    .eq("match_id", matchId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? mapDealSnapshot(data as DbDealSnapshot) : null;
+}
+
+export async function confirmDealSnapshotRemote(input: {
+  matchId: string;
+  agreedPrice: number;
+  snapshot: Record<string, unknown>;
+}): Promise<DealSnapshot> {
+  const { data, error } = await getSupabase().rpc("confirm_deal_snapshot", {
+    p_match_id: input.matchId,
+    p_agreed_price: input.agreedPrice,
+    p_snapshot: input.snapshot,
+  });
+  if (error) throw error;
+  return mapDealSnapshot(data as DbDealSnapshot);
 }
 
 export async function sellerConnectRemote(matchId: string): Promise<Match> {
