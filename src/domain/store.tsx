@@ -43,6 +43,8 @@ import {
 } from "./productName";
 import type {
   BuyDemand,
+  DealEvidence,
+  DealSnapshot,
   Demand,
   DemandCategory,
   Match,
@@ -69,6 +71,8 @@ type Action =
   | { type: "CLOSE_DEMAND"; demandId: string }
   | { type: "CREATE_OWNERSHIP"; ownership: Ownership; ensureUserId?: string }
   | { type: "UPSERT_SELL_INTENT"; sellIntent: SellIntent; ensureUserId?: string }
+  | { type: "UPSERT_DEAL_EVIDENCE"; evidence: DealEvidence }
+  | { type: "UPSERT_DEAL_SNAPSHOT"; snapshot: DealSnapshot }
   | { type: "UPSERT_RESPONSE"; response: Response; ensureUserId?: string }
   | { type: "ACCEPT_RESPONSE"; responseId: string }
   | { type: "BUYER_INTEREST"; match: Match }
@@ -86,6 +90,8 @@ function defaultState(): DanState {
     sellIntents: SEED_SELL_INTENTS,
     responses: SEED_RESPONSES,
     matches: SEED_MATCHES,
+    dealEvidence: [],
+    dealSnapshots: [],
   };
 }
 
@@ -106,6 +112,8 @@ function loadState(): DanState {
       sellIntents: parsed.sellIntents ?? SEED_SELL_INTENTS,
       responses: parsed.responses ?? SEED_RESPONSES,
       matches: sanitizePersistedMatches(parsed.matches),
+      dealEvidence: parsed.dealEvidence ?? [],
+      dealSnapshots: parsed.dealSnapshots ?? [],
     };
   } catch {
     return defaultState();
@@ -344,6 +352,43 @@ function reducer(state: DanState, action: Action): DanState {
       const base = withEnsuredUser(state, action.ensureUserId);
       const { list } = upsertOpenSellIntent(base.sellIntents, action.sellIntent);
       const next = { ...base, sellIntents: list };
+      persist(next);
+      return next;
+    }
+    case "UPSERT_DEAL_EVIDENCE": {
+      const next = {
+        ...state,
+        dealEvidence: [
+          action.evidence,
+          ...state.dealEvidence.filter((x) => x.matchId !== action.evidence.matchId),
+        ],
+        matches: state.matches.map((m) =>
+          m.id === action.evidence.matchId
+            ? { ...m, dealStage: "EVIDENCE_READY" as const }
+            : m,
+        ),
+      };
+      persist(next);
+      return next;
+    }
+    case "UPSERT_DEAL_SNAPSHOT": {
+      const next = {
+        ...state,
+        dealSnapshots: [
+          action.snapshot,
+          ...state.dealSnapshots.filter((x) => x.matchId !== action.snapshot.matchId),
+        ],
+        matches: state.matches.map((m) =>
+          m.id === action.snapshot.matchId
+            ? {
+                ...m,
+                dealStage: action.snapshot.lockedAt
+                  ? ("DEAL_LOCKED" as const)
+                  : ("DEAL_REVIEW" as const),
+              }
+            : m,
+        ),
+      };
       persist(next);
       return next;
     }
@@ -612,12 +657,94 @@ export function DanProvider({ children }: { children: ReactNode }) {
           userId: actorId,
           productId: ownership.productId,
           minimumPrice: payload.minimumPrice,
+          targetDemandId: payload.targetDemandId,
+          approxUsageCount: payload.approxUsageCount,
+          conditionNote: payload.conditionNote?.trim() || undefined,
+          quickPhotoUrl: payload.quickPhotoUrl?.trim() || undefined,
           status: "OPEN",
           createdAt: existingOpen?.createdAt ?? new Date().toISOString(),
         };
         const { result } = upsertOpenSellIntent(state.sellIntents, sellIntent);
         dispatch({ type: "UPSERT_SELL_INTENT", sellIntent: result, ensureUserId });
         return result;
+      },
+      getDealEvidence: async (matchId) =>
+        state.dealEvidence.find((x) => x.matchId === matchId) ?? null,
+      upsertDealEvidence: async (payload) => {
+        const match = state.matches.find((m) => m.id === payload.matchId);
+        if (!match || !state.currentUserId || match.sellerId !== state.currentUserId) {
+          return null;
+        }
+        const existing = state.dealEvidence.find((x) => x.matchId === payload.matchId);
+        const now = new Date().toISOString();
+        const evidence: DealEvidence = {
+          id: existing?.id ?? createId("evidence"),
+          matchId: payload.matchId,
+          sellerId: state.currentUserId,
+          possessionPhotoUrl: payload.possessionPhotoUrl?.trim() || undefined,
+          serialLast4: payload.serialLast4?.trim() || undefined,
+          usageCount: payload.usageCount,
+          purchaseDate: payload.purchaseDate,
+          warrantyUntil: payload.warrantyUntil,
+          components: payload.components ?? [],
+          cosmeticNotes: payload.cosmeticNotes?.trim() ?? "",
+          knownIssues: payload.knownIssues?.trim() ?? "",
+          repairHistory: payload.repairHistory?.trim() ?? "",
+          waterDamageStatement: payload.waterDamageStatement?.trim() ?? "",
+          evidenceMeta: payload.evidenceMeta ?? {},
+          submittedAt: now,
+          updatedAt: now,
+        };
+        dispatch({ type: "UPSERT_DEAL_EVIDENCE", evidence });
+        return evidence;
+      },
+      getDealSnapshot: async (matchId) =>
+        state.dealSnapshots.find((x) => x.matchId === matchId) ?? null,
+      confirmDealSnapshot: async (payload) => {
+        const match = state.matches.find((m) => m.id === payload.matchId);
+        const actorId = state.currentUserId;
+        if (!match || !actorId || (actorId !== match.buyerId && actorId !== match.sellerId)) {
+          return null;
+        }
+        if (!state.dealEvidence.some((x) => x.matchId === match.id)) return null;
+        const now = new Date().toISOString();
+        const existing = state.dealSnapshots.find((x) => x.matchId === match.id);
+        if (existing?.lockedAt) return existing;
+        const changed =
+          Boolean(existing) &&
+          (existing!.agreedPrice !== payload.agreedPrice ||
+            JSON.stringify(existing!.snapshot) !== JSON.stringify(payload.snapshot));
+        const buyerConfirmedAt = changed
+          ? actorId === match.buyerId
+            ? now
+            : undefined
+          : actorId === match.buyerId
+            ? existing?.buyerConfirmedAt ?? now
+            : existing?.buyerConfirmedAt;
+        const sellerConfirmedAt = changed
+          ? actorId === match.sellerId
+            ? now
+            : undefined
+          : actorId === match.sellerId
+            ? existing?.sellerConfirmedAt ?? now
+            : existing?.sellerConfirmedAt;
+        const snapshot: DealSnapshot = {
+          id: existing?.id ?? createId("deal"),
+          matchId: match.id,
+          demandId: match.demandId,
+          productId: match.productId,
+          buyerId: match.buyerId,
+          sellerId: match.sellerId,
+          agreedPrice: payload.agreedPrice,
+          snapshot: payload.snapshot,
+          buyerConfirmedAt,
+          sellerConfirmedAt,
+          lockedAt: buyerConfirmedAt && sellerConfirmedAt ? now : undefined,
+          createdAt: existing?.createdAt ?? now,
+          updatedAt: now,
+        };
+        dispatch({ type: "UPSERT_DEAL_SNAPSHOT", snapshot });
+        return snapshot;
       },
       createResponse: async (payload) => {
         const { actorId, ensureUserId } = resolveDemoActorId(state.currentUserId);
