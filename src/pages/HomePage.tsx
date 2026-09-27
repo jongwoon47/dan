@@ -3,6 +3,7 @@ import { AggregatedDemandCard } from "@/components/AggregatedDemandCard";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDan } from "@/domain/danContext";
+import { DAN_V1_CAMERA_NAME_SET } from "@/domain/danV1";
 import "./pages.css";
 import "@/components/feedCards.css";
 
@@ -12,7 +13,7 @@ export function HomePage() {
     .filter(
       (item) =>
         item.kind === "aggregated" &&
-        item.product.category === "camera" &&
+        DAN_V1_CAMERA_NAME_SET.has(item.product.name) &&
         item.aggregate.seekerCount > 0,
     )
     .slice(0, 6);
