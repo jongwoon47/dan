@@ -31,6 +31,51 @@ export const CURRENT_USER_ID = "user-you";
 
 export const PRODUCTS: Product[] = [
   {
+    id: "prod-fuji-x100vi",
+    name: "Fujifilm X100VI",
+    brand: "Fujifilm",
+    model: "X100VI",
+    category: "camera",
+    imageHue: 254,
+    createdAt: "2026-09-27T00:00:00.000Z",
+  },
+  {
+    id: "prod-fuji-x100v",
+    name: "Fujifilm X100V",
+    brand: "Fujifilm",
+    model: "X100V",
+    category: "camera",
+    imageHue: 250,
+    createdAt: "2026-09-27T00:00:00.000Z",
+  },
+  {
+    id: "prod-ricoh-gr3",
+    name: "Ricoh GR III",
+    brand: "Ricoh",
+    model: "GR III",
+    category: "camera",
+    imageHue: 264,
+    createdAt: "2026-09-27T00:00:00.000Z",
+  },
+  {
+    id: "prod-ricoh-gr3x",
+    name: "Ricoh GR IIIx",
+    brand: "Ricoh",
+    model: "GR IIIx",
+    category: "camera",
+    imageHue: 270,
+    createdAt: "2026-09-27T00:00:00.000Z",
+  },
+  {
+    id: "prod-sony-rx100m7",
+    name: "Sony RX100 VII",
+    brand: "Sony",
+    model: "RX100 VII",
+    category: "camera",
+    imageHue: 242,
+    createdAt: "2026-09-27T00:00:00.000Z",
+  },
+  {
     id: "prod-iphone-15-pro",
     name: "iPhone 15 Pro",
     brand: "Apple",
@@ -156,6 +201,40 @@ function buySeed(
 }
 
 const SEED_BUY: BuyDemand[] = [
+  ...buySeed("prod-fuji-x100vi", "camera", "Fujifilm X100VI", [
+    [2_150_000, 0],
+    [2_120_000, 1],
+    [2_100_000, 2],
+    [2_050_000, 3],
+    [2_180_000, 4],
+    [2_080_000, 5],
+    [2_130_000, 6],
+    [2_000_000, 7],
+  ]),
+  ...buySeed("prod-fuji-x100v", "camera", "Fujifilm X100V", [
+    [1_650_000, 0],
+    [1_620_000, 2],
+    [1_600_000, 3],
+    [1_580_000, 5],
+    [1_700_000, 7],
+  ]),
+  ...buySeed("prod-ricoh-gr3", "camera", "Ricoh GR III", [
+    [1_450_000, 0],
+    [1_420_000, 1],
+    [1_400_000, 4],
+    [1_380_000, 6],
+  ]),
+  ...buySeed("prod-ricoh-gr3x", "camera", "Ricoh GR IIIx", [
+    [1_500_000, 0],
+    [1_470_000, 2],
+    [1_430_000, 5],
+    [1_400_000, 7],
+  ]),
+  ...buySeed("prod-sony-rx100m7", "camera", "Sony RX100 VII", [
+    [1_350_000, 1],
+    [1_320_000, 3],
+    [1_280_000, 5],
+  ]),
   ...buySeed("prod-iphone-15-pro", "electronics", "iPhone 15 Pro", [
     [900000, 12],
     [950000, 10],
