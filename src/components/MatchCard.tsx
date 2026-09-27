@@ -12,7 +12,7 @@ import { formatWon } from "@/lib/format";
 import "./matchCard.css";
 
 export function MatchCard({ match }: { match: Match }) {
-  const { currentUser, getProduct, state, expressBuyerInterest } = useDan();
+  const { currentUser, getProduct, state, expressBuyerInterest, connectAsSeller } = useDan();
   const [busy, setBusy] = useState(false);
 
   async function onInterest() {
@@ -25,6 +25,15 @@ export function MatchCard({ match }: { match: Match }) {
     }
   }
 
+  async function onConnect() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await connectAsSeller(match.id);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   const demand = state.demands.find((d) => d.id === match.demandId);
   const sell = match.sellIntentId
