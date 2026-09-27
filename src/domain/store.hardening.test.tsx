@@ -156,6 +156,9 @@ describe("store mutations / login race", () => {
     const { result } = renderHook(() => useDan(), { wrapper });
 
     act(() => {
+      result.current.resetDemo();
+    });
+    act(() => {
       result.current.login("user-you");
     });
     await act(async () => {
