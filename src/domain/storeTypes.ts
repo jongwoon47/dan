@@ -1,5 +1,7 @@
 import type {
   Demand,
+  DealEvidence,
+  DealSnapshot,
   Match,
   Ownership,
   Response,
@@ -13,4 +15,6 @@ export interface DanState {
   sellIntents: SellIntent[];
   responses: Response[];
   matches: Match[];
+  dealEvidence: DealEvidence[];
+  dealSnapshots: DealSnapshot[];
 }
