@@ -133,6 +133,8 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
       sellIntents,
       responses,
       matches,
+      dealEvidence: [],
+      dealSnapshots: [],
     }),
     [auth.user?.id, demands, ownerships, sellIntents, responses, matches],
   );
@@ -207,6 +209,36 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
           return null;
         }
         return run(() => api.upsertSellIntentRemote(payload));
+      },
+      getDealEvidence: async (matchId) => {
+        if (!currentUser) return null;
+        try {
+          return await api.getDealEvidenceRemote(matchId);
+        } catch {
+          return null;
+        }
+      },
+      upsertDealEvidence: async (payload) => {
+        if (!currentUser) {
+          assignLogin();
+          return null;
+        }
+        return run(() => api.upsertDealEvidenceRemote(payload));
+      },
+      getDealSnapshot: async (matchId) => {
+        if (!currentUser) return null;
+        try {
+          return await api.getDealSnapshotRemote(matchId);
+        } catch {
+          return null;
+        }
+      },
+      confirmDealSnapshot: async (payload) => {
+        if (!currentUser) {
+          assignLogin();
+          return null;
+        }
+        return run(() => api.confirmDealSnapshotRemote(payload));
       },
       createResponse: async (payload) => {
         if (!currentUser) {
