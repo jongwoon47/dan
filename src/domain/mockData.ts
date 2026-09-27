@@ -163,6 +163,46 @@ function tradeFrom(options: FulfillmentOption[]) {
   return "any" as const;
 }
 
+
+function pilotCameraFulfillment(): FulfillmentOption[] {
+  return [{ mode: "MEETUP", place: placeFromLabel("서울") }];
+}
+
+function buySeedPilotCamera(
+  productId: string,
+  productName: string,
+  entries: Array<[number, number]>,
+): BuyDemand[] {
+  const conditions: BuyDemand["details"]["conditionPreference"][] = [
+    "any",
+    "like_new",
+    "lightly_used",
+    "any",
+  ];
+  return entries.map(([maxPrice, days], index) => {
+    const fulfillmentOptions = pilotCameraFulfillment();
+    return {
+      id: `demand-${productId}-${index}`,
+      userId: `seeker-${productId}-${index}`,
+      type: "BUY" as const,
+      title: `${productName} | ${Math.round(maxPrice / 10_000)}${ko.manWon}`,
+      description: `${productName} / ${maxPrice.toLocaleString("ko-KR")}${ko.won}`,
+      category: "camera" as const,
+      budget: maxPrice,
+      fulfillmentOptions,
+      status: "ACTIVE" as const,
+      createdAt: daysAgo(days),
+      expiresAt: daysFromNow(Math.max(1, 7 - (days % 7))),
+      details: {
+        productId,
+        maxPrice,
+        conditionPreference: conditions[index % conditions.length]!,
+        tradeMethod: "meetup" as const,
+      },
+    };
+  });
+}
+
 function buySeed(
   productId: string,
   category: BuyDemand["category"],
@@ -201,7 +241,7 @@ function buySeed(
 }
 
 const SEED_BUY: BuyDemand[] = [
-  ...buySeed("prod-fuji-x100vi", "camera", "Fujifilm X100VI", [
+  ...buySeedPilotCamera("prod-fuji-x100vi", "Fujifilm X100VI", [
     [2_150_000, 0],
     [2_120_000, 1],
     [2_100_000, 2],
@@ -211,26 +251,26 @@ const SEED_BUY: BuyDemand[] = [
     [2_130_000, 6],
     [2_000_000, 7],
   ]),
-  ...buySeed("prod-fuji-x100v", "camera", "Fujifilm X100V", [
+  ...buySeedPilotCamera("prod-fuji-x100v", "Fujifilm X100V", [
     [1_650_000, 0],
     [1_620_000, 2],
     [1_600_000, 3],
     [1_580_000, 5],
     [1_700_000, 7],
   ]),
-  ...buySeed("prod-ricoh-gr3", "camera", "Ricoh GR III", [
+  ...buySeedPilotCamera("prod-ricoh-gr3", "Ricoh GR III", [
     [1_450_000, 0],
     [1_420_000, 1],
     [1_400_000, 4],
     [1_380_000, 6],
   ]),
-  ...buySeed("prod-ricoh-gr3x", "camera", "Ricoh GR IIIx", [
+  ...buySeedPilotCamera("prod-ricoh-gr3x", "Ricoh GR IIIx", [
     [1_500_000, 0],
     [1_470_000, 2],
     [1_430_000, 5],
     [1_400_000, 7],
   ]),
-  ...buySeed("prod-sony-rx100m7", "camera", "Sony RX100 VII", [
+  ...buySeedPilotCamera("prod-sony-rx100m7", "Sony RX100 VII", [
     [1_350_000, 1],
     [1_320_000, 3],
     [1_280_000, 5],
