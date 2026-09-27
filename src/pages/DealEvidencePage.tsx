@@ -122,6 +122,9 @@ export function DealEvidencePage() {
 
   async function submit() {
     if (!canSubmit || busy) return;
+    const activeMatch = match;
+    const activeProduct = product;
+    if (!activeMatch || !activeProduct) return;
     setSubmitError("");
     const row = await upsertDealEvidence({
       matchId,
@@ -135,16 +138,16 @@ export function DealEvidencePage() {
       knownIssues,
       repairHistory,
       waterDamageStatement,
-      evidenceMeta: { source: "seller_submitted", productCategory: product.category },
+      evidenceMeta: { source: "seller_submitted", productCategory: activeProduct.category },
     });
     if (!row) {
       setSubmitError("증거를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
       return;
     }
-    if (match.status === "BUYER_INTERESTED") {
-      await connectAsSeller(match.id);
+    if (activeMatch.status === "BUYER_INTERESTED") {
+      await connectAsSeller(activeMatch.id);
     }
-    navigate(`/deal/${match.id}/snapshot`);
+    navigate(`/deal/${activeMatch.id}/snapshot`);
   }
 
   return (
