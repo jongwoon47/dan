@@ -7,6 +7,8 @@ import type {
   ChatMessage,
   Demand,
   DemandAggregate,
+  DealEvidence,
+  DealSnapshot,
   DemandType,
   FeedItem,
   ItemCondition,
@@ -61,7 +63,32 @@ export interface DanContextValue {
   createSellIntent: (payload: {
     ownershipId: string;
     minimumPrice: number;
+    targetDemandId?: string;
+    approxUsageCount?: number;
+    conditionNote?: string;
+    quickPhotoUrl?: string;
   }) => Promise<SellIntent | null>;
+  getDealEvidence: (matchId: string) => Promise<DealEvidence | null>;
+  upsertDealEvidence: (payload: {
+    matchId: string;
+    possessionPhotoUrl?: string;
+    serialLast4?: string;
+    usageCount?: number;
+    purchaseDate?: string;
+    warrantyUntil?: string;
+    components?: string[];
+    cosmeticNotes?: string;
+    knownIssues?: string;
+    repairHistory?: string;
+    waterDamageStatement?: string;
+    evidenceMeta?: Record<string, unknown>;
+  }) => Promise<DealEvidence | null>;
+  getDealSnapshot: (matchId: string) => Promise<DealSnapshot | null>;
+  confirmDealSnapshot: (payload: {
+    matchId: string;
+    agreedPrice: number;
+    snapshot: Record<string, unknown>;
+  }) => Promise<DealSnapshot | null>;
   createResponse: (payload: {
     demandId: string;
     message: string;
