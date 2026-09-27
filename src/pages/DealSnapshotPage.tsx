@@ -96,10 +96,12 @@ export function DealSnapshotPage() {
 
   async function confirm() {
     if (!payload || busy) return;
+    const activeSell = sell;
+    if (!activeSell) return;
     setError("");
     const result = await confirmDealSnapshot({
       matchId,
-      agreedPrice: sell.minimumPrice,
+      agreedPrice: activeSell.minimumPrice,
       snapshot: payload,
     });
     if (!result) {
