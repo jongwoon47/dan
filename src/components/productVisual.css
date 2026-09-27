@@ -72,3 +72,25 @@
   font-size: 0.75rem;
   font-weight: 600;
 }
+
+
+.product-visual--camera {
+  background:
+    radial-gradient(circle at 50% 35%, rgba(91, 63, 242, 0.08), transparent 58%),
+    linear-gradient(145deg, #fbfaff, #f0edff);
+  color: #312b49;
+}
+
+.product-visual__camera {
+  width: 72%;
+  height: auto;
+  display: block;
+}
+
+.product-visual--sm .product-visual__camera {
+  width: 78%;
+}
+
+.product-visual--lg .product-visual__camera {
+  width: min(42%, 150px);
+}
