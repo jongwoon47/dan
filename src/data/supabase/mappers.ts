@@ -90,6 +90,10 @@ export type DbSellIntent = {
   user_id: string;
   product_id: string;
   minimum_price: number;
+  target_demand_id?: string | null;
+  approx_usage_count?: number | null;
+  condition_note?: string | null;
+  quick_photo_url?: string | null;
   status: SellIntent["status"];
   created_at: string;
   updated_at: string;
@@ -117,6 +121,9 @@ export type DbMatch = {
   buyer_id: string;
   seller_id: string;
   status: Exclude<MatchStatus, "POTENTIAL">;
+  deal_stage?: Match["dealStage"] | null;
+  payment_status?: Match["paymentStatus"] | null;
+  cancel_reason?: Match["cancelReason"] | null;
   created_at: string;
   updated_at: string;
   buyer_completed_at?: string | null;
@@ -151,6 +158,9 @@ export function mapDemand(row: DbDemand): Demand {
     budget: Number(row.budget),
     fulfillmentOptions,
     status: row.status,
+    dealStage: row.deal_stage ?? undefined,
+    paymentStatus: row.payment_status ?? undefined,
+    cancelReason: row.cancel_reason ?? undefined,
     createdAt: row.created_at,
     expiresAt: row.expires_at ?? row.created_at,
   };
@@ -221,6 +231,11 @@ export function mapSellIntent(row: DbSellIntent): SellIntent {
     userId: row.user_id,
     productId: row.product_id,
     minimumPrice: Number(row.minimum_price),
+    targetDemandId: row.target_demand_id ?? undefined,
+    approxUsageCount:
+      row.approx_usage_count == null ? undefined : Number(row.approx_usage_count),
+    conditionNote: row.condition_note?.trim() || undefined,
+    quickPhotoUrl: row.quick_photo_url?.trim() || undefined,
     status: row.status,
     createdAt: row.created_at,
   };
