@@ -23,6 +23,33 @@ export type TradeMethod = "meetup" | "shipping" | "any";
 export type DemandStatus = "ACTIVE" | "MATCHED" | "CLOSED" | "EXPIRED";
 export type OwnershipStatus = "OWNED" | "RELEASED";
 export type SellIntentStatus = "OPEN" | "PAUSED" | "MATCHED" | "CLOSED";
+
+export type DealStage =
+  | "MATCHING"
+  | "BUYER_INTERESTED"
+  | "EVIDENCE_PENDING"
+  | "EVIDENCE_READY"
+  | "DEAL_REVIEW"
+  | "DEAL_LOCKED"
+  | "PAYMENT_PENDING"
+  | "PAID"
+  | "HANDOFF_READY"
+  | "COMPLETED"
+  | "DISPUTE"
+  | "CANCELLED"
+  | "REFUNDED";
+
+export type PaymentStatus = "NOT_STARTED" | "PENDING" | "PAID" | "REFUNDED";
+
+export type CancelReason =
+  | "BUYER_CHANGED_MIND"
+  | "SELLER_CHANGED_MIND"
+  | "SELLER_CHANGED_TERMS"
+  | "BUYER_NO_PAYMENT"
+  | "ITEM_UNAVAILABLE"
+  | "MUTUAL_CANCEL"
+  | "SYSTEM_CANCEL"
+  | "RISK_CANCEL";
 export type ResponseStatus = "OPEN" | "ACCEPTED" | "WITHDRAWN" | "DECLINED";
 export type MatchStatus =
   | "POTENTIAL"
@@ -130,8 +157,51 @@ export interface SellIntent {
   userId: string;
   productId: string;
   minimumPrice: number;
+  /** Optional demand this quick offer was opened from. */
+  targetDemandId?: string;
+  /** Camera V1: approximate shutter count / usage count. */
+  approxUsageCount?: number;
+  /** Seller's short, non-verified condition statement. */
+  conditionNote?: string;
+  /** Optional seller-submitted current-photo URL. */
+  quickPhotoUrl?: string;
   status: SellIntentStatus;
   createdAt: string;
+}
+
+export interface DealEvidence {
+  id: string;
+  matchId: string;
+  sellerId: string;
+  possessionPhotoUrl?: string;
+  serialLast4?: string;
+  usageCount?: number;
+  purchaseDate?: string;
+  warrantyUntil?: string;
+  components: string[];
+  cosmeticNotes: string;
+  knownIssues: string;
+  repairHistory: string;
+  waterDamageStatement: string;
+  evidenceMeta: Record<string, unknown>;
+  submittedAt: string;
+  updatedAt: string;
+}
+
+export interface DealSnapshot {
+  id: string;
+  matchId: string;
+  demandId: string;
+  productId?: string;
+  buyerId: string;
+  sellerId: string;
+  agreedPrice: number;
+  snapshot: Record<string, unknown>;
+  buyerConfirmedAt?: string;
+  sellerConfirmedAt?: string;
+  lockedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Response {
@@ -154,6 +224,9 @@ export interface Match {
   buyerId: string;
   sellerId: string;
   status: MatchStatus;
+  dealStage?: DealStage;
+  paymentStatus?: PaymentStatus;
+  cancelReason?: CancelReason;
   createdAt: string;
   buyerCompletedAt?: string;
   sellerCompletedAt?: string;
