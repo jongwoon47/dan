@@ -1,21 +1,21 @@
 :root {
   /* DAN identity — soft marketplace surface + cyan-teal accent */
-  --dan-bg: #f7f8fa;
-  --dan-bg-elevated: #eef2f4;
+  --dan-bg: #f8f8fc;
+  --dan-bg-elevated: #f1effb;
   --dan-surface: #ffffff;
   --dan-ink: #14161a;
   --dan-ink-secondary: #4b5563;
   --dan-ink-muted: #6b7280;
-  --dan-border: #e8eaee;
-  --dan-border-strong: #d5dae0;
-  --dan-accent: #0b8573;
-  --dan-accent-pressed: #097564;
-  --dan-accent-soft: #e6f7f3;
-  --dan-accent-text: #086656;
+  --dan-border: #e9e6f3;
+  --dan-border-strong: #d8d2ec;
+  --dan-accent: #5b3ff2;
+  --dan-accent-pressed: #4930d4;
+  --dan-accent-soft: #f0ecff;
+  --dan-accent-text: #4930cf;
   --dan-warn: #b54708;
   --dan-warn-soft: #fffaeb;
   --dan-danger: #b42318;
-  --dan-success: #067647;
+  --dan-success: #15845b;
 
   /* Spacing rhythm: 4 / 8 / 12 / 16 / 24 / 32 / 40 */
   --space-xs: 4px;
