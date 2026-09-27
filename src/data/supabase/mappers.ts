@@ -112,6 +112,41 @@ export type DbResponse = {
   updated_at: string;
 };
 
+export type DbDealEvidence = {
+  id: string;
+  match_id: string;
+  seller_id: string;
+  possession_photo_url: string | null;
+  serial_last4: string | null;
+  usage_count: number | null;
+  purchase_date: string | null;
+  warranty_until: string | null;
+  components: unknown;
+  cosmetic_notes: string;
+  known_issues: string;
+  repair_history: string;
+  water_damage_statement: string;
+  evidence_meta: unknown;
+  submitted_at: string;
+  updated_at: string;
+};
+
+export type DbDealSnapshot = {
+  id: string;
+  match_id: string;
+  demand_id: string;
+  product_id: string | null;
+  buyer_id: string;
+  seller_id: string;
+  agreed_price: number;
+  snapshot: unknown;
+  buyer_confirmed_at: string | null;
+  seller_confirmed_at: string | null;
+  locked_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type DbMatch = {
   id: string;
   demand_id: string;
@@ -251,6 +286,53 @@ export function mapResponse(row: DbResponse): Response {
     availabilityText: row.availability_text?.trim() || undefined,
     status: row.status,
     createdAt: row.created_at,
+  };
+}
+
+export function mapDealEvidence(row: DbDealEvidence): DealEvidence {
+  return {
+    id: row.id,
+    matchId: row.match_id,
+    sellerId: row.seller_id,
+    possessionPhotoUrl: row.possession_photo_url ?? undefined,
+    serialLast4: row.serial_last4 ?? undefined,
+    usageCount: row.usage_count == null ? undefined : Number(row.usage_count),
+    purchaseDate: row.purchase_date ?? undefined,
+    warrantyUntil: row.warranty_until ?? undefined,
+    components: Array.isArray(row.components)
+      ? row.components.filter((x): x is string => typeof x === "string")
+      : [],
+    cosmeticNotes: row.cosmetic_notes ?? "",
+    knownIssues: row.known_issues ?? "",
+    repairHistory: row.repair_history ?? "",
+    waterDamageStatement: row.water_damage_statement ?? "",
+    evidenceMeta:
+      row.evidence_meta && typeof row.evidence_meta === "object"
+        ? (row.evidence_meta as Record<string, unknown>)
+        : {},
+    submittedAt: row.submitted_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function mapDealSnapshot(row: DbDealSnapshot): DealSnapshot {
+  return {
+    id: row.id,
+    matchId: row.match_id,
+    demandId: row.demand_id,
+    productId: row.product_id ?? undefined,
+    buyerId: row.buyer_id,
+    sellerId: row.seller_id,
+    agreedPrice: Number(row.agreed_price),
+    snapshot:
+      row.snapshot && typeof row.snapshot === "object"
+        ? (row.snapshot as Record<string, unknown>)
+        : {},
+    buyerConfirmedAt: row.buyer_confirmed_at ?? undefined,
+    sellerConfirmedAt: row.seller_confirmed_at ?? undefined,
+    lockedAt: row.locked_at ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
