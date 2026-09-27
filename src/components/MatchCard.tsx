@@ -65,15 +65,10 @@ export function MatchCard({ match }: { match: Match }) {
                 ? ko.tradeDoneTitle
                 : ko.connectedMsg}
             </p>
-            {match.status === "CONNECTED" ? (
-              <Button to={`/deal/${match.id}/snapshot`} fullWidth>
-                거래 조건 확인
-              </Button>
-            ) : null}
             <Button
               to={`/match/${match.id}`}
               fullWidth
-              variant="secondary"
+              variant={match.status === "COMPLETED" ? "secondary" : "primary"}
             >
               {ko.openChat}
             </Button>
@@ -166,10 +161,15 @@ export function MatchCard({ match }: { match: Match }) {
                 ? ko.tradeDoneTitle
                 : ko.connectedMsg}
             </p>
+            {match.status === "CONNECTED" ? (
+              <Button to={`/deal/${match.id}/snapshot`} fullWidth>
+                거래 조건 확인
+              </Button>
+            ) : null}
             <Button
               to={`/match/${match.id}`}
               fullWidth
-              variant={match.status === "COMPLETED" ? "secondary" : "primary"}
+              variant="secondary"
             >
               {ko.openChat}
             </Button>
