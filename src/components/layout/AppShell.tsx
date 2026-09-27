@@ -206,58 +206,54 @@ function AppShellInner() {
       </main>
 
       {mode === "root" ? (
-        <>
-          <nav className="bottom-nav" aria-label="하단 메뉴">
-            <NavLink to="/feed">
-              {({ isActive }) => (
-                <>
-                  <IconFeed active={isActive} />
-                  <span>{ko.navFeed}</span>
-                </>
-              )}
-            </NavLink>
-            <NavLink to="/chats">
-              {({ isActive }) => (
-                <>
-                  <span className="bottom-nav__icon-wrap">
-                    <IconChat active={isActive} />
-                    {chatBadge ? (
-                      <span className="nav-badge nav-badge--float">
-                        {chatBadge}
-                      </span>
-                    ) : null}
-                  </span>
-                  <span>{ko.navChats}</span>
-                </>
-              )}
-            </NavLink>
-            <NavLink to="/my" className="bottom-nav__my">
-              {({ isActive }) => (
-                <>
-                  <span className="bottom-nav__icon-wrap">
-                    <IconMy active={isActive} />
-                    {myBadge ? (
-                      <span className="nav-badge nav-badge--float">
-                        {myBadge}
-                      </span>
-                    ) : null}
-                  </span>
-                  <span>{ko.navMy}</span>
-                </>
-              )}
-            </NavLink>
-          </nav>
-          {pathname !== "/" ? (
-            <NavLink
-              to="/create"
-              className="create-fab"
-              aria-label={ko.navCreate}
-            >
-              <IconPlus />
-              <span className="create-fab__label">{ko.fabCreate}</span>
-            </NavLink>
-          ) : null}
-        </>
+        <nav className="bottom-nav bottom-nav--v1" aria-label="하단 메뉴">
+          <NavLink to="/" end>
+            {({ isActive }) => (
+              <>
+                <IconFeed active={isActive} />
+                <span>홈</span>
+              </>
+            )}
+          </NavLink>
+          <NavLink to="/my">
+            {({ isActive }) => (
+              <>
+                <span className="bottom-nav__icon-wrap">
+                  <IconMy active={isActive} />
+                  {myBadge ? (
+                    <span className="nav-badge nav-badge--float">{myBadge}</span>
+                  ) : null}
+                </span>
+                <span>내 구매수요</span>
+              </>
+            )}
+          </NavLink>
+          <NavLink to="/buy/new" className="bottom-nav__create" aria-label="구매수요 등록">
+            <span className="bottom-nav__create-circle"><IconPlus /></span>
+            <span>등록</span>
+          </NavLink>
+          <NavLink to="/chats">
+            {({ isActive }) => (
+              <>
+                <span className="bottom-nav__icon-wrap">
+                  <IconChat active={isActive} />
+                  {chatBadge ? (
+                    <span className="nav-badge nav-badge--float">{chatBadge}</span>
+                  ) : null}
+                </span>
+                <span>{ko.navChats}</span>
+              </>
+            )}
+          </NavLink>
+          <NavLink to={currentUser ? `/profile/${currentUser.id}` : "/login"}>
+            {({ isActive }) => (
+              <>
+                <IconMy active={isActive} />
+                <span>프로필</span>
+              </>
+            )}
+          </NavLink>
+        </nav>
       ) : null}
     </div>
   );
