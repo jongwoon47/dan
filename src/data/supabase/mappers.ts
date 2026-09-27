@@ -1,5 +1,7 @@
 import type {
   BuyDemand,
+  DealEvidence,
+  DealSnapshot,
   Demand,
   DemandCategory,
   DemandType,
@@ -193,9 +195,6 @@ export function mapDemand(row: DbDemand): Demand {
     budget: Number(row.budget),
     fulfillmentOptions,
     status: row.status,
-    dealStage: row.deal_stage ?? undefined,
-    paymentStatus: row.payment_status ?? undefined,
-    cancelReason: row.cancel_reason ?? undefined,
     createdAt: row.created_at,
     expiresAt: row.expires_at ?? row.created_at,
   };
@@ -346,6 +345,9 @@ export function mapMatch(row: DbMatch): Match {
     buyerId: row.buyer_id,
     sellerId: row.seller_id,
     status: row.status,
+    dealStage: row.deal_stage ?? undefined,
+    paymentStatus: row.payment_status ?? undefined,
+    cancelReason: row.cancel_reason ?? undefined,
     createdAt: row.created_at,
     buyerCompletedAt: row.buyer_completed_at ?? undefined,
     sellerCompletedAt: row.seller_completed_at ?? undefined,
