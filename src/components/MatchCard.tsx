@@ -12,7 +12,7 @@ import { formatWon } from "@/lib/format";
 import "./matchCard.css";
 
 export function MatchCard({ match }: { match: Match }) {
-  const { currentUser, getProduct, state, expressBuyerInterest, connectAsSeller } = useDan();
+  const { currentUser, getProduct, state, expressBuyerInterest } = useDan();
   const [busy, setBusy] = useState(false);
 
   async function onInterest() {
@@ -25,15 +25,7 @@ export function MatchCard({ match }: { match: Match }) {
     }
   }
 
-  async function onConnect() {
-    if (busy) return;
-    setBusy(true);
-    try {
-      await connectAsSeller(match.id);
-    } finally {
-      setBusy(false);
-    }
-  }
+
   const demand = state.demands.find((d) => d.id === match.demandId);
   const sell = match.sellIntentId
     ? state.sellIntents.find((s) => s.id === match.sellIntentId)
@@ -64,10 +56,15 @@ export function MatchCard({ match }: { match: Match }) {
                 ? ko.tradeDoneTitle
                 : ko.connectedMsg}
             </p>
+            {match.status === "CONNECTED" ? (
+              <Button to={`/deal/${match.id}/snapshot`} fullWidth>
+                거래 조건 확인
+              </Button>
+            ) : null}
             <Button
               to={`/match/${match.id}`}
               fullWidth
-              variant={match.status === "COMPLETED" ? "secondary" : "primary"}
+              variant="secondary"
             >
               {ko.openChat}
             </Button>
@@ -149,8 +146,8 @@ export function MatchCard({ match }: { match: Match }) {
           </Button>
         ) : null}
         {isSeller && match.status === "BUYER_INTERESTED" ? (
-          <Button fullWidth onClick={() => void onConnect()} disabled={busy}>
-            {busy ? "..." : ko.connect}
+          <Button fullWidth to={`/deal/${match.id}/evidence`}>
+            증거 제출하기
           </Button>
         ) : null}
         {match.status === "CONNECTED" || match.status === "COMPLETED" ? (
