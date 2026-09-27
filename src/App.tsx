@@ -13,6 +13,8 @@ import { DemandDetailPage } from "@/pages/DemandDetailPage";
 import { DemandEditPage } from "@/pages/DemandEditPage";
 import { DemandFeedPage } from "@/pages/DemandFeedPage";
 import { DemandItemPage } from "@/pages/DemandItemPage";
+import { DealEvidencePage } from "@/pages/DealEvidencePage";
+import { DealSnapshotPage } from "@/pages/DealSnapshotPage";
 import { HomePage } from "@/pages/HomePage";
 import { LoginPage } from "@/pages/LoginPage";
 import { MatchChatPage } from "@/pages/MatchChatPage";
@@ -45,6 +47,8 @@ export default function App() {
               <Route path="activity" element={<ActivityPage />} />
               <Route path="profile/:userId" element={<ProfilePage />} />
               <Route path="match/:matchId" element={<MatchChatPage />} />
+              <Route path="deal/:matchId/evidence" element={<DealEvidencePage />} />
+              <Route path="deal/:matchId/snapshot" element={<DealSnapshotPage />} />
               <Route path="demand/item/:demandId" element={<DemandItemPage />} />
               <Route path="demand/item/:demandId/edit" element={<DemandEditPage />} />
               <Route path="demand/:productId" element={<DemandDetailPage />} />
