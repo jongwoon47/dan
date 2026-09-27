@@ -26,7 +26,7 @@ export function HomePage() {
           원하는 카메라와 가격을 남기면, 그 물건을 가진 사람이
           판매를 제안합니다.
         </p>
-        <Button to="/create?type=BUY" fullWidth size="lg">
+        <Button to="/buy/new" fullWidth size="lg">
           구매수요 등록하기
         </Button>
       </section>
@@ -46,7 +46,7 @@ export function HomePage() {
           <EmptyState
             title="아직 카메라 구매수요가 없어요"
             body="첫 구매수요를 남기면 여기에 표시돼요."
-            action={<Button to="/create?type=BUY">구매수요 등록</Button>}
+            action={<Button to="/buy/new">구매수요 등록</Button>}
           />
         ) : (
           <div className="live-demand-list">
