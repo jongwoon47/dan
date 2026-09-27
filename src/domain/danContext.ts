@@ -54,7 +54,7 @@ export interface DanContextValue {
     tradeMethod?: string;
   }) => Promise<Demand | null>;
   closeDemand: (demandId: string) => Promise<Demand | null>;
-  /** BUY only — soft-expired ACTIVE row gets +30d. No auto-repost. */
+  /** BUY only — user-confirmed Live Demand gets +7d. No auto-repost. */
   extendBuyDemand: (demandId: string) => Promise<Demand | null>;
   createOwnership: (payload: {
     productId: string;
