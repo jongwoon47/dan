@@ -15,7 +15,7 @@ import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
-import type { ChatMessage, Demand, Match } from "@/domain/types";
+import type { ChatMessage, DealSnapshot, Demand, Match } from "@/domain/types";
 import "./pages.css";
 
 const POLL_MS = 8000;
@@ -87,6 +87,7 @@ export function MatchChatPage() {
     blockUser,
     reportUser,
     getPublicProfile,
+    getDealSnapshot,
     busy,
   } = useDan();
   const match = myMatches.find((m) => m.id === matchId);
@@ -113,6 +114,7 @@ export function MatchChatPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [peerName, setPeerName] = useState("");
+  const [dealSnapshot, setDealSnapshot] = useState<DealSnapshot | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const onMenuOpenChange = useCallback((open: boolean) => {
     setMenuOpen(open);
@@ -154,6 +156,20 @@ export function MatchChatPage() {
       window.clearInterval(timer);
     };
   }, [load]);
+
+  useEffect(() => {
+    if (!matchId || demand?.type !== "BUY") {
+      setDealSnapshot(null);
+      return;
+    }
+    let cancelled = false;
+    void getDealSnapshot(matchId).then((row) => {
+      if (!cancelled) setDealSnapshot(row);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [getDealSnapshot, matchId, demand?.type, match?.dealStage]);
 
   useEffect(() => {
     if (!peerId) return;
@@ -218,6 +234,9 @@ export function MatchChatPage() {
 
   const mineDone = currentUser ? iConfirmed(match, currentUser.id) : false;
   const peerDone = currentUser ? peerConfirmed(match, currentUser.id) : false;
+  const isBuyTrade = demand?.type === "BUY";
+  const buySnapshotLocked = Boolean(dealSnapshot?.lockedAt);
+  const buyPaid = match.paymentStatus === "PAID";
 
   let lastDay = "";
 
@@ -305,6 +324,30 @@ export function MatchChatPage() {
             ) : (
               <p className="trade-status__hint">{ko.tradePeerClosed}</p>
             )}
+          </>
+        ) : isBuyTrade && !buySnapshotLocked ? (
+          <>
+            <p className="trade-status__state">거래 조건 확인이 먼저 필요해요</p>
+            <p className="trade-status__hint">
+              판매자가 제출한 상태와 가격을 양쪽이 확인하면 Deal Snapshot이 고정됩니다.
+            </p>
+            <div className="trade-status__actions">
+              <Button to={`/deal/${match.id}/snapshot`} fullWidth>
+                거래 조건 확인
+              </Button>
+            </div>
+          </>
+        ) : isBuyTrade && !buyPaid ? (
+          <>
+            <p className="trade-status__state">안전결제 연결 전 단계예요</p>
+            <p className="trade-status__hint">
+              Deal Snapshot은 확정됐습니다. PG 안전결제가 실제 연동되기 전에는 이 화면에서 실거래 완료 처리를 허용하지 않습니다.
+            </p>
+            <div className="trade-status__actions">
+              <Button to={`/deal/${match.id}/snapshot`} fullWidth variant="secondary">
+                확정된 거래 조건 보기
+              </Button>
+            </div>
           </>
         ) : peerDone && !mineDone ? (
           <>
