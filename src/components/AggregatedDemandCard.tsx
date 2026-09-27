@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ko } from "@/copy/ko";
+import { ProductVisual } from "@/components/ProductVisual";
 import type { DemandAggregate, Product } from "@/domain/types";
 import { formatWon } from "@/lib/format";
 import "./feedCards.css";
@@ -13,38 +13,24 @@ export function AggregatedDemandCard({
 }) {
   const price = aggregate.highestIntentPrice;
   return (
-    <Link to={`/demand/${product.id}`} className="feed-row feed-row--agg">
-      <div className="feed-row__meta">
-        <span className="feed-row__type">{ko.typeBuy}</span>
-        <h3 className="feed-row__title">{product.name}</h3>
-        {aggregate.seekerCount > 0 ? (
-          <p className="feed-row__signal">
-            <strong>
-              {aggregate.seekerCount}
-              {ko.myung}
-            </strong>
-            {ko.similarSeeking}
-          </p>
-        ) : null}
+    <Link to={`/demand/${product.id}`} className="live-demand-card">
+      <ProductVisual product={product} size="sm" />
+      <div className="live-demand-card__body">
+        <div className="live-demand-card__top">
+          <h3>{product.name}</h3>
+          <span aria-hidden>›</span>
+        </div>
+        <p className="live-demand-card__signal">
+          <strong>구매수요 {aggregate.seekerCount}명</strong>
+          <span> · 최근 확인된 수요</span>
+        </p>
         {aggregate.fulfillmentSummary ? (
-          <p className="feed-row__place">{aggregate.fulfillmentSummary}</p>
+          <p className="live-demand-card__meta">{aggregate.fulfillmentSummary}</p>
         ) : null}
-      </div>
-      <div className="feed-row__stats">
         {price > 0 ? (
-          <div>
-            <span>{ko.maxBudget}</span>
-            <strong>{formatWon(price)}</strong>
-          </div>
-        ) : null}
-        {aggregate.recent7dDelta > 0 ? (
-          <div>
-            <span>{ko.thisWeek}</span>
-            <strong className="feed-row__trend">
-              +{aggregate.recent7dDelta}
-              {ko.myung}
-            </strong>
-          </div>
+          <p className="live-demand-card__price">
+            최대 희망가 <strong>{formatWon(price)}</strong>
+          </p>
         ) : null}
       </div>
     </Link>
