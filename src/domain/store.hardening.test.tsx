@@ -142,6 +142,33 @@ describe("store mutations / login race", () => {
     act(() => {
       result.current.login("user-jun");
     });
+
+    await act(async () => {
+      await result.current.connectAsSeller(interested!.id);
+    });
+    expect(
+      result.current.state.matches.find((m) => m.id === interested!.id)?.status,
+    ).toBe("BUYER_INTERESTED");
+
+    let challengeCode = "";
+    await act(async () => {
+      const challenge = await result.current.issueDealEvidenceChallenge(interested!.id);
+      expect(challenge?.challengeCode).toHaveLength(6);
+      challengeCode = challenge!.challengeCode;
+    });
+
+    await act(async () => {
+      const evidence = await result.current.upsertDealEvidence({
+        matchId: interested!.id,
+        challengeCode,
+        possessionPhotoUrl: "data:image/png;base64,AA==",
+        serialLast4: "3812",
+        cosmeticNotes: "상태 좋음",
+        knownIssues: "없음",
+      });
+      expect(evidence).toBeTruthy();
+    });
+
     await act(async () => {
       await result.current.connectAsSeller(interested!.id);
     });
