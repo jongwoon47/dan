@@ -131,6 +131,7 @@ language plpgsql
 set search_path = public
 as $$
 begin
+  if auth.uid() is null then return new; end if;
   if new.type = 'BUY' and new.status = 'ACTIVE' then
     if not exists (
       select 1
@@ -160,6 +161,7 @@ as $$
 declare
   v_type text;
 begin
+  if auth.uid() is null then return new; end if;
   if new.status <> 'CONNECTED' or old.status = 'CONNECTED' then
     return new;
   end if;
