@@ -194,6 +194,16 @@ export function HandoffPage() {
       {match.paymentStatus !== "PAID" ? (
         <section className="safe-payment-gate">
           <strong>안전결제 확인 전에는 인도 완료를 누를 수 없어요</strong>
+          {match.paymentDueAt ? (
+            <p className="payment-deadline">
+              결제 기한 · {new Date(match.paymentDueAt).toLocaleString("ko-KR", {
+                month: "numeric",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </p>
+          ) : null}
           <p>
             실제 서비스에서는 PG가 결제 완료를 서버에 통지한 뒤에만 이 단계가 열립니다.
             사용자가 직접 결제 상태를 바꿀 수 없습니다.
