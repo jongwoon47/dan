@@ -21,6 +21,7 @@ import type {
   DemandAggregate,
   DealDispute,
   DealEvidence,
+  DealEvidenceChallenge,
   DealSnapshot,
   Match,
   Ownership,
@@ -50,6 +51,73 @@ import {
   type DbResponse,
   type DbSellIntent,
 } from "./mappers";
+
+const EVIDENCE_BUCKET = "dan-v1-evidence";
+const STORAGE_PREFIX = `storage://${EVIDENCE_BUCKET}/`;
+
+function decodeImageDataUrl(value: string): {
+  blob: Blob;
+  extension: "jpg" | "png" | "webp";
+} | null {
+  const match = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/i.exec(value);
+  if (!match) return null;
+  const mime = match[1]!.toLowerCase();
+  const bytes = Uint8Array.from(atob(match[2]!), (ch) => ch.charCodeAt(0));
+  const extension = mime === "image/jpeg" ? "jpg" : mime === "image/png" ? "png" : "webp";
+  return { blob: new Blob([bytes], { type: mime }), extension };
+}
+
+async function persistPrivateEvidenceImage(
+  value: string | undefined,
+  scope: "quick-offers" | "deal-evidence",
+): Promise<string | undefined> {
+  const trimmed = value?.trim();
+  if (!trimmed) return undefined;
+  if (trimmed.startsWith(STORAGE_PREFIX)) return trimmed;
+  const decoded = decodeImageDataUrl(trimmed);
+  if (!decoded) return trimmed;
+
+  const sb = getSupabase();
+  const { data: auth } = await sb.auth.getUser();
+  if (!auth.user) throw new Error("login required");
+
+  const fileId =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const objectPath = `${auth.user.id}/${scope}/${fileId}.${decoded.extension}`;
+
+  const { error } = await sb.storage
+    .from(EVIDENCE_BUCKET)
+    .upload(objectPath, decoded.blob, {
+      contentType: decoded.blob.type,
+      upsert: false,
+    });
+  if (error) throw error;
+  return `${STORAGE_PREFIX}${objectPath}`;
+}
+
+async function resolvePrivateEvidenceImage(
+  value: string | undefined,
+): Promise<string | undefined> {
+  const trimmed = value?.trim();
+  if (!trimmed || !trimmed.startsWith(STORAGE_PREFIX)) return trimmed || undefined;
+  const objectPath = trimmed.slice(STORAGE_PREFIX.length);
+  const { data, error } = await getSupabase().storage
+    .from(EVIDENCE_BUCKET)
+    .createSignedUrl(objectPath, 15 * 60);
+  if (error) return undefined;
+  return data.signedUrl;
+}
+
+async function hydrateDealEvidencePhoto(
+  evidence: DealEvidence,
+): Promise<DealEvidence> {
+  return {
+    ...evidence,
+    possessionPhotoUrl: await resolvePrivateEvidenceImage(evidence.possessionPhotoUrl),
+  };
+}
 
 export async function fetchSessionUser(): Promise<User | null> {
   const sb = getSupabase();
@@ -430,6 +498,11 @@ export async function upsertSellIntentRemote(input: {
   if (ownErr) throw ownErr;
   if (ownership.user_id !== auth.user.id) throw new Error("forbidden");
 
+  const storedQuickPhoto = await persistPrivateEvidenceImage(
+    input.quickPhotoUrl,
+    "quick-offers",
+  );
+
   const { data: open } = await sb
     .from("sell_intents")
     .select("*")
@@ -445,7 +518,7 @@ export async function upsertSellIntentRemote(input: {
         target_demand_id: input.targetDemandId ?? null,
         approx_usage_count: input.approxUsageCount ?? null,
         condition_note: input.conditionNote?.trim() ?? "",
-        quick_photo_url: input.quickPhotoUrl?.trim() || null,
+        quick_photo_url: storedQuickPhoto ?? null,
       })
       .eq("id", open.id)
       .select("*")
@@ -464,7 +537,7 @@ export async function upsertSellIntentRemote(input: {
       target_demand_id: input.targetDemandId ?? null,
       approx_usage_count: input.approxUsageCount ?? null,
       condition_note: input.conditionNote?.trim() ?? "",
-      quick_photo_url: input.quickPhotoUrl?.trim() || null,
+      quick_photo_url: storedQuickPhoto ?? null,
       status: "OPEN",
     })
     .select("*")
@@ -872,6 +945,25 @@ export async function openDealDisputeRemote(input: {
   return mapDealDispute(data as DbDealDispute);
 }
 
+export async function issueDealEvidenceChallengeRemote(
+  matchId: string,
+): Promise<DealEvidenceChallenge> {
+  const { data, error } = await getSupabase().rpc("issue_deal_evidence_challenge", {
+    p_match_id: matchId,
+  });
+  if (error) throw error;
+  const row = data as Record<string, unknown>;
+  return {
+    id: String(row.id),
+    matchId: String(row.match_id),
+    sellerId: String(row.seller_id),
+    challengeCode: String(row.challenge_code),
+    expiresAt: String(row.expires_at),
+    consumedAt: row.consumed_at ? String(row.consumed_at) : undefined,
+    createdAt: String(row.created_at),
+  };
+}
+
 export async function getDealEvidenceRemote(
   matchId: string,
 ): Promise<DealEvidence | null> {
@@ -881,11 +973,14 @@ export async function getDealEvidenceRemote(
     .eq("match_id", matchId)
     .maybeSingle();
   if (error) throw error;
-  return data ? mapDealEvidence(data as DbDealEvidence) : null;
+  return data
+    ? hydrateDealEvidencePhoto(mapDealEvidence(data as DbDealEvidence))
+    : null;
 }
 
 export async function upsertDealEvidenceRemote(input: {
   matchId: string;
+  challengeCode: string;
   possessionPhotoUrl?: string;
   serialLast4?: string;
   usageCount?: number;
@@ -898,10 +993,15 @@ export async function upsertDealEvidenceRemote(input: {
   waterDamageStatement?: string;
   evidenceMeta?: Record<string, unknown>;
 }): Promise<DealEvidence> {
+  const storedPossessionPhoto = await persistPrivateEvidenceImage(
+    input.possessionPhotoUrl,
+    "deal-evidence",
+  );
   const { data, error } = await getSupabase().rpc("upsert_deal_evidence", {
     p_match_id: input.matchId,
     p_payload: {
-      possessionPhotoUrl: input.possessionPhotoUrl ?? "",
+      possessionPhotoUrl: storedPossessionPhoto ?? "",
+      challengeCode: input.challengeCode,
       serialLast4: input.serialLast4 ?? "",
       usageCount: input.usageCount ?? null,
       purchaseDate: input.purchaseDate ?? "",
@@ -915,7 +1015,7 @@ export async function upsertDealEvidenceRemote(input: {
     },
   });
   if (error) throw error;
-  return mapDealEvidence(data as DbDealEvidence);
+  return hydrateDealEvidencePhoto(mapDealEvidence(data as DbDealEvidence));
 }
 
 export async function getDealSnapshotRemote(
