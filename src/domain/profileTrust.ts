@@ -15,6 +15,7 @@ export function buildPublicProfileStats(input: {
   matches: Match[];
   disputes?: DealDispute[];
   viewerIsSelf: boolean;
+  identityVerified?: boolean;
   authLabel?: string | null;
 }): PublicProfile {
   const myMatches = input.matches.filter(
@@ -80,6 +81,7 @@ export function buildPublicProfileStats(input: {
     sellerFaultCancellationCount,
     unresolvedDisputeCount,
     confirmedMismatchCount,
+    identityVerified: input.identityVerified ?? false,
     authLabel: input.authLabel ?? null,
     recentActivity,
   };
