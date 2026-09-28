@@ -40,7 +40,7 @@ test("DAN V1 blueprint screens render on mobile", async ({ page }, testInfo) => 
 
   await page.goto("/demand/prod-fuji-x100vi/offer");
   await settle(page);
-  await expect(page.getByText("Quick Offer")).toBeVisible();
+  await expect(page.getByText("Quick Offer", { exact: true })).toBeVisible();
   await expect(page.getByRole("button",{ name:"제안 보내기" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path:path.join(outDir,"04-quick-offer.png"), fullPage:true });
