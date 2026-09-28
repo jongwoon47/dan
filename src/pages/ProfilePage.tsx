@@ -31,6 +31,8 @@ export function ProfilePage() {
     busy,
     logout,
     myMatches,
+    getProduct,
+    getDemand,
   } = useDan();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,6 +46,7 @@ export function ProfilePage() {
     "spam" | "fraud" | "abuse" | "other"
   >("spam");
   const [toast, setToast] = useState<string | null>(null);
+  const [historyTab, setHistoryTab] = useState<"completed" | "progress" | "cancelled">("completed");
   const isSelf = currentUser?.id === userId;
 
   const connectedMatch = useMemo(
@@ -144,6 +147,36 @@ export function ProfilePage() {
   const bioTrim = profile.bio.trim();
   const showStats =
     profile.completedDemandCount > 0 || profile.responseConnectionCount > 0;
+  const tradeHistoryRows = useMemo(() => {
+    if (!isSelf) return [];
+    return myMatches
+      .filter((match) => {
+        if (historyTab === "completed") return match.status === "COMPLETED";
+        if (historyTab === "progress") {
+          return match.status === "CONNECTED" || match.status === "BUYER_INTERESTED" || match.status === "SELLER_ACCEPTED";
+        }
+        return match.status === "CLOSED" || match.status === "DECLINED";
+      })
+      .map((match) => {
+        const product = match.productId ? getProduct(match.productId) : undefined;
+        const demand = getDemand(match.demandId);
+        return {
+          id: match.id,
+          title: product?.name ?? demand?.title ?? "거래",
+          href:
+            match.status === "CONNECTED"
+              ? `/deal/${match.id}/handoff`
+              : `/match/${match.id}`,
+          meta:
+            match.status === "COMPLETED"
+              ? "거래 완료"
+              : match.status === "CLOSED" || match.status === "DECLINED"
+                ? "거래 취소"
+                : "거래 진행 중",
+        };
+      });
+  }, [getDemand, getProduct, historyTab, isSelf, myMatches]);
+
   const activityBits: string[] = [];
   if (profile.completedDemandCount > 0) {
     activityBits.push(
@@ -267,6 +300,32 @@ export function ProfilePage() {
                 사용자 신고나 선택만으로 귀책을 표시하지 않습니다. 확정된 운영 기록만 반영합니다.
               </p>
             </div>
+
+            {isSelf ? (
+              <section className="profile-trade-history">
+                <div className="profile-trade-history__head">
+                  <strong>판매 · 거래 내역</strong>
+                  <span>확정된 거래 상태만 표시해요</span>
+                </div>
+                <div className="profile-trade-tabs" role="tablist" aria-label="거래 내역">
+                  <button type="button" className={historyTab === "completed" ? "is-active" : ""} onClick={() => setHistoryTab("completed")}>완료</button>
+                  <button type="button" className={historyTab === "progress" ? "is-active" : ""} onClick={() => setHistoryTab("progress")}>진행중</button>
+                  <button type="button" className={historyTab === "cancelled" ? "is-active" : ""} onClick={() => setHistoryTab("cancelled")}>취소</button>
+                </div>
+                {tradeHistoryRows.length > 0 ? (
+                  <div className="profile-trade-list">
+                    {tradeHistoryRows.map((row) => (
+                      <Link key={row.id} to={row.href} className="profile-trade-row">
+                        <div><strong>{row.title}</strong><span>{row.meta}</span></div>
+                        <span aria-hidden>›</span>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="profile-trade-empty">표시할 거래가 아직 없어요.</p>
+                )}
+              </section>
+            ) : null}
 
             {profile.recentActivity.length > 0 ? (
               <div className="trust-card__recent">
