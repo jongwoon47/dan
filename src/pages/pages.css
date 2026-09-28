@@ -2185,3 +2185,49 @@
   font-size: 0.75rem;
   line-height: 1.5;
 }
+
+
+/* DAN V1 possession challenge */
+.evidence-challenge-block {
+  display: grid;
+  gap: 12px;
+}
+
+.evidence-challenge-copy {
+  display: grid;
+  gap: 5px;
+}
+
+.evidence-challenge-copy p {
+  margin: 0;
+  color: var(--dan-ink-secondary);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.evidence-challenge-code {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid #dcd4ff;
+  border-radius: 16px;
+  background: #f6f3ff;
+}
+
+.evidence-challenge-code > span,
+.evidence-challenge-code > small {
+  color: var(--dan-ink-muted);
+  font-size: 0.72rem;
+}
+
+.evidence-challenge-code > strong {
+  color: var(--dan-accent-text);
+  font-size: 1.65rem;
+  letter-spacing: 0.16em;
+}
+
+.evidence-challenge-code--loading {
+  justify-items: stretch;
+  text-align: center;
+}
