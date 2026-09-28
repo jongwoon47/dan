@@ -389,8 +389,14 @@ function reducer(state: DanState, action: Action): DanState {
             ? {
                 ...m,
                 dealStage: action.snapshot.lockedAt
-                  ? ("DEAL_LOCKED" as const)
+                  ? ("PAYMENT_PENDING" as const)
                   : ("DEAL_REVIEW" as const),
+                paymentStatus: action.snapshot.lockedAt
+                  ? ("PENDING" as const)
+                  : m.paymentStatus,
+                paymentDueAt: action.snapshot.lockedAt
+                  ? new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString()
+                  : m.paymentDueAt,
               }
             : m,
         ),
@@ -1004,7 +1010,9 @@ export function DanProvider({ children }: { children: ReactNode }) {
           !match ||
           match.status !== "CONNECTED" ||
           !snapshot?.lockedAt ||
-          match.paymentStatus === "PAID"
+          match.paymentStatus === "PAID" ||
+          (match.paymentDueAt != null &&
+            new Date(match.paymentDueAt).getTime() <= Date.now())
         ) {
           return false;
         }
