@@ -19,6 +19,7 @@ import {
 import type {
   Demand,
   DemandAggregate,
+  DealDispute,
   DealEvidence,
   DealSnapshot,
   Match,
@@ -30,6 +31,7 @@ import type {
 } from "@/domain/types";
 import { getSupabase } from "./client";
 import {
+  mapDealDispute,
   mapDealEvidence,
   mapDealSnapshot,
   mapDemand,
@@ -38,6 +40,7 @@ import {
   mapProduct,
   mapResponse,
   mapSellIntent,
+  type DbDealDispute,
   type DbDealEvidence,
   type DbDealSnapshot,
   type DbDemand,
@@ -674,6 +677,10 @@ export async function fetchPublicProfile(userId: string) {
     completedDemandCount?: number;
     responseConnectionCount?: number;
     connectionCount?: number;
+    buyerFaultCancellationCount?: number;
+    sellerFaultCancellationCount?: number;
+    unresolvedDisputeCount?: number;
+    confirmedMismatchCount?: number;
     recentActivity?: Array<{
       id: string;
       type: string;
@@ -704,6 +711,10 @@ export async function fetchPublicProfile(userId: string) {
     connectionCount: trust.connectionCount ?? 0,
     completedDemandCount: trust.completedDemandCount ?? 0,
     responseConnectionCount: trust.responseConnectionCount ?? 0,
+    buyerFaultCancellationCount: trust.buyerFaultCancellationCount ?? 0,
+    sellerFaultCancellationCount: trust.sellerFaultCancellationCount ?? 0,
+    unresolvedDisputeCount: trust.unresolvedDisputeCount ?? 0,
+    confirmedMismatchCount: trust.confirmedMismatchCount ?? 0,
     authLabel,
     recentActivity: (trust.recentActivity ?? []).map((row) => {
       const statusKo =
@@ -835,6 +846,32 @@ export async function expressBuyerInterestRemote(
   return mapMatch(data as DbMatch);
 }
 
+export async function listDealDisputesRemote(
+  matchId: string,
+): Promise<DealDispute[]> {
+  const { data, error } = await getSupabase()
+    .from("deal_disputes")
+    .select("*")
+    .eq("match_id", matchId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return ((data ?? []) as DbDealDispute[]).map(mapDealDispute);
+}
+
+export async function openDealDisputeRemote(input: {
+  matchId: string;
+  reason: DealDispute["reason"];
+  detail?: string;
+}): Promise<DealDispute> {
+  const { data, error } = await getSupabase().rpc("open_deal_dispute", {
+    p_match_id: input.matchId,
+    p_reason: input.reason,
+    p_detail: input.detail ?? "",
+  });
+  if (error) throw error;
+  return mapDealDispute(data as DbDealDispute);
+}
+
 export async function getDealEvidenceRemote(
   matchId: string,
 ): Promise<DealEvidence | null> {
@@ -928,6 +965,18 @@ export async function confirmMatchCompletionRemote(
 export async function closeMatchRemote(matchId: string): Promise<Match> {
   const { data, error } = await getSupabase().rpc("close_match", {
     p_match_id: matchId,
+  });
+  if (error) throw error;
+  return mapMatch(data as DbMatch);
+}
+
+export async function cancelDealRemote(input: {
+  matchId: string;
+  reason: import("@/domain/types").CancelReason;
+}): Promise<Match> {
+  const { data, error } = await getSupabase().rpc("cancel_deal", {
+    p_match_id: input.matchId,
+    p_reason: input.reason,
   });
   if (error) throw error;
   return mapMatch(data as DbMatch);
