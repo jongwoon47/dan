@@ -103,3 +103,101 @@
     display: none;
   }
 }
+
+/* DAN V1 received-offer blueprint */
+.received-offer-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--dan-border);
+  border-radius: 16px;
+  background: var(--dan-surface);
+}
+
+.received-offer-card__main {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.received-offer-card__body {
+  min-width: 0;
+}
+
+.received-offer-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.received-offer-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.received-offer-card__head > span {
+  flex-shrink: 0;
+  color: var(--dan-ink-muted);
+  font-size: 0.7rem;
+}
+
+.received-offer-card__price {
+  margin: 3px 0 0;
+  color: var(--dan-accent-text);
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.received-offer-card__summary {
+  margin: 7px 0 0;
+  color: var(--dan-ink-secondary);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.received-offer-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.received-offer-card__tags span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--dan-accent-soft);
+  color: var(--dan-accent-text);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.received-offer-card__trust {
+  display: inline-flex;
+  margin-top: 9px;
+  color: var(--dan-ink-secondary);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.received-offer-card__actions {
+  display: grid;
+  gap: 8px;
+}
+
+@media (max-width: 380px) {
+  .received-offer-card {
+    padding: 12px;
+  }
+
+  .received-offer-card__main {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+}
