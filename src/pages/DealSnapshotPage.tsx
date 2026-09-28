@@ -184,13 +184,21 @@ export function DealSnapshotPage() {
       </section>
 
       {snapshot?.lockedAt ? (
-        <section className="safe-payment-placeholder">
-          <span className="safe-payment-placeholder__icon">✓</span>
-          <div>
-            <strong>거래 조건이 확정됐어요</strong>
-            <p>안전결제는 PG 계약 완료 후 이 단계에 연결됩니다. 현재 브랜치에서는 결제가 실행되지 않습니다.</p>
-          </div>
-        </section>
+        <>
+          <section className="safe-payment-placeholder">
+            <span className="safe-payment-placeholder__icon">✓</span>
+            <div>
+              <strong>거래 조건이 확정됐어요</strong>
+              <p>
+                이제 안전결제 상태를 확인한 뒤 현장에서 같은 Deal Snapshot을
+                다시 대조합니다.
+              </p>
+            </div>
+          </section>
+          <Button to={`/deal/${match.id}/handoff`} fullWidth size="lg">
+            안전결제 · 직거래 단계
+          </Button>
+        </>
       ) : (
         <>
           {error ? <p className="form-error">{error}</p> : null}
