@@ -108,36 +108,23 @@ export function DemandDetailPage() {
       </section>
 
       <section className="holder-cta">
-        <h2 className="section-title">{ko.haveItTitle}</h2>
-        <p className="section-desc">{ko.haveItBody}</p>
+        <h2 className="section-title">이 카메라를 가지고 있나요?</h2>
+        <p className="section-desc">
+          보유 등록부터 따로 할 필요 없어요. 가격과 기본 상태만 적고 바로
+          구매자들에게 제안할 수 있어요.
+        </p>
+        <Button to={`/demand/${product.id}/offer`} fullWidth size="lg">
+          바로 판매 제안하기
+        </Button>
         {owned ? (
-          <div className="holder-cta__owned">
-            <p>
-              {ko.alreadyOwnedPrefix}{" "}
-              {aggregate.seekerCount > 0 ? (
-                <>
-                  {ko.seekersLabel}{" "}
-                  <strong>
-                    {aggregate.seekerCount}
-                    {ko.myung}
-                  </strong>
-                  .
-                </>
-              ) : null}
-            </p>
-            <Button to={`/ownership/${owned.id}/sell-intent`} fullWidth>
-              {ko.leaveSellIntent}
-            </Button>
-            <Button to="/my" variant="secondary" fullWidth>
-              {ko.viewInMy}
-            </Button>
-          </div>
+          <p className="holder-cta__note">
+            이미 등록한 내 물건 정보를 재사용해서 더 빠르게 제안할 수 있어요.
+          </p>
         ) : (
-          <Button to={`/demand/${product.id}/own`} fullWidth size="lg">
-            {ko.haveIt}
-          </Button>
+          <p className="holder-cta__note">
+            구매자가 관심을 보인 뒤에만 시리얼·보증·상세 상태 증거를 요청해요.
+          </p>
         )}
-        <p className="holder-cta__note">{ko.ownershipNote}</p>
       </section>
 
       {myBuy ? (
@@ -155,7 +142,7 @@ export function DemandDetailPage() {
       {myBuy ? null : (
         <p className="detail-foot">
           {ko.buyerSide}
-          <Link to="/create?type=BUY">{ko.registerSame}</Link>
+          <Link to="/buy/new">{ko.registerSame}</Link>
         </p>
       )}
     </div>
