@@ -45,6 +45,7 @@ import type {
   BuyDemand,
   DealDispute,
   DealEvidence,
+  DealEvidenceChallenge,
   DealSnapshot,
   Demand,
   DemandCategory,
@@ -91,6 +92,7 @@ function defaultState(): DanState {
     sellIntents: SEED_SELL_INTENTS,
     responses: SEED_RESPONSES,
     matches: SEED_MATCHES,
+    dealEvidenceChallenges: [],
     dealEvidence: [],
     dealSnapshots: [],
     dealDisputes: [],
@@ -114,6 +116,7 @@ function loadState(): DanState {
       sellIntents: parsed.sellIntents ?? SEED_SELL_INTENTS,
       responses: parsed.responses ?? SEED_RESPONSES,
       matches: sanitizePersistedMatches(parsed.matches),
+      dealEvidenceChallenges: parsed.dealEvidenceChallenges ?? [],
       dealEvidence: parsed.dealEvidence ?? [],
       dealSnapshots: parsed.dealSnapshots ?? [],
       dealDisputes: parsed.dealDisputes ?? [],
@@ -481,10 +484,30 @@ function reducer(state: DanState, action: Action): DanState {
       if (!current) return state;
       const transitioned = transitionSellerConnect(current, actorId);
       if (!transitioned) return state;
-      const matches = state.matches.map((m) =>
-        m.id === action.matchId ? transitioned : m,
+      if (!state.dealEvidence.some((x) => x.matchId === current.id)) return state;
+
+      const matches = state.matches.map((m) => {
+        if (m.id === action.matchId) {
+          return { ...transitioned, dealStage: "EVIDENCE_READY" as const };
+        }
+        const sameDemand =
+          m.demandId === current.demandId &&
+          (m.status === "BUYER_INTERESTED" || m.status === "SELLER_ACCEPTED");
+        const sameSellIntent =
+          Boolean(current.sellIntentId) &&
+          m.sellIntentId === current.sellIntentId &&
+          (m.status === "BUYER_INTERESTED" || m.status === "SELLER_ACCEPTED");
+        return sameDemand || sameSellIntent
+          ? { ...m, status: "CLOSED" as const }
+          : m;
+      });
+      const demands = state.demands.map((d) =>
+        d.id === current.demandId ? { ...d, status: "MATCHED" as const } : d,
       );
-      const next = { ...state, matches };
+      const sellIntents = state.sellIntents.map((si) =>
+        si.id === current.sellIntentId ? { ...si, status: "MATCHED" as const } : si,
+      );
+      const next = { ...state, matches, demands, sellIntents };
       persist(next);
       return next;
     }
@@ -542,6 +565,8 @@ function reducer(state: DanState, action: Action): DanState {
       if (actorId !== current.buyerId && actorId !== current.sellerId) {
         return state;
       }
+      const demand = state.demands.find((d) => d.id === current.demandId);
+      if (demand?.type === "BUY") return state;
       const matches = state.matches.map((m) =>
         m.id === action.matchId ? { ...m, status: "CLOSED" as const } : m,
       );
@@ -684,34 +709,112 @@ export function DanProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "UPSERT_SELL_INTENT", sellIntent: result, ensureUserId });
         return result;
       },
+      issueDealEvidenceChallenge: async (matchId) => {
+        const actorId = state.currentUserId;
+        const match = state.matches.find((m) => m.id === matchId);
+        if (!actorId || !match || match.sellerId !== actorId) return null;
+        if (match.status !== "BUYER_INTERESTED" && match.status !== "CONNECTED") {
+          return null;
+        }
+        if (state.dealSnapshots.some((x) => x.matchId === matchId && x.lockedAt)) {
+          return null;
+        }
+        const now = new Date();
+        const seed = createId("challenge").replace(/[^a-z0-9]/gi, "");
+        const challenge: DealEvidenceChallenge = {
+          id: createId("challenge"),
+          matchId,
+          sellerId: actorId,
+          challengeCode: seed.slice(-6).toUpperCase().padEnd(6, "X"),
+          expiresAt: new Date(now.getTime() + 15 * 60 * 1000).toISOString(),
+          createdAt: now.toISOString(),
+        };
+        const next: DanState = {
+          ...state,
+          dealEvidenceChallenges: [
+            challenge,
+            ...state.dealEvidenceChallenges.filter((x) => x.matchId !== matchId),
+          ],
+        };
+        persist(next);
+        flushSync(() => dispatch({ type: "HYDRATE", state: next }));
+        return challenge;
+      },
       getDealEvidence: async (matchId) =>
         state.dealEvidence.find((x) => x.matchId === matchId) ?? null,
       upsertDealEvidence: async (payload) => {
         const match = state.matches.find((m) => m.id === payload.matchId);
-        if (!match || !state.currentUserId || match.sellerId !== state.currentUserId) {
+        const actorId = state.currentUserId;
+        if (!match || !actorId || match.sellerId !== actorId) return null;
+        if (match.status !== "BUYER_INTERESTED" && match.status !== "CONNECTED") {
           return null;
         }
+        if (state.dealSnapshots.some((x) => x.matchId === match.id && x.lockedAt)) {
+          return null;
+        }
+        const challenge = state.dealEvidenceChallenges.find(
+          (x) => x.matchId === match.id,
+        );
+        if (
+          !challenge ||
+          challenge.consumedAt ||
+          challenge.challengeCode !== payload.challengeCode.trim().toUpperCase() ||
+          new Date(challenge.expiresAt).getTime() <= Date.now()
+        ) {
+          return null;
+        }
+        if (
+          !payload.possessionPhotoUrl?.trim() ||
+          (payload.serialLast4?.trim().length ?? 0) < 2 ||
+          !payload.cosmeticNotes?.trim() ||
+          !payload.knownIssues?.trim()
+        ) {
+          return null;
+        }
+
         const existing = state.dealEvidence.find((x) => x.matchId === payload.matchId);
         const now = new Date().toISOString();
         const evidence: DealEvidence = {
           id: existing?.id ?? createId("evidence"),
           matchId: payload.matchId,
-          sellerId: state.currentUserId,
-          possessionPhotoUrl: payload.possessionPhotoUrl?.trim() || undefined,
+          sellerId: actorId,
+          possessionPhotoUrl: payload.possessionPhotoUrl.trim(),
           serialLast4: payload.serialLast4?.trim() || undefined,
           usageCount: payload.usageCount,
           purchaseDate: payload.purchaseDate,
           warrantyUntil: payload.warrantyUntil,
           components: payload.components ?? [],
-          cosmeticNotes: payload.cosmeticNotes?.trim() ?? "",
-          knownIssues: payload.knownIssues?.trim() ?? "",
+          cosmeticNotes: payload.cosmeticNotes.trim(),
+          knownIssues: payload.knownIssues.trim(),
           repairHistory: payload.repairHistory?.trim() ?? "",
           waterDamageStatement: payload.waterDamageStatement?.trim() ?? "",
-          evidenceMeta: payload.evidenceMeta ?? {},
+          evidenceMeta: {
+            ...(payload.evidenceMeta ?? {}),
+            challengeId: challenge.id,
+            challengeCode: challenge.challengeCode,
+            challengeIssuedAt: challenge.createdAt,
+          },
           submittedAt: now,
           updatedAt: now,
         };
-        dispatch({ type: "UPSERT_DEAL_EVIDENCE", evidence });
+        const next: DanState = {
+          ...state,
+          dealEvidenceChallenges: state.dealEvidenceChallenges.map((x) =>
+            x.id === challenge.id ? { ...x, consumedAt: now } : x,
+          ),
+          dealEvidence: [
+            evidence,
+            ...state.dealEvidence.filter((x) => x.matchId !== match.id),
+          ],
+          dealSnapshots: state.dealSnapshots.filter(
+            (x) => x.matchId !== match.id || Boolean(x.lockedAt),
+          ),
+          matches: state.matches.map((m) =>
+            m.id === match.id ? { ...m, dealStage: "EVIDENCE_READY" as const } : m,
+          ),
+        };
+        persist(next);
+        flushSync(() => dispatch({ type: "HYDRATE", state: next }));
         return evidence;
       },
       getDealSnapshot: async (matchId) =>
@@ -719,17 +822,69 @@ export function DanProvider({ children }: { children: ReactNode }) {
       confirmDealSnapshot: async (payload) => {
         const match = state.matches.find((m) => m.id === payload.matchId);
         const actorId = state.currentUserId;
-        if (!match || !actorId || (actorId !== match.buyerId && actorId !== match.sellerId)) {
+        if (
+          !match ||
+          !actorId ||
+          match.status !== "CONNECTED" ||
+          (actorId !== match.buyerId && actorId !== match.sellerId)
+        ) {
           return null;
         }
-        if (!state.dealEvidence.some((x) => x.matchId === match.id)) return null;
+        const evidence = state.dealEvidence.find((x) => x.matchId === match.id);
+        const sell = match.sellIntentId
+          ? state.sellIntents.find((x) => x.id === match.sellIntentId)
+          : undefined;
+        const demand = state.demands.find((x) => x.id === match.demandId);
+        const product = match.productId
+          ? products.find((x) => x.id === match.productId)
+          : undefined;
+        if (!evidence || !sell || !demand || demand.type !== "BUY" || !product) {
+          return null;
+        }
+        if (payload.agreedPrice !== sell.minimumPrice) return null;
+
+        const canonicalSnapshot: Record<string, unknown> = {
+          schemaVersion: "dan.deal_snapshot.v1",
+          product: {
+            id: product.id,
+            name: product.name,
+            brand: product.brand,
+            model: product.model,
+          },
+          offer: {
+            price: sell.minimumPrice,
+            approxUsageCount: sell.approxUsageCount ?? null,
+            conditionNote: sell.conditionNote ?? "",
+          },
+          evidence: {
+            evidenceId: evidence.id,
+            possessionPhotoRef: evidence.possessionPhotoUrl ?? null,
+            serialLast4: evidence.serialLast4 ?? null,
+            usageCount: evidence.usageCount ?? null,
+            purchaseDate: evidence.purchaseDate ?? null,
+            warrantyUntil: evidence.warrantyUntil ?? null,
+            components: evidence.components,
+            cosmeticNotes: evidence.cosmeticNotes,
+            knownIssues: evidence.knownIssues,
+            repairHistory: evidence.repairHistory,
+            waterDamageStatement: evidence.waterDamageStatement,
+            evidenceMeta: evidence.evidenceMeta,
+            submittedAt: evidence.submittedAt,
+            updatedAt: evidence.updatedAt,
+          },
+          handoff: {
+            method: demand.details.tradeMethod,
+            fulfillmentOptions: demand.fulfillmentOptions,
+          },
+        };
+
         const now = new Date().toISOString();
         const existing = state.dealSnapshots.find((x) => x.matchId === match.id);
         if (existing?.lockedAt) return existing;
         const changed =
           Boolean(existing) &&
-          (existing!.agreedPrice !== payload.agreedPrice ||
-            JSON.stringify(existing!.snapshot) !== JSON.stringify(payload.snapshot));
+          (existing!.agreedPrice !== sell.minimumPrice ||
+            JSON.stringify(existing!.snapshot) !== JSON.stringify(canonicalSnapshot));
         const buyerConfirmedAt = changed
           ? actorId === match.buyerId
             ? now
@@ -751,8 +906,8 @@ export function DanProvider({ children }: { children: ReactNode }) {
           productId: match.productId,
           buyerId: match.buyerId,
           sellerId: match.sellerId,
-          agreedPrice: payload.agreedPrice,
-          snapshot: payload.snapshot,
+          agreedPrice: sell.minimumPrice,
+          snapshot: canonicalSnapshot,
           buyerConfirmedAt,
           sellerConfirmedAt,
           lockedAt: buyerConfirmedAt && sellerConfirmedAt ? now : undefined,
