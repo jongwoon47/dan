@@ -238,6 +238,22 @@ export function MyDanPage() {
     [myMatches],
   );
 
+  const receivedOffers = useMemo(
+    () =>
+      pendingMatches.filter(
+        (m) => Boolean(m.sellIntentId) && m.buyerId === currentUser?.id,
+      ),
+    [pendingMatches, currentUser?.id],
+  );
+
+  const sellerActions = useMemo(
+    () =>
+      pendingMatches.filter(
+        (m) => !receivedOffers.some((offer) => offer.id === m.id),
+      ),
+    [pendingMatches, receivedOffers],
+  );
+
   const responseRows = useMemo(() => {
     return [...myResponses]
       .filter((r) => r.status !== "WITHDRAWN")
@@ -277,12 +293,22 @@ export function MyDanPage() {
 
   return (
     <div className="page-stack my-dan">
-      <header className="my-dan__header">
-        <h1 className="page-title">{ko.myDan}</h1>
+      <header className="my-dan__header my-dan__header--v1">
+        <div>
+          <p className="eyebrow">My Demand</p>
+          <h1 className="page-title">내 구매수요</h1>
+        </div>
         <Link to={`/profile/${currentUser?.id}`} className="my-dan__name">
           {currentUser?.name}
         </Link>
       </header>
+
+      {receivedOffers.length > 0 ? (
+        <MyBlock title={`받은 제안 ${receivedOffers.length}`}>
+          <p className="my-block__hint">가격과 기본 상태를 먼저 보고 거래를 검토할 수 있어요.</p>
+          <MatchList matches={receivedOffers} emptyWhenZero={false} />
+        </MyBlock>
+      ) : null}
 
       {nowItems.length > 0 ? (
         <MyBlock title={ko.attentionTitle}>
@@ -299,9 +325,9 @@ export function MyDanPage() {
         </MyBlock>
       ) : null}
 
-      {pendingMatches.length > 0 ? (
+      {sellerActions.length > 0 ? (
         <MyBlock title={ko.pendingMatches}>
-          <MatchList matches={pendingMatches} emptyWhenZero={false} />
+          <MatchList matches={sellerActions} emptyWhenZero={false} />
         </MyBlock>
       ) : null}
 
