@@ -22,6 +22,7 @@ import type {
   Response,
   SellIntent,
   User,
+  UserVerificationStatus,
 } from "./types";
 import type { DanState } from "./storeTypes";
 
@@ -34,6 +35,7 @@ export interface DanContextValue {
   users: User[];
   currentUser: User | null;
   isLoggedIn: boolean;
+  getMyVerification: () => Promise<UserVerificationStatus>;
   login: (userId?: string) => void;
   logout: () => void;
   createDemand: (payload: CreateDemandInput) => Promise<Demand | null>;
