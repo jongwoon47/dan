@@ -2252,3 +2252,11 @@
   font-size: 0.8rem;
   line-height: 1.55;
 }
+
+
+.required-mark {
+  margin-left: 4px;
+  color: var(--dan-accent-text);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
