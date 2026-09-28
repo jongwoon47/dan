@@ -1023,6 +1023,7 @@ export function DanProvider({ children }: { children: ReactNode }) {
           createdAt: u.createdAt ?? new Date().toISOString(),
           demands: state.demands,
           matches: state.matches,
+          disputes: state.dealDisputes,
           viewerIsSelf: state.currentUserId === userId,
           authLabel: null,
         });
