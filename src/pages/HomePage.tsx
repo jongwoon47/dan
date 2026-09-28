@@ -29,31 +29,48 @@ export function HomePage() {
     })
     .slice(0, 5);
 
+  const totalDemand = cameraDemand.reduce(
+    (sum, item) =>
+      sum + (item.kind === "aggregated" ? item.aggregate.seekerCount : 0),
+    0,
+  );
+
   return (
     <div className="page-stack home-page home-page--v1">
-      <section className="dan-v1-hero">
-        <div className="dan-v1-hero__eyebrow">DAN · Demand-first marketplace</div>
-        <h1>찾아서 사는 게 아니라,<br />사고 싶다고 먼저 말해요.</h1>
-        <p>
-          원하는 카메라와 가격을 남기면, 그 물건을 가진 사람이
-          판매를 제안합니다.
-        </p>
-        <Button to="/buy/new" fullWidth size="lg">
-          구매수요 등록하기
-        </Button>
-      </section>
-
-      <section className="section-stack">
-        <div className="section-head section-head--v1">
-          <div>
-            <h2 className="section-title section-title--xl">지금 사고 있는 사람들</h2>
-            <p className="section-desc">
-              살아 있는 구매수요만 보여줘요. 판매자는 이 수요를 보고 직접 제안합니다.
-            </p>
-          </div>
-          <Link to="/feed" className="text-link">전체 보기</Link>
+      <section className="home-demand-header">
+        <div className="home-demand-heading">
+          <h1>지금 사고 있는 사람들</h1>
+          <p>
+            아직 판매글이 없어도 괜찮아요.
+            <br />
+            이 카메라를 가진 사람의 제안을 기다리고 있어요.
+          </p>
         </div>
 
+        <div className="home-demand-tabs" role="tablist" aria-label="구매수요 보기">
+          <Link to="/" className="home-demand-tab is-active" aria-current="page">
+            지금 사고 있는 사람들
+          </Link>
+          <Link to="/my" className="home-demand-tab">
+            내 구매수요
+          </Link>
+        </div>
+
+        <div className="home-demand-filters" aria-label="카메라 모델 바로가기">
+          <Link to="/" className="demand-filter is-active">
+            전체 {totalDemand}
+          </Link>
+          {cameraDemand.map((item) =>
+            item.kind === "aggregated" ? (
+              <Link key={item.id} to={`/demand/${item.product.id}`} className="demand-filter">
+                {item.product.model || item.product.name} {item.aggregate.seekerCount}
+              </Link>
+            ) : null,
+          )}
+        </div>
+      </section>
+
+      <section className="home-live-section">
         {cameraDemand.length === 0 ? (
           <EmptyState
             title="아직 카메라 구매수요가 없어요"
@@ -64,11 +81,7 @@ export function HomePage() {
           <div className="live-demand-list">
             {cameraDemand.map((item) =>
               item.kind === "aggregated" ? (
-                <AggregatedDemandCard
-                  key={item.id}
-                  product={item.product}
-                  aggregate={item.aggregate}
-                />
+                <AggregatedDemandCard key={item.id} product={item.product} aggregate={item.aggregate} />
               ) : null,
             )}
           </div>
@@ -80,9 +93,7 @@ export function HomePage() {
           <span>카메라를 가지고 있나요?</span>
           <strong>팔 생각이 없었어도, 지금 누가 얼마에 찾는지 먼저 확인하세요.</strong>
         </div>
-        <Button to="/feed" variant="secondary">
-          구매수요 보기
-        </Button>
+        <Button to="/feed" variant="secondary">구매수요 보기</Button>
       </section>
     </div>
   );
