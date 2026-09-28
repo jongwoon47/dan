@@ -34,6 +34,7 @@ export function defaultDeepTitle(pathname: string): string {
   if (pathname.startsWith("/buy/new")) return "구매수요 등록";
   if (pathname.startsWith("/deal/") && pathname.endsWith("/evidence")) return "판매자 증거 제출";
   if (pathname.startsWith("/deal/") && pathname.endsWith("/snapshot")) return "거래 조건 확인";
+  if (pathname.startsWith("/deal/") && pathname.endsWith("/handoff")) return "직거래 최종 확인";
   if (pathname.startsWith("/activity")) return ko.navActivity;
   if (pathname.includes("/edit")) return "요청 수정";
   if (pathname.includes("/own")) return ko.ownTitle;
