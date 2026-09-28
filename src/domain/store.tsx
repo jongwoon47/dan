@@ -619,6 +619,12 @@ export function DanProvider({ children }: { children: ReactNode }) {
       users: DEMO_USERS,
       currentUser,
       isLoggedIn: Boolean(state.currentUserId),
+      getMyVerification: async () => ({
+        phoneVerified: true,
+        identityVerified: true,
+        payoutVerified: true,
+        sellerType: "INDIVIDUAL" as const,
+      }),
       login: (userId = CURRENT_USER_ID) => dispatch({ type: "LOGIN", userId }),
       logout: () => dispatch({ type: "LOGOUT" }),
       ensureProduct: async (name) => {
