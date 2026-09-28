@@ -148,8 +148,16 @@ export function DealSnapshotPage() {
           <strong>{evidence.usageCount == null ? "미제출" : `${evidence.usageCount.toLocaleString("ko-KR")}컷`}</strong>
         </div>
         <div className="snapshot-section">
-          <span>보증</span>
+          <span>구매일</span>
+          <strong>{evidence.purchaseDate || "미제출"}</strong>
+        </div>
+        <div className="snapshot-section">
+          <span>보증기간</span>
           <strong>{evidence.warrantyUntil || "미제출"}</strong>
+        </div>
+        <div className="snapshot-section">
+          <span>시리얼 끝자리</span>
+          <strong>{evidence.serialLast4 ? `••••${evidence.serialLast4}` : "미제출"}</strong>
         </div>
         <div className="snapshot-section">
           <span>구성품</span>
@@ -160,8 +168,16 @@ export function DealSnapshotPage() {
           <strong>{evidence.cosmeticNotes || "미제출"}</strong>
         </div>
         <div className="snapshot-section">
-          <span>알려진 기능 이상</span>
+          <span>기능 이상</span>
           <strong>{evidence.knownIssues || "미제출"}</strong>
+        </div>
+        <div className="snapshot-section">
+          <span>수리 이력</span>
+          <strong>{evidence.repairHistory || "없음"}</strong>
+        </div>
+        <div className="snapshot-section">
+          <span>침수 이력</span>
+          <strong>{evidence.waterDamageStatement || "미제출"}</strong>
         </div>
         <div className="snapshot-section">
           <span>거래 방식</span>
@@ -169,9 +185,9 @@ export function DealSnapshotPage() {
         </div>
       </section>
 
-      <section className="trust-explainer">
-        <strong>이 화면은 거래 당시 조건을 고정합니다</strong>
-        <p>양쪽이 같은 내용을 확인하면 Deal Snapshot이 잠기고 이후 수정할 수 없습니다. 변경하려면 기존 거래를 종료하고 새 조건으로 다시 확인해야 합니다.</p>
+      <section className="snapshot-lock-notice">
+        <strong>위 조건으로 거래를 진행합니다.</strong>
+        <p>양쪽이 확인하면 Deal Snapshot이 잠기고 이후에는 수정할 수 없어요. 실제 물건과 다른 내용이 있다면 확인 전에 판매자와 다시 조율하세요.</p>
       </section>
 
       <section className="deal-confirm-state">
