@@ -1068,7 +1068,9 @@ export function DanProvider({ children }: { children: ReactNode }) {
       },
       confirmMatchCompletion: async (matchId) => {
         if (!state.currentUserId) return null;
-        dispatch({ type: "CONFIRM_MATCH_COMPLETION", matchId });
+        flushSync(() => {
+          dispatch({ type: "CONFIRM_MATCH_COMPLETION", matchId });
+        });
         const after = loadState();
         return after.matches.find((m) => m.id === matchId) ?? null;
       },
