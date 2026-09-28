@@ -1,6 +1,6 @@
 begin;
 
-select plan(15);
+select plan(17);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -83,6 +83,21 @@ select ok(
 );
 
 
+
+select has_function(
+  'public',
+  'expire_unpaid_deals',
+  array[]::text[],
+  'payment timeout recovery RPC exists'
+);
+
+select ok(
+  position(
+    '6 hours'
+    in pg_get_functiondef('public.set_buy_payment_window()'::regprocedure)
+  ) > 0,
+  'snapshot lock opens a six-hour payment window'
+);
 
 select * from finish();
 rollback;
