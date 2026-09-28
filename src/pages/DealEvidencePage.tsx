@@ -371,12 +371,21 @@ export function DealEvidencePage() {
 
 function EvidenceSummary({ evidence }: { evidence: DealEvidence }) {
   return (
-    <dl className="deal-facts">
-      <div><dt>컷수</dt><dd>{evidence.usageCount == null ? "미제출" : `${evidence.usageCount.toLocaleString("ko-KR")}컷`}</dd></div>
-      <div><dt>시리얼</dt><dd>{evidence.serialLast4 ? `••••${evidence.serialLast4}` : "미제출"}</dd></div>
-      <div><dt>구성품</dt><dd>{evidence.components.join(", ") || "없음"}</dd></div>
-      <div><dt>외관</dt><dd>{evidence.cosmeticNotes || "미제출"}</dd></div>
-      <div><dt>기능 이상</dt><dd>{evidence.knownIssues || "미제출"}</dd></div>
-    </dl>
+    <div className="deal-evidence-review">
+      {evidence.possessionPhotoUrl ? (
+        <img
+          className="deal-evidence-review__photo"
+          src={evidence.possessionPhotoUrl}
+          alt="판매자가 제출한 현재 보유 물품"
+        />
+      ) : null}
+      <dl className="deal-facts">
+        <div><dt>컷수</dt><dd>{evidence.usageCount == null ? "미제출" : `${evidence.usageCount.toLocaleString("ko-KR")}컷`}</dd></div>
+        <div><dt>시리얼</dt><dd>{evidence.serialLast4 ? `••••${evidence.serialLast4}` : "미제출"}</dd></div>
+        <div><dt>구성품</dt><dd>{evidence.components.join(", ") || "없음"}</dd></div>
+        <div><dt>외관</dt><dd>{evidence.cosmeticNotes || "미제출"}</dd></div>
+        <div><dt>기능 이상</dt><dd>{evidence.knownIssues || "미제출"}</dd></div>
+      </dl>
+    </div>
   );
 }
