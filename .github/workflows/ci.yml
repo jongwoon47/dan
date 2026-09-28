@@ -32,6 +32,7 @@ jobs:
           version: latest
       - run: supabase start
       - run: supabase db reset
+      - run: supabase test db
       - if: always()
         run: supabase stop --no-backup
 
