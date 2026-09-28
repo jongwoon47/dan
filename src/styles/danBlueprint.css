@@ -348,3 +348,198 @@
     .preference-check-grid { grid-template-columns:1fr; }
   }
 }
+
+/* DAN V1 blueprint continuation */
+.snapshot-lock-notice {
+  display: grid;
+  gap: 6px;
+  padding: 15px 16px;
+  border: 1px solid #ded9ff;
+  border-radius: 14px;
+  background: #f6f4ff;
+}
+
+.snapshot-lock-notice strong {
+  font-size: .94rem;
+}
+
+.snapshot-lock-notice p {
+  margin: 0;
+  color: var(--dan-ink-secondary);
+  font-size: .8rem;
+  line-height: 1.5;
+}
+
+.evidence-form-divider {
+  display: grid;
+  grid-template-columns: 28px minmax(0,1fr);
+  gap: 10px;
+  align-items: center;
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid var(--dan-border);
+}
+
+.evidence-form-divider > span {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--dan-accent-soft);
+  color: var(--dan-accent-text);
+  font-size: .72rem;
+  font-weight: 900;
+}
+
+.evidence-form-divider > div {
+  display: grid;
+  gap: 2px;
+}
+
+.evidence-form-divider strong {
+  font-size: .9rem;
+}
+
+.evidence-form-divider small {
+  color: var(--dan-ink-muted);
+  font-size: .72rem;
+  line-height: 1.4;
+}
+
+.trade-progress-card {
+  overflow: hidden;
+  border: 1px solid var(--dan-border);
+  border-radius: 15px;
+  background: #fff;
+}
+
+.trade-progress-row {
+  display: grid;
+  grid-template-columns: 30px minmax(0,1fr);
+  gap: 11px;
+  align-items: center;
+  min-height: 58px;
+  padding: 10px 13px;
+  border-top: 1px solid var(--dan-border);
+}
+
+.trade-progress-row:first-child {
+  border-top: 0;
+}
+
+.trade-progress-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--dan-border-strong);
+  border-radius: 999px;
+  color: var(--dan-ink-muted);
+  font-size: .72rem;
+  font-weight: 900;
+}
+
+.trade-progress-row > div {
+  display: grid;
+  gap: 2px;
+}
+
+.trade-progress-row strong {
+  font-size: .86rem;
+}
+
+.trade-progress-row small {
+  color: var(--dan-ink-muted);
+  font-size: .72rem;
+}
+
+.trade-progress-row.is-done .trade-progress-icon {
+  border-color: #b8ead4;
+  background: #eaf9f1;
+  color: #0f7a52;
+}
+
+.trade-progress-row.is-current {
+  background: #f7f5ff;
+}
+
+.trade-progress-row.is-current .trade-progress-icon {
+  border-color: var(--dan-accent);
+  background: var(--dan-accent);
+  color: #fff;
+}
+
+.trust-history--blueprint {
+  gap: 11px;
+}
+
+.trust-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  overflow: hidden;
+  border: 1px solid var(--dan-border);
+  border-radius: 13px;
+  background: #fff;
+}
+
+.trust-summary-strip > div {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  padding: 12px 6px;
+  border-left: 1px solid var(--dan-border);
+}
+
+.trust-summary-strip > div:first-child {
+  border-left: 0;
+}
+
+.trust-summary-strip strong {
+  font-size: 1.05rem;
+}
+
+.trust-summary-strip span {
+  color: var(--dan-ink-muted);
+  font-size: .66rem;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.trust-fact-list {
+  overflow: hidden;
+  border-top: 1px solid var(--dan-border);
+  border-bottom: 1px solid var(--dan-border);
+}
+
+.trust-fact-list > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  border-top: 1px solid var(--dan-border);
+}
+
+.trust-fact-list > div:first-child {
+  border-top: 0;
+}
+
+.trust-fact-list span {
+  color: var(--dan-ink-secondary);
+  font-size: .78rem;
+}
+
+.trust-fact-list strong {
+  font-size: .88rem;
+}
+
+.my-dan__header--v1 > div {
+  display: grid;
+  gap: 3px;
+}
+
+@media (max-width: 380px) {
+  .trust-summary-strip span {
+    font-size: .61rem;
+  }
+}
