@@ -63,7 +63,7 @@ export function MatchCard({ match }: { match: Match }) {
             <p>
               {match.status === "COMPLETED"
                 ? ko.tradeDoneTitle
-                : "상세 증거가 준비됐어요. 거래 조건을 확인하세요."}
+                : ko.connectedMsg}
             </p>
             <Button
               to={`/match/${match.id}`}
@@ -163,7 +163,7 @@ export function MatchCard({ match }: { match: Match }) {
             <p>
               {match.status === "COMPLETED"
                 ? ko.tradeDoneTitle
-                : ko.connectedMsg}
+                : "상세 증거가 준비됐어요. 거래 조건을 확인하세요."}
             </p>
             {match.status === "CONNECTED" ? (
               <Button to={`/deal/${match.id}/snapshot`} fullWidth>
