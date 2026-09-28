@@ -185,6 +185,16 @@ export interface SellIntent {
   createdAt: string;
 }
 
+export interface DealEvidenceChallenge {
+  id: string;
+  matchId: string;
+  sellerId: string;
+  challengeCode: string;
+  expiresAt: string;
+  consumedAt?: string;
+  createdAt: string;
+}
+
 export interface DealEvidence {
   id: string;
   matchId: string;
