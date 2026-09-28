@@ -244,7 +244,12 @@ export function ProfilePage() {
             <div className="trust-history">
               <div className="trust-history__head">
                 <strong>Trust History</strong>
-                <span>사실 기반 거래 기록</span>
+                <div className="trust-history__badges">
+                  {profile.identityVerified ? (
+                    <span className="trust-verified-badge">본인 확인됨</span>
+                  ) : null}
+                  <span>사실 기반 거래 기록</span>
+                </div>
               </div>
               <div className="trust-history__grid">
                 <div><span>거래 완료</span><strong>{profile.completedDemandCount}</strong></div>
