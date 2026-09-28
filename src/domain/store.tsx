@@ -1186,6 +1186,7 @@ export function DanProvider({ children }: { children: ReactNode }) {
           matches: state.matches,
           disputes: state.dealDisputes,
           viewerIsSelf: state.currentUserId === userId,
+          identityVerified: true,
           authLabel: null,
         });
       },
