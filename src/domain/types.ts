@@ -273,6 +273,7 @@ export interface Match {
   status: MatchStatus;
   dealStage?: DealStage;
   paymentStatus?: PaymentStatus;
+  paymentDueAt?: string;
   cancelReason?: CancelReason;
   cancelledBy?: string;
   cancelFaultParty?: FaultParty;
