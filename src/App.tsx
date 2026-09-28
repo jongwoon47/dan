@@ -22,6 +22,7 @@ import { MatchChatPage } from "@/pages/MatchChatPage";
 import { MyDanPage } from "@/pages/MyDanPage";
 import { OwnershipPage } from "@/pages/OwnershipPage";
 import { ProfilePage } from "@/pages/ProfilePage";
+import { QuickOfferPage } from "@/pages/QuickOfferPage";
 import { SellIntentPage } from "@/pages/SellIntentPage";
 
 function DataProvider({ children }: { children: ReactNode }) {
@@ -54,6 +55,7 @@ export default function App() {
               <Route path="demand/item/:demandId" element={<DemandItemPage />} />
               <Route path="demand/item/:demandId/edit" element={<DemandEditPage />} />
               <Route path="demand/:productId" element={<DemandDetailPage />} />
+              <Route path="demand/:productId/offer" element={<QuickOfferPage />} />
               <Route path="demand/:productId/own" element={<OwnershipPage />} />
               <Route
                 path="ownership/:ownershipId/sell-intent"
