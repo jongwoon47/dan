@@ -50,6 +50,22 @@ export type CancelReason =
   | "MUTUAL_CANCEL"
   | "SYSTEM_CANCEL"
   | "RISK_CANCEL";
+
+export type DealDisputeReason =
+  | "ITEM_NOT_RECEIVED"
+  | "WRONG_ITEM"
+  | "SNAPSHOT_MISMATCH"
+  | "MAJOR_UNDISCLOSED_DEFECT"
+  | "OTHER";
+
+export type DealDisputeStatus =
+  | "OPEN"
+  | "REVIEWING"
+  | "RESOLVED_BUYER"
+  | "RESOLVED_SELLER"
+  | "CLOSED";
+
+export type FaultParty = "BUYER" | "SELLER" | "NONE";
 export type ResponseStatus = "OPEN" | "ACCEPTED" | "WITHDRAWN" | "DECLINED";
 export type MatchStatus =
   | "POTENTIAL"
@@ -204,6 +220,20 @@ export interface DealSnapshot {
   updatedAt: string;
 }
 
+
+export interface DealDispute {
+  id: string;
+  matchId: string;
+  openedBy: string;
+  reason: DealDisputeReason;
+  detail: string;
+  status: DealDisputeStatus;
+  attributedFault?: FaultParty;
+  resolutionNote: string;
+  createdAt: string;
+  resolvedAt?: string;
+}
+
 export interface Response {
   id: string;
   demandId: string;
@@ -227,6 +257,8 @@ export interface Match {
   dealStage?: DealStage;
   paymentStatus?: PaymentStatus;
   cancelReason?: CancelReason;
+  cancelledBy?: string;
+  cancelFaultParty?: FaultParty;
   createdAt: string;
   buyerCompletedAt?: string;
   sellerCompletedAt?: string;
@@ -282,6 +314,11 @@ export interface PublicProfile {
   completedDemandCount: number;
   /** CONNECTED/COMPLETED matches where this user was the responder/seller. */
   responseConnectionCount: number;
+  /** Facts only; fault fields are populated only after explicit ops attribution. */
+  buyerFaultCancellationCount: number;
+  sellerFaultCancellationCount: number;
+  unresolvedDisputeCount: number;
+  confirmedMismatchCount: number;
   /** Only real auth providers — never invent verification. */
   authLabel?: string | null;
   recentActivity: PublicProfileActivity[];
