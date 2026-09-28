@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
@@ -18,7 +18,7 @@ const CONDITION_OPTIONS: Array<{ value: ConditionPreference; label: string }> = 
 ];
 
 export function CameraDemandCreatePage() {
-  const { products, createDemand, currentUser, isLoggedIn } = useDan();
+  const { products, createDemand, currentUser, isLoggedIn, getMyVerification } = useDan();
   const navigate = useNavigate();
   const pilotProducts = useMemo(
     () =>
@@ -32,9 +32,28 @@ export function CameraDemandCreatePage() {
   const [condition, setCondition] = useState<ConditionPreference>("any");
   const [area, setArea] = useState(currentUser?.defaultArea || "서울");
   const [submitting, setSubmitting] = useState(false);
+  const [verificationLoaded, setVerificationLoaded] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
   const [error, setError] = useState("");
 
   useDeepHeader({ title: "구매수요 등록" });
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setVerificationLoaded(false);
+      setPhoneVerified(false);
+      return;
+    }
+    let cancelled = false;
+    void getMyVerification().then((status) => {
+      if (cancelled) return;
+      setPhoneVerified(status.phoneVerified);
+      setVerificationLoaded(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [getMyVerification, isLoggedIn]);
 
   const selected = pilotProducts.find((p) => p.id === productId);
   const price = parseMoneyInput(maxPrice);
@@ -44,6 +63,10 @@ export function CameraDemandCreatePage() {
     if (!canSubmit || !selected || submitting) return;
     if (!isLoggedIn) {
       navigate("/login?next=/buy/new");
+      return;
+    }
+    if (!phoneVerified) {
+      setError("Live Demand를 공개하려면 휴대폰 본인확인이 필요해요.");
       return;
     }
     setSubmitting(true);
@@ -131,8 +154,23 @@ export function CameraDemandCreatePage() {
           <p>현재 시스템의 만료 정책에 따라 일정 기간 후 다시 확인하며, 만료된 수요는 공개 집계에서 빠집니다.</p>
         </div>
 
+        {isLoggedIn && verificationLoaded && !phoneVerified ? (
+          <div className="verification-gate">
+            <strong>휴대폰 본인확인이 필요해요</strong>
+            <p>
+              DAN의 공개 구매수요와 최고 희망가는 실제 구매 의사가 있는 계정만 반영하도록
+              검증된 계정만 Live Demand를 만들 수 있어요.
+            </p>
+          </div>
+        ) : null}
+
         {error ? <p className="form-error">{error}</p> : null}
-        <Button fullWidth size="lg" disabled={!canSubmit || submitting} onClick={() => void submit()}>
+        <Button
+          fullWidth
+          size="lg"
+          disabled={!canSubmit || submitting || (isLoggedIn && verificationLoaded && !phoneVerified)}
+          onClick={() => void submit()}
+        >
           {submitting ? "등록 중…" : "구매수요 등록하기"}
         </Button>
       </section>
