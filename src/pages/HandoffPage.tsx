@@ -68,7 +68,7 @@ export function HandoffPage() {
   const [detail, setDetail] = useState("");
   const [error, setError] = useState("");
 
-  useDeepHeader({ title: "직거래 최종 확인" });
+  useDeepHeader({ title: "거래 진행 중" });
 
   useEffect(() => {
     if (!matchId) return;
@@ -177,9 +177,30 @@ export function HandoffPage() {
   return (
     <div className="page-stack page-narrow handoff-page">
       <section className="handoff-hero">
-        <span className="eyebrow">Final Check</span>
+        <span className="eyebrow">Safe Handoff</span>
         <h1 className="page-title">{product.name}</h1>
-        <p>현장에서 실제 물건과 잠긴 Deal Snapshot을 다시 대조하세요.</p>
+        <p>확정한 조건을 기준으로 결제하고, 직거래 현장에서 실제 물건을 다시 확인해요.</p>
+      </section>
+
+      <section className="trade-progress-card" aria-label="거래 진행 단계">
+        <div className="trade-progress-row is-done">
+          <span className="trade-progress-icon">✓</span>
+          <div><strong>거래조건 확정</strong><small>Deal Snapshot 잠금 완료</small></div>
+        </div>
+        <div className={match.paymentStatus === "PAID" ? "trade-progress-row is-done" : "trade-progress-row is-current"}>
+          <span className="trade-progress-icon">{match.paymentStatus === "PAID" ? "✓" : "2"}</span>
+          <div>
+            <strong>구매자 안전결제</strong>
+            <small>{match.paymentStatus === "PAID" ? "결제 완료" : "결제 대기 중"}</small>
+          </div>
+        </div>
+        <div className={match.status === "COMPLETED" ? "trade-progress-row is-done" : match.paymentStatus === "PAID" ? "trade-progress-row is-current" : "trade-progress-row"}>
+          <span className="trade-progress-icon">{match.status === "COMPLETED" ? "✓" : "3"}</span>
+          <div>
+            <strong>직거래 · 인계 확인</strong>
+            <small>{match.status === "COMPLETED" ? "거래 완료" : match.paymentStatus === "PAID" ? "채팅에서 시간과 장소를 조율하세요" : "결제 완료 후 진행"}</small>
+          </div>
+        </div>
       </section>
 
       <section className="deal-snapshot-card">
@@ -205,8 +226,7 @@ export function HandoffPage() {
             </p>
           ) : null}
           <p>
-            실제 서비스에서는 PG가 결제 완료를 서버에 통지한 뒤에만 이 단계가 열립니다.
-            사용자가 직접 결제 상태를 바꿀 수 없습니다.
+            구매자의 안전결제가 확인되면 직거래 인계 단계가 열려요. 결제가 완료되기 전에는 물건을 넘기지 마세요.
           </p>
           {isDemo ? (
             <Button fullWidth variant="secondary" disabled={busy} onClick={() => void simulatePayment()}>
@@ -248,7 +268,7 @@ export function HandoffPage() {
           <span className="safe-payment-placeholder__icon">✓</span>
           <div>
             <strong>거래가 완료됐어요</strong>
-            <p>이 거래 결과는 별점이 아니라 실제 이행 기록으로 Trust History에 남습니다.</p>
+            <p>양쪽의 확인이 끝났습니다. 정산은 영업일 기준 1일 이내 처리되고, 거래 결과는 Trust History에 사실 기록으로 남아요.</p>
           </div>
           <Button to={`/profile/${currentUser.id}`} variant="secondary" fullWidth>
             내 Trust History 보기
@@ -318,7 +338,7 @@ export function HandoffPage() {
       {error ? <p className="form-error">{error}</p> : null}
 
       <Button to={`/match/${match.id}`} fullWidth variant="ghost">
-        거래 채팅
+        채팅에서 시간 · 장소 조율
       </Button>
     </div>
   );
