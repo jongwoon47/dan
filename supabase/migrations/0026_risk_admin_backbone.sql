@@ -26,6 +26,49 @@ $$;
 revoke all on function public.is_dan_admin(uuid) from public;
 grant execute on function public.is_dan_admin(uuid) to authenticated;
 
+-- Read-only admin visibility over operational records.
+drop policy if exists demands_admin_read on public.demands;
+create policy demands_admin_read
+on public.demands for select
+to authenticated
+using (public.is_dan_admin(auth.uid()));
+
+drop policy if exists matches_admin_read on public.matches;
+create policy matches_admin_read
+on public.matches for select
+to authenticated
+using (public.is_dan_admin(auth.uid()));
+
+drop policy if exists sell_intents_admin_read on public.sell_intents;
+create policy sell_intents_admin_read
+on public.sell_intents for select
+to authenticated
+using (public.is_dan_admin(auth.uid()));
+
+drop policy if exists ownerships_admin_read on public.ownerships;
+create policy ownerships_admin_read
+on public.ownerships for select
+to authenticated
+using (public.is_dan_admin(auth.uid()));
+
+drop policy if exists deal_disputes_admin_read on public.deal_disputes;
+create policy deal_disputes_admin_read
+on public.deal_disputes for select
+to authenticated
+using (public.is_dan_admin(auth.uid()));
+
+drop policy if exists deal_evidence_admin_read on public.deal_evidence;
+create policy deal_evidence_admin_read
+on public.deal_evidence for select
+to authenticated
+using (public.is_dan_admin(auth.uid()));
+
+drop policy if exists deal_snapshots_admin_read on public.deal_snapshots;
+create policy deal_snapshots_admin_read
+on public.deal_snapshots for select
+to authenticated
+using (public.is_dan_admin(auth.uid()));
+
 create table if not exists public.risk_flags (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references public.profiles (id) on delete set null,
