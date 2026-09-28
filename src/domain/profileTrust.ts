@@ -1,4 +1,4 @@
-import type { Demand, Match, PublicProfile, PublicProfileActivity } from "./types";
+import type { DealDispute, Demand, Match, PublicProfile, PublicProfileActivity } from "./types";
 import { DEMAND_TYPE_LABEL } from "./types";
 
 function isLiveConnection(status: Match["status"]) {
@@ -13,6 +13,7 @@ export function buildPublicProfileStats(input: {
   createdAt: string;
   demands: Demand[];
   matches: Match[];
+  disputes?: DealDispute[];
   viewerIsSelf: boolean;
   authLabel?: string | null;
 }): PublicProfile {
@@ -24,6 +25,27 @@ export function buildPublicProfileStats(input: {
     (m) => isLiveConnection(m.status) && m.sellerId === input.userId,
   );
   const allConnections = myMatches.filter((m) => isLiveConnection(m.status));
+  const buyerFaultCancellationCount = myMatches.filter(
+    (m) => m.buyerId === input.userId && m.cancelFaultParty === "BUYER",
+  ).length;
+  const sellerFaultCancellationCount = myMatches.filter(
+    (m) => m.sellerId === input.userId && m.cancelFaultParty === "SELLER",
+  ).length;
+  const disputes = input.disputes ?? [];
+  const myDisputes = disputes.filter((d) =>
+    myMatches.some((m) => m.id === d.matchId),
+  );
+  const unresolvedDisputeCount = myDisputes.filter(
+    (d) => d.status === "OPEN" || d.status === "REVIEWING",
+  ).length;
+  const confirmedMismatchCount = myDisputes.filter((d) => {
+    const m = myMatches.find((x) => x.id === d.matchId);
+    return (
+      d.reason === "SNAPSHOT_MISMATCH" &&
+      d.attributedFault === "SELLER" &&
+      m?.sellerId === input.userId
+    );
+  }).length;
 
   const demandById = new Map(input.demands.map((d) => [d.id, d]));
   const recentSource = [...completed].sort((a, b) => {
@@ -54,6 +76,10 @@ export function buildPublicProfileStats(input: {
     connectionCount: allConnections.length,
     completedDemandCount: completed.length,
     responseConnectionCount: responseConnections.length,
+    buyerFaultCancellationCount,
+    sellerFaultCancellationCount,
+    unresolvedDisputeCount,
+    confirmedMismatchCount,
     authLabel: input.authLabel ?? null,
     recentActivity,
   };
