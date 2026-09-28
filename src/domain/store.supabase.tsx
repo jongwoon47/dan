@@ -133,6 +133,7 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
       sellIntents,
       responses,
       matches,
+      dealEvidenceChallenges: [],
       dealEvidence: [],
       dealSnapshots: [],
       dealDisputes: [],
@@ -210,6 +211,13 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
           return null;
         }
         return run(() => api.upsertSellIntentRemote(payload));
+      },
+      issueDealEvidenceChallenge: async (matchId) => {
+        if (!currentUser) {
+          assignLogin();
+          return null;
+        }
+        return run(() => api.issueDealEvidenceChallengeRemote(matchId));
       },
       getDealEvidence: async (matchId) => {
         if (!currentUser) return null;
