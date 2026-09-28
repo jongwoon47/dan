@@ -336,6 +336,8 @@ export interface PublicProfile {
   sellerFaultCancellationCount: number;
   unresolvedDisputeCount: number;
   confirmedMismatchCount: number;
+  /** Privacy-safe fact from trusted verification provider. */
+  identityVerified: boolean;
   /** Only real auth providers — never invent verification. */
   authLabel?: string | null;
   recentActivity: PublicProfileActivity[];
