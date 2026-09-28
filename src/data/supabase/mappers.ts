@@ -1,5 +1,6 @@
 import type {
   BuyDemand,
+  DealDispute,
   DealEvidence,
   DealSnapshot,
   Demand,
@@ -114,6 +115,19 @@ export type DbResponse = {
   updated_at: string;
 };
 
+export type DbDealDispute = {
+  id: string;
+  match_id: string;
+  opened_by: string;
+  reason: DealDispute["reason"];
+  detail: string;
+  status: DealDispute["status"];
+  attributed_fault: DealDispute["attributedFault"] | null;
+  resolution_note: string;
+  created_at: string;
+  resolved_at: string | null;
+};
+
 export type DbDealEvidence = {
   id: string;
   match_id: string;
@@ -161,6 +175,8 @@ export type DbMatch = {
   deal_stage?: Match["dealStage"] | null;
   payment_status?: Match["paymentStatus"] | null;
   cancel_reason?: Match["cancelReason"] | null;
+  cancelled_by?: string | null;
+  cancel_fault_party?: Match["cancelFaultParty"] | null;
   created_at: string;
   updated_at: string;
   buyer_completed_at?: string | null;
@@ -288,6 +304,21 @@ export function mapResponse(row: DbResponse): Response {
   };
 }
 
+export function mapDealDispute(row: DbDealDispute): DealDispute {
+  return {
+    id: row.id,
+    matchId: row.match_id,
+    openedBy: row.opened_by,
+    reason: row.reason,
+    detail: row.detail ?? "",
+    status: row.status,
+    attributedFault: row.attributed_fault ?? undefined,
+    resolutionNote: row.resolution_note ?? "",
+    createdAt: row.created_at,
+    resolvedAt: row.resolved_at ?? undefined,
+  };
+}
+
 export function mapDealEvidence(row: DbDealEvidence): DealEvidence {
   return {
     id: row.id,
@@ -348,6 +379,8 @@ export function mapMatch(row: DbMatch): Match {
     dealStage: row.deal_stage ?? undefined,
     paymentStatus: row.payment_status ?? undefined,
     cancelReason: row.cancel_reason ?? undefined,
+    cancelledBy: row.cancelled_by ?? undefined,
+    cancelFaultParty: row.cancel_fault_party ?? undefined,
     createdAt: row.created_at,
     buyerCompletedAt: row.buyer_completed_at ?? undefined,
     sellerCompletedAt: row.seller_completed_at ?? undefined,
