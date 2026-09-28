@@ -1,6 +1,6 @@
 begin;
 
-select plan(14);
+select plan(15);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -73,6 +73,15 @@ select ok(
   ) > 0,
   'Live BUY demand TTL is capped at seven days in the database'
 );
+
+select ok(
+  position(
+    'Fujifilm X100VI'
+    in pg_get_functiondef('public.enforce_live_buy_phone_verification()'::regprocedure)
+  ) > 0,
+  'Live BUY demand is restricted to the five-camera V1 pilot'
+);
+
 
 
 select * from finish();
