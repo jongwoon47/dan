@@ -755,10 +755,11 @@ export async function fetchPublicProfile(userId: string) {
     else if (provider === "email") authLabel = "이메일로 가입";
   }
 
-  const { data: trustRaw, error: trustError } = await sb.rpc(
-    "get_public_profile_trust",
-    { p_user_id: userId },
-  );
+  const [{ data: trustRaw, error: trustError }, { data: verificationRaw }] =
+    await Promise.all([
+      sb.rpc("get_public_profile_trust", { p_user_id: userId }),
+      sb.rpc("get_public_verification_badges", { p_user_id: userId }),
+    ]);
   // Migration 0011 may not be applied yet — still show the trust card shell.
   const trust = (
     trustError ? {} : ((trustRaw ?? {}) as Record<string, unknown>)
@@ -787,6 +788,7 @@ export async function fetchPublicProfile(userId: string) {
   };
 
   const isSelf = trust.viewerIsSelf ?? viewerIsSelf;
+  const verification = (verificationRaw ?? {}) as Record<string, unknown>;
 
   return {
     id: profile.id as string,
@@ -804,6 +806,7 @@ export async function fetchPublicProfile(userId: string) {
     sellerFaultCancellationCount: trust.sellerFaultCancellationCount ?? 0,
     unresolvedDisputeCount: trust.unresolvedDisputeCount ?? 0,
     confirmedMismatchCount: trust.confirmedMismatchCount ?? 0,
+    identityVerified: Boolean(verification.identityVerified),
     authLabel,
     recentActivity: (trust.recentActivity ?? []).map((row) => {
       const statusKo =
