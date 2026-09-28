@@ -29,6 +29,7 @@ import type {
   Response,
   SellIntent,
   User,
+  UserVerificationStatus,
 } from "@/domain/types";
 import { getSupabase } from "./client";
 import {
@@ -133,6 +134,21 @@ export async function fetchSessionUser(): Promise<User | null> {
     name: profile?.display_name ?? auth.user.email ?? "DAN user",
     defaultArea:
       profile?.default_area_label ?? profile?.location ?? "",
+  };
+}
+
+export async function getMyVerificationRemote(): Promise<UserVerificationStatus> {
+  const { data, error } = await getSupabase().rpc("get_my_verification");
+  if (error) throw error;
+  const row = (data ?? {}) as Record<string, unknown>;
+  return {
+    phoneVerified: Boolean(row.phoneVerified),
+    identityVerified: Boolean(row.identityVerified),
+    payoutVerified: Boolean(row.payoutVerified),
+    sellerType:
+      row.sellerType === "INDIVIDUAL" || row.sellerType === "BUSINESS"
+        ? row.sellerType
+        : undefined,
   };
 }
 
