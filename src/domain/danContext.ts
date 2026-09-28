@@ -7,6 +7,8 @@ import type {
   ChatMessage,
   Demand,
   DemandAggregate,
+  CancelReason,
+  DealDispute,
   DealEvidence,
   DealSnapshot,
   DemandType,
@@ -89,6 +91,18 @@ export interface DanContextValue {
     agreedPrice: number;
     snapshot: Record<string, unknown>;
   }) => Promise<DealSnapshot | null>;
+  listDealDisputes: (matchId: string) => Promise<DealDispute[]>;
+  openDealDispute: (payload: {
+    matchId: string;
+    reason: DealDispute["reason"];
+    detail?: string;
+  }) => Promise<DealDispute | null>;
+  cancelDeal: (payload: {
+    matchId: string;
+    reason: CancelReason;
+  }) => Promise<Match | null>;
+  /** Demo-only visual QA helper. Supabase mode always returns false. */
+  simulateSafePaymentDemo: (matchId: string) => Promise<boolean>;
   createResponse: (payload: {
     demandId: string;
     message: string;
