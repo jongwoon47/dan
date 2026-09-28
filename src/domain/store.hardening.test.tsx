@@ -195,9 +195,18 @@ describe("store mutations / login race", () => {
       result.current.login("user-jun");
     });
 
+    let challengeCode = "";
+    await act(async () => {
+      const challenge = await result.current.issueDealEvidenceChallenge(interested!.id);
+      expect(challenge?.challengeCode).toHaveLength(6);
+      challengeCode = challenge!.challengeCode;
+    });
+
     await act(async () => {
       const evidence = await result.current.upsertDealEvidence({
         matchId: interested!.id,
+        challengeCode,
+        possessionPhotoUrl: "data:image/png;base64,AA==",
         serialLast4: "3812",
         usageCount: 2417,
         components: ["정품 배터리"],
@@ -205,6 +214,7 @@ describe("store mutations / login race", () => {
         knownIssues: "없음",
       });
       expect(evidence?.matchId).toBe(interested!.id);
+      expect(evidence?.evidenceMeta.challengeCode).toBe(challengeCode);
     });
 
     await act(async () => {
