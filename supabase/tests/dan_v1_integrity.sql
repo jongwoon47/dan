@@ -1,6 +1,6 @@
 begin;
 
-select plan(13);
+select plan(14);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -41,12 +41,19 @@ select ok(
   'Deal Snapshot is built from canonical V1 payload'
 );
 
+select has_function(
+  'public',
+  'is_phone_verified_for_live_demand',
+  array['uuid'],
+  'privacy-safe verification predicate exists'
+);
+
 select ok(
   position(
-    'user_verifications'
+    'is_phone_verified_for_live_demand'
     in pg_get_viewdef('public.buy_demand_aggregates'::regclass, true)
   ) > 0,
-  'public Live Demand aggregate is verification-gated'
+  'public Live Demand aggregate is verification-gated without reading verification rows'
 );
 
 select ok(
