@@ -133,6 +133,21 @@ as $$
 begin
   if auth.uid() is null then return new; end if;
   if new.type = 'BUY' and new.status = 'ACTIVE' then
+    if not exists (
+      select 1
+      from public.products p
+      where p.id = new.product_id
+        and p.canonical_name in (
+          'Fujifilm X100VI',
+          'Fujifilm X100V',
+          'Ricoh GR III',
+          'Ricoh GR IIIx',
+          'Sony RX100 VII'
+        )
+    ) then
+      raise exception 'product is outside DAN V1 camera pilot';
+    end if;
+
     if new.expires_at is null or new.expires_at > now() + interval '7 days' then
       new.expires_at := now() + interval '7 days';
     end if;
