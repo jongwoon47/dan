@@ -50,4 +50,24 @@ test("DAN V1 core concept screens render on mobile", async ({ page }, testInfo) 
     path: path.join(outDir, "03-live-demand-detail.png"),
     fullPage: true,
   });
+
+  await page.goto("/demand/prod-fuji-x100vi/offer");
+  await settle(page);
+  await expect(page.getByText("Quick Offer")).toBeVisible();
+  await expect(page.getByRole("button", { name: "제안 보내기" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await page.screenshot({
+    path: path.join(outDir, "04-quick-offer.png"),
+    fullPage: true,
+  });
+
+  await page.goto("/profile/user-you");
+  await settle(page);
+  await expect(page.getByText("Trust History")).toBeVisible();
+  await expect(page.getByText("사실 기반 거래 기록")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await page.screenshot({
+    path: path.join(outDir, "05-trust-history.png"),
+    fullPage: true,
+  });
 });
