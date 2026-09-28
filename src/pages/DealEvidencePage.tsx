@@ -31,6 +31,7 @@ export function DealEvidencePage() {
     getProduct,
     currentUser,
     issueDealEvidenceChallenge,
+    getMyVerification,
     getDealEvidence,
     upsertDealEvidence,
     connectAsSeller,
@@ -47,6 +48,8 @@ export function DealEvidencePage() {
   const [existing, setExisting] = useState<DealEvidence | null>(null);
   const [challenge, setChallenge] = useState<DealEvidenceChallenge | null>(null);
   const [challengeError, setChallengeError] = useState("");
+  const [sellerVerificationLoaded, setSellerVerificationLoaded] = useState(false);
+  const [sellerVerifiedForDeal, setSellerVerifiedForDeal] = useState(false);
   const [usageCount, setUsageCount] = useState("");
   const [serialLast4, setSerialLast4] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
@@ -61,6 +64,28 @@ export function DealEvidencePage() {
   const [submitError, setSubmitError] = useState("");
 
   useDeepHeader({ title: "판매자 증거 제출" });
+
+  useEffect(() => {
+    if (!isSeller) {
+      setSellerVerificationLoaded(false);
+      setSellerVerifiedForDeal(false);
+      return;
+    }
+    let cancelled = false;
+    void getMyVerification().then((status) => {
+      if (cancelled) return;
+      setSellerVerifiedForDeal(
+        status.phoneVerified &&
+          status.identityVerified &&
+          status.payoutVerified &&
+          Boolean(status.sellerType),
+      );
+      setSellerVerificationLoaded(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [getMyVerification, isSeller]);
 
   useEffect(() => {
     if (!matchId || !isSeller) return;
@@ -100,12 +125,21 @@ export function DealEvidencePage() {
   const canSubmit = useMemo(
     () =>
       isSeller &&
+      sellerVerifiedForDeal &&
       Boolean(challenge) &&
       Boolean(possessionPhotoUrl) &&
       serialLast4.trim().length >= 2 &&
       cosmeticNotes.trim().length > 0 &&
       knownIssues.trim().length > 0,
-    [isSeller, challenge, possessionPhotoUrl, serialLast4, cosmeticNotes, knownIssues],
+    [
+      isSeller,
+      sellerVerifiedForDeal,
+      challenge,
+      possessionPhotoUrl,
+      serialLast4,
+      cosmeticNotes,
+      knownIssues,
+    ],
   );
 
   if (!match || !demand || !product || !sell || !currentUser) {
@@ -196,6 +230,16 @@ export function DealEvidencePage() {
           <Button to={`/deal/${match.id}/snapshot`} fullWidth size="lg">
             거래 조건 확인
           </Button>
+        </section>
+      ) : null}
+
+      {isSeller && sellerVerificationLoaded && !sellerVerifiedForDeal ? (
+        <section className="verification-gate">
+          <strong>실거래 전 판매자 검증이 필요해요</strong>
+          <p>
+            Quick Offer는 검증 없이도 보낼 수 있지만 Deal로 들어가려면
+            휴대폰·본인·정산계좌 검증이 모두 완료되어야 합니다.
+          </p>
         </section>
       ) : null}
 
