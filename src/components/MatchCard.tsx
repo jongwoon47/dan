@@ -55,11 +55,7 @@ export function MatchCard({ match }: { match: Match }) {
           <div>
             <Badge tone="accent">{MATCH_STATUS_LABEL[match.status]}</Badge>
             <h3>{demand.title}</h3>
-            <p className="match-card__lead">
-            {isBuyer
-              ? "판매자가 이 구매수요에 판매 제안을 보냈어요."
-              : "구매자가 이 제안을 검토하고 있어요."}
-          </p>
+            <p className="match-card__lead">{ko.matchLead}</p>
           </div>
         </div>
         {match.status === "CONNECTED" || match.status === "COMPLETED" ? (
@@ -105,7 +101,11 @@ export function MatchCard({ match }: { match: Match }) {
             <Badge tone="accent">{MATCH_STATUS_LABEL[match.status]}</Badge>
           </div>
           <h3>{product.name}</h3>
-          <p className="match-card__lead">{ko.matchLead}</p>
+          <p className="match-card__lead">
+            {isBuyer
+              ? "판매자가 이 구매수요에 판매 제안을 보냈어요."
+              : "구매자가 이 제안을 검토하고 있어요."}
+          </p>
         </div>
       </div>
 
