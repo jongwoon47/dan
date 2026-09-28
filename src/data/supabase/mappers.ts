@@ -174,6 +174,7 @@ export type DbMatch = {
   status: Exclude<MatchStatus, "POTENTIAL">;
   deal_stage?: Match["dealStage"] | null;
   payment_status?: Match["paymentStatus"] | null;
+  payment_due_at?: string | null;
   cancel_reason?: Match["cancelReason"] | null;
   cancelled_by?: string | null;
   cancel_fault_party?: Match["cancelFaultParty"] | null;
@@ -378,6 +379,7 @@ export function mapMatch(row: DbMatch): Match {
     status: row.status,
     dealStage: row.deal_stage ?? undefined,
     paymentStatus: row.payment_status ?? undefined,
+    paymentDueAt: row.payment_due_at ?? undefined,
     cancelReason: row.cancel_reason ?? undefined,
     cancelledBy: row.cancelled_by ?? undefined,
     cancelFaultParty: row.cancel_fault_party ?? undefined,
