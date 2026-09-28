@@ -6,7 +6,7 @@ import { Chip, ChipGroup, Field, TextInput } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
-import type { ItemCondition } from "@/domain/types";
+import type { ItemCondition, Ownership } from "@/domain/types";
 import { CONDITION_LABEL } from "@/domain/types";
 import {
   digitsOnly,
@@ -101,9 +101,10 @@ export function QuickOfferPage() {
     setBusy(true);
     setError("");
     try {
-      let ownership = existingOwnership;
+      let ownership: Ownership | undefined = existingOwnership;
       if (!ownership) {
-        ownership = await createOwnership({ productId, condition });
+        ownership =
+          (await createOwnership({ productId, condition })) ?? undefined;
       }
       if (!ownership) {
         setError("물품 보유 정보를 만들지 못했어요.");
