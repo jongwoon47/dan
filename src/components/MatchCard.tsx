@@ -55,7 +55,11 @@ export function MatchCard({ match }: { match: Match }) {
           <div>
             <Badge tone="accent">{MATCH_STATUS_LABEL[match.status]}</Badge>
             <h3>{demand.title}</h3>
-            <p className="match-card__lead">{ko.matchLead}</p>
+            <p className="match-card__lead">
+            {isBuyer
+              ? "판매자가 이 구매수요에 판매 제안을 보냈어요."
+              : "구매자가 이 제안을 검토하고 있어요."}
+          </p>
           </div>
         </div>
         {match.status === "CONNECTED" || match.status === "COMPLETED" ? (
@@ -63,7 +67,7 @@ export function MatchCard({ match }: { match: Match }) {
             <p>
               {match.status === "COMPLETED"
                 ? ko.tradeDoneTitle
-                : ko.connectedMsg}
+                : "상세 증거가 준비됐어요. 거래 조건을 확인하세요."}
             </p>
             <Button
               to={`/match/${match.id}`}
@@ -141,17 +145,17 @@ export function MatchCard({ match }: { match: Match }) {
       <div className="match-card__actions">
         {isBuyer && match.status === "POTENTIAL" ? (
           <Button fullWidth onClick={() => void onInterest()} disabled={busy}>
-            {busy ? "..." : ko.sendInterest}
+            {busy ? "..." : "거래 검토하기"}
           </Button>
         ) : null}
         {isBuyer && match.status === "BUYER_INTERESTED" ? (
           <Button fullWidth variant="secondary" disabled>
-            {ko.waitingSeller}
+            판매자 증거 제출 대기
           </Button>
         ) : null}
         {isSeller && match.status === "BUYER_INTERESTED" ? (
           <Button fullWidth to={`/deal/${match.id}/evidence`}>
-            증거 제출하기
+            구매자가 관심을 보였어요 · 증거 제출
           </Button>
         ) : null}
         {match.status === "CONNECTED" || match.status === "COMPLETED" ? (
