@@ -1,6 +1,6 @@
 begin;
 
-select plan(12);
+select plan(13);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -58,6 +58,15 @@ select ok(
   ),
   'DAN evidence bucket is private'
 );
+
+select ok(
+  position(
+    '7 days'
+    in pg_get_functiondef('public.enforce_live_buy_phone_verification()'::regprocedure)
+  ) > 0,
+  'Live BUY demand TTL is capped at seven days in the database'
+);
+
 
 select * from finish();
 rollback;
