@@ -344,8 +344,23 @@ export function MatchChatPage() {
               Deal Snapshot은 확정됐습니다. PG 안전결제가 실제 연동되기 전에는 이 화면에서 실거래 완료 처리를 허용하지 않습니다.
             </p>
             <div className="trade-status__actions">
+              <Button to={`/deal/${match.id}/handoff`} fullWidth>
+                안전결제 · 직거래 단계
+              </Button>
               <Button to={`/deal/${match.id}/snapshot`} fullWidth variant="secondary">
                 확정된 거래 조건 보기
+              </Button>
+            </div>
+          </>
+        ) : isBuyTrade && buyPaid ? (
+          <>
+            <p className="trade-status__state">현장 최종 확인 단계예요</p>
+            <p className="trade-status__hint">
+              거래 완료는 채팅이 아니라 잠긴 Deal Snapshot을 다시 확인하는 화면에서 진행합니다.
+            </p>
+            <div className="trade-status__actions">
+              <Button to={`/deal/${match.id}/handoff`} fullWidth>
+                직거래 최종 확인
               </Button>
             </div>
           </>
