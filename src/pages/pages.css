@@ -2260,3 +2260,18 @@
   font-size: 0.72rem;
   font-weight: 800;
 }
+
+
+.deal-evidence-review {
+  display: grid;
+  gap: 12px;
+}
+
+.deal-evidence-review__photo {
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  border: 1px solid var(--dan-border);
+  border-radius: 18px;
+  background: var(--dan-bg);
+}
