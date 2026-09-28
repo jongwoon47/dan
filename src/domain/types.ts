@@ -76,6 +76,13 @@ export type MatchStatus =
   | "CLOSED"
   | "COMPLETED";
 
+export interface UserVerificationStatus {
+  phoneVerified: boolean;
+  identityVerified: boolean;
+  payoutVerified: boolean;
+  sellerType?: "INDIVIDUAL" | "BUSINESS";
+}
+
 export interface User {
   id: string;
   name: string;
