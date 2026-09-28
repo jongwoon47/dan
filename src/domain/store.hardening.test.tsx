@@ -289,7 +289,10 @@ describe("store mutations / login race", () => {
 
     expect(
       result.current.state.matches.find((m) => m.id === interested!.id)?.dealStage,
-    ).toBe("DEAL_LOCKED");
+    ).toBe("PAYMENT_PENDING");
+    expect(
+      result.current.state.matches.find((m) => m.id === interested!.id)?.paymentDueAt,
+    ).toBeTruthy();
 
     // Locked terms alone are not enough: BUY completion is payment-gated.
     await act(async () => {
