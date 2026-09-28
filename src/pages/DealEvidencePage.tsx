@@ -63,7 +63,7 @@ export function DealEvidencePage() {
   const [photoError, setPhotoError] = useState("");
   const [submitError, setSubmitError] = useState("");
 
-  useDeepHeader({ title: "판매자 증거 제출" });
+  useDeepHeader({ title: isSeller ? "판매자 증거 제출" : "판매자 증거" });
 
   useEffect(() => {
     if (!isSeller) {
@@ -303,6 +303,11 @@ export function DealEvidencePage() {
             {photoError ? <p className="form-error">{photoError}</p> : null}
           </div>
 
+          <div className="evidence-form-divider">
+            <span>2</span>
+            <div><strong>제품 정보</strong><small>컷수·시리얼·구매 및 보증 정보를 확인해요.</small></div>
+          </div>
+
           <div className="deal-grid-2">
             <Field label="컷수">
               <TextInput
@@ -328,6 +333,11 @@ export function DealEvidencePage() {
             <Field label="보증 종료">
               <input className="dan-input" type="date" value={warrantyUntil} onChange={(e) => setWarrantyUntil(e.target.value)} />
             </Field>
+          </div>
+
+          <div className="evidence-form-divider">
+            <span>3</span>
+            <div><strong>구성품 · 상태 · 추가 정보</strong><small>Deal Snapshot에 그대로 기록될 내용이에요.</small></div>
           </div>
 
           <div>
@@ -361,7 +371,7 @@ export function DealEvidencePage() {
 
           {submitError ? <p className="form-error">{submitError}</p> : null}
           <Button fullWidth size="lg" disabled={!canSubmit || busy} onClick={() => void submit()}>
-            {busy ? "저장 중…" : "증거 제출하고 거래 조건 확인"}
+            {busy ? "저장 중…" : "증거 제출하기"}
           </Button>
         </section>
       ) : null}
