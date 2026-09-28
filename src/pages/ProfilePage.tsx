@@ -241,6 +241,23 @@ export function ProfilePage() {
               </div>
             ) : null}
 
+            <div className="trust-history">
+              <div className="trust-history__head">
+                <strong>Trust History</strong>
+                <span>사실 기반 거래 기록</span>
+              </div>
+              <div className="trust-history__grid">
+                <div><span>거래 완료</span><strong>{profile.completedDemandCount}</strong></div>
+                <div><span>판매자 귀책 취소</span><strong>{profile.sellerFaultCancellationCount}</strong></div>
+                <div><span>구매자 귀책 취소</span><strong>{profile.buyerFaultCancellationCount}</strong></div>
+                <div><span>확정 상태불일치</span><strong>{profile.confirmedMismatchCount}</strong></div>
+                <div><span>미해결 분쟁</span><strong>{profile.unresolvedDisputeCount}</strong></div>
+              </div>
+              <p className="trust-history__note">
+                사용자 신고나 선택만으로 귀책을 표시하지 않습니다. 확정된 운영 기록만 반영합니다.
+              </p>
+            </div>
+
             {profile.recentActivity.length > 0 ? (
               <div className="trust-card__recent">
                 <p className="trust-card__stats-label">{ko.profileRecent}</p>
