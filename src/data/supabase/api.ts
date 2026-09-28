@@ -1112,6 +1112,66 @@ export async function reopenDemandAfterTradeCloseRemote(
   return mapDemand(data as DbDemand);
 }
 
+export async function isDanAdminRemote(): Promise<boolean> {
+  const { data, error } = await getSupabase().rpc("is_dan_admin");
+  if (error) return false;
+  return Boolean(data);
+}
+
+export async function listAdminRiskFlagsRemote() {
+  const { data, error } = await getSupabase()
+    .from("risk_flags")
+    .select("id,user_id,match_id,sell_intent_id,kind,severity,status,detail,created_at,resolved_at")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function listAdminDisputesRemote() {
+  const { data, error } = await getSupabase()
+    .from("deal_disputes")
+    .select("id,match_id,opened_by,reason,detail,status,attributed_fault,resolution_note,created_at,resolved_at")
+    .in("status", ["OPEN", "REVIEWING"])
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function listAdminDealsRemote() {
+  const { data, error } = await getSupabase()
+    .from("matches")
+    .select("id,demand_id,product_id,buyer_id,seller_id,status,deal_stage,payment_status,payment_due_at,cancel_reason,created_at,completed_at")
+    .in("status", ["CONNECTED", "COMPLETED", "CLOSED"])
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function listAdminAuditRemote() {
+  const { data, error } = await getSupabase()
+    .from("admin_audit_log")
+    .select("id,actor_id,action,target_type,target_id,detail,created_at")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function updateAdminRiskFlagRemote(
+  flagId: string,
+  status: "OPEN" | "REVIEWING" | "RESOLVED" | "DISMISSED",
+) {
+  const { data, error } = await getSupabase().rpc("admin_update_risk_flag", {
+    p_flag_id: flagId,
+    p_status: status,
+  });
+  if (error) throw error;
+  return data;
+}
+
 export async function signUp(email: string, password: string, displayName: string) {
   const { data, error } = await getSupabase().auth.signUp({
     email,
