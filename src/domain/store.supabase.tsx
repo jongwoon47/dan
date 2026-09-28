@@ -135,6 +135,7 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
       matches,
       dealEvidence: [],
       dealSnapshots: [],
+      dealDisputes: [],
     }),
     [auth.user?.id, demands, ownerships, sellIntents, responses, matches],
   );
@@ -240,6 +241,29 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         }
         return run(() => api.confirmDealSnapshotRemote(payload));
       },
+      listDealDisputes: async (matchId) => {
+        if (!currentUser) return [];
+        try {
+          return await api.listDealDisputesRemote(matchId);
+        } catch {
+          return [];
+        }
+      },
+      openDealDispute: async (payload) => {
+        if (!currentUser) {
+          assignLogin();
+          return null;
+        }
+        return run(() => api.openDealDisputeRemote(payload));
+      },
+      cancelDeal: async (payload) => {
+        if (!currentUser) {
+          assignLogin();
+          return null;
+        }
+        return run(() => api.cancelDealRemote(payload));
+      },
+      simulateSafePaymentDemo: async () => false,
       createResponse: async (payload) => {
         if (!currentUser) {
           assignLogin();
