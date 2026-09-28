@@ -3,7 +3,7 @@ import { AggregatedDemandCard } from "@/components/AggregatedDemandCard";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDan } from "@/domain/danContext";
-import { DAN_V1_CAMERA_NAME_SET } from "@/domain/danV1";
+import { DAN_V1_CAMERA_NAMES, DAN_V1_CAMERA_NAME_SET } from "@/domain/danV1";
 import "./pages.css";
 import "@/components/feedCards.css";
 
@@ -16,7 +16,18 @@ export function HomePage() {
         DAN_V1_CAMERA_NAME_SET.has(item.product.name) &&
         item.aggregate.seekerCount > 0,
     )
-    .slice(0, 6);
+    .sort((a, b) => {
+      if (a.kind !== "aggregated" || b.kind !== "aggregated") return 0;
+      return (
+        DAN_V1_CAMERA_NAMES.indexOf(
+          a.product.name as (typeof DAN_V1_CAMERA_NAMES)[number],
+        ) -
+        DAN_V1_CAMERA_NAMES.indexOf(
+          b.product.name as (typeof DAN_V1_CAMERA_NAMES)[number],
+        )
+      );
+    })
+    .slice(0, 5);
 
   return (
     <div className="page-stack home-page home-page--v1">
