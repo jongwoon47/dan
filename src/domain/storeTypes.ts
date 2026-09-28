@@ -1,5 +1,6 @@
 import type {
   Demand,
+  DealDispute,
   DealEvidence,
   DealSnapshot,
   Match,
@@ -17,4 +18,5 @@ export interface DanState {
   matches: Match[];
   dealEvidence: DealEvidence[];
   dealSnapshots: DealSnapshot[];
+  dealDisputes: DealDispute[];
 }
