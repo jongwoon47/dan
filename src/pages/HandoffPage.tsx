@@ -4,10 +4,19 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
-import type { DealDispute, DealDisputeReason, DealSnapshot } from "@/domain/types";
+import type { CancelReason, DealDispute, DealDisputeReason, DealSnapshot } from "@/domain/types";
 import { formatWon } from "@/lib/format";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import "./pages.css";
+
+const CANCEL_OPTIONS: Array<{ value: CancelReason; label: string }> = [
+  { value: "BUYER_CHANGED_MIND", label: "구매자 변심" },
+  { value: "SELLER_CHANGED_MIND", label: "판매자 변심" },
+  { value: "SELLER_CHANGED_TERMS", label: "판매 조건 변경" },
+  { value: "BUYER_NO_PAYMENT", label: "결제 미이행" },
+  { value: "ITEM_UNAVAILABLE", label: "물품 판매 불가" },
+  { value: "MUTUAL_CANCEL", label: "상호 합의 취소" },
+];
 
 const DISPUTE_OPTIONS: Array<{ value: DealDisputeReason; label: string }> = [
   { value: "WRONG_ITEM", label: "다른 물건이에요" },
@@ -34,6 +43,7 @@ function snapshotString(
 
 export function HandoffPage() {
   const { matchId = "" } = useParams();
+  const navigate = useNavigate();
   const {
     myMatches,
     currentUser,
@@ -42,6 +52,7 @@ export function HandoffPage() {
     getDealSnapshot,
     listDealDisputes,
     openDealDispute,
+    cancelDeal,
     confirmMatchCompletion,
     simulateSafePaymentDemo,
     busy,
@@ -53,6 +64,7 @@ export function HandoffPage() {
   const [snapshot, setSnapshot] = useState<DealSnapshot | null>(null);
   const [disputes, setDisputes] = useState<DealDispute[]>([]);
   const [reason, setReason] = useState<DealDisputeReason>("SNAPSHOT_MISMATCH");
+  const [cancelReason, setCancelReason] = useState<CancelReason>("MUTUAL_CANCEL");
   const [detail, setDetail] = useState("");
   const [error, setError] = useState("");
 
@@ -128,6 +140,16 @@ export function HandoffPage() {
     }
   }
 
+  async function cancelBeforePayment() {
+    setError("");
+    const updated = await cancelDeal({ matchId, reason: cancelReason });
+    if (!updated) {
+      setError("거래를 취소하지 못했어요.");
+      return;
+    }
+    navigate("/my");
+  }
+
   async function confirmHandoff() {
     setError("");
     const updated = await confirmMatchCompletion(matchId);
@@ -181,6 +203,29 @@ export function HandoffPage() {
               데모: 안전결제 완료 상태로 전환
             </Button>
           ) : null}
+          <details className="cancel-panel">
+            <summary>결제 전에 거래를 취소해야 하나요?</summary>
+            <div className="section-stack">
+              <div className="dispute-reason-grid">
+                {CANCEL_OPTIONS.map((option) => (
+                  <button
+                    type="button"
+                    key={option.value}
+                    className={cancelReason === option.value ? "condition-option is-selected" : "condition-option"}
+                    onClick={() => setCancelReason(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              <p className="section-desc">
+                이 사유는 거래 기록에는 남지만, 사용자의 선택만으로 상대방 귀책으로 공개되지 않습니다.
+              </p>
+              <Button fullWidth variant="ghost" disabled={busy} onClick={() => void cancelBeforePayment()}>
+                이 거래 취소
+              </Button>
+            </div>
+          </details>
         </section>
       ) : openDispute ? (
         <section className="dispute-paused">
