@@ -71,7 +71,7 @@ export function QuickOfferPage() {
   }
 
   const typedPrice = parseMoneyInput(price);
-  const canSubmit = Boolean(condition && typedPrice > 0);
+  const canSubmit = Boolean(condition && typedPrice > 0 && quickPhotoUrl);
 
   async function pickPhoto(file?: File) {
     setPhotoError("");
@@ -205,13 +205,13 @@ export function QuickOfferPage() {
 
         <div>
           <p className="field-inline-label">
-            현재 사진 1장 <span className="muted">선택</span>
+            현재 사진 1장 <span className="required-mark">필수</span>
           </p>
           <label className="evidence-upload evidence-upload--quick">
             {quickPhotoUrl ? (
               <img src={quickPhotoUrl} alt="현재 물품" />
             ) : (
-              <span>사진을 추가하면 구매자가 더 빠르게 판단할 수 있어요</span>
+              <span>현재 가지고 있는 카메라 사진 1장을 추가해 주세요</span>
             )}
             <input
               type="file"
