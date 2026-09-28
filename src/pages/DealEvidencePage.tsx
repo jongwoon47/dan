@@ -6,7 +6,7 @@ import { Field, TextInput } from "@/components/ui/Input";
 import { ProductVisual } from "@/components/ProductVisual";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
-import type { DealEvidence } from "@/domain/types";
+import type { DealEvidence, DealEvidenceChallenge } from "@/domain/types";
 import { formatWon } from "@/lib/format";
 import "./pages.css";
 
@@ -30,6 +30,7 @@ export function DealEvidencePage() {
     getDemand,
     getProduct,
     currentUser,
+    issueDealEvidenceChallenge,
     getDealEvidence,
     upsertDealEvidence,
     connectAsSeller,
@@ -44,6 +45,8 @@ export function DealEvidencePage() {
   const isSeller = Boolean(match && currentUser?.id === match.sellerId);
 
   const [existing, setExisting] = useState<DealEvidence | null>(null);
+  const [challenge, setChallenge] = useState<DealEvidenceChallenge | null>(null);
+  const [challengeError, setChallengeError] = useState("");
   const [usageCount, setUsageCount] = useState("");
   const [serialLast4, setSerialLast4] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
@@ -58,6 +61,23 @@ export function DealEvidencePage() {
   const [submitError, setSubmitError] = useState("");
 
   useDeepHeader({ title: "판매자 증거 제출" });
+
+  useEffect(() => {
+    if (!matchId || !isSeller) return;
+    let cancelled = false;
+    setChallengeError("");
+    void issueDealEvidenceChallenge(matchId).then((row) => {
+      if (cancelled) return;
+      if (!row) {
+        setChallengeError("촬영 코드를 발급하지 못했어요.");
+        return;
+      }
+      setChallenge(row);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [issueDealEvidenceChallenge, isSeller, matchId]);
 
   useEffect(() => {
     if (!matchId) return;
@@ -80,10 +100,12 @@ export function DealEvidencePage() {
   const canSubmit = useMemo(
     () =>
       isSeller &&
+      Boolean(challenge) &&
+      Boolean(possessionPhotoUrl) &&
       serialLast4.trim().length >= 2 &&
       cosmeticNotes.trim().length > 0 &&
       knownIssues.trim().length > 0,
-    [isSeller, serialLast4, cosmeticNotes, knownIssues],
+    [isSeller, challenge, possessionPhotoUrl, serialLast4, cosmeticNotes, knownIssues],
   );
 
   if (!match || !demand || !product || !sell || !currentUser) {
@@ -126,8 +148,10 @@ export function DealEvidencePage() {
     const activeProduct = product;
     if (!activeMatch || !activeProduct) return;
     setSubmitError("");
+    if (!challenge) return;
     const row = await upsertDealEvidence({
       matchId,
+      challengeCode: challenge.challengeCode,
       possessionPhotoUrl: possessionPhotoUrl || undefined,
       serialLast4: serialLast4.trim(),
       usageCount: usageCount ? Number(usageCount) : undefined,
@@ -177,17 +201,58 @@ export function DealEvidencePage() {
 
       {isSeller ? (
         <section className="section-stack deal-form">
-          <div>
-            <p className="field-inline-label">현재 보유 사진</p>
+          <div className="evidence-challenge-block">
+            <div className="evidence-challenge-copy">
+              <p className="field-inline-label">현재 보유 사진 · 필수</p>
+              <p>
+                아래 코드를 종이나 다른 화면에 띄워 카메라와 함께 촬영해 주세요.
+                DAN이 정품을 보증하는 것은 아니지만, 오래된 도용 사진을 쓰기 어렵게 합니다.
+              </p>
+            </div>
+            {challenge ? (
+              <div className="evidence-challenge-code">
+                <span>촬영 코드</span>
+                <strong>{challenge.challengeCode}</strong>
+                <small>15분 동안 유효</small>
+              </div>
+            ) : (
+              <div className="evidence-challenge-code evidence-challenge-code--loading">
+                <span>{challengeError || "촬영 코드 발급 중…"}</span>
+                {challengeError ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      setChallengeError("");
+                      void issueDealEvidenceChallenge(matchId).then((row) => {
+                        if (!row) {
+                          setChallengeError("촬영 코드를 발급하지 못했어요.");
+                          return;
+                        }
+                        setChallenge(row);
+                      });
+                    }}
+                  >
+                    새 코드 받기
+                  </Button>
+                ) : null}
+              </div>
+            )}
             <label className="evidence-upload">
               {possessionPhotoUrl ? (
                 <img src={possessionPhotoUrl} alt="현재 보유 물품" />
               ) : (
-                <span>카메라와 오늘의 물품을 함께 찍어주세요</span>
+                <span>
+                  {challenge
+                    ? `카메라와 촬영 코드 ${challenge.challengeCode}가 함께 보이게 찍어주세요`
+                    : "촬영 코드가 발급되면 사진을 추가할 수 있어요"}
+                </span>
               )}
               <input
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
+                disabled={!challenge}
                 onChange={(e) => void pickPhoto(e.target.files?.[0])}
               />
             </label>
