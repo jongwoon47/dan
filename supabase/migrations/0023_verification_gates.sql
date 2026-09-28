@@ -193,7 +193,28 @@ create trigger trg_connected_buy_seller_verification
 before update of status on public.matches
 for each row execute function public.enforce_connected_buy_seller_verification();
 
+-- Internal predicate: exposes only a boolean, never verification rows.
+create or replace function public.is_phone_verified_for_live_demand(p_user_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.user_verifications v
+    where v.user_id = p_user_id
+      and v.phone_verified_at is not null
+  );
+$$;
+
+revoke all on function public.is_phone_verified_for_live_demand(uuid) from public;
+grant execute on function public.is_phone_verified_for_live_demand(uuid) to authenticated;
+
 -- Public Live Demand numbers only include phone-verified buyers.
+-- The security-definer predicate prevents exposing verification rows while the
+-- aggregate view itself remains security-invoker for demand visibility.
 create or replace view public.buy_demand_aggregates
 with (security_invoker = true)
 as
@@ -213,7 +234,5 @@ join public.demands d
  and d.type = 'BUY'
  and d.status = 'ACTIVE'
  and d.expires_at > now()
-join public.user_verifications v
-  on v.user_id = d.user_id
- and v.phone_verified_at is not null
+ and public.is_phone_verified_for_live_demand(d.user_id)
 group by p.id;
