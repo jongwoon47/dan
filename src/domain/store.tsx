@@ -43,6 +43,7 @@ import {
 } from "./productName";
 import type {
   BuyDemand,
+  DealDispute,
   DealEvidence,
   DealSnapshot,
   Demand,
@@ -92,6 +93,7 @@ function defaultState(): DanState {
     matches: SEED_MATCHES,
     dealEvidence: [],
     dealSnapshots: [],
+    dealDisputes: [],
   };
 }
 
@@ -114,6 +116,7 @@ function loadState(): DanState {
       matches: sanitizePersistedMatches(parsed.matches),
       dealEvidence: parsed.dealEvidence ?? [],
       dealSnapshots: parsed.dealSnapshots ?? [],
+      dealDisputes: parsed.dealDisputes ?? [],
     };
   } catch {
     return defaultState();
@@ -493,6 +496,18 @@ function reducer(state: DanState, action: Action): DanState {
       if (actorId !== current.buyerId && actorId !== current.sellerId) {
         return state;
       }
+      const demand = state.demands.find((d) => d.id === current.demandId);
+      if (demand?.type === "BUY") {
+        const snapshot = state.dealSnapshots.find((x) => x.matchId === current.id);
+        const hasOpenDispute = state.dealDisputes.some(
+          (x) =>
+            x.matchId === current.id &&
+            (x.status === "OPEN" || x.status === "REVIEWING"),
+        );
+        if (!snapshot?.lockedAt || current.paymentStatus !== "PAID" || hasOpenDispute) {
+          return state;
+        }
+      }
       const now = new Date().toISOString();
       const isBuyer = actorId === current.buyerId;
       let nextMatch: Match = {
@@ -508,6 +523,7 @@ function reducer(state: DanState, action: Action): DanState {
         nextMatch = {
           ...nextMatch,
           status: "COMPLETED",
+          dealStage: demand?.type === "BUY" ? ("COMPLETED" as const) : nextMatch.dealStage,
           completedAt: now,
         };
       }
@@ -745,6 +761,107 @@ export function DanProvider({ children }: { children: ReactNode }) {
         };
         dispatch({ type: "UPSERT_DEAL_SNAPSHOT", snapshot });
         return snapshot;
+      },
+      listDealDisputes: async (matchId) =>
+        state.dealDisputes
+          .filter((x) => x.matchId === matchId)
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+      openDealDispute: async (payload) => {
+        const actorId = state.currentUserId;
+        const match = state.matches.find((m) => m.id === payload.matchId);
+        if (
+          !actorId ||
+          !match ||
+          match.status !== "CONNECTED" ||
+          match.paymentStatus !== "PAID" ||
+          (actorId !== match.buyerId && actorId !== match.sellerId)
+        ) {
+          return null;
+        }
+        if (
+          state.dealDisputes.some(
+            (x) =>
+              x.matchId === match.id &&
+              (x.status === "OPEN" || x.status === "REVIEWING"),
+          )
+        ) {
+          return null;
+        }
+        const dispute: DealDispute = {
+          id: createId("dispute"),
+          matchId: match.id,
+          openedBy: actorId,
+          reason: payload.reason,
+          detail: payload.detail?.trim() ?? "",
+          status: "OPEN",
+          resolutionNote: "",
+          createdAt: new Date().toISOString(),
+        };
+        const next: DanState = {
+          ...state,
+          dealDisputes: [dispute, ...state.dealDisputes],
+          matches: state.matches.map((m) =>
+            m.id === match.id ? { ...m, dealStage: "DISPUTE" as const } : m,
+          ),
+        };
+        persist(next);
+        flushSync(() => dispatch({ type: "HYDRATE", state: next }));
+        return dispute;
+      },
+      cancelDeal: async (payload) => {
+        const actorId = state.currentUserId;
+        const match = state.matches.find((m) => m.id === payload.matchId);
+        if (
+          !actorId ||
+          !match ||
+          match.status !== "CONNECTED" ||
+          match.paymentStatus === "PAID" ||
+          (actorId !== match.buyerId && actorId !== match.sellerId)
+        ) {
+          return null;
+        }
+        const updated: Match = {
+          ...match,
+          status: "CLOSED",
+          dealStage: "CANCELLED",
+          cancelReason: payload.reason,
+          cancelledBy: actorId,
+          cancelFaultParty: undefined,
+        };
+        const next: DanState = {
+          ...state,
+          matches: state.matches.map((m) => (m.id === match.id ? updated : m)),
+        };
+        persist(next);
+        flushSync(() => dispatch({ type: "HYDRATE", state: next }));
+        return updated;
+      },
+      simulateSafePaymentDemo: async (matchId) => {
+        const match = state.matches.find((m) => m.id === matchId);
+        const snapshot = state.dealSnapshots.find((x) => x.matchId === matchId);
+        if (
+          !match ||
+          match.status !== "CONNECTED" ||
+          !snapshot?.lockedAt ||
+          match.paymentStatus === "PAID"
+        ) {
+          return false;
+        }
+        const next: DanState = {
+          ...state,
+          matches: state.matches.map((m) =>
+            m.id === matchId
+              ? {
+                  ...m,
+                  paymentStatus: "PAID" as const,
+                  dealStage: "HANDOFF_READY" as const,
+                }
+              : m,
+          ),
+        };
+        persist(next);
+        flushSync(() => dispatch({ type: "HYDRATE", state: next }));
+        return true;
       },
       createResponse: async (payload) => {
         const { actorId, ensureUserId } = resolveDemoActorId(state.currentUserId);
