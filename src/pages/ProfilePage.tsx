@@ -105,6 +105,36 @@ export function ProfilePage() {
     };
   }, [getPublicProfile, userId]);
 
+  const tradeHistoryRows = useMemo(() => {
+    if (!isSelf) return [];
+    return myMatches
+      .filter((match) => {
+        if (historyTab === "completed") return match.status === "COMPLETED";
+        if (historyTab === "progress") {
+          return match.status === "CONNECTED" || match.status === "BUYER_INTERESTED" || match.status === "SELLER_ACCEPTED";
+        }
+        return match.status === "CLOSED" || match.status === "DECLINED";
+      })
+      .map((match) => {
+        const product = match.productId ? getProduct(match.productId) : undefined;
+        const demand = getDemand(match.demandId);
+        return {
+          id: match.id,
+          title: product?.name ?? demand?.title ?? "거래",
+          href:
+            match.status === "CONNECTED"
+              ? `/deal/${match.id}/handoff`
+              : `/match/${match.id}`,
+          meta:
+            match.status === "COMPLETED"
+              ? "거래 완료"
+              : match.status === "CLOSED" || match.status === "DECLINED"
+                ? "거래 취소"
+                : "거래 진행 중",
+        };
+      });
+  }, [getDemand, getProduct, historyTab, isSelf, myMatches]);
+
   if (loading) {
     return (
       <div className="page-stack page-narrow">
@@ -147,36 +177,6 @@ export function ProfilePage() {
   const bioTrim = profile.bio.trim();
   const showStats =
     profile.completedDemandCount > 0 || profile.responseConnectionCount > 0;
-  const tradeHistoryRows = useMemo(() => {
-    if (!isSelf) return [];
-    return myMatches
-      .filter((match) => {
-        if (historyTab === "completed") return match.status === "COMPLETED";
-        if (historyTab === "progress") {
-          return match.status === "CONNECTED" || match.status === "BUYER_INTERESTED" || match.status === "SELLER_ACCEPTED";
-        }
-        return match.status === "CLOSED" || match.status === "DECLINED";
-      })
-      .map((match) => {
-        const product = match.productId ? getProduct(match.productId) : undefined;
-        const demand = getDemand(match.demandId);
-        return {
-          id: match.id,
-          title: product?.name ?? demand?.title ?? "거래",
-          href:
-            match.status === "CONNECTED"
-              ? `/deal/${match.id}/handoff`
-              : `/match/${match.id}`,
-          meta:
-            match.status === "COMPLETED"
-              ? "거래 완료"
-              : match.status === "CLOSED" || match.status === "DECLINED"
-                ? "거래 취소"
-                : "거래 진행 중",
-        };
-      });
-  }, [getDemand, getProduct, historyTab, isSelf, myMatches]);
-
   const activityBits: string[] = [];
   if (profile.completedDemandCount > 0) {
     activityBits.push(
