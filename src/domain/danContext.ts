@@ -10,6 +10,7 @@ import type {
   CancelReason,
   DealDispute,
   DealEvidence,
+  DealEvidenceChallenge,
   DealSnapshot,
   DemandType,
   FeedItem,
@@ -70,9 +71,11 @@ export interface DanContextValue {
     conditionNote?: string;
     quickPhotoUrl?: string;
   }) => Promise<SellIntent | null>;
+  issueDealEvidenceChallenge: (matchId: string) => Promise<DealEvidenceChallenge | null>;
   getDealEvidence: (matchId: string) => Promise<DealEvidence | null>;
   upsertDealEvidence: (payload: {
     matchId: string;
+    challengeCode: string;
     possessionPhotoUrl?: string;
     serialLast4?: string;
     usageCount?: number;
