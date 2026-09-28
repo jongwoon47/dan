@@ -241,23 +241,28 @@ export function ProfilePage() {
               </div>
             ) : null}
 
-            <div className="trust-history">
+            <div className="trust-history trust-history--blueprint">
               <div className="trust-history__head">
                 <strong>Trust History</strong>
                 <div className="trust-history__badges">
                   {profile.identityVerified ? (
-                    <span className="trust-verified-badge">본인 확인됨</span>
+                    <span className="trust-verified-badge">본인인증 완료</span>
                   ) : null}
                   <span>사실 기반 거래 기록</span>
                 </div>
               </div>
-              <div className="trust-history__grid">
-                <div><span>거래 완료</span><strong>{profile.completedDemandCount}</strong></div>
-                <div><span>판매자 귀책 취소</span><strong>{profile.sellerFaultCancellationCount}</strong></div>
-                <div><span>구매자 귀책 취소</span><strong>{profile.buyerFaultCancellationCount}</strong></div>
-                <div><span>확정 상태불일치</span><strong>{profile.confirmedMismatchCount}</strong></div>
+
+              <div className="trust-summary-strip">
+                <div><strong>{profile.completedDemandCount}</strong><span>거래 완료</span></div>
+                <div><strong>{profile.sellerFaultCancellationCount}</strong><span>판매자 귀책 취소</span></div>
+                <div><strong>{profile.buyerFaultCancellationCount}</strong><span>구매자 귀책 취소</span></div>
+              </div>
+
+              <div className="trust-fact-list">
+                <div><span>확정 상태 불일치</span><strong>{profile.confirmedMismatchCount}</strong></div>
                 <div><span>미해결 분쟁</span><strong>{profile.unresolvedDisputeCount}</strong></div>
               </div>
+
               <p className="trust-history__note">
                 사용자 신고나 선택만으로 귀책을 표시하지 않습니다. 확정된 운영 기록만 반영합니다.
               </p>
