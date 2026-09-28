@@ -59,7 +59,7 @@ export function QuickOfferPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  useDeepHeader({ title: "빠른 판매 제안" });
+  useDeepHeader({ title: "판매 제안하기" });
 
   if (!product) {
     return (
@@ -129,8 +129,8 @@ export function QuickOfferPage() {
   }
 
   return (
-    <div className="page-stack page-narrow quick-offer-page">
-      <section className="deal-product-card">
+    <div className="page-stack page-narrow quick-offer-page quick-offer-page--blueprint">
+      <section className="deal-product-card quick-offer-product-card">
         <ProductVisual product={product} size="sm" />
         <div>
           <p className="eyebrow">Quick Offer</p>
@@ -145,7 +145,7 @@ export function QuickOfferPage() {
 
       {aggregate?.highestIntentPrice ? (
         <section className="live-demand-banner">
-          <span>현재 최고 구매희망가</span>
+          <span>현재 최고 구매 희망가</span>
           <strong>{formatWon(aggregate.highestIntentPrice)}</strong>
           <button
             type="button"
@@ -172,7 +172,7 @@ export function QuickOfferPage() {
           </ChipGroup>
         </div>
 
-        <Field label="희망 판매가" hint="구매자는 가격과 기본상태를 먼저 확인합니다.">
+        <Field label="희망 판매가" hint="구매자는 가격과 기본 상태를 먼저 확인해요.">
           <TextInput
             inputMode="numeric"
             value={formatDigitsGrouped(price)}
@@ -183,7 +183,7 @@ export function QuickOfferPage() {
 
         <Field
           label="대략적인 컷수"
-          hint="정확한 증거는 구매자가 관심을 보인 뒤 제출합니다."
+          hint="구매자가 관심을 보이면 정확한 컷수와 상세 증거를 제출해요."
         >
           <TextInput
             inputMode="numeric"
@@ -223,7 +223,7 @@ export function QuickOfferPage() {
         </div>
 
         <div className="quick-offer-note">
-          <strong>지금은 이 정도면 충분해요</strong>
+          <strong>Quick Offer는 이 정도면 충분해요</strong>
           <p>
             구매자가 관심을 보인 뒤에만 시리얼·보증·구성품·상세 상태
             증거를 요청합니다.
