@@ -131,6 +131,9 @@ begin
   if v_photo is null then
     raise exception 'possession photo required';
   end if;
+  if v_photo not like 'storage://dan-v1-evidence/%' then
+    raise exception 'private DAN evidence storage reference required';
+  end if;
 
   select * into v_challenge
   from public.deal_evidence_challenges
