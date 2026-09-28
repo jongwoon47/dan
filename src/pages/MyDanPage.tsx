@@ -113,9 +113,11 @@ export function MyDanPage() {
     currentUser,
     myDemands,
     myResponses,
+    mySellIntents,
     myMatches,
     activities,
     getDemand,
+    getProduct,
     state,
     resetDemo,
     extendBuyDemand,
@@ -300,6 +302,34 @@ export function MyDanPage() {
       {pendingMatches.length > 0 ? (
         <MyBlock title={ko.pendingMatches}>
           <MatchList matches={pendingMatches} emptyWhenZero={false} />
+        </MyBlock>
+      ) : null}
+
+      {mySellIntents.length > 0 ? (
+        <MyBlock title="내 판매 제안">
+          <div className="app-row-list">
+            {[...mySellIntents]
+              .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+              .map((offer) => {
+                const product = getProduct(offer.productId);
+                const status =
+                  offer.status === "OPEN"
+                    ? "구매자 검토 대기"
+                    : offer.status === "MATCHED"
+                      ? "거래 진행 중"
+                      : offer.status === "PAUSED"
+                        ? "일시정지"
+                        : "종료";
+                return (
+                  <RowLink
+                    key={offer.id}
+                    to={`/demand/${offer.productId}`}
+                    title={product?.name ?? "판매 제안"}
+                    meta={`${offer.minimumPrice.toLocaleString("ko-KR")}원 · ${status}`}
+                  />
+                );
+              })}
+          </div>
         </MyBlock>
       ) : null}
 
