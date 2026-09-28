@@ -133,6 +133,9 @@ as $$
 begin
   if auth.uid() is null then return new; end if;
   if new.type = 'BUY' and new.status = 'ACTIVE' then
+    if new.expires_at is null or new.expires_at > now() + interval '7 days' then
+      new.expires_at := now() + interval '7 days';
+    end if;
     if not exists (
       select 1
       from public.user_verifications v
