@@ -253,6 +253,35 @@ describe("store mutations / login race", () => {
     expect(
       result.current.state.matches.find((m) => m.id === interested!.id)?.dealStage,
     ).toBe("DEAL_LOCKED");
+
+    // Locked terms alone are not enough: BUY completion is payment-gated.
+    await act(async () => {
+      const blocked = await result.current.confirmMatchCompletion(interested!.id);
+      expect(blocked?.status).toBe("CONNECTED");
+      expect(blocked?.buyerCompletedAt).toBeUndefined();
+    });
+
+    await act(async () => {
+      expect(await result.current.simulateSafePaymentDemo(interested!.id)).toBe(true);
+    });
+    expect(
+      result.current.state.matches.find((m) => m.id === interested!.id)?.paymentStatus,
+    ).toBe("PAID");
+
+    await act(async () => {
+      const buyerChecked = await result.current.confirmMatchCompletion(interested!.id);
+      expect(buyerChecked?.buyerCompletedAt).toBeTruthy();
+      expect(buyerChecked?.status).toBe("CONNECTED");
+    });
+
+    act(() => {
+      result.current.login("user-jun");
+    });
+    await act(async () => {
+      const completed = await result.current.confirmMatchCompletion(interested!.id);
+      expect(completed?.status).toBe("COMPLETED");
+      expect(completed?.dealStage).toBe("COMPLETED");
+    });
   });
 
   it("accepting one TASK response connects once and declines the other", async () => {
