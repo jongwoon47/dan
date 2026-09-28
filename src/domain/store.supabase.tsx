@@ -178,6 +178,24 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
       users: currentUser ? [currentUser] : [],
       currentUser,
       isLoggedIn: Boolean(currentUser),
+      getMyVerification: async () => {
+        if (!currentUser) {
+          return {
+            phoneVerified: false,
+            identityVerified: false,
+            payoutVerified: false,
+          };
+        }
+        try {
+          return await api.getMyVerificationRemote();
+        } catch {
+          return {
+            phoneVerified: false,
+            identityVerified: false,
+            payoutVerified: false,
+          };
+        }
+      },
       login: () => {
         assignLogin();
       },
