@@ -818,25 +818,16 @@ export async function updateMyProfileRemote(input: {
 }
 
 export async function blockUserRemote(blockedId: string) {
-  const sb = getSupabase();
-  const { data: auth } = await sb.auth.getUser();
-  if (!auth.user) throw new Error("login required");
-  const { error } = await sb.from("blocks").insert({
-    blocker_id: auth.user.id,
-    blocked_id: blockedId,
+  const { error } = await getSupabase().rpc("block_user", {
+    p_blocked_id: blockedId,
   });
   if (error) throw error;
 }
 
 export async function unblockUserRemote(blockedId: string) {
-  const sb = getSupabase();
-  const { data: auth } = await sb.auth.getUser();
-  if (!auth.user) throw new Error("login required");
-  const { error } = await sb
-    .from("blocks")
-    .delete()
-    .eq("blocker_id", auth.user.id)
-    .eq("blocked_id", blockedId);
+  const { error } = await getSupabase().rpc("unblock_user", {
+    p_blocked_id: blockedId,
+  });
   if (error) throw error;
 }
 
@@ -857,14 +848,10 @@ export async function reportUserRemote(input: {
   reason: "spam" | "fraud" | "abuse" | "other";
   detail?: string;
 }) {
-  const sb = getSupabase();
-  const { data: auth } = await sb.auth.getUser();
-  if (!auth.user) throw new Error("login required");
-  const { error } = await sb.from("reports").insert({
-    reporter_id: auth.user.id,
-    target_user_id: input.targetUserId,
-    reason: input.reason,
-    detail: input.detail ?? null,
+  const { error } = await getSupabase().rpc("submit_user_report", {
+    p_target_user_id: input.targetUserId,
+    p_reason: input.reason,
+    p_detail: input.detail ?? "",
   });
   if (error) throw error;
 }
