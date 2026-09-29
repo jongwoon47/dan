@@ -10,7 +10,21 @@ import type { DealEvidence, DealEvidenceChallenge, Product } from "@/domain/type
 import { formatWon } from "@/lib/format";
 import "./pages.css";
 
-const COMPONENT_OPTIONS = ["제품/본체", "박스", "충전기/어댑터", "케이블", "보증서/영수증"];
+function componentOptionsFor(product: Product): string[] {
+  if (product.category === "fashion" || product.category === "shoes" || product.category === "watches_accessories") {
+    return ["제품", "박스/더스트백", "택", "보증서/영수증", "추가 구성품"];
+  }
+  if (product.category === "furniture") {
+    return ["제품/본체", "조립 부품", "설명서", "보증서/영수증", "추가 부품"];
+  }
+  if (product.category === "books_media") {
+    return ["본품", "케이스", "부록", "포토카드/특전", "영수증"];
+  }
+  if (product.category === "hobby_collectible") {
+    return ["본품", "원박스", "설명서", "한정 구성품", "영수증"];
+  }
+  return ["제품/본체", "박스", "충전기/어댑터", "케이블", "보증서/영수증"];
+}
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -142,7 +156,8 @@ export function DealEvidencePage() {
     ],
   );
 
-  const usageLabel = product?.category === "camera" ? "컷수" : "사용량 / 사용 횟수";
+  const showUsageCount = product?.category === "camera";
+  const componentOptions = product ? componentOptionsFor(product) : [];
 
   if (!match || !demand || !product || !sell || !currentUser) {
     return (
@@ -190,7 +205,10 @@ export function DealEvidencePage() {
       challengeCode: challenge.challengeCode,
       possessionPhotoUrl: possessionPhotoUrl || undefined,
       serialLast4: serialLast4.trim() || undefined,
-      usageCount: usageCount ? Number(usageCount) : undefined,
+      usageCount:
+        activeProduct.category === "camera" && usageCount
+          ? Number(usageCount)
+          : undefined,
       purchaseDate: purchaseDate || undefined,
       warrantyUntil: warrantyUntil || undefined,
       components,
@@ -311,14 +329,16 @@ export function DealEvidencePage() {
           </div>
 
           <div className="deal-grid-2">
-            <Field label={usageLabel}>
-              <TextInput
-                inputMode="numeric"
-                value={usageCount}
-                onChange={(e) => setUsageCount(e.target.value.replace(/\D/g, ""))}
-                placeholder="예: 2417"
-              />
-            </Field>
+            {showUsageCount ? (
+              <Field label="컷수">
+                <TextInput
+                  inputMode="numeric"
+                  value={usageCount}
+                  onChange={(e) => setUsageCount(e.target.value.replace(/\D/g, ""))}
+                  placeholder="예: 2417"
+                />
+              </Field>
+            ) : null}
             <Field label="시리얼 / 식별번호 끝자리 (선택)">
               <TextInput
                 value={serialLast4}
@@ -345,7 +365,7 @@ export function DealEvidencePage() {
           <div>
             <p className="field-inline-label">구성품</p>
             <div className="evidence-chip-row">
-              {COMPONENT_OPTIONS.map((item) => (
+              {componentOptions.map((item) => (
                 <button
                   key={item}
                   type="button"
@@ -388,10 +408,9 @@ function EvidenceSummary({
   evidence: DealEvidence;
   product: Product;
 }) {
-  const usageLabel = product.category === "camera" ? "컷수" : "사용량 / 횟수";
   const usageValue =
     evidence.usageCount == null
-      ? "미제출"
+      ? null
       : product.category === "camera"
         ? `${evidence.usageCount.toLocaleString("ko-KR")}컷`
         : evidence.usageCount.toLocaleString("ko-KR");
@@ -406,7 +425,12 @@ function EvidenceSummary({
         />
       ) : null}
       <dl className="deal-facts">
-        <div><dt>{usageLabel}</dt><dd>{usageValue}</dd></div>
+        {usageValue ? (
+          <div>
+            <dt>{product.category === "camera" ? "컷수" : "사용량 / 횟수"}</dt>
+            <dd>{usageValue}</dd>
+          </div>
+        ) : null}
         <div><dt>식별번호</dt><dd>{evidence.serialLast4 ? `••••${evidence.serialLast4}` : "미제출"}</dd></div>
         <div><dt>구성품</dt><dd>{evidence.components.join(", ") || "없음"}</dd></div>
         <div><dt>외관</dt><dd>{evidence.cosmeticNotes || "미제출"}</dd></div>
