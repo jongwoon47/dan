@@ -71,12 +71,7 @@ export function QuickOfferPage() {
   }
 
   const typedPrice = parseMoneyInput(price);
-  const usageLabel =
-    product.category === "camera" ? "대략적인 컷수" : "사용량 / 사용 횟수";
-  const usageHint =
-    product.category === "camera"
-      ? "구매자가 관심을 보이면 정확한 컷수와 상세 증거를 제출해요."
-      : "사용 횟수나 사용량이 의미 있는 제품이라면 선택해서 입력해 주세요.";
+  const showUsageCount = product.category === "camera";
   const canSubmit = Boolean(condition && typedPrice > 0 && quickPhotoUrl);
 
   async function pickPhoto(file?: File) {
@@ -120,7 +115,8 @@ export function QuickOfferPage() {
       const offer = await createSellIntent({
         ownershipId: ownership.id,
         minimumPrice: typedPrice,
-        approxUsageCount: usageCount ? Number(usageCount) : undefined,
+        approxUsageCount:
+          showUsageCount && usageCount ? Number(usageCount) : undefined,
         conditionNote: conditionNote.trim() || undefined,
         quickPhotoUrl: quickPhotoUrl || undefined,
       });
@@ -187,19 +183,21 @@ export function QuickOfferPage() {
           />
         </Field>
 
-        <Field
-          label={usageLabel}
-          hint={usageHint}
-        >
-          <TextInput
-            inputMode="numeric"
-            value={formatDigitsGrouped(usageCount)}
-            onChange={(event) =>
-              setUsageCount(digitsOnly(event.target.value))
-            }
-            placeholder="예: 2,400"
-          />
-        </Field>
+        {showUsageCount ? (
+          <Field
+            label="대략적인 컷수"
+            hint="구매자가 관심을 보이면 정확한 컷수와 상세 증거를 제출해요."
+          >
+            <TextInput
+              inputMode="numeric"
+              value={formatDigitsGrouped(usageCount)}
+              onChange={(event) =>
+                setUsageCount(digitsOnly(event.target.value))
+              }
+              placeholder="예: 2,400"
+            />
+          </Field>
+        ) : null}
 
         <Field label="상태 한 줄">
           <TextInput
