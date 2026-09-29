@@ -777,7 +777,6 @@ export function DanProvider({ children }: { children: ReactNode }) {
         }
         if (
           !payload.possessionPhotoUrl?.trim() ||
-          (payload.serialLast4?.trim().length ?? 0) < 2 ||
           !payload.cosmeticNotes?.trim() ||
           !payload.knownIssues?.trim()
         ) {
