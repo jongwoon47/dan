@@ -1109,3 +1109,15 @@
   font-size: .72rem;
   font-weight: 800;
 }
+
+.my-demand-filter-clear {
+  flex-shrink: 0;
+  min-height: 30px;
+  padding: 5px 9px;
+  border: 1px solid var(--dan-border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--dan-ink-secondary);
+  font-size: .7rem;
+  font-weight: 750;
+}
