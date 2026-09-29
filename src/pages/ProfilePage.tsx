@@ -122,9 +122,11 @@ export function ProfilePage() {
           id: match.id,
           title: product?.name ?? demand?.title ?? "거래",
           href:
-            match.status === "CONNECTED"
-              ? `/deal/${match.id}/handoff`
-              : `/match/${match.id}`,
+            match.status === "COMPLETED"
+              ? `/deal/${match.id}/complete`
+              : match.status === "CONNECTED"
+                ? `/deal/${match.id}/handoff`
+                : `/match/${match.id}`,
           meta:
             match.status === "COMPLETED"
               ? "거래 완료"
