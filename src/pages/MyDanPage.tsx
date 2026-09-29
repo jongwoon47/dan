@@ -8,7 +8,7 @@ import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
 import { effectiveDemandStatus } from "@/domain/demandLifecycle";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
-import { isBuyDemand } from "@/domain/types";
+import { isBuyDemand, type BuyDemand } from "@/domain/types";
 import { formatWon } from "@/lib/format";
 import "./pages.css";
 
@@ -35,7 +35,7 @@ export function MyDanPage() {
 
   const openBuyDemands = useMemo(
     () =>
-      myDemands.filter((demand) => {
+      myDemands.filter((demand): demand is BuyDemand => {
         if (!isBuyDemand(demand)) return false;
         const status = effectiveDemandStatus(demand);
         return status === "ACTIVE" || status === "MATCHED";
