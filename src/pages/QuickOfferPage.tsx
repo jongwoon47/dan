@@ -6,7 +6,7 @@ import { Chip, ChipGroup, Field, TextInput } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
-import type { ItemCondition, Ownership } from "@/domain/types";
+import type { ItemCondition, Ownership, TradeMethod } from "@/domain/types";
 import { CONDITION_LABEL } from "@/domain/types";
 import {
   digitsOnly,
@@ -17,6 +17,12 @@ import {
 import "./pages.css";
 
 const CONDITIONS: ItemCondition[] = ["sealed", "like_new", "lightly_used"];
+const SELLER_TRADE_METHODS: TradeMethod[] = ["meetup", "shipping", "any"];
+const SELLER_TRADE_LABEL: Record<TradeMethod, string> = {
+  meetup: "직거래",
+  shipping: "택배",
+  any: "둘 다 가능",
+};
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -54,6 +60,7 @@ export function QuickOfferPage() {
   );
   const [usageCount, setUsageCount] = useState("");
   const [conditionNote, setConditionNote] = useState("");
+  const [tradeMethod, setTradeMethod] = useState<TradeMethod>("any");
   const [quickPhotoUrl, setQuickPhotoUrl] = useState("");
   const [photoError, setPhotoError] = useState("");
   const [error, setError] = useState("");
@@ -118,6 +125,7 @@ export function QuickOfferPage() {
         approxUsageCount:
           showUsageCount && usageCount ? Number(usageCount) : undefined,
         conditionNote: conditionNote.trim() || undefined,
+        tradeMethod,
         quickPhotoUrl: quickPhotoUrl || undefined,
       });
       if (!offer) {
@@ -198,6 +206,21 @@ export function QuickOfferPage() {
             />
           </Field>
         ) : null}
+
+        <div>
+          <p className="field-inline-label">가능한 거래 방식</p>
+          <ChipGroup>
+            {SELLER_TRADE_METHODS.map((item) => (
+              <Chip
+                key={item}
+                selected={tradeMethod === item}
+                onClick={() => setTradeMethod(item)}
+              >
+                {SELLER_TRADE_LABEL[item]}
+              </Chip>
+            ))}
+          </ChipGroup>
+        </div>
 
         <Field label="상태 한 줄">
           <TextInput
