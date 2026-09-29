@@ -1,6 +1,6 @@
 begin;
 
-select plan(44);
+select plan(47);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -284,6 +284,48 @@ select is(
   public.marketplace_product_allowed('Herman Miller Embody Chair'),
   true,
   'ordinary secondhand product remains allowed'
+);
+
+select ok(
+  position(
+    'sell_intent_id'
+    in coalesce((
+      select qual
+      from pg_policies
+      where schemaname = 'public'
+        and tablename = 'sell_intents'
+        and policyname = 'sell_intents_select_open_or_own'
+    ), '')
+  ) > 0,
+  'matched buyers keep read access to their Quick Offer'
+);
+
+select ok(
+  position(
+    'sell_intent_id'
+    in coalesce((
+      select qual
+      from pg_policies
+      where schemaname = 'public'
+        and tablename = 'ownerships'
+        and policyname = 'ownerships_select_own_or_open_sell'
+    ), '')
+  ) > 0,
+  'matched buyers keep read access to offer ownership condition'
+);
+
+select ok(
+  position(
+    'sell_intent_id'
+    in coalesce((
+      select qual
+      from pg_policies
+      where schemaname = 'storage'
+        and tablename = 'objects'
+        and policyname = 'dan_v1_evidence_select_parties'
+    ), '')
+  ) > 0,
+  'matched buyers can read private Quick Offer media'
 );
 
 select * from finish();
