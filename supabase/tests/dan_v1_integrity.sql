@@ -1,6 +1,6 @@
 begin;
 
-select plan(17);
+select plan(18);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -78,11 +78,17 @@ select ok(
   position(
     'Fujifilm X100VI'
     in pg_get_functiondef('public.enforce_live_buy_phone_verification()'::regprocedure)
-  ) > 0,
-  'Live BUY demand is restricted to the five-camera V1 pilot'
+  ) = 0,
+  'Live BUY demand is not restricted to a camera SKU allowlist'
 );
 
-
+select ok(
+  position(
+    'serial fragment required'
+    in pg_get_functiondef('public.upsert_deal_evidence(uuid,jsonb)'::regprocedure)
+  ) = 0,
+  'serial fragment is optional for product-agnostic evidence'
+);
 
 select has_function(
   'public',
