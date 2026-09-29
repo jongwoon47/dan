@@ -2,21 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
-import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
-import type { CancelReason, DealDispute, DealDisputeReason, DealSnapshot } from "@/domain/types";
+import type { DealDispute, DealDisputeReason, DealSnapshot } from "@/domain/types";
 import { formatWon } from "@/lib/format";
 import { useNavigate, useParams } from "react-router-dom";
 import "./pages.css";
-
-const CANCEL_OPTIONS: Array<{ value: CancelReason; label: string }> = [
-  { value: "BUYER_CHANGED_MIND", label: "구매자 변심" },
-  { value: "SELLER_CHANGED_MIND", label: "판매자 변심" },
-  { value: "SELLER_CHANGED_TERMS", label: "판매 조건 변경" },
-  { value: "BUYER_NO_PAYMENT", label: "결제 미이행" },
-  { value: "ITEM_UNAVAILABLE", label: "물품 판매 불가" },
-  { value: "MUTUAL_CANCEL", label: "상호 합의 취소" },
-];
 
 const DISPUTE_OPTIONS: Array<{ value: DealDisputeReason; label: string }> = [
   { value: "WRONG_ITEM", label: "다른 물건이에요" },
@@ -52,9 +42,7 @@ export function HandoffPage() {
     getDealSnapshot,
     listDealDisputes,
     openDealDispute,
-    cancelDeal,
     confirmMatchCompletion,
-    simulateSafePaymentDemo,
     busy,
   } = useDan();
 
@@ -64,7 +52,6 @@ export function HandoffPage() {
   const [snapshot, setSnapshot] = useState<DealSnapshot | null>(null);
   const [disputes, setDisputes] = useState<DealDispute[]>([]);
   const [reason, setReason] = useState<DealDisputeReason>("SNAPSHOT_MISMATCH");
-  const [cancelReason, setCancelReason] = useState<CancelReason>("MUTUAL_CANCEL");
   const [detail, setDetail] = useState("");
   const [error, setError] = useState("");
 
@@ -95,7 +82,6 @@ export function HandoffPage() {
       ? Boolean(match.sellerCompletedAt)
       : Boolean(match.buyerCompletedAt)
     : false;
-  const isDemo = getDataMode() === "demo";
 
   const facts = useMemo(() => {
     if (!snapshot) return [];
@@ -140,24 +126,6 @@ export function HandoffPage() {
         action={<Button to={"/deal/" + match.id + "/payment"}>안전결제</Button>}
       />
     );
-  }
-
-  async function simulatePayment() {
-    setError("");
-    const ok = await simulateSafePaymentDemo(matchId);
-    if (!ok) {
-      setError("데모 결제 상태를 변경하지 못했어요.");
-    }
-  }
-
-  async function cancelBeforePayment() {
-    setError("");
-    const updated = await cancelDeal({ matchId, reason: cancelReason });
-    if (!updated) {
-      setError("거래를 취소하지 못했어요.");
-      return;
-    }
-    navigate("/my");
   }
 
   async function confirmHandoff() {
