@@ -86,20 +86,26 @@ export function HandoffPage() {
   const facts = useMemo(() => {
     if (!snapshot) return [];
     const payload = snapshot.snapshot;
-    return [
+    const usage = snapshotString(payload, ["evidence", "usageCount"]);
+    const rows: string[][] = [
       ["제품", snapshotString(payload, ["product", "name"]) || product?.name || ""],
       ["가격", formatWon(snapshot.agreedPrice)],
-      [product?.category === "camera" ? "컷수" : "사용량 / 횟수",
-        snapshotString(payload, ["evidence", "usageCount"])
-          ? product?.category === "camera"
-            ? `${Number(snapshotString(payload, ["evidence", "usageCount"])).toLocaleString("ko-KR")}컷`
-            : Number(snapshotString(payload, ["evidence", "usageCount"])).toLocaleString("ko-KR")
-          : "미제출"],
+    ];
+    if (usage) {
+      rows.push([
+        product?.category === "camera" ? "컷수" : "사용량 / 횟수",
+        product?.category === "camera"
+          ? `${Number(usage).toLocaleString("ko-KR")}컷`
+          : Number(usage).toLocaleString("ko-KR"),
+      ]);
+    }
+    rows.push(
       ["구성품", snapshotString(payload, ["evidence", "components"]) || "없음"],
       ["외관", snapshotString(payload, ["evidence", "cosmeticNotes"]) || "미제출"],
       ["기능 이상", snapshotString(payload, ["evidence", "knownIssues"]) || "미제출"],
       ["거래 방식", snapshotString(payload, ["handoff", "method"]) || "직거래"],
-    ];
+    );
+    return rows;
   }, [product?.category, product?.name, snapshot]);
 
   if (!match || !currentUser || !demand || demand.type !== "BUY" || !product) {
@@ -210,7 +216,7 @@ export function HandoffPage() {
           <span className="safe-payment-placeholder__icon">✓</span>
           <div>
             <strong>거래가 완료됐어요</strong>
-            <p>양쪽의 확인이 끝났습니다. 정산은 영업일 기준 1일 이내 처리되고, 거래 결과는 Trust History에 사실 기록으로 남아요.</p>
+            <p>양쪽의 확인이 끝났습니다. 거래 결과는 Trust History에 사실 기록으로 남아요.</p>
           </div>
           <Button to={`/profile/${currentUser.id}`} variant="secondary" fullWidth>
             내 Trust History 보기
