@@ -490,6 +490,7 @@ export async function upsertSellIntentRemote(input: {
   ownershipId: string;
   minimumPrice: number;
   targetDemandId?: string;
+  tradeMethod?: import("@/domain/types").TradeMethod;
   approxUsageCount?: number;
   conditionNote?: string;
   quickPhotoUrl?: string;
@@ -524,6 +525,7 @@ export async function upsertSellIntentRemote(input: {
       .update({
         minimum_price: input.minimumPrice,
         target_demand_id: input.targetDemandId ?? null,
+        trade_method: input.tradeMethod ?? "any",
         approx_usage_count: input.approxUsageCount ?? null,
         condition_note: input.conditionNote?.trim() ?? "",
         quick_photo_url: storedQuickPhoto ?? null,
@@ -543,6 +545,7 @@ export async function upsertSellIntentRemote(input: {
       product_id: ownership.product_id,
       minimum_price: input.minimumPrice,
       target_demand_id: input.targetDemandId ?? null,
+      trade_method: input.tradeMethod ?? "any",
       approx_usage_count: input.approxUsageCount ?? null,
       condition_note: input.conditionNote?.trim() ?? "",
       quick_photo_url: storedQuickPhoto ?? null,
