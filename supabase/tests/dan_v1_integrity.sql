@@ -1,6 +1,6 @@
 begin;
 
-select plan(50);
+select plan(55);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -362,6 +362,46 @@ select ok(
     in pg_get_viewdef('public.buy_demand_aggregates'::regclass, true)
   ) > 0,
   'restricted products are removed from Live Demand aggregates immediately'
+);
+
+select ok(
+  position(
+    'provider reference required'
+    in pg_get_functiondef('public.settlement_mark_paid(uuid,text)'::regprocedure)
+  ) > 0,
+  'payment completion requires a provider reference'
+);
+
+select ok(
+  position(
+    'payment_status = ''REFUNDED'''
+    in pg_get_functiondef('public.settlement_mark_refunded(uuid)'::regprocedure)
+  ) > 0,
+  'refund transition is retry-safe'
+);
+
+select ok(
+  position(
+    'cancelled_by = auth.uid()'
+    in pg_get_functiondef('public.cancel_deal(uuid,text)'::regprocedure)
+  ) > 0,
+  'deal cancellation is retry-safe for the cancelling participant'
+);
+
+select ok(
+  position(
+    'v_existing.opened_by = auth.uid()'
+    in pg_get_functiondef('public.open_deal_dispute(uuid,text,text)'::regprocedure)
+  ) > 0,
+  'duplicate dispute submission returns the existing dispute'
+);
+
+select ok(
+  position(
+    'v_match.status = ''COMPLETED'''
+    in pg_get_functiondef('public.confirm_match_completion(uuid)'::regprocedure)
+  ) > 0,
+  'completion confirmation is retry-safe after completion'
 );
 
 select * from finish();
