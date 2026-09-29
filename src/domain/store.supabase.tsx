@@ -209,12 +209,12 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         }
         return run(() => api.createDemandRemote(payload));
       },
-      ensureProduct: async (name) => {
+      ensureProduct: async (name, category = "other") => {
         if (!currentUser) {
           assignLogin();
           return null;
         }
-        return run(() => api.ensureProductRemote(name));
+        return run(() => api.ensureProductRemote(name, category));
       },
       createOwnership: async (payload) => {
         if (!currentUser) {
