@@ -1,6 +1,6 @@
 begin;
 
-select plan(70);
+select plan(74);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -535,6 +535,28 @@ select ok(
     in pg_get_functiondef('public.reopen_demand_after_trade_close(uuid)'::regprocedure)
   ) > 0,
   'explicit BUY reopen restores a fresh seven-day demand window'
+);
+
+select ok(
+  not has_table_privilege('authenticated', 'public.demands', 'UPDATE'),
+  'authenticated clients cannot directly mutate demand lifecycle'
+);
+
+select ok(
+  not has_table_privilege('authenticated', 'public.demands', 'DELETE'),
+  'authenticated clients cannot delete demand history directly'
+);
+
+select ok(
+  not has_table_privilege('authenticated', 'public.ownerships', 'UPDATE'),
+  'authenticated clients cannot directly mutate ownership state'
+);
+
+select has_trigger(
+  'public',
+  'demands',
+  'trg_matched_buy_terms_immutable',
+  'MATCHED BUY commercial terms are frozen in the database'
 );
 
 select * from finish();
