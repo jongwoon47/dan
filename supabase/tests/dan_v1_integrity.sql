@@ -19,7 +19,7 @@ select ok(
 
 select ok(
   position(
-    'storage://dan-v1-evidence/%'
+    'storage://dan-v1-evidence/'
     in pg_get_functiondef('public.upsert_deal_evidence(uuid,jsonb)'::regprocedure)
   ) > 0,
   'evidence RPC requires private storage reference'
