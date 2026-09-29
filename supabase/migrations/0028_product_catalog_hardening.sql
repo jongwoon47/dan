@@ -42,7 +42,7 @@ immutable
 set search_path = public
 as $$
 declare
-  v text := lower(trim(coalesce(p_raw, '')));
+  v text := lower(trim(normalize(coalesce(p_raw, ''), NFKC)));
 begin
   v := replace(v, '프로 맥스', 'promax');
   v := replace(v, '프로맥스', 'promax');
@@ -118,6 +118,10 @@ declare
   v_row public.products%rowtype;
   v_hue integer;
 begin
+  if auth.uid() is null then
+    raise exception 'not authenticated';
+  end if;
+
   if char_length(v_name) < 2 or char_length(v_name) > 120 then
     raise exception 'product name must be between 2 and 120 characters';
   end if;
