@@ -58,11 +58,10 @@ export function OfferDetailPage() {
     );
   }
 
-  const usageLabel = product?.category === "camera" ? "컷수" : "사용량 / 횟수";
   const usageValue =
-    sell?.approxUsageCount == null
-      ? "미입력"
-      : product?.category === "camera"
+    sell.approxUsageCount == null
+      ? null
+      : product.category === "camera"
         ? `약 ${sell.approxUsageCount.toLocaleString("ko-KR")}컷`
         : sell.approxUsageCount.toLocaleString("ko-KR");
 
@@ -90,7 +89,12 @@ export function OfferDetailPage() {
       </section>
 
       <section className="offer-detail-facts">
-        <div><span>{usageLabel}</span><strong>{usageValue}</strong></div>
+        {usageValue ? (
+          <div>
+            <span>{product.category === "camera" ? "컷수" : "사용량 / 횟수"}</span>
+            <strong>{usageValue}</strong>
+          </div>
+        ) : null}
         <div><span>상태</span><strong>{CONDITION_LABEL[ownership.condition]}</strong></div>
         <div><span>상태 메모</span><strong>{sell.conditionNote || "특이사항 없음"}</strong></div>
         <div><span>거래 방식</span><strong>{formatFulfillmentSummary(demand.fulfillmentOptions)}</strong></div>
