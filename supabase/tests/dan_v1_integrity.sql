@@ -1,6 +1,6 @@
 begin;
 
-select plan(21);
+select plan(23);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -128,6 +128,18 @@ select ok(
       and policyname = 'products_insert_authenticated'
   ),
   'ordinary clients cannot bypass canonical product creation'
+);
+
+select is(
+  public.canonical_product_key('아이폰 15 프로'),
+  'iphone15pro',
+  'Hangul iPhone alias canonicalizes to the shared catalog key'
+);
+
+select is(
+  public.canonical_product_key('소니 A7 IV'),
+  'sonya7iv',
+  'Hangul brand alias canonicalizes to the shared catalog key'
 );
 
 select * from finish();
