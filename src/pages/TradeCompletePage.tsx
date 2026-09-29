@@ -1,0 +1,57 @@
+import { useParams } from "react-router-dom";
+import { ProductVisual } from "@/components/ProductVisual";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { useDeepHeader } from "@/components/layout/ShellChrome";
+import { useDan } from "@/domain/danContext";
+import "./pages.css";
+
+export function TradeCompletePage() {
+  const { matchId = "" } = useParams();
+  const { myMatches, currentUser, getProduct } = useDan();
+  const match = myMatches.find((row) => row.id === matchId);
+  const product = match?.productId ? getProduct(match.productId) : undefined;
+
+  useDeepHeader({ title: "거래 완료" });
+
+  if (!match || !product || !currentUser) {
+    return <EmptyState title="거래 정보를 찾을 수 없어요" action={<Button to="/my">내 구매수요</Button>} />;
+  }
+
+  if (match.status !== "COMPLETED") {
+    return (
+      <EmptyState
+        title="아직 거래가 완료되지 않았어요"
+        body="양쪽이 직거래 인계를 확인하면 완료됩니다."
+        action={<Button to={"/deal/" + match.id + "/handoff"}>거래 진행</Button>}
+      />
+    );
+  }
+
+  const peerId = currentUser.id === match.buyerId ? match.sellerId : match.buyerId;
+
+  return (
+    <div className="page-stack page-narrow trade-complete-page">
+      <section className="trade-complete-hero">
+        <span className="trade-complete-check" aria-hidden>✓</span>
+        <h1>거래가 완료됐어요!</h1>
+        <p>양쪽의 인계 확인이 끝났고 거래 결과가 Trust History에 기록됐어요.</p>
+      </section>
+
+      <section className="trade-complete-product">
+        <ProductVisual product={product} size="sm" />
+        <div><strong>{product.name}</strong><span>직거래 완료</span></div>
+      </section>
+
+      <Button to={"/profile/" + peerId} fullWidth variant="secondary">
+        상대 Trust History 보기
+      </Button>
+      <Button to={"/profile/" + currentUser.id} fullWidth>
+        내 거래 이력 보기
+      </Button>
+      <Button to="/" fullWidth variant="ghost">
+        홈으로
+      </Button>
+    </div>
+  );
+}
