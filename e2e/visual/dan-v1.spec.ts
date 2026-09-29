@@ -326,3 +326,28 @@ test("open catalog accepts a product that is not pre-seeded", async ({ page }, t
     fullPage: true,
   });
 });
+
+
+test("BUY chat cancellation uses structured deal cancellation", async ({ page }, testInfo) => {
+  const outDir = path.join("qa-screenshots", "dan-v1", testInfo.project.name);
+  mkdirSync(outDir, { recursive: true });
+
+  await page.goto("/");
+  await settle(page);
+  await installTradeFixture(page, "connected");
+  await page.goto("/match/visual-match-x100vi");
+  await settle(page);
+
+  await expect(page.getByText("거래 조건 확인이 먼저 필요해요")).toBeVisible();
+  await page.getByRole("button", { name: "거래 취소" }).click();
+  await expect(page.getByText("이 거래를 종료할까요?")).toBeVisible();
+  await page.getByRole("button", { name: "거래 종료" }).click();
+  await settle(page);
+
+  await expect(page.getByText("거래가 종료됐어요")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await page.screenshot({
+    path: path.join(outDir, "14-buy-chat-cancel.png"),
+    fullPage: true,
+  });
+});
