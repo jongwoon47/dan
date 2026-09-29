@@ -71,6 +71,12 @@ export function QuickOfferPage() {
   }
 
   const typedPrice = parseMoneyInput(price);
+  const usageLabel =
+    product.category === "camera" ? "대략적인 컷수" : "사용량 / 사용 횟수";
+  const usageHint =
+    product.category === "camera"
+      ? "구매자가 관심을 보이면 정확한 컷수와 상세 증거를 제출해요."
+      : "사용 횟수나 사용량이 의미 있는 제품이라면 선택해서 입력해 주세요.";
   const canSubmit = Boolean(condition && typedPrice > 0 && quickPhotoUrl);
 
   async function pickPhoto(file?: File) {
@@ -182,8 +188,8 @@ export function QuickOfferPage() {
         </Field>
 
         <Field
-          label="대략적인 컷수"
-          hint="구매자가 관심을 보이면 정확한 컷수와 상세 증거를 제출해요."
+          label={usageLabel}
+          hint={usageHint}
         >
           <TextInput
             inputMode="numeric"
@@ -211,7 +217,7 @@ export function QuickOfferPage() {
             {quickPhotoUrl ? (
               <img src={quickPhotoUrl} alt="현재 물품" />
             ) : (
-              <span>현재 가지고 있는 카메라 사진 1장을 추가해 주세요</span>
+              <span>현재 가지고 있는 물품 사진 1장을 추가해 주세요</span>
             )}
             <input
               type="file"
@@ -225,7 +231,7 @@ export function QuickOfferPage() {
         <div className="quick-offer-note">
           <strong>Quick Offer는 이 정도면 충분해요</strong>
           <p>
-            구매자가 관심을 보인 뒤에만 시리얼·보증·구성품·상세 상태
+            구매자가 관심을 보인 뒤에만 식별정보·보증·구성품·상세 상태
             증거를 요청합니다.
           </p>
         </div>
