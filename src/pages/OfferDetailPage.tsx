@@ -97,7 +97,17 @@ export function OfferDetailPage() {
         ) : null}
         <div><span>상태</span><strong>{CONDITION_LABEL[ownership.condition]}</strong></div>
         <div><span>상태 메모</span><strong>{sell.conditionNote || "특이사항 없음"}</strong></div>
-        <div><span>거래 방식</span><strong>{formatFulfillmentSummary(demand.fulfillmentOptions)}</strong></div>
+        <div><span>구매자 희망</span><strong>{formatFulfillmentSummary(demand.fulfillmentOptions)}</strong></div>
+        <div>
+          <span>판매자 가능</span>
+          <strong>
+            {sell.tradeMethod === "meetup"
+              ? "직거래"
+              : sell.tradeMethod === "shipping"
+                ? "택배"
+                : "직거래 · 택배 모두"}
+          </strong>
+        </div>
       </section>
 
       <section className="offer-seller-card">
