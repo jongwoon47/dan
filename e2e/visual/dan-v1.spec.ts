@@ -210,7 +210,8 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
 
   await page.goto("/buy/new");
   await settle(page);
-  await expect(page.getByRole("heading", { name: "원하는 조건만 간단하게 남겨주세요." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "사고 싶은 물건을 먼저 알려주세요." })).toBeVisible();
+  await expect(page.getByText("찾는 제품")).toBeVisible();
   await expect(page.getByText("필수 조건")).toBeVisible();
   await expect(page.getByText("선호 조건")).toBeVisible();
   await expectNoHorizontalOverflow(page);
