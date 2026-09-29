@@ -6,11 +6,11 @@ import { Field, TextInput } from "@/components/ui/Input";
 import { ProductVisual } from "@/components/ProductVisual";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
-import type { DealEvidence, DealEvidenceChallenge } from "@/domain/types";
+import type { DealEvidence, DealEvidenceChallenge, Product } from "@/domain/types";
 import { formatWon } from "@/lib/format";
 import "./pages.css";
 
-const COMPONENT_OPTIONS = ["풀박스", "정품 배터리", "스트랩", "충전기", "보증서"];
+const COMPONENT_OPTIONS = ["제품/본체", "박스", "충전기/어댑터", "케이블", "보증서/영수증"];
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -128,7 +128,6 @@ export function DealEvidencePage() {
       sellerVerifiedForDeal &&
       Boolean(challenge) &&
       Boolean(possessionPhotoUrl) &&
-      serialLast4.trim().length >= 2 &&
       cosmeticNotes.trim().length > 0 &&
       knownIssues.trim().length > 0,
     [
@@ -136,11 +135,13 @@ export function DealEvidencePage() {
       sellerVerifiedForDeal,
       challenge,
       possessionPhotoUrl,
-      serialLast4,
       cosmeticNotes,
       knownIssues,
     ],
   );
+
+  const usageLabel = product?.category === "camera" ? "컷수" : "사용량 / 사용 횟수";
+  const usageSuffix = product?.category === "camera" ? "컷" : "";
 
   if (!match || !demand || !product || !sell || !currentUser) {
     return (
@@ -187,7 +188,7 @@ export function DealEvidencePage() {
       matchId,
       challengeCode: challenge.challengeCode,
       possessionPhotoUrl: possessionPhotoUrl || undefined,
-      serialLast4: serialLast4.trim(),
+      serialLast4: serialLast4.trim() || undefined,
       usageCount: usageCount ? Number(usageCount) : undefined,
       purchaseDate: purchaseDate || undefined,
       warrantyUntil: warrantyUntil || undefined,
@@ -226,7 +227,7 @@ export function DealEvidencePage() {
 
       {!isSeller && existing ? (
         <section className="deal-evidence-summary">
-          <EvidenceSummary evidence={existing} />
+          <EvidenceSummary evidence={existing} product={product} />
           <Button to={`/deal/${match.id}/snapshot`} fullWidth size="lg">
             거래 조건 확인
           </Button>
@@ -249,8 +250,8 @@ export function DealEvidencePage() {
             <div className="evidence-challenge-copy">
               <p className="field-inline-label">현재 보유 사진 · 필수</p>
               <p>
-                아래 코드를 종이나 다른 화면에 띄워 카메라와 함께 촬영해 주세요.
-                DAN이 정품을 보증하는 것은 아니지만, 오래된 도용 사진을 쓰기 어렵게 합니다.
+                아래 코드를 종이나 다른 화면에 띄워 실제 물품과 함께 촬영해 주세요.
+                DAN이 진품이나 상태를 보증하는 것은 아니지만, 오래된 도용 사진을 쓰기 어렵게 합니다.
               </p>
             </div>
             {challenge ? (
@@ -289,7 +290,7 @@ export function DealEvidencePage() {
               ) : (
                 <span>
                   {challenge
-                    ? `카메라와 촬영 코드 ${challenge.challengeCode}가 함께 보이게 찍어주세요`
+                    ? `물품과 촬영 코드 ${challenge.challengeCode}가 함께 보이게 찍어주세요`
                     : "촬영 코드가 발급되면 사진을 추가할 수 있어요"}
                 </span>
               )}
@@ -305,11 +306,11 @@ export function DealEvidencePage() {
 
           <div className="evidence-form-divider">
             <span>2</span>
-            <div><strong>제품 정보</strong><small>컷수·시리얼·구매 및 보증 정보를 확인해요.</small></div>
+            <div><strong>제품 정보</strong><small>사용량·식별번호·구매 및 보증 정보가 있다면 함께 남겨요.</small></div>
           </div>
 
           <div className="deal-grid-2">
-            <Field label="컷수">
+            <Field label={usageLabel}>
               <TextInput
                 inputMode="numeric"
                 value={usageCount}
@@ -317,7 +318,7 @@ export function DealEvidencePage() {
                 placeholder="예: 2417"
               />
             </Field>
-            <Field label="시리얼 끝자리">
+            <Field label="시리얼 / 식별번호 끝자리 (선택)">
               <TextInput
                 value={serialLast4}
                 onChange={(e) => setSerialLast4(e.target.value.slice(0, 8))}
@@ -365,7 +366,7 @@ export function DealEvidencePage() {
           <Field label="수리 이력">
             <textarea className="dan-textarea dan-input" value={repairHistory} onChange={(e) => setRepairHistory(e.target.value)} placeholder="없음 / 수리 내용" />
           </Field>
-          <Field label="침수 이력">
+          <Field label="침수 / 물손상 이력 (해당 시)">
             <TextInput value={waterDamageStatement} onChange={(e) => setWaterDamageStatement(e.target.value)} placeholder="없음 / 있음 / 모름" />
           </Field>
 
@@ -379,7 +380,21 @@ export function DealEvidencePage() {
   );
 }
 
-function EvidenceSummary({ evidence }: { evidence: DealEvidence }) {
+function EvidenceSummary({
+  evidence,
+  product,
+}: {
+  evidence: DealEvidence;
+  product: Product;
+}) {
+  const usageLabel = product.category === "camera" ? "컷수" : "사용량 / 횟수";
+  const usageValue =
+    evidence.usageCount == null
+      ? "미제출"
+      : product.category === "camera"
+        ? `${evidence.usageCount.toLocaleString("ko-KR")}컷`
+        : evidence.usageCount.toLocaleString("ko-KR");
+
   return (
     <div className="deal-evidence-review">
       {evidence.possessionPhotoUrl ? (
@@ -390,11 +405,11 @@ function EvidenceSummary({ evidence }: { evidence: DealEvidence }) {
         />
       ) : null}
       <dl className="deal-facts">
-        <div><dt>컷수</dt><dd>{evidence.usageCount == null ? "미제출" : `${evidence.usageCount.toLocaleString("ko-KR")}컷`}</dd></div>
-        <div><dt>시리얼</dt><dd>{evidence.serialLast4 ? `••••${evidence.serialLast4}` : "미제출"}</dd></div>
+        <div><dt>{usageLabel}</dt><dd>{usageValue}</dd></div>
+        <div><dt>식별번호</dt><dd>{evidence.serialLast4 ? `••••${evidence.serialLast4}` : "미제출"}</dd></div>
         <div><dt>구성품</dt><dd>{evidence.components.join(", ") || "없음"}</dd></div>
         <div><dt>외관</dt><dd>{evidence.cosmeticNotes || "미제출"}</dd></div>
-        <div><dt>기능 이상</dt><dd>{evidence.knownIssues || "미제출"}</dd></div>
+        <div><dt>알려진 이상</dt><dd>{evidence.knownIssues || "미제출"}</dd></div>
       </dl>
     </div>
   );
