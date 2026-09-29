@@ -13,6 +13,7 @@ import {
 import {
   CATEGORY_LABEL,
   CONDITION_LABEL,
+  PRODUCT_CATEGORY_OPTIONS,
   TRADE_LABEL,
   type ConditionPreference,
   type ProductCategory,
@@ -32,14 +33,31 @@ const CONDITION_OPTIONS: ConditionPreference[] = [
   "sealed",
 ];
 
-const CATEGORY_OPTIONS: ProductCategory[] = [
-  "electronics",
-  "camera",
-  "lens",
-  "furniture",
-  "camping",
-  "other",
-];
+const PREFERENCE_PLACEHOLDER: Partial<Record<ProductCategory, string>> = {
+  electronics: "예: 256GB, 블랙, 배터리 90% 이상",
+  computer: "예: RAM 16GB 이상, SSD 512GB, 스페이스 블랙",
+  gaming: "예: 정발판, 박스 포함, 추가 패드 포함",
+  audio: "예: 블랙, 정품 케이블 포함, 패드 상태 양호",
+  camera: "예: 블랙, 1만컷 이하, 풀박스",
+  lens: "예: 정품 후드 포함, 곰팡이·헤이즈 없음",
+  home_appliance: "예: 2024년 이후 구매, 구성품 포함",
+  furniture: "예: B사이즈, 그래파이트, 헤드레스트 포함",
+  fashion: "예: M 사이즈, 블랙, 택 포함",
+  shoes: "예: 270mm, 박스 포함",
+  watches_accessories: "예: 풀세트, 여분 링크 포함",
+  sports: "예: M 사이즈, 실사용 적음",
+  outdoor: "예: 2인용, 풋프린트 포함",
+  camping: "예: 2인용, 풋프린트 포함",
+  hobby_collectible: "예: 미개봉, 한글판",
+  baby_kids: "예: 2025년식, 구성품 전체",
+  books_media: "예: 전권, 낙서 없음",
+  musical_instrument: "예: 소프트케이스 포함, 수리 이력 없음",
+  beauty: "예: 미개봉, 사용기한 1년 이상",
+  pet: "예: M 사이즈, 세척 완료",
+  tools: "예: 배터리 2개, 충전기 포함",
+  auto: "예: 신형, 장착 부품 포함",
+  other: "예: 색상, 사이즈, 용량, 구성품",
+};
 
 const TRADE_OPTIONS: TradeMethod[] = ["meetup", "shipping", "any"];
 
@@ -254,7 +272,7 @@ export function BuyDemandCreatePage() {
               value={category}
               onChange={(event) => setCategory(event.target.value as ProductCategory)}
             >
-              {CATEGORY_OPTIONS.map((item) => (
+              {PRODUCT_CATEGORY_OPTIONS.map((item) => (
                 <option key={item} value={item}>
                   {CATEGORY_LABEL[item]}
                 </option>
@@ -335,7 +353,7 @@ export function BuyDemandCreatePage() {
           <TextInput
             value={extraCondition}
             onChange={(event) => setExtraCondition(event.target.value)}
-            placeholder="예: 256GB, 블랙, 박스 포함"
+            placeholder={PREFERENCE_PLACEHOLDER[selectedProduct?.category ?? category] ?? PREFERENCE_PLACEHOLDER.other}
           />
         </Field>
       </section>
