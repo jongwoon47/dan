@@ -141,7 +141,6 @@ export function DealEvidencePage() {
   );
 
   const usageLabel = product?.category === "camera" ? "컷수" : "사용량 / 사용 횟수";
-  const usageSuffix = product?.category === "camera" ? "컷" : "";
 
   if (!match || !demand || !product || !sell || !currentUser) {
     return (
