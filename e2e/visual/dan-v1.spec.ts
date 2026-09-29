@@ -18,12 +18,15 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(overflow).toBeLessThanOrEqual(1);
 }
 
-function tradeFixture(stage: "received" | "connected" | "handoff") {
+type Stage = "received" | "connected" | "payment" | "handoff" | "complete";
+
+function tradeFixture(stage: Stage) {
   const now = Date.now();
   const createdAt = new Date(now - 18 * 60 * 1000).toISOString();
   const future = new Date(now + 5 * 24 * 60 * 60 * 1000).toISOString();
   const paymentDueAt = new Date(now + 4 * 60 * 60 * 1000).toISOString();
   const lockedAt = new Date(now - 4 * 60 * 1000).toISOString();
+  const completedAt = new Date(now - 60 * 1000).toISOString();
 
   const demand = {
     id: "visual-demand-x100vi",
@@ -69,28 +72,43 @@ function tradeFixture(stage: "received" | "connected" | "handoff") {
     createdAt,
   };
 
-  const match = {
-    id: "visual-match-x100vi",
-    demandId: demand.id,
-    sellIntentId: sell.id,
-    productId: "prod-fuji-x100vi",
-    buyerId: "user-you",
-    sellerId: "user-jun",
-    status: stage === "received" ? "BUYER_INTERESTED" : "CONNECTED",
-    dealStage:
-      stage === "received"
-        ? "BUYER_INTERESTED"
-        : stage === "handoff"
-          ? "PAYMENT_PENDING"
-          : "EVIDENCE_READY",
-    paymentStatus: stage === "handoff" ? "PENDING" : "NOT_STARTED",
-    paymentDueAt: stage === "handoff" ? paymentDueAt : undefined,
-    createdAt,
-  };
+  const persistedMatch = stage === "received"
+    ? null
+    : {
+        id: "visual-match-x100vi",
+        demandId: demand.id,
+        sellIntentId: sell.id,
+        productId: "prod-fuji-x100vi",
+        buyerId: "user-you",
+        sellerId: "user-jun",
+        status: stage === "complete" ? "COMPLETED" : "CONNECTED",
+        dealStage:
+          stage === "connected"
+            ? "EVIDENCE_READY"
+            : stage === "payment"
+              ? "PAYMENT_PENDING"
+              : stage === "handoff"
+                ? "HANDOFF_READY"
+                : "COMPLETED",
+        paymentStatus:
+          stage === "connected"
+            ? "NOT_STARTED"
+            : stage === "payment"
+              ? "PENDING"
+              : "PAID",
+        paymentDueAt:
+          stage === "payment" || stage === "handoff"
+            ? paymentDueAt
+            : undefined,
+        createdAt,
+        buyerCompletedAt: stage === "complete" ? completedAt : undefined,
+        sellerCompletedAt: stage === "complete" ? completedAt : undefined,
+        completedAt: stage === "complete" ? completedAt : undefined,
+      };
 
   const evidence = {
     id: "visual-evidence-x100vi",
-    matchId: match.id,
+    matchId: "visual-match-x100vi",
     sellerId: "user-jun",
     possessionPhotoUrl: "",
     serialLast4: "3812",
@@ -138,24 +156,26 @@ function tradeFixture(stage: "received" | "connected" | "handoff") {
     },
   };
 
-  const snapshot =
-    stage === "handoff"
-      ? {
-          id: "visual-snapshot-x100vi",
-          matchId: match.id,
-          demandId: demand.id,
-          productId: "prod-fuji-x100vi",
-          buyerId: "user-you",
-          sellerId: "user-jun",
-          agreedPrice: 2_130_000,
-          snapshot: snapshotPayload,
-          buyerConfirmedAt: lockedAt,
-          sellerConfirmedAt: lockedAt,
-          lockedAt,
-          createdAt,
-          updatedAt: lockedAt,
-        }
-      : null;
+  const hasLockedSnapshot =
+    stage === "payment" || stage === "handoff" || stage === "complete";
+
+  const snapshot = hasLockedSnapshot
+    ? {
+        id: "visual-snapshot-x100vi",
+        matchId: "visual-match-x100vi",
+        demandId: demand.id,
+        productId: "prod-fuji-x100vi",
+        buyerId: "user-you",
+        sellerId: "user-jun",
+        agreedPrice: 2_130_000,
+        snapshot: snapshotPayload,
+        buyerConfirmedAt: lockedAt,
+        sellerConfirmedAt: lockedAt,
+        lockedAt,
+        createdAt,
+        updatedAt: lockedAt,
+      }
+    : null;
 
   return {
     currentUserId: "user-you",
@@ -163,7 +183,7 @@ function tradeFixture(stage: "received" | "connected" | "handoff") {
     ownerships: [ownership],
     sellIntents: [sell],
     responses: [],
-    matches: [match],
+    matches: persistedMatch ? [persistedMatch] : [],
     dealEvidenceChallenges: [],
     dealEvidence: stage === "received" ? [] : [evidence],
     dealSnapshots: snapshot ? [snapshot] : [],
@@ -171,87 +191,54 @@ function tradeFixture(stage: "received" | "connected" | "handoff") {
   };
 }
 
-async function installTradeFixture(
-  page: Page,
-  stage: "received" | "connected" | "handoff",
-) {
+async function installTradeFixture(page: Page, stage: Stage) {
   await page.evaluate(
     ({ key, value }) => localStorage.setItem(key, JSON.stringify(value)),
     { key: STORE_KEY, value: tradeFixture(stage) },
   );
 }
 
-test("DAN V1 blueprint screens render on mobile", async ({ page }, testInfo) => {
+test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
   const outDir = path.join("qa-screenshots", "dan-v1", testInfo.project.name);
   mkdirSync(outDir, { recursive: true });
 
   await page.goto("/");
   await settle(page);
-  await expect(
-    page.getByRole("heading", { name: "지금 사고 있는 사람들" }),
-  ).toBeVisible();
-  await expect(page.getByRole("link", { name: /내 구매수요/ })).toBeVisible();
-  await expect(page.getByText("Fujifilm X100VI").first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "지금 사고 있는 사람들" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
-  await page.screenshot({
-    path: path.join(outDir, "01-home-live-demand.png"),
-    fullPage: true,
-  });
+  await page.screenshot({ path: path.join(outDir, "01-home.png"), fullPage: true });
 
   await page.goto("/buy/new");
   await settle(page);
-  await expect(
-    page.getByRole("heading", { name: "원하는 조건만 간단하게 남겨주세요." }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "원하는 조건만 간단하게 남겨주세요." })).toBeVisible();
   await expect(page.getByText("필수 조건")).toBeVisible();
   await expect(page.getByText("선호 조건")).toBeVisible();
   await expectNoHorizontalOverflow(page);
-  await page.screenshot({
-    path: path.join(outDir, "02-create-demand.png"),
-    fullPage: true,
-  });
-
-  await page.goto("/demand/prod-fuji-x100vi");
-  await settle(page);
-  await expect(page.getByText("Fujifilm X100VI").first()).toBeVisible();
-  await expect(page.getByRole("link", { name: "판매 제안하기" })).toBeVisible();
-  await expectNoHorizontalOverflow(page);
-  await page.screenshot({
-    path: path.join(outDir, "03-live-demand-detail.png"),
-    fullPage: true,
-  });
-
-  await page.goto("/demand/prod-fuji-x100vi/offer");
-  await settle(page);
-  await expect(page.getByText("Quick Offer", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "제안 보내기" })).toBeVisible();
-  await expectNoHorizontalOverflow(page);
-  await page.screenshot({
-    path: path.join(outDir, "04-quick-offer.png"),
-    fullPage: true,
-  });
-
-  await page.goto("/profile/user-you");
-  await settle(page);
-  await expect(page.getByText("Trust History")).toBeVisible();
-  await expect(page.getByText("사실 기반 거래 기록")).toBeVisible();
-  await expectNoHorizontalOverflow(page);
-  await page.screenshot({
-    path: path.join(outDir, "05-trust-history.png"),
-    fullPage: true,
-  });
+  await page.screenshot({ path: path.join(outDir, "02-demand-create.png"), fullPage: true });
 
   await installTradeFixture(page, "received");
   await page.goto("/my");
   await settle(page);
   await expect(page.getByRole("heading", { name: "내 구매수요" })).toBeVisible();
-  await expect(page.getByText("받은 제안 1")).toBeVisible();
-  await expect(page.getByText("2,130,000원")).toBeVisible();
+  await expect(page.getByText("최대 2,150,000원")).toBeVisible();
   await expectNoHorizontalOverflow(page);
-  await page.screenshot({
-    path: path.join(outDir, "06-received-offer.png"),
-    fullPage: true,
-  });
+  await page.screenshot({ path: path.join(outDir, "03-my-demand.png"), fullPage: true });
+
+  await page.goto("/my?tab=offers");
+  await settle(page);
+  await expect(page.getByRole("heading", { name: "받은 제안" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "제안 상세 보기" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await page.screenshot({ path: path.join(outDir, "04-received-offers.png"), fullPage: true });
+
+  const potentialId = "potential::visual-demand-x100vi::visual-sell-x100vi";
+  await page.goto("/offer/" + potentialId);
+  await settle(page);
+  await expect(page.getByText("Quick Offer", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "관심있어요" })).toBeVisible();
+  await expect(page.getByText("Trust History 자세히 보기")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await page.screenshot({ path: path.join(outDir, "05-offer-detail.png"), fullPage: true });
 
   await installTradeFixture(page, "connected");
   await page.goto("/deal/visual-match-x100vi/evidence");
@@ -259,21 +246,23 @@ test("DAN V1 blueprint screens render on mobile", async ({ page }, testInfo) => 
   await expect(page.getByText("판매자가 제출한 정보예요")).toBeVisible();
   await expect(page.getByText("2,417컷")).toBeVisible();
   await expectNoHorizontalOverflow(page);
-  await page.screenshot({
-    path: path.join(outDir, "07-deal-evidence.png"),
-    fullPage: true,
-  });
+  await page.screenshot({ path: path.join(outDir, "06-seller-evidence.png"), fullPage: true });
 
   await page.goto("/deal/visual-match-x100vi/snapshot");
   await settle(page);
   await expect(page.getByText("Deal Snapshot", { exact: true })).toBeVisible();
   await expect(page.getByText("위 조건으로 거래를 진행합니다.")).toBeVisible();
-  await expect(page.getByText("2024-03-15")).toBeVisible();
   await expectNoHorizontalOverflow(page);
-  await page.screenshot({
-    path: path.join(outDir, "08-deal-snapshot.png"),
-    fullPage: true,
-  });
+  await page.screenshot({ path: path.join(outDir, "07-deal-snapshot.png"), fullPage: true });
+
+  await installTradeFixture(page, "payment");
+  await page.goto("/deal/visual-match-x100vi/payment");
+  await settle(page);
+  await expect(page.getByRole("heading", { name: "2,130,000원" })).toBeVisible();
+  await expect(page.getByText("결제 수단")).toBeVisible();
+  await expect(page.getByRole("button", { name: "2,130,000원 결제하기" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await page.screenshot({ path: path.join(outDir, "08-safe-payment.png"), fullPage: true });
 
   await installTradeFixture(page, "handoff");
   await page.goto("/deal/visual-match-x100vi/handoff");
@@ -282,8 +271,27 @@ test("DAN V1 blueprint screens render on mobile", async ({ page }, testInfo) => 
   await expect(page.getByText("구매자 안전결제")).toBeVisible();
   await expect(page.getByText("직거래 · 인계 확인")).toBeVisible();
   await expectNoHorizontalOverflow(page);
-  await page.screenshot({
-    path: path.join(outDir, "09-handoff-progress.png"),
-    fullPage: true,
-  });
+  await page.screenshot({ path: path.join(outDir, "09-direct-handoff.png"), fullPage: true });
+
+  await installTradeFixture(page, "complete");
+  await page.goto("/deal/visual-match-x100vi/complete");
+  await settle(page);
+  await expect(page.getByRole("heading", { name: "거래가 완료됐어요!" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "내 거래 이력 보기" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await page.screenshot({ path: path.join(outDir, "10-trade-complete.png"), fullPage: true });
+
+  await page.goto("/profile/user-you");
+  await settle(page);
+  await expect(page.getByText("Trust History")).toBeVisible();
+  await expect(page.getByText("사실 기반 거래 기록")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await page.screenshot({ path: path.join(outDir, "11-trust-history.png"), fullPage: true });
+
+  await page.goto("/demand/prod-fuji-x100vi/offer");
+  await settle(page);
+  await expect(page.getByText("Quick Offer", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "제안 보내기" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await page.screenshot({ path: path.join(outDir, "12-seller-quick-offer.png"), fullPage: true });
 });
