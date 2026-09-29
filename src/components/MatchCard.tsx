@@ -86,7 +86,15 @@ export function MatchCard({ match }: { match: Match }) {
     return (
       <article className="received-offer-card">
         <div className="received-offer-card__main">
-          <ProductVisual product={product} size="sm" />
+          {sell.quickPhotoUrl ? (
+            <img
+              className="received-offer-card__photo"
+              src={sell.quickPhotoUrl}
+              alt={`${product.name} 판매자가 올린 현재 물품`}
+            />
+          ) : (
+            <ProductVisual product={product} size="sm" />
+          )}
           <div className="received-offer-card__body">
             <div className="received-offer-card__head">
               <div>
