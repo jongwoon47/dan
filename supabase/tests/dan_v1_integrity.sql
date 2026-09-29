@@ -1,6 +1,6 @@
 begin;
 
-select plan(38);
+select plan(44);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -245,6 +245,45 @@ select ok(
     ), '')
   ) > 0,
   'blocked users are filtered from open Quick Offer visibility'
+);
+
+select has_table(
+  'public',
+  'marketplace_restricted_terms',
+  'operator-managed marketplace restriction registry exists'
+);
+
+select has_function(
+  'public',
+  'marketplace_product_allowed',
+  array['text'],
+  'marketplace product policy predicate exists'
+);
+
+select has_trigger(
+  'public',
+  'products',
+  'trg_product_marketplace_policy',
+  'restricted product names are blocked at catalog write time'
+);
+
+select has_trigger(
+  'public',
+  'demands',
+  'trg_buy_demand_product_policy',
+  'restricted products cannot become BUY demand'
+);
+
+select is(
+  public.marketplace_product_allowed('권총'),
+  false,
+  'obviously restricted weapon product is denied'
+);
+
+select is(
+  public.marketplace_product_allowed('Herman Miller Embody Chair'),
+  true,
+  'ordinary secondhand product remains allowed'
 );
 
 select * from finish();
