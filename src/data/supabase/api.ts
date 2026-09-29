@@ -490,29 +490,10 @@ export async function createOwnershipRemote(input: {
   productId: string;
   condition: Ownership["condition"];
 }): Promise<Ownership> {
-  const sb = getSupabase();
-  const { data: auth } = await sb.auth.getUser();
-  if (!auth.user) throw new Error("login required");
-
-  const existing = await sb
-    .from("ownerships")
-    .select("*")
-    .eq("user_id", auth.user.id)
-    .eq("product_id", input.productId)
-    .eq("status", "OWNED")
-    .maybeSingle();
-  if (existing.data) return mapOwnership(existing.data as DbOwnership);
-
-  const { data, error } = await sb
-    .from("ownerships")
-    .insert({
-      user_id: auth.user.id,
-      product_id: input.productId,
-      condition: input.condition,
-      status: "OWNED",
-    })
-    .select("*")
-    .single();
+  const { data, error } = await getSupabase().rpc("ensure_ownership", {
+    p_product_id: input.productId,
+    p_condition: input.condition,
+  });
   if (error) throw error;
   return mapOwnership(data as DbOwnership);
 }
