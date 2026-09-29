@@ -1,6 +1,6 @@
 begin;
 
-select plan(47);
+select plan(50);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -326,6 +326,42 @@ select ok(
     ), '')
   ) > 0,
   'matched buyers can read private Quick Offer media'
+);
+
+select ok(
+  position(
+    'marketplace_product_allowed'
+    in coalesce((
+      select qual
+      from pg_policies
+      where schemaname = 'public'
+        and tablename = 'products'
+        and policyname = 'products_select_all'
+    ), '')
+  ) > 0,
+  'restricted products disappear from catalog discovery immediately'
+);
+
+select ok(
+  position(
+    'marketplace_product_allowed'
+    in coalesce((
+      select qual
+      from pg_policies
+      where schemaname = 'public'
+        and tablename = 'demands'
+        and policyname = 'demands_select_public_or_own'
+    ), '')
+  ) > 0,
+  'restricted BUY demand disappears from public discovery immediately'
+);
+
+select ok(
+  position(
+    'marketplace_product_allowed'
+    in pg_get_viewdef('public.buy_demand_aggregates'::regclass, true)
+  ) > 0,
+  'restricted products are removed from Live Demand aggregates immediately'
 );
 
 select * from finish();
