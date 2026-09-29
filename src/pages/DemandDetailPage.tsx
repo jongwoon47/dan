@@ -51,7 +51,7 @@ export function DemandDetailPage() {
 
       <section className="seller-action-card">
         <div>
-          <span>이 카메라를 가지고 있나요?</span>
+          <span>이 제품을 가지고 있나요?</span>
           <h2>가격과 기본 상태만 적고 바로 제안하세요.</h2>
           <p>구매자가 관심을 보인 뒤 상세 증거와 거래 조건을 확정합니다.</p>
         </div>
@@ -74,7 +74,7 @@ export function DemandDetailPage() {
           <Button to={`/demand/item/${myBuy.id}`} fullWidth variant="secondary">{ko.editDemand} / {ko.closeDemand}</Button>
         </section>
       ) : (
-        <p className="detail-foot">같은 카메라를 찾고 있나요? <Link to="/buy/new">나도 구매수요 등록</Link></p>
+        <p className="detail-foot">같은 제품을 찾고 있나요? <Link to="/buy/new">나도 구매수요 등록</Link></p>
       )}
     </div>
   );
