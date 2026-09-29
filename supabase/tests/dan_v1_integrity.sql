@@ -1,6 +1,6 @@
 begin;
 
-select plan(18);
+select plan(21);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -103,6 +103,31 @@ select ok(
     in pg_get_functiondef('public.set_buy_payment_window()'::regprocedure)
   ) > 0,
   'snapshot lock opens a six-hour payment window'
+);
+
+select has_function(
+  'public',
+  'canonical_product_key',
+  array['text'],
+  'server product canonicalization exists'
+);
+
+select has_function(
+  'public',
+  'ensure_product',
+  array['text','text'],
+  'atomic product ensure RPC exists'
+);
+
+select ok(
+  not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'products'
+      and policyname = 'products_insert_authenticated'
+  ),
+  'ordinary clients cannot bypass canonical product creation'
 );
 
 select * from finish();
