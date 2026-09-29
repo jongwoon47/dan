@@ -32,6 +32,7 @@ export function MyDanPage() {
   const dataMode = getDataMode();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = normalizeTab(searchParams.get("tab"));
+  const demandFilter = searchParams.get("demand");
 
   const openBuyDemands = useMemo(
     () =>
@@ -53,6 +54,14 @@ export function MyDanPage() {
           match.status !== "CLOSED",
       ),
     [currentUser?.id, myMatches],
+  );
+
+  const visibleReceivedOffers = useMemo(
+    () =>
+      demandFilter
+        ? receivedOffers.filter((match) => match.demandId === demandFilter)
+        : receivedOffers,
+    [demandFilter, receivedOffers],
   );
 
   const sellerMatches = useMemo(
@@ -183,9 +192,14 @@ export function MyDanPage() {
               <h2>받은 제안</h2>
               <p>가격과 기본 상태를 비교한 뒤 제안 상세에서 관심을 표시하세요.</p>
             </div>
+            {demandFilter ? (
+              <button type="button" className="my-demand-filter-clear" onClick={() => setSearchParams({ tab: "offers" })}>
+                전체 보기
+              </button>
+            ) : null}
           </div>
-          {receivedOffers.length > 0 ? (
-            <MatchList matches={receivedOffers} emptyWhenZero={false} />
+          {visibleReceivedOffers.length > 0 ? (
+            <MatchList matches={visibleReceivedOffers} emptyWhenZero={false} />
           ) : (
             <EmptyState
               title="아직 받은 제안이 없어요"
