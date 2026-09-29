@@ -5,10 +5,27 @@ export type DemandType = "BUY" | "BORROW" | "TASK" | "SERVICE";
 
 export type ProductCategory =
   | "electronics"
+  | "computer"
+  | "gaming"
+  | "audio"
   | "camera"
   | "lens"
+  | "home_appliance"
   | "furniture"
+  | "fashion"
+  | "shoes"
+  | "watches_accessories"
+  | "sports"
+  | "outdoor"
   | "camping"
+  | "hobby_collectible"
+  | "baby_kids"
+  | "books_media"
+  | "musical_instrument"
+  | "beauty"
+  | "pet"
+  | "tools"
+  | "auto"
   | "other";
 
 export type DemandCategory =
@@ -182,7 +199,7 @@ export interface SellIntent {
   minimumPrice: number;
   /** Optional demand this quick offer was opened from. */
   targetDemandId?: string;
-  /** Camera V1: approximate shutter count / usage count. */
+  /** Optional count when a product has a meaningful numeric usage metric (e.g. camera shutter count). */
   approxUsageCount?: number;
   /** Seller's short, non-verified condition statement. */
   conditionNote?: string;
@@ -385,12 +402,55 @@ export const DEMAND_TYPE_LABEL: Record<DemandType, string> = {
   SERVICE: ko.typeService,
 };
 
+export const PRODUCT_CATEGORY_OPTIONS: ProductCategory[] = [
+  "electronics",
+  "computer",
+  "gaming",
+  "audio",
+  "camera",
+  "lens",
+  "home_appliance",
+  "furniture",
+  "fashion",
+  "shoes",
+  "watches_accessories",
+  "sports",
+  "outdoor",
+  "camping",
+  "hobby_collectible",
+  "baby_kids",
+  "books_media",
+  "musical_instrument",
+  "beauty",
+  "pet",
+  "tools",
+  "auto",
+  "other",
+];
+
 export const CATEGORY_LABEL: Record<DemandCategory, string> = {
+  electronics: ko.electronics,
+  computer: "컴퓨터 · 노트북",
+  gaming: "게임",
+  audio: "오디오",
   camera: ko.camera,
   lens: ko.lens,
-  electronics: ko.electronics,
+  home_appliance: "생활가전",
   furniture: ko.furniture,
+  fashion: "패션",
+  shoes: "신발",
+  watches_accessories: "시계 · 액세서리",
+  sports: "스포츠",
+  outdoor: "아웃도어",
   camping: ko.camping,
+  hobby_collectible: "취미 · 수집",
+  baby_kids: "유아 · 아동",
+  books_media: "도서 · 미디어",
+  musical_instrument: "악기",
+  beauty: "뷰티",
+  pet: "반려동물",
+  tools: "공구",
+  auto: "자동차용품",
   other: ko.other,
   errand: ko.errand,
   service: ko.serviceCat,
