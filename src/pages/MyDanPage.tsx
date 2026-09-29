@@ -149,7 +149,7 @@ export function MyDanPage() {
           {openBuyDemands.length === 0 ? (
             <EmptyState
               title="등록한 구매수요가 없어요"
-              body="원하는 카메라와 조건을 먼저 남겨보세요."
+              body="원하는 물건과 조건을 먼저 남겨보세요."
               action={<Button to="/buy/new">구매수요 등록</Button>}
             />
           ) : (
@@ -260,7 +260,7 @@ export function MyDanPage() {
           ) : (
             <EmptyState
               title="보낸 판매 제안이 없어요"
-              body="Live Demand에서 판매할 수 있는 카메라를 선택해 Quick Offer를 보내세요."
+              body="Live Demand에서 가지고 있는 물건을 찾아 Quick Offer를 보내세요."
               action={<Button to="/">구매수요 보기</Button>}
             />
           )}
