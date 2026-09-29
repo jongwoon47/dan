@@ -80,7 +80,15 @@ export function OfferDetailPage() {
   return (
     <div className="page-stack page-narrow offer-detail-page">
       <section className="offer-detail-product">
-        <ProductVisual product={product} size="lg" />
+        {sell.quickPhotoUrl ? (
+          <img
+            className="offer-detail-product__photo"
+            src={sell.quickPhotoUrl}
+            alt={`${product.name} 판매자가 올린 현재 물품`}
+          />
+        ) : (
+          <ProductVisual product={product} size="lg" />
+        )}
         <div>
           <p className="eyebrow">Quick Offer</p>
           <h1 className="page-title">{product.name}</h1>
