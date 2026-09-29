@@ -23,18 +23,8 @@ function formatOfferTime(iso: string): string {
 }
 
 export function MatchCard({ match }: { match: Match }) {
-  const { currentUser, getProduct, state, expressBuyerInterest, connectAsSeller } = useDan();
+  const { currentUser, getProduct, state, connectAsSeller } = useDan();
   const [busy, setBusy] = useState(false);
-
-  async function onInterest() {
-    if (busy) return;
-    setBusy(true);
-    try {
-      await expressBuyerInterest(match.id);
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function onConnect() {
     if (busy) return;
