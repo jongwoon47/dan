@@ -159,7 +159,7 @@ export async function listProducts(): Promise<Product[]> {
 }
 
 /** Find or create a catalog product by display name (BUY custom requests). */
-export async function ensureProductRemote(name: string): Promise<Product> {
+export async function ensureProductRemote(name: string, category: Product["category"] = "other"): Promise<Product> {
   const display = displayProductName(name);
   const key = productMatchKey(display);
   if (!key) throw new Error("product name required");
@@ -176,7 +176,7 @@ export async function ensureProductRemote(name: string): Promise<Product> {
       canonical_name: display,
       brand: null,
       model: display,
-      category: "other",
+      category,
       image_hue: hue,
     })
     .select("*")
