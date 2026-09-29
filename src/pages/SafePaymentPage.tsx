@@ -15,6 +15,7 @@ export function SafePaymentPage() {
   const navigate = useNavigate();
   const {
     myMatches,
+    currentUser,
     getProduct,
     getDealSnapshot,
     simulateSafePaymentDemo,
@@ -26,6 +27,7 @@ export function SafePaymentPage() {
   const [method, setMethod] = useState<"card" | "bank">("card");
   const [error, setError] = useState("");
   const isDemo = getDataMode() === "demo";
+  const isBuyer = Boolean(match && currentUser?.id === match.buyerId);
 
   useDeepHeader({ title: "안전결제" });
 
@@ -59,7 +61,7 @@ export function SafePaymentPage() {
   }
 
   async function pay() {
-    if (!isDemo || busy) return;
+    if (!isBuyer || !isDemo || busy) return;
     setError("");
     const ok = await simulateSafePaymentDemo(matchId);
     if (!ok) {
@@ -86,6 +88,7 @@ export function SafePaymentPage() {
         <div className="is-total"><span>총 결제 금액</span><strong>{formatWon(snapshot.agreedPrice)}</strong></div>
       </section>
 
+      {isBuyer ? (
       <section className="payment-methods">
         <h2>결제 수단</h2>
         <button type="button" className={method === "card" ? "payment-method is-selected" : "payment-method"} onClick={() => setMethod("card")}>
@@ -95,6 +98,12 @@ export function SafePaymentPage() {
           <span>계좌 이체</span><strong>{method === "bank" ? "✓" : ""}</strong>
         </button>
       </section>
+      ) : (
+        <section className="offer-next-state">
+          <strong>구매자 결제를 기다리고 있어요</strong>
+          <p>구매자의 안전결제가 서버에서 확인되면 직거래 인계 단계가 열려요.</p>
+        </section>
+      )}
 
       <div className="payment-safety-note">
         <strong>결제 완료 여부는 서버에서 확인해요.</strong>
@@ -103,11 +112,16 @@ export function SafePaymentPage() {
 
       {error ? <p className="form-error">{error}</p> : null}
 
-      <Button fullWidth size="lg" disabled={!isDemo || busy} onClick={() => void pay()}>
-        {isDemo ? (busy ? "결제 확인 중…" : formatWon(snapshot.agreedPrice) + " 결제하기") : "안전결제 연동 준비 중"}
-      </Button>
-
-      {!isDemo ? <p className="payment-production-note">실제 PG 결제 연동 전에는 결제 버튼을 활성화하지 않습니다.</p> : null}
+      {isBuyer ? (
+        <>
+          <Button fullWidth size="lg" disabled={!isDemo || busy} onClick={() => void pay()}>
+            {isDemo ? (busy ? "결제 확인 중…" : formatWon(snapshot.agreedPrice) + " 결제하기") : "안전결제 연동 준비 중"}
+          </Button>
+          {!isDemo ? <p className="payment-production-note">실제 PG 결제 연동 전에는 결제 버튼을 활성화하지 않습니다.</p> : null}
+        </>
+      ) : (
+        <Button to="/my?tab=selling" fullWidth variant="secondary">내 판매 제안으로</Button>
+      )}
     </div>
   );
 }
