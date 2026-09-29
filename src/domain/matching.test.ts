@@ -23,7 +23,11 @@ import type { BuyDemand, Match, Ownership, Product, SellIntent } from "@/domain/
 
 const NOW = Date.parse("2026-09-13T12:00:00.000Z");
 
-const demand = (overrides: Partial<BuyDemand> & { details?: Partial<BuyDemand["details"]> } = {}): BuyDemand => {
+const demand = (
+  overrides: Omit<Partial<BuyDemand>, "details"> & {
+    details?: Partial<BuyDemand["details"]>;
+  } = {},
+): BuyDemand => {
   const { details: detailOverrides, ...rest } = overrides;
   return {
     id: "d1",
