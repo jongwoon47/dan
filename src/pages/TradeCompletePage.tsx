@@ -40,7 +40,7 @@ export function TradeCompletePage() {
 
       <section className="trade-complete-product">
         <ProductVisual product={product} size="sm" />
-        <div><strong>{product.name}</strong><span>직거래 완료</span></div>
+        <div><strong>{product.name}</strong><span>거래 완료</span></div>
       </section>
 
       <Button to={"/profile/" + peerId} fullWidth variant="secondary">
