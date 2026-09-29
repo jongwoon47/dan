@@ -1,6 +1,6 @@
 begin;
 
-select plan(55);
+select plan(60);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -402,6 +402,46 @@ select ok(
     in pg_get_functiondef('public.confirm_match_completion(uuid)'::regprocedure)
   ) > 0,
   'completion confirmation is retry-safe after completion'
+);
+
+select ok(
+  position(
+    'price incompatible'
+    in pg_get_functiondef('public.seller_connect_match(uuid)'::regprocedure)
+  ) > 0,
+  'seller connect revalidates price compatibility'
+);
+
+select ok(
+  position(
+    'trade method incompatible'
+    in pg_get_functiondef('public.seller_connect_match(uuid)'::regprocedure)
+  ) > 0,
+  'seller connect revalidates fulfillment compatibility'
+);
+
+select ok(
+  position(
+    'target demand mismatch'
+    in pg_get_functiondef('public.seller_connect_match(uuid)'::regprocedure)
+  ) > 0,
+  'seller connect revalidates targeted demand'
+);
+
+select ok(
+  position(
+    'condition incompatible'
+    in pg_get_functiondef('public.seller_connect_match(uuid)'::regprocedure)
+  ) > 0,
+  'seller connect revalidates condition compatibility'
+);
+
+select ok(
+  position(
+    'v_match.status = ''CONNECTED'''
+    in pg_get_functiondef('public.seller_connect_match(uuid)'::regprocedure)
+  ) > 0,
+  'seller connect is retry-safe after connection'
 );
 
 select * from finish();
