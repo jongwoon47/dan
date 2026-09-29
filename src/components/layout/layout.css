@@ -272,6 +272,10 @@
   color: var(--dan-accent-text);
 }
 
+.top-nav__mobile-search {
+  display: none;
+}
+
 .top-nav__bell-wrap {
   position: relative;
   display: inline-flex;
