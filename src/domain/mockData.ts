@@ -129,6 +129,33 @@ export const PRODUCTS: Product[] = [
     imageHue: 210,
     createdAt: "2026-01-20T00:00:00.000Z",
   },
+  {
+    id: "prod-aeron-chair",
+    name: "Herman Miller Aeron Chair",
+    brand: "Herman Miller",
+    model: "Aeron Chair",
+    category: "furniture",
+    imageHue: 232,
+    createdAt: "2026-02-01T00:00:00.000Z",
+  },
+  {
+    id: "prod-newbalance-993",
+    name: "New Balance 993",
+    brand: "New Balance",
+    model: "993",
+    category: "shoes",
+    imageHue: 205,
+    createdAt: "2026-02-03T00:00:00.000Z",
+  },
+  {
+    id: "prod-yamaha-p125a",
+    name: "Yamaha P-125a",
+    brand: "Yamaha",
+    model: "P-125a",
+    category: "musical_instrument",
+    imageHue: 268,
+    createdAt: "2026-02-05T00:00:00.000Z",
+  },
 ];
 
 function daysAgo(days: number): string {
@@ -163,45 +190,6 @@ function tradeFrom(options: FulfillmentOption[]) {
   return "any" as const;
 }
 
-
-function pilotCameraFulfillment(): FulfillmentOption[] {
-  return [{ mode: "MEETUP", place: placeFromLabel("서울") }];
-}
-
-function buySeedPilotCamera(
-  productId: string,
-  productName: string,
-  entries: Array<[number, number]>,
-): BuyDemand[] {
-  const conditions: BuyDemand["details"]["conditionPreference"][] = [
-    "any",
-    "like_new",
-    "lightly_used",
-    "any",
-  ];
-  return entries.map(([maxPrice, days], index) => {
-    const fulfillmentOptions = pilotCameraFulfillment();
-    return {
-      id: `demand-${productId}-${index}`,
-      userId: `seeker-${productId}-${index}`,
-      type: "BUY" as const,
-      title: `${productName} | ${Math.round(maxPrice / 10_000)}${ko.manWon}`,
-      description: `${productName} / ${maxPrice.toLocaleString("ko-KR")}${ko.won}`,
-      category: "camera" as const,
-      budget: maxPrice,
-      fulfillmentOptions,
-      status: "ACTIVE" as const,
-      createdAt: daysAgo(days),
-      expiresAt: daysFromNow(Math.max(1, 7 - (days % 7))),
-      details: {
-        productId,
-        maxPrice,
-        conditionPreference: conditions[index % conditions.length]!,
-        tradeMethod: "meetup" as const,
-      },
-    };
-  });
-}
 
 function buySeed(
   productId: string,
@@ -241,7 +229,7 @@ function buySeed(
 }
 
 const SEED_BUY: BuyDemand[] = [
-  ...buySeedPilotCamera("prod-fuji-x100vi", "Fujifilm X100VI", [
+  ...buySeed("prod-fuji-x100vi", "camera", "Fujifilm X100VI", [
     [2_150_000, 0],
     [2_120_000, 1],
     [2_100_000, 2],
@@ -251,26 +239,26 @@ const SEED_BUY: BuyDemand[] = [
     [2_130_000, 6],
     [2_000_000, 7],
   ]),
-  ...buySeedPilotCamera("prod-fuji-x100v", "Fujifilm X100V", [
+  ...buySeed("prod-fuji-x100v", "camera", "Fujifilm X100V", [
     [1_650_000, 0],
     [1_620_000, 2],
     [1_600_000, 3],
     [1_580_000, 5],
     [1_700_000, 7],
   ]),
-  ...buySeedPilotCamera("prod-ricoh-gr3", "Ricoh GR III", [
+  ...buySeed("prod-ricoh-gr3", "camera", "Ricoh GR III", [
     [1_450_000, 0],
     [1_420_000, 1],
     [1_400_000, 4],
     [1_380_000, 6],
   ]),
-  ...buySeedPilotCamera("prod-ricoh-gr3x", "Ricoh GR IIIx", [
+  ...buySeed("prod-ricoh-gr3x", "camera", "Ricoh GR IIIx", [
     [1_500_000, 0],
     [1_470_000, 2],
     [1_430_000, 5],
     [1_400_000, 7],
   ]),
-  ...buySeedPilotCamera("prod-sony-rx100m7", "Sony RX100 VII", [
+  ...buySeed("prod-sony-rx100m7", "camera", "Sony RX100 VII", [
     [1_350_000, 1],
     [1_320_000, 3],
     [1_280_000, 5],
@@ -327,6 +315,24 @@ const SEED_BUY: BuyDemand[] = [
     [1800000, 3],
     [1850000, 1],
     [1780000, 0],
+  ]),
+  ...buySeed("prod-aeron-chair", "furniture", "Herman Miller Aeron Chair", [
+    [1500000, 6],
+    [1450000, 4],
+    [1550000, 2],
+    [1600000, 1],
+    [1480000, 0],
+  ]),
+  ...buySeed("prod-newbalance-993", "shoes", "New Balance 993", [
+    [210000, 5],
+    [200000, 3],
+    [220000, 1],
+    [205000, 0],
+  ]),
+  ...buySeed("prod-yamaha-p125a", "musical_instrument", "Yamaha P-125a", [
+    [650000, 4],
+    [620000, 2],
+    [680000, 0],
   ]),
 ];
 
