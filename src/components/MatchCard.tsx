@@ -126,28 +126,19 @@ export function MatchCard({ match }: { match: Match }) {
         </div>
 
         <div className="received-offer-card__actions">
-          {match.status === "POTENTIAL" ? (
-            <Button fullWidth onClick={() => void onInterest()} disabled={busy}>
-              {busy ? "검토 중…" : "거래 검토하기"}
-            </Button>
-          ) : match.status === "BUYER_INTERESTED" ? (
-            <Button fullWidth variant="secondary" disabled>
-              판매자 증거 제출 대기
-            </Button>
-          ) : match.status === "CONNECTED" ? (
-            <>
-              <Button to={`/deal/${match.id}/evidence`} fullWidth variant="secondary">
-                판매자 증거 보기
-              </Button>
-              <Button to={`/deal/${match.id}/snapshot`} fullWidth>
-                거래 조건 확인
-              </Button>
-            </>
-          ) : match.status === "COMPLETED" ? (
-            <Button to={`/profile/${match.sellerId}`} fullWidth variant="secondary">
-              거래 기록 보기
-            </Button>
-          ) : null}
+          <Button
+            to={"/offer/" + match.id}
+            fullWidth
+            variant={match.status === "POTENTIAL" ? "primary" : "secondary"}
+          >
+            {match.status === "POTENTIAL"
+              ? "제안 상세 보기"
+              : match.status === "BUYER_INTERESTED"
+                ? "제안 상태 확인"
+                : match.status === "CONNECTED"
+                  ? "거래 진행 보기"
+                  : "거래 기록 보기"}
+          </Button>
         </div>
       </article>
     );
