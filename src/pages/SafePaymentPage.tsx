@@ -54,8 +54,8 @@ export function SafePaymentPage() {
     return (
       <EmptyState
         title="안전결제가 확인됐어요"
-        body="이제 판매자와 직거래 시간과 장소를 조율하세요."
-        action={<Button to={"/deal/" + match.id + "/handoff"}>직거래 진행</Button>}
+        body="이제 판매자와 물품 인계 방법을 조율하세요."
+        action={<Button to={"/deal/" + match.id + "/handoff"}>인계 진행</Button>}
       />
     );
   }
