@@ -211,8 +211,8 @@ export function DealSnapshotPage() {
               </p>
             </div>
           </section>
-          <Button to={`/deal/${match.id}/handoff`} fullWidth size="lg">
-            안전결제 · 직거래 단계
+          <Button to={`/deal/${match.id}/payment`} fullWidth size="lg">
+            안전결제로 이동
           </Button>
         </>
       ) : (
