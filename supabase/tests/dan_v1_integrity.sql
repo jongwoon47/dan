@@ -1,6 +1,6 @@
 begin;
 
-select plan(23);
+select plan(26);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -140,6 +140,29 @@ select is(
   public.canonical_product_key('소니 A7 IV'),
   'sonya7iv',
   'Hangul brand alias canonicalizes to the shared catalog key'
+);
+
+select has_column(
+  'public',
+  'sell_intents',
+  'trade_method',
+  'Quick Offer stores seller fulfillment method'
+);
+
+select ok(
+  position(
+    'trade method incompatible'
+    in pg_get_functiondef('public.express_buyer_interest(uuid,uuid)'::regprocedure)
+  ) > 0,
+  'buyer interest enforces fulfillment compatibility'
+);
+
+select ok(
+  position(
+    'target demand mismatch'
+    in pg_get_functiondef('public.express_buyer_interest(uuid,uuid)'::regprocedure)
+  ) > 0,
+  'targeted Quick Offers cannot leak to another demand'
 );
 
 select * from finish();
