@@ -521,7 +521,9 @@ function reducer(state: DanState, action: Action): DanState {
       const actorId = state.currentUserId;
       if (!actorId) return state;
       const current = state.matches.find((m) => m.id === action.matchId);
-      if (!current || current.status !== "CONNECTED") return state;
+      if (!current) return state;
+      if (current.status === "COMPLETED") return state;
+      if (current.status !== "CONNECTED") return state;
       if (actorId !== current.buyerId && actorId !== current.sellerId) {
         return state;
       }
@@ -537,6 +539,7 @@ function reducer(state: DanState, action: Action): DanState {
           return state;
         }
       }
+
       const now = new Date().toISOString();
       const isBuyer = actorId === current.buyerId;
       let nextMatch: Match = {
@@ -548,18 +551,53 @@ function reducer(state: DanState, action: Action): DanState {
           ? current.sellerCompletedAt ?? now
           : current.sellerCompletedAt,
       };
+
       if (nextMatch.buyerCompletedAt && nextMatch.sellerCompletedAt) {
         nextMatch = {
           ...nextMatch,
           status: "COMPLETED",
-          dealStage: demand?.type === "BUY" ? ("COMPLETED" as const) : nextMatch.dealStage,
+          dealStage:
+            demand?.type === "BUY"
+              ? ("COMPLETED" as const)
+              : nextMatch.dealStage,
           completedAt: now,
         };
       }
-      const matches = state.matches.map((m) =>
-        m.id === action.matchId ? nextMatch : m,
-      );
-      const next = { ...state, matches };
+
+      const completedBuy =
+        nextMatch.status === "COMPLETED" && demand?.type === "BUY";
+      const matchedSell = completedBuy
+        ? state.sellIntents.find((offer) => offer.id === current.sellIntentId)
+        : undefined;
+
+      const next: DanState = {
+        ...state,
+        matches: state.matches.map((m) =>
+          m.id === action.matchId ? nextMatch : m,
+        ),
+        demands: completedBuy
+          ? state.demands.map((row) =>
+              row.id === current.demandId
+                ? { ...row, status: "CLOSED" as const }
+                : row,
+            )
+          : state.demands,
+        sellIntents: completedBuy
+          ? state.sellIntents.map((offer) =>
+              offer.id === current.sellIntentId
+                ? { ...offer, status: "CLOSED" as const }
+                : offer,
+            )
+          : state.sellIntents,
+        ownerships:
+          completedBuy && matchedSell
+            ? state.ownerships.map((own) =>
+                own.id === matchedSell.ownershipId
+                  ? { ...own, status: "RELEASED" as const }
+                  : own,
+              )
+            : state.ownerships,
+      };
       persist(next);
       return next;
     }
@@ -978,15 +1016,25 @@ export function DanProvider({ children }: { children: ReactNode }) {
       cancelDeal: async (payload) => {
         const actorId = state.currentUserId;
         const match = state.matches.find((m) => m.id === payload.matchId);
+        if (!actorId || !match) return null;
+
         if (
-          !actorId ||
-          !match ||
+          match.status === "CLOSED" &&
+          match.dealStage === "CANCELLED" &&
+          match.cancelledBy === actorId
+        ) {
+          return match;
+        }
+
+        if (
           match.status !== "CONNECTED" ||
           match.paymentStatus === "PAID" ||
           (actorId !== match.buyerId && actorId !== match.sellerId)
         ) {
           return null;
         }
+
+        const actorIsBuyer = actorId === match.buyerId;
         const updated: Match = {
           ...match,
           status: "CLOSED",
@@ -998,6 +1046,25 @@ export function DanProvider({ children }: { children: ReactNode }) {
         const next: DanState = {
           ...state,
           matches: state.matches.map((m) => (m.id === match.id ? updated : m)),
+          demands: actorIsBuyer
+            ? state.demands
+            : state.demands.map((d) =>
+                d.id === match.demandId && d.type === "BUY"
+                  ? {
+                      ...d,
+                      status: "ACTIVE" as const,
+                      expiresAt: extendBuyExpiresAt(),
+                    }
+                  : d,
+              ),
+          sellIntents: state.sellIntents.map((offer) =>
+            offer.id === match.sellIntentId
+              ? {
+                  ...offer,
+                  status: actorIsBuyer ? ("OPEN" as const) : ("CLOSED" as const),
+                }
+              : offer,
+          ),
         };
         persist(next);
         flushSync(() => dispatch({ type: "HYDRATE", state: next }));
