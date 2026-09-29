@@ -495,64 +495,20 @@ export async function upsertSellIntentRemote(input: {
   conditionNote?: string;
   quickPhotoUrl?: string;
 }): Promise<SellIntent> {
-  const sb = getSupabase();
-  const { data: auth } = await sb.auth.getUser();
-  if (!auth.user) throw new Error("login required");
-
-  const { data: ownership, error: ownErr } = await sb
-    .from("ownerships")
-    .select("*")
-    .eq("id", input.ownershipId)
-    .single();
-  if (ownErr) throw ownErr;
-  if (ownership.user_id !== auth.user.id) throw new Error("forbidden");
-
   const storedQuickPhoto = await persistPrivateEvidenceImage(
     input.quickPhotoUrl,
     "quick-offers",
   );
 
-  const { data: open } = await sb
-    .from("sell_intents")
-    .select("*")
-    .eq("ownership_id", input.ownershipId)
-    .eq("status", "OPEN")
-    .maybeSingle();
-
-  if (open) {
-    const { data, error } = await sb
-      .from("sell_intents")
-      .update({
-        minimum_price: input.minimumPrice,
-        target_demand_id: input.targetDemandId ?? null,
-        trade_method: input.tradeMethod ?? "any",
-        approx_usage_count: input.approxUsageCount ?? null,
-        condition_note: input.conditionNote?.trim() ?? "",
-        quick_photo_url: storedQuickPhoto ?? null,
-      })
-      .eq("id", open.id)
-      .select("*")
-      .single();
-    if (error) throw error;
-    return mapSellIntent(data as DbSellIntent);
-  }
-
-  const { data, error } = await sb
-    .from("sell_intents")
-    .insert({
-      ownership_id: input.ownershipId,
-      user_id: auth.user.id,
-      product_id: ownership.product_id,
-      minimum_price: input.minimumPrice,
-      target_demand_id: input.targetDemandId ?? null,
-      trade_method: input.tradeMethod ?? "any",
-      approx_usage_count: input.approxUsageCount ?? null,
-      condition_note: input.conditionNote?.trim() ?? "",
-      quick_photo_url: storedQuickPhoto ?? null,
-      status: "OPEN",
-    })
-    .select("*")
-    .single();
+  const { data, error } = await getSupabase().rpc("upsert_quick_offer", {
+    p_ownership_id: input.ownershipId,
+    p_minimum_price: input.minimumPrice,
+    p_target_demand_id: input.targetDemandId ?? null,
+    p_trade_method: input.tradeMethod ?? "any",
+    p_approx_usage_count: input.approxUsageCount ?? null,
+    p_condition_note: input.conditionNote?.trim() ?? "",
+    p_quick_photo_url: storedQuickPhoto ?? null,
+  });
   if (error) throw error;
   return mapSellIntent(data as DbSellIntent);
 }
