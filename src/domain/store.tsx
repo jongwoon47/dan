@@ -711,6 +711,7 @@ export function DanProvider({ children }: { children: ReactNode }) {
           productId: ownership.productId,
           minimumPrice: payload.minimumPrice,
           targetDemandId: payload.targetDemandId,
+          tradeMethod: payload.tradeMethod ?? "any",
           approxUsageCount: payload.approxUsageCount,
           conditionNote: payload.conditionNote?.trim() || undefined,
           quickPhotoUrl: payload.quickPhotoUrl?.trim() || undefined,
