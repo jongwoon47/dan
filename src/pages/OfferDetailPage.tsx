@@ -60,9 +60,11 @@ export function OfferDetailPage() {
 
   async function interest() {
     if (busy) return;
+    const activeMatch = match;
+    if (!activeMatch) return;
     setBusy(true);
     try {
-      await expressBuyerInterest(match.id);
+      await expressBuyerInterest(activeMatch.id);
     } finally {
       setBusy(false);
     }
