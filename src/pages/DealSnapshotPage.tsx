@@ -144,8 +144,14 @@ export function DealSnapshotPage() {
           <strong>{product.name}</strong>
         </div>
         <div className="snapshot-section">
-          <span>컷수</span>
-          <strong>{evidence.usageCount == null ? "미제출" : `${evidence.usageCount.toLocaleString("ko-KR")}컷`}</strong>
+          <span>{product.category === "camera" ? "컷수" : "사용량 / 횟수"}</span>
+          <strong>
+            {evidence.usageCount == null
+              ? "미제출"
+              : product.category === "camera"
+                ? `${evidence.usageCount.toLocaleString("ko-KR")}컷`
+                : evidence.usageCount.toLocaleString("ko-KR")}
+          </strong>
         </div>
         <div className="snapshot-section">
           <span>구매일</span>
@@ -156,7 +162,7 @@ export function DealSnapshotPage() {
           <strong>{evidence.warrantyUntil || "미제출"}</strong>
         </div>
         <div className="snapshot-section">
-          <span>시리얼 끝자리</span>
+          <span>식별번호 끝자리</span>
           <strong>{evidence.serialLast4 ? `••••${evidence.serialLast4}` : "미제출"}</strong>
         </div>
         <div className="snapshot-section">
@@ -176,7 +182,7 @@ export function DealSnapshotPage() {
           <strong>{evidence.repairHistory || "없음"}</strong>
         </div>
         <div className="snapshot-section">
-          <span>침수 이력</span>
+          <span>침수 / 물손상 이력</span>
           <strong>{evidence.waterDamageStatement || "미제출"}</strong>
         </div>
         <div className="snapshot-section">
