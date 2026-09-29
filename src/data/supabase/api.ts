@@ -120,6 +120,15 @@ async function hydrateDealEvidencePhoto(
   };
 }
 
+async function hydrateSellIntentPhoto(
+  sellIntent: SellIntent,
+): Promise<SellIntent> {
+  return {
+    ...sellIntent,
+    quickPhotoUrl: await resolvePrivateEvidenceImage(sellIntent.quickPhotoUrl),
+  };
+}
+
 export async function fetchSessionUser(): Promise<User | null> {
   const sb = getSupabase();
   const { data: auth } = await sb.auth.getUser();
@@ -259,7 +268,11 @@ export async function listOpenSellIntents(): Promise<SellIntent[]> {
     .select("*")
     .eq("status", "OPEN");
   if (error) throw error;
-  return ((data ?? []) as DbSellIntent[]).map(mapSellIntent);
+  return Promise.all(
+    ((data ?? []) as DbSellIntent[]).map((row) =>
+      hydrateSellIntentPhoto(mapSellIntent(row)),
+    ),
+  );
 }
 
 export async function listMySellIntents(userId: string): Promise<SellIntent[]> {
@@ -268,7 +281,25 @@ export async function listMySellIntents(userId: string): Promise<SellIntent[]> {
     .select("*")
     .eq("user_id", userId);
   if (error) throw error;
-  return ((data ?? []) as DbSellIntent[]).map(mapSellIntent);
+  return Promise.all(
+    ((data ?? []) as DbSellIntent[]).map((row) =>
+      hydrateSellIntentPhoto(mapSellIntent(row)),
+    ),
+  );
+}
+
+export async function listSellIntentsByIds(ids: string[]): Promise<SellIntent[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await getSupabase()
+    .from("sell_intents")
+    .select("*")
+    .in("id", ids);
+  if (error) throw error;
+  return Promise.all(
+    ((data ?? []) as DbSellIntent[]).map((row) =>
+      hydrateSellIntentPhoto(mapSellIntent(row)),
+    ),
+  );
 }
 
 export async function listMyResponses(userId: string): Promise<Response[]> {
@@ -510,7 +541,7 @@ export async function upsertSellIntentRemote(input: {
     p_quick_photo_url: storedQuickPhoto ?? null,
   });
   if (error) throw error;
-  return mapSellIntent(data as DbSellIntent);
+  return hydrateSellIntentPhoto(mapSellIntent(data as DbSellIntent));
 }
 
 export async function createResponseRemote(input: {
