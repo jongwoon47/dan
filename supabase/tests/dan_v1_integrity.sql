@@ -1,6 +1,6 @@
 begin;
 
-select plan(31);
+select plan(38);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -195,6 +195,56 @@ select ok(
 select ok(
   not has_table_privilege('authenticated', 'public.sell_intents', 'UPDATE'),
   'authenticated clients cannot directly update Quick Offers'
+);
+
+select has_function(
+  'public',
+  'block_user',
+  array['uuid'],
+  'idempotent block RPC exists'
+);
+
+select has_function(
+  'public',
+  'unblock_user',
+  array['uuid'],
+  'unblock RPC exists'
+);
+
+select has_function(
+  'public',
+  'submit_user_report',
+  array['uuid','text','text'],
+  'rate-limited report RPC exists'
+);
+
+select ok(
+  not has_table_privilege('authenticated', 'public.blocks', 'INSERT'),
+  'authenticated clients cannot directly insert blocks'
+);
+
+select ok(
+  not has_table_privilege('authenticated', 'public.blocks', 'DELETE'),
+  'authenticated clients cannot directly delete blocks'
+);
+
+select ok(
+  not has_table_privilege('authenticated', 'public.reports', 'INSERT'),
+  'authenticated clients cannot directly spam reports'
+);
+
+select ok(
+  position(
+    'interaction_blocked_with'
+    in coalesce((
+      select qual
+      from pg_policies
+      where schemaname = 'public'
+        and tablename = 'sell_intents'
+        and policyname = 'sell_intents_select_open_or_own'
+    ), '')
+  ) > 0,
+  'blocked users are filtered from open Quick Offer visibility'
 );
 
 select * from finish();
