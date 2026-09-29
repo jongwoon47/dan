@@ -633,3 +633,479 @@
   font-size: .78rem;
   text-align: center;
 }
+
+/* DAN V1 frozen UX flow pass */
+.my-dan--blueprint {
+  gap: 16px;
+}
+
+.my-demand-tabs {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 6px;
+  padding: 4px;
+  border-radius: 14px;
+  background: #f4f5f9;
+}
+
+.my-demand-tabs button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 40px;
+  padding: 7px 5px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--dan-ink-muted);
+  font-size: .75rem;
+  font-weight: 800;
+}
+
+.my-demand-tabs button span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #e5e7ef;
+  font-size: .65rem;
+}
+
+.my-demand-tabs button.is-active {
+  background: #fff;
+  color: var(--dan-ink);
+  box-shadow: 0 1px 5px rgba(20,24,40,.08);
+}
+
+.my-demand-tabs button.is-active span {
+  background: var(--dan-accent-soft);
+  color: var(--dan-accent-text);
+}
+
+.my-demand-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.my-demand-card-list,
+.seller-offer-list {
+  display: grid;
+  gap: 10px;
+}
+
+.my-demand-card,
+.seller-offer-row {
+  display: grid;
+  grid-template-columns: 62px minmax(0,1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 88px;
+  padding: 12px;
+  border: 1px solid var(--dan-border);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.my-demand-card__body {
+  min-width: 0;
+}
+
+.my-demand-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.my-demand-card__head strong {
+  font-size: .9rem;
+  line-height: 1.25;
+}
+
+.my-demand-card__head span {
+  flex-shrink: 0;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--dan-accent-soft);
+  color: var(--dan-accent-text);
+  font-size: .64rem;
+  font-weight: 800;
+}
+
+.my-demand-card__body p {
+  margin: 4px 0 0;
+  color: var(--dan-accent-text);
+  font-size: .79rem;
+  font-weight: 850;
+}
+
+.my-demand-card__body small {
+  display: block;
+  margin-top: 3px;
+  color: var(--dan-ink-muted);
+  font-size: .7rem;
+}
+
+.my-demand-card__offer {
+  display: grid;
+  justify-items: center;
+  min-width: 40px;
+}
+
+.my-demand-card__offer strong {
+  font-size: 1rem;
+  color: var(--dan-accent-text);
+}
+
+.my-demand-card__offer span {
+  color: var(--dan-ink-muted);
+  font-size: .65rem;
+}
+
+.my-demand-section-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.my-demand-section-head h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.my-demand-section-head p {
+  margin: 3px 0 0;
+  color: var(--dan-ink-muted);
+  font-size: .74rem;
+  line-height: 1.45;
+}
+
+.seller-offer-row > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.seller-offer-row > div strong {
+  font-size: .86rem;
+}
+
+.seller-offer-row > div span {
+  color: var(--dan-ink-muted);
+  font-size: .72rem;
+}
+
+.offer-detail-page {
+  gap: 18px;
+}
+
+.offer-detail-product {
+  display: grid;
+  gap: 13px;
+}
+
+.offer-detail-product > .product-visual {
+  width: 100%;
+}
+
+.offer-detail-product > div {
+  display: grid;
+  gap: 5px;
+}
+
+.offer-detail-price {
+  color: var(--dan-accent-text);
+  font-size: 1.55rem;
+  letter-spacing: -.03em;
+}
+
+.offer-detail-facts,
+.payment-breakdown {
+  overflow: hidden;
+  border-top: 1px solid var(--dan-border);
+  border-bottom: 1px solid var(--dan-border);
+}
+
+.offer-detail-facts > div,
+.payment-breakdown > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 48px;
+  border-top: 1px solid var(--dan-border);
+}
+
+.offer-detail-facts > div:first-child,
+.payment-breakdown > div:first-child {
+  border-top: 0;
+}
+
+.offer-detail-facts span,
+.payment-breakdown span {
+  color: var(--dan-ink-muted);
+  font-size: .76rem;
+}
+
+.offer-detail-facts strong,
+.payment-breakdown strong {
+  max-width: 62%;
+  font-size: .82rem;
+  text-align: right;
+}
+
+.offer-seller-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--dan-border);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.offer-seller-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.offer-seller-card__head > div {
+  display: grid;
+  gap: 2px;
+}
+
+.offer-seller-card__head > div span {
+  color: var(--dan-ink-muted);
+  font-size: .68rem;
+}
+
+.offer-seller-card__head > div strong {
+  font-size: .9rem;
+}
+
+.offer-seller-card__facts {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  overflow: hidden;
+  border: 1px solid var(--dan-border);
+  border-radius: 11px;
+}
+
+.offer-seller-card__facts > div {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  padding: 10px 4px;
+  border-left: 1px solid var(--dan-border);
+}
+
+.offer-seller-card__facts > div:first-child {
+  border-left: 0;
+}
+
+.offer-seller-card__facts strong {
+  font-size: .94rem;
+}
+
+.offer-seller-card__facts span {
+  color: var(--dan-ink-muted);
+  font-size: .62rem;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.offer-next-state {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 14px;
+  background: #f7f5ff;
+}
+
+.offer-next-state p {
+  margin: 0;
+  color: var(--dan-ink-secondary);
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+.safe-payment-page {
+  gap: 18px;
+}
+
+.payment-product-card {
+  display: grid;
+  grid-template-columns: 62px minmax(0,1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--dan-border);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.payment-product-card > div {
+  display: grid;
+  gap: 2px;
+}
+
+.payment-product-card span {
+  color: var(--dan-ink-muted);
+  font-size: .7rem;
+}
+
+.payment-product-card h1 {
+  margin: 0;
+  color: var(--dan-accent-text);
+  font-size: 1.45rem;
+  letter-spacing: -.035em;
+}
+
+.payment-product-card p {
+  margin: 0;
+  color: var(--dan-ink-secondary);
+  font-size: .76rem;
+}
+
+.payment-breakdown .is-total {
+  min-height: 56px;
+}
+
+.payment-breakdown .is-total strong {
+  color: var(--dan-accent-text);
+  font-size: 1rem;
+}
+
+.payment-methods {
+  display: grid;
+  gap: 8px;
+}
+
+.payment-methods h2 {
+  margin: 0 0 2px;
+  font-size: .95rem;
+}
+
+.payment-method {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 50px;
+  padding: 0 14px;
+  border: 1px solid var(--dan-border);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--dan-ink);
+  font-size: .82rem;
+  font-weight: 750;
+}
+
+.payment-method.is-selected {
+  border-color: var(--dan-accent);
+  background: #faf9ff;
+}
+
+.payment-method strong {
+  display: inline-grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  border-radius: 999px;
+  background: var(--dan-accent);
+  color: #fff;
+  font-size: .68rem;
+}
+
+.payment-safety-note {
+  display: grid;
+  gap: 4px;
+  padding: 13px 14px;
+  border-radius: 12px;
+  background: #f5f7fb;
+}
+
+.payment-safety-note strong {
+  font-size: .8rem;
+}
+
+.payment-safety-note p,
+.payment-production-note {
+  margin: 0;
+  color: var(--dan-ink-muted);
+  font-size: .72rem;
+  line-height: 1.45;
+}
+
+.payment-production-note {
+  text-align: center;
+}
+
+.trade-complete-page {
+  padding-top: 28px;
+  gap: 14px;
+}
+
+.trade-complete-hero {
+  display: grid;
+  justify-items: center;
+  gap: 9px;
+  padding: 20px 10px 10px;
+  text-align: center;
+}
+
+.trade-complete-check {
+  display: inline-grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  background: var(--dan-accent);
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 900;
+  box-shadow: 0 12px 28px rgba(79,70,229,.22);
+}
+
+.trade-complete-hero h1 {
+  margin: 4px 0 0;
+  font-size: 1.45rem;
+}
+
+.trade-complete-hero p {
+  max-width: 280px;
+  margin: 0;
+  color: var(--dan-ink-secondary);
+  font-size: .8rem;
+  line-height: 1.55;
+}
+
+.trade-complete-product {
+  display: grid;
+  grid-template-columns: 62px minmax(0,1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 13px;
+  border: 1px solid var(--dan-border);
+  border-radius: 13px;
+  background: #fff;
+}
+
+.trade-complete-product > div {
+  display: grid;
+  gap: 3px;
+}
+
+.trade-complete-product strong {
+  font-size: .86rem;
+}
+
+.trade-complete-product span {
+  color: #16835f;
+  font-size: .72rem;
+  font-weight: 800;
+}
