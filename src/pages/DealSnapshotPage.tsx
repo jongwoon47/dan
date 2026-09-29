@@ -143,16 +143,16 @@ export function DealSnapshotPage() {
           <span>제품 정보</span>
           <strong>{product.name}</strong>
         </div>
-        <div className="snapshot-section">
-          <span>{product.category === "camera" ? "컷수" : "사용량 / 횟수"}</span>
-          <strong>
-            {evidence.usageCount == null
-              ? "미제출"
-              : product.category === "camera"
+        {evidence.usageCount != null ? (
+          <div className="snapshot-section">
+            <span>{product.category === "camera" ? "컷수" : "사용량 / 횟수"}</span>
+            <strong>
+              {product.category === "camera"
                 ? `${evidence.usageCount.toLocaleString("ko-KR")}컷`
                 : evidence.usageCount.toLocaleString("ko-KR")}
-          </strong>
-        </div>
+            </strong>
+          </div>
+        ) : null}
         <div className="snapshot-section">
           <span>구매일</span>
           <strong>{evidence.purchaseDate || "미제출"}</strong>
