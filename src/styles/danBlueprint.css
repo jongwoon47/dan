@@ -1292,3 +1292,13 @@
     letter-spacing: -.03em;
   }
 }
+
+
+.offer-detail-product__photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: 14px;
+  object-fit: cover;
+  background: var(--dan-bg-elevated);
+}
