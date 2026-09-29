@@ -132,6 +132,16 @@ export function HandoffPage() {
     );
   }
 
+  if (match.paymentStatus !== "PAID") {
+    return (
+      <EmptyState
+        title="안전결제가 먼저 필요해요"
+        body="결제 완료가 서버에서 확인된 뒤 직거래 인계 단계가 열립니다."
+        action={<Button to={"/deal/" + match.id + "/payment"}>안전결제</Button>}
+      />
+    );
+  }
+
   async function simulatePayment() {
     setError("");
     const ok = await simulateSafePaymentDemo(matchId);
@@ -153,7 +163,13 @@ export function HandoffPage() {
   async function confirmHandoff() {
     setError("");
     const updated = await confirmMatchCompletion(matchId);
-    if (!updated) setError("최종 확인을 저장하지 못했어요.");
+    if (!updated) {
+      setError("최종 확인을 저장하지 못했어요.");
+      return;
+    }
+    if (updated.status === "COMPLETED") {
+      navigate("/deal/" + matchId + "/complete");
+    }
   }
 
   async function submitDispute() {
@@ -212,52 +228,7 @@ export function HandoffPage() {
         ))}
       </section>
 
-      {match.paymentStatus !== "PAID" ? (
-        <section className="safe-payment-gate">
-          <strong>안전결제 확인 전에는 인도 완료를 누를 수 없어요</strong>
-          {match.paymentDueAt ? (
-            <p className="payment-deadline">
-              결제 기한 · {new Date(match.paymentDueAt).toLocaleString("ko-KR", {
-                month: "numeric",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </p>
-          ) : null}
-          <p>
-            구매자의 안전결제가 확인되면 직거래 인계 단계가 열려요. 결제가 완료되기 전에는 물건을 넘기지 마세요.
-          </p>
-          {isDemo ? (
-            <Button fullWidth variant="secondary" disabled={busy} onClick={() => void simulatePayment()}>
-              데모: 안전결제 완료 상태로 전환
-            </Button>
-          ) : null}
-          <details className="cancel-panel">
-            <summary>결제 전에 거래를 취소해야 하나요?</summary>
-            <div className="section-stack">
-              <div className="dispute-reason-grid">
-                {CANCEL_OPTIONS.map((option) => (
-                  <button
-                    type="button"
-                    key={option.value}
-                    className={cancelReason === option.value ? "condition-option is-selected" : "condition-option"}
-                    onClick={() => setCancelReason(option.value)}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-              <p className="section-desc">
-                이 사유는 거래 기록에는 남지만, 사용자의 선택만으로 상대방 귀책으로 공개되지 않습니다.
-              </p>
-              <Button fullWidth variant="ghost" disabled={busy} onClick={() => void cancelBeforePayment()}>
-                이 거래 취소
-              </Button>
-            </div>
-          </details>
-        </section>
-      ) : openDispute ? (
+      {openDispute ? (
         <section className="dispute-paused">
           <strong>거래가 분쟁 검토 상태예요</strong>
           <p>분쟁이 해결되기 전에는 거래 완료 처리를 진행하지 않습니다.</p>
