@@ -89,7 +89,7 @@ export function CameraDemandCreatePage() {
         setError("구매수요를 등록하지 못했어요.");
         return;
       }
-      navigate(`/demand/item/${created.id}`);
+      navigate("/my?tab=demands");
     } finally {
       setSubmitting(false);
     }
