@@ -158,35 +158,27 @@ export async function listProducts(): Promise<Product[]> {
   return ((data ?? []) as DbProduct[]).map(mapProduct);
 }
 
-/** Find or create a catalog product by display name (BUY custom requests). */
-export async function ensureProductRemote(name: string, category: Product["category"] = "other"): Promise<Product> {
+/** Find or atomically create a canonical catalog product. */
+export async function ensureProductRemote(
+  name: string,
+  category: Product["category"] = "other",
+): Promise<Product> {
   const display = displayProductName(name);
   const key = productMatchKey(display);
   if (!key) throw new Error("product name required");
 
+  // Fast client-side reuse keeps search responsive; the RPC below remains the
+  // source of truth and serializes concurrent creation for the same key.
   const catalog = await listProducts();
   const matched = findProductByMatchKey(catalog, display);
   if (matched) return matched;
 
-  const sb = getSupabase();
-  const hue = 180 + ((key.length * 17) % 160);
-  const { data, error } = await sb
-    .from("products")
-    .insert({
-      canonical_name: display,
-      brand: null,
-      model: display,
-      category,
-      image_hue: hue,
-    })
-    .select("*")
-    .single();
-  if (error) {
-    const again = await listProducts();
-    const recovered = findProductByMatchKey(again, display);
-    if (recovered) return recovered;
-    throw error;
-  }
+  const { data, error } = await getSupabase().rpc("ensure_product", {
+    p_name: display,
+    p_category: category,
+  });
+  if (error) throw error;
+  if (!data) throw new Error("product create failed");
   return mapProduct(data as DbProduct);
 }
 
