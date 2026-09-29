@@ -98,15 +98,17 @@ export function MatchCard({ match }: { match: Match }) {
 
             <p className="received-offer-card__summary">
               {sell.approxUsageCount != null
-                ? `약 ${sell.approxUsageCount.toLocaleString("ko-KR")}컷`
+                ? product.category === "camera"
+                  ? `약 ${sell.approxUsageCount.toLocaleString("ko-KR")}컷`
+                  : sell.approxUsageCount.toLocaleString("ko-KR")
                 : CONDITION_LABEL[ownership.condition]}
               {sell.conditionNote ? ` · ${sell.conditionNote}` : ""}
             </p>
 
             <div className="received-offer-card__tags">
-              <span>필수 조건 충족</span>
-              <span>희망가 이내</span>
-              <span>{formatFulfillmentSummary(demand.fulfillmentOptions)}</span>
+              <span>같은 제품</span>
+              <span>{sell.minimumPrice <= buyMax ? "희망가 이내" : "희망가 초과"}</span>
+              <span>구매자 희망 · {formatFulfillmentSummary(demand.fulfillmentOptions)}</span>
             </div>
 
             <Link to={`/profile/${match.sellerId}`} className="received-offer-card__trust">
