@@ -110,13 +110,16 @@ begin
   from public.matches
   where demand_id = p_demand_id
     and sell_intent_id = p_sell_intent_id
-    and status in ('BUYER_INTERESTED','SELLER_ACCEPTED','CONNECTED')
+    and status in ('BUYER_INTERESTED','SELLER_ACCEPTED','CONNECTED','DECLINED')
   order by created_at desc
   limit 1
   for update;
 
   if found then
     if v_existing.status = 'BUYER_INTERESTED' then return v_existing; end if;
+    if v_existing.status = 'DECLINED' then
+      raise exception 'offer was declined for this demand';
+    end if;
     raise exception 'match already active in status %', v_existing.status;
   end if;
 
