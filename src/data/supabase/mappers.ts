@@ -94,6 +94,7 @@ export type DbSellIntent = {
   product_id: string;
   minimum_price: number;
   target_demand_id?: string | null;
+  trade_method?: import("@/domain/types").TradeMethod | null;
   approx_usage_count?: number | null;
   condition_note?: string | null;
   quick_photo_url?: string | null;
@@ -283,6 +284,7 @@ export function mapSellIntent(row: DbSellIntent): SellIntent {
     productId: row.product_id,
     minimumPrice: Number(row.minimum_price),
     targetDemandId: row.target_demand_id ?? undefined,
+    tradeMethod: row.trade_method ?? "any",
     approxUsageCount:
       row.approx_usage_count == null ? undefined : Number(row.approx_usage_count),
     conditionNote: row.condition_note?.trim() || undefined,
