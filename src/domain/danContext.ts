@@ -18,6 +18,7 @@ import type {
   Match,
   Ownership,
   Product,
+  ProductCategory,
   PublicProfile,
   Response,
   SellIntent,
@@ -39,7 +40,7 @@ export interface DanContextValue {
   login: (userId?: string) => void;
   logout: () => void;
   createDemand: (payload: CreateDemandInput) => Promise<Demand | null>;
-  ensureProduct: (name: string) => Promise<Product | null>;
+  ensureProduct: (name: string, category?: ProductCategory) => Promise<Product | null>;
   updateDemand: (payload: {
     demandId: string;
     title: string;
