@@ -82,6 +82,12 @@ export function HandoffPage() {
       ? Boolean(match.sellerCompletedAt)
       : Boolean(match.buyerCompletedAt)
     : false;
+  const shippingOnly = Boolean(
+    demand &&
+      demand.fulfillmentOptions.length > 0 &&
+      demand.fulfillmentOptions.every((option) => option.mode === "SHIPPING"),
+  );
+  const handoffLabel = shippingOnly ? "배송 · 수령 확인" : "직거래 · 인계 확인";
 
   const facts = useMemo(() => {
     if (!snapshot) return [];
@@ -121,7 +127,7 @@ export function HandoffPage() {
     return (
       <EmptyState
         title="먼저 거래 조건을 확정해 주세요"
-        body="양쪽이 같은 Deal Snapshot을 확인해야 직거래 단계로 넘어갈 수 있어요."
+        body="양쪽이 같은 Deal Snapshot을 확인해야 물품 인계 단계로 넘어갈 수 있어요."
         action={<Button to={`/deal/${match.id}/snapshot`}>거래 조건 확인</Button>}
       />
     );
@@ -172,7 +178,7 @@ export function HandoffPage() {
       <section className="handoff-hero">
         <span className="eyebrow">Safe Handoff</span>
         <h1 className="page-title">{product.name}</h1>
-        <p>확정한 조건을 기준으로 결제하고, 직거래 현장에서 실제 물건을 다시 확인해요.</p>
+        <p>확정한 조건을 기준으로 결제하고, 물품을 인계받을 때 실제 상태를 다시 확인해요.</p>
       </section>
 
       <section className="trade-progress-card" aria-label="거래 진행 단계">
@@ -190,8 +196,8 @@ export function HandoffPage() {
         <div className={match.status === "COMPLETED" ? "trade-progress-row is-done" : match.paymentStatus === "PAID" ? "trade-progress-row is-current" : "trade-progress-row"}>
           <span className="trade-progress-icon">{match.status === "COMPLETED" ? "✓" : "3"}</span>
           <div>
-            <strong>직거래 · 인계 확인</strong>
-            <small>{match.status === "COMPLETED" ? "거래 완료" : match.paymentStatus === "PAID" ? "채팅에서 시간과 장소를 조율하세요" : "결제 완료 후 진행"}</small>
+            <strong>{handoffLabel}</strong>
+            <small>{match.status === "COMPLETED" ? "거래 완료" : match.paymentStatus === "PAID" ? "채팅에서 인계 방법을 조율하세요" : "결제 완료 후 진행"}</small>
           </div>
         </div>
       </section>
@@ -248,7 +254,7 @@ export function HandoffPage() {
               {mineDone
                 ? "상대 확인 대기 중"
                 : isBuyer
-                  ? "현장에서 제품을 확인했습니다"
+                  ? "물품을 확인했습니다"
                   : "제품 인도를 완료했습니다"}
             </Button>
           </section>
@@ -286,7 +292,7 @@ export function HandoffPage() {
       {error ? <p className="form-error">{error}</p> : null}
 
       <Button to={`/match/${match.id}`} fullWidth variant="ghost">
-        채팅에서 시간 · 장소 조율
+        채팅에서 인계 방법 조율
       </Button>
     </div>
   );
