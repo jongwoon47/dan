@@ -66,6 +66,8 @@ function tradeFixture(stage: Stage) {
     productId: "prod-fuji-x100vi",
     minimumPrice: 2_130_000,
     targetDemandId: demand.id,
+    tradeMethod: "meetup",
+    quickPhotoUrl: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='68'%3E%3Crect width='96' height='68' fill='%23e7e7ef'/%3E%3Ccircle cx='48' cy='34' r='18' fill='%236b7280'/%3E%3C/svg%3E",
     approxUsageCount: 2_400,
     conditionNote: "상태 좋음 · 상단 미세스크래치",
     status: stage === "received" ? "OPEN" : "MATCHED",
@@ -231,6 +233,7 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
   await settle(page);
   await expect(page.getByRole("heading", { name: "받은 제안" })).toBeVisible();
   await expect(page.getByRole("link", { name: "제안 상세 보기" })).toBeVisible();
+  await expect(page.getByAltText("Fujifilm X100VI 판매자가 올린 현재 물품")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "04-received-offers.png"), fullPage: true });
 
@@ -240,6 +243,7 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
   await expect(page.getByText("Quick Offer", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "관심있어요" })).toBeVisible();
   await expect(page.getByText("Trust History 자세히 보기")).toBeVisible();
+  await expect(page.getByAltText("Fujifilm X100VI 판매자가 올린 현재 물품")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "05-offer-detail.png"), fullPage: true });
 
