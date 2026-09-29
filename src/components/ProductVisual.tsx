@@ -2,6 +2,32 @@ import type { Product, ProductCategory } from "@/domain/types";
 import { CATEGORY_LABEL } from "@/domain/types";
 import "./productVisual.css";
 
+const CATEGORY_SYMBOL: Record<ProductCategory, string> = {
+  electronics: "전",
+  computer: "PC",
+  gaming: "G",
+  audio: "A",
+  camera: "카",
+  lens: "L",
+  home_appliance: "가",
+  furniture: "F",
+  fashion: "패",
+  shoes: "S",
+  watches_accessories: "W",
+  sports: "SP",
+  outdoor: "O",
+  camping: "C",
+  hobby_collectible: "H",
+  baby_kids: "K",
+  books_media: "B",
+  musical_instrument: "M",
+  beauty: "뷰",
+  pet: "P",
+  tools: "T",
+  auto: "AU",
+  other: "•",
+};
+
 function CameraGlyph({ brand }: { brand?: string | null }) {
   const brandMark = (brand || "DAN").slice(0, 8).toUpperCase();
   return (
@@ -27,12 +53,41 @@ function CameraGlyph({ brand }: { brand?: string | null }) {
   );
 }
 
-export function ProductVisual({ product, size = "md" }: { product: Product; size?: "sm" | "md" | "lg"; }) {
-  const initial = (product.name.trim()[0] ?? "?").toUpperCase();
+function GenericProductGlyph({ category }: { category: ProductCategory }) {
   return (
-    <div className={`product-visual product-visual--${size} ${product.category === "camera" ? "product-visual--camera" : ""}`} aria-hidden>
-      {product.category === "camera" ? <CameraGlyph brand={product.brand} /> : <span className="product-visual__initial">{initial}</span>}
-      {size !== "sm" ? <span className="product-visual__caption">{product.brand || product.name}</span> : null}
+    <span className="product-visual__category-glyph" aria-hidden>
+      {CATEGORY_SYMBOL[category]}
+    </span>
+  );
+}
+
+export function ProductVisual({
+  product,
+  size = "md",
+}: {
+  product: Product;
+  size?: "sm" | "md" | "lg";
+}) {
+  const isCameraLike = product.category === "camera" || product.category === "lens";
+  return (
+    <div
+      className={[
+        "product-visual",
+        `product-visual--${size}`,
+        isCameraLike ? "product-visual--camera" : "product-visual--generic",
+      ].join(" ")}
+      aria-hidden
+    >
+      {isCameraLike ? (
+        <CameraGlyph brand={product.brand} />
+      ) : (
+        <GenericProductGlyph category={product.category} />
+      )}
+      {size !== "sm" ? (
+        <span className="product-visual__caption">
+          {product.brand || CATEGORY_LABEL[product.category]}
+        </span>
+      ) : null}
     </div>
   );
 }
