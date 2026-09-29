@@ -199,6 +199,8 @@ export interface SellIntent {
   minimumPrice: number;
   /** Optional demand this quick offer was opened from. */
   targetDemandId?: string;
+  /** Seller-supported fulfillment for this offer. */
+  tradeMethod?: TradeMethod;
   /** Optional count when a product has a meaningful numeric usage metric (e.g. camera shutter count). */
   approxUsageCount?: number;
   /** Seller's short, non-verified condition statement. */
