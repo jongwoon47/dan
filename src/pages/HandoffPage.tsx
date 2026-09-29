@@ -89,15 +89,18 @@ export function HandoffPage() {
     return [
       ["제품", snapshotString(payload, ["product", "name"]) || product?.name || ""],
       ["가격", formatWon(snapshot.agreedPrice)],
-      ["컷수", snapshotString(payload, ["evidence", "usageCount"])
-        ? `${Number(snapshotString(payload, ["evidence", "usageCount"])).toLocaleString("ko-KR")}컷`
-        : "미제출"],
+      [product?.category === "camera" ? "컷수" : "사용량 / 횟수",
+        snapshotString(payload, ["evidence", "usageCount"])
+          ? product?.category === "camera"
+            ? `${Number(snapshotString(payload, ["evidence", "usageCount"])).toLocaleString("ko-KR")}컷`
+            : Number(snapshotString(payload, ["evidence", "usageCount"])).toLocaleString("ko-KR")
+          : "미제출"],
       ["구성품", snapshotString(payload, ["evidence", "components"]) || "없음"],
       ["외관", snapshotString(payload, ["evidence", "cosmeticNotes"]) || "미제출"],
       ["기능 이상", snapshotString(payload, ["evidence", "knownIssues"]) || "미제출"],
       ["거래 방식", snapshotString(payload, ["handoff", "method"]) || "직거래"],
     ];
-  }, [product?.name, snapshot]);
+  }, [product?.category, product?.name, snapshot]);
 
   if (!match || !currentUser || !demand || demand.type !== "BUY" || !product) {
     return (
