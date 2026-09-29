@@ -633,7 +633,7 @@ export function DanProvider({ children }: { children: ReactNode }) {
       }),
       login: (userId = CURRENT_USER_ID) => dispatch({ type: "LOGIN", userId }),
       logout: () => dispatch({ type: "LOGOUT" }),
-      ensureProduct: async (name) => {
+      ensureProduct: async (name, category = "other") => {
         const display = displayProductName(name);
         const key = productMatchKey(display);
         if (!key) return null;
@@ -644,7 +644,7 @@ export function DanProvider({ children }: { children: ReactNode }) {
           name: display,
           brand: "",
           model: display,
-          category: "other",
+          category,
           imageHue: 180 + ((key.length * 17) % 160),
           createdAt: new Date().toISOString(),
         };
