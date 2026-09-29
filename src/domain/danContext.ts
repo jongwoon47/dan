@@ -70,6 +70,7 @@ export interface DanContextValue {
     ownershipId: string;
     minimumPrice: number;
     targetDemandId?: string;
+    tradeMethod?: import("@/domain/types").TradeMethod;
     approxUsageCount?: number;
     conditionNote?: string;
     quickPhotoUrl?: string;
