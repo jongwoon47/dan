@@ -250,6 +250,31 @@ describe("match lifecycle", () => {
     ]);
   });
 
+  it("allows a fresh potential candidate after closed trade history", () => {
+    const own = ownership();
+    const candidates = listMatchCandidates({
+      demands: [demand()],
+      sellIntents: [sell()],
+      ownershipById: new Map([
+        [own.id, { condition: own.condition, status: own.status, userId: own.userId }],
+      ]),
+      nowMs: NOW,
+    });
+    const closed: Match = {
+      ...potential,
+      id: "closed-history",
+      status: "CLOSED",
+    };
+    const visible = mergeVisibleMatches({
+      persisted: [closed],
+      candidates,
+      userId: "buyer",
+      nowIso: new Date(NOW).toISOString(),
+    });
+    expect(visible.some((row) => row.status === "POTENTIAL")).toBe(true);
+    expect(visible.some((row) => row.id === "closed-history")).toBe(true);
+  });
+
   it("keeps POTENTIAL derived and progressive matches persisted in merge", () => {
     const own = ownership();
     const candidates = listMatchCandidates({
