@@ -128,6 +128,7 @@ export function DealEvidencePage() {
       sellerVerifiedForDeal &&
       Boolean(challenge) &&
       Boolean(possessionPhotoUrl) &&
+      (serialLast4.trim().length === 0 || serialLast4.trim().length >= 2) &&
       cosmeticNotes.trim().length > 0 &&
       knownIssues.trim().length > 0,
     [
@@ -135,6 +136,7 @@ export function DealEvidencePage() {
       sellerVerifiedForDeal,
       challenge,
       possessionPhotoUrl,
+      serialLast4,
       cosmeticNotes,
       knownIssues,
     ],
