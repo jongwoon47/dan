@@ -88,6 +88,13 @@ $$;
 
 drop trigger if exists trg_sell_intent_marketplace_policy on public.sell_intents;
 create trigger trg_sell_intent_marketplace_policy
-before insert or update of product_id
+before insert or update of
+  product_id,
+  minimum_price,
+  target_demand_id,
+  trade_method,
+  approx_usage_count,
+  condition_note,
+  quick_photo_url
 on public.sell_intents
 for each row execute function public.enforce_sell_intent_marketplace_policy();
