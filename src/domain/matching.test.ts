@@ -114,11 +114,44 @@ describe("matching compatibility", () => {
     ).toBe(false);
   });
 
+  it("rejects incompatible fulfillment method", () => {
+    expect(
+      canCreateMatch({
+        demand: demand({ details: { tradeMethod: "shipping" } }),
+        sellIntent: sell({ tradeMethod: "meetup" }),
+        ownershipCondition: "lightly_used",
+        nowMs: NOW,
+      }),
+    ).toBe(false);
+  });
+
+  it("allows either-side any fulfillment", () => {
+    expect(
+      canCreateMatch({
+        demand: demand({ details: { tradeMethod: "shipping" } }),
+        sellIntent: sell({ tradeMethod: "any" }),
+        ownershipCondition: "lightly_used",
+        nowMs: NOW,
+      }),
+    ).toBe(true);
+  });
+
+  it("rejects a targeted offer for a different demand", () => {
+    expect(
+      canCreateMatch({
+        demand: demand({ id: "d-other" }),
+        sellIntent: sell({ targetDemandId: "d-target" }),
+        ownershipCondition: "lightly_used",
+        nowMs: NOW,
+      }),
+    ).toBe(false);
+  });
+
   it("allows compatible live demand", () => {
     expect(
       canCreateMatch({
         demand: demand(),
-        sellIntent: sell(),
+        sellIntent: sell({ tradeMethod: "any" }),
         ownershipCondition: "lightly_used",
         nowMs: NOW,
       }),
