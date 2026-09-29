@@ -1,6 +1,6 @@
 begin;
 
-select plan(26);
+select plan(31);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -163,6 +163,38 @@ select ok(
     in pg_get_functiondef('public.express_buyer_interest(uuid,uuid)'::regprocedure)
   ) > 0,
   'targeted Quick Offers cannot leak to another demand'
+);
+
+select has_function(
+  'public',
+  'upsert_quick_offer',
+  array['uuid','numeric','uuid','text','integer','text','text'],
+  'Quick Offer write RPC exists'
+);
+
+select has_trigger(
+  'public',
+  'sell_intents',
+  'trg_sell_intent_ownership_consistency',
+  'sell intent ownership consistency trigger exists'
+);
+
+select ok(
+  position(
+    'ownership product mismatch'
+    in pg_get_functiondef('public.enforce_sell_intent_ownership_consistency()'::regprocedure)
+  ) > 0,
+  'sell intent product cannot diverge from owned product'
+);
+
+select ok(
+  not has_table_privilege('authenticated', 'public.sell_intents', 'INSERT'),
+  'authenticated clients cannot directly insert Quick Offers'
+);
+
+select ok(
+  not has_table_privilege('authenticated', 'public.sell_intents', 'UPDATE'),
+  'authenticated clients cannot directly update Quick Offers'
 );
 
 select * from finish();
