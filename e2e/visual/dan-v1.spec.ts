@@ -205,6 +205,8 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
   await page.goto("/");
   await settle(page);
   await expect(page.getByRole("heading", { name: "지금 사고 있는 사람들" })).toBeVisible();
+  await expect(page.getByText("Herman Miller Aeron Chair")).toBeVisible();
+  await expect(page.getByRole("button", { name: /가구/ })).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "01-home.png"), fullPage: true });
 
@@ -295,4 +297,28 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
   await expect(page.getByRole("button", { name: "제안 보내기" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "12-seller-quick-offer.png"), fullPage: true });
+});
+
+
+test("open catalog accepts a product that is not pre-seeded", async ({ page }, testInfo) => {
+  const outDir = path.join("qa-screenshots", "dan-v1", testInfo.project.name);
+  mkdirSync(outDir, { recursive: true });
+
+  await page.goto("/buy/new");
+  await settle(page);
+
+  await page.getByLabel("찾는 제품").fill("Herman Miller Embody Chair");
+  await page.getByLabel("제품 카테고리").selectOption("furniture");
+  await page.getByLabel("최대 구매 희망가").fill("1800000");
+  await page.getByRole("button", { name: "구매수요 등록하기" }).click();
+  await settle(page);
+
+  await expect(page).toHaveURL(/\/my/);
+  await expect(page.getByText("Herman Miller Embody Chair")).toBeVisible();
+  await expect(page.getByText("최대 1,800,000원")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await page.screenshot({
+    path: path.join(outDir, "13-open-catalog-custom-demand.png"),
+    fullPage: true,
+  });
 });
