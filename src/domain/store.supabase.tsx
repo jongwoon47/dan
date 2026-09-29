@@ -73,10 +73,20 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
             api.listMyDemands(auth.user.id),
           ]);
 
+        const matchedSellIds = [
+          ...new Set(
+            myMatches
+              .map((match) => match.sellIntentId)
+              .filter((id): id is string => Boolean(id)),
+          ),
+        ];
+        const matchedSells = await api.listSellIntentsByIds(matchedSellIds);
+
         const ownershipIds = [
           ...new Set([
             ...sellRows.map((s) => s.ownershipId),
             ...mySells.map((s) => s.ownershipId),
+            ...matchedSells.map((s) => s.ownershipId),
             ...owns.map((o) => o.id),
           ]),
         ];
@@ -88,6 +98,7 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         setSellIntents(() => {
           const map = new Map(sellRows.map((s) => [s.id, s]));
           for (const s of mySells) map.set(s.id, s);
+          for (const s of matchedSells) map.set(s.id, s);
           return [...map.values()];
         });
         setResponses(partyResponses);
