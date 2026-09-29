@@ -83,6 +83,7 @@ export function MatchChatPage() {
     markMessagesRead,
     confirmMatchCompletion,
     closeMatch,
+    cancelDeal,
     reopenDemandAfterTradeClose,
     blockUser,
     reportUser,
@@ -490,7 +491,17 @@ export function MatchChatPage() {
         danger
         onCancel={() => setConfirm(null)}
         onConfirm={() => {
-          void closeMatch(matchId).then((updated) => {
+          const action =
+            demand?.type === "BUY"
+              ? cancelDeal({
+                  matchId,
+                  reason:
+                    currentUser?.id === match.buyerId
+                      ? "BUYER_CHANGED_MIND"
+                      : "SELLER_CHANGED_MIND",
+                })
+              : closeMatch(matchId);
+          void action.then((updated) => {
             setConfirm(null);
             if (!updated) setError(ko.genericError);
           });
