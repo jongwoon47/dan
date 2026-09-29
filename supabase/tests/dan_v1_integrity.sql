@@ -1,6 +1,6 @@
 begin;
 
-select plan(60);
+select plan(70);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -442,6 +442,99 @@ select ok(
     in pg_get_functiondef('public.seller_connect_match(uuid)'::regprocedure)
   ) > 0,
   'seller connect is retry-safe after connection'
+);
+
+select ok(
+  position(
+    'return v_existing'
+    in pg_get_functiondef('public.upsert_deal_evidence(uuid,jsonb)'::regprocedure)
+  ) > 0
+  and position(
+    'challengeCode'
+    in pg_get_functiondef('public.upsert_deal_evidence(uuid,jsonb)'::regprocedure)
+  ) > 0,
+  'evidence submission is retry-safe for the committed challenge'
+);
+
+select ok(
+  position(
+    '/deal-evidence/%'
+    in pg_get_functiondef('public.upsert_deal_evidence(uuid,jsonb)'::regprocedure)
+  ) > 0,
+  'deal evidence media must live in the seller private evidence path'
+);
+
+select has_function(
+  'public',
+  'ensure_ownership',
+  array['uuid','text'],
+  'retry-safe ownership RPC exists'
+);
+
+select ok(
+  not has_table_privilege('authenticated', 'public.ownerships', 'INSERT'),
+  'authenticated clients cannot bypass ownership creation RPC'
+);
+
+select has_trigger(
+  'public',
+  'sell_intents',
+  'trg_sell_intent_marketplace_policy',
+  'Quick Offer edits remain marketplace-policy gated'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_indexes
+    where schemaname = 'public'
+      and tablename = 'matches'
+      and indexname = 'matches_active_demand_sell_uidx'
+      and indexdef ilike '%BUYER_INTERESTED%'
+      and indexdef ilike '%CONNECTED%'
+  ),
+  'only active demand/sell pairs are unique so closed history can rematch'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_indexes
+    where schemaname = 'public'
+      and tablename = 'sell_intents'
+      and indexname = 'sell_intents_active_ownership_uidx'
+      and indexdef ilike '%OPEN%'
+      and indexdef ilike '%MATCHED%'
+  ),
+  'one physical ownership cannot have two active or committed offers'
+);
+
+select ok(
+  position(
+    'status = ''CLOSED'''
+    in pg_get_functiondef('public.confirm_match_completion(uuid)'::regprocedure)
+  ) > 0
+  and position(
+    'status = ''RELEASED'''
+    in pg_get_functiondef('public.confirm_match_completion(uuid)'::regprocedure)
+  ) > 0,
+  'completed BUY closes demand/offer and releases sold ownership'
+);
+
+select ok(
+  position(
+    'update public.demands'
+    in pg_get_functiondef('public.expire_unpaid_deals()'::regprocedure)
+  ) = 0,
+  'payment timeout does not silently republish buyer demand'
+);
+
+select ok(
+  position(
+    'now() + interval ''7 days'''
+    in pg_get_functiondef('public.reopen_demand_after_trade_close(uuid)'::regprocedure)
+  ) > 0,
+  'explicit BUY reopen restores a fresh seven-day demand window'
 );
 
 select * from finish();
