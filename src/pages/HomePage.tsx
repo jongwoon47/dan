@@ -161,8 +161,8 @@ export function HomePage() {
           <span>이 중 가지고 있는 물건이 있나요?</span>
           <strong>판매글을 먼저 만들 필요 없이, 실제 구매수요에 바로 제안할 수 있어요.</strong>
         </div>
-        <Button to="/" variant="secondary">
-          Live Demand 보기
+        <Button to="/feed" variant="secondary">
+          전체 Live Demand 보기
         </Button>
       </section>
     </div>
