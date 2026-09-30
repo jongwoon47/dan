@@ -207,6 +207,10 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
   await page.goto("/");
   await settle(page);
   await expect(page.getByRole("heading", { name: "지금 사고 있는 사람들" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "찾는 제품 구매수요 등록" }),
+  ).toBeVisible();
+  await expect(page.getByText("어떤 제품을 찾고 있나요?")).toBeVisible();
   await expect(page.getByText("Herman Miller Aeron Chair")).toBeVisible();
   await expect(page.getByRole("button", { name: /가구/ })).toBeVisible();
   await expectNoHorizontalOverflow(page);
