@@ -1483,3 +1483,32 @@ body {
     flex: 1;
   }
 }
+
+
+.deep-header-share {
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid #dfdbea;
+  border-radius: 11px;
+  background: rgba(255,255,255,.88);
+  color: #5b46d3;
+  font-size: .75rem;
+  font-weight: 850;
+  box-shadow: 0 4px 12px rgba(43,35,66,.04);
+}
+
+.deep-header-share:active {
+  transform: scale(.97);
+}
+
+.share-status {
+  margin: -8px 0 0;
+  padding: 9px 11px;
+  border: 1px solid #ddd6fb;
+  border-radius: 12px;
+  background: #f5f2ff;
+  color: #5742ce;
+  font-size: .76rem;
+  font-weight: 750;
+  text-align: center;
+}
