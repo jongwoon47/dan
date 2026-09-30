@@ -230,7 +230,13 @@ export function MatchChatPage() {
       setBody(text);
       return;
     }
-    await load();
+    setMessages((prev) =>
+      prev.some((message) => message.id === result.id)
+        ? prev
+        : [...prev, result],
+    );
+    setError(null);
+    void load();
   }
 
   const mineDone = currentUser ? iConfirmed(match, currentUser.id) : false;
@@ -238,6 +244,7 @@ export function MatchChatPage() {
   const isBuyTrade = demand?.type === "BUY";
   const buySnapshotLocked = Boolean(dealSnapshot?.lockedAt);
   const buyPaid = match.paymentStatus === "PAID";
+  const buyComplete = match.status === "COMPLETED";
 
   let lastDay = "";
 
@@ -291,6 +298,25 @@ export function MatchChatPage() {
           />
         ) : null}
       </header>
+
+      {isBuyTrade ? (
+        <div className="chat-deal-progress" aria-label="거래 진행 단계">
+          <span className={buySnapshotLocked ? "is-done" : "is-current"}>
+            <i aria-hidden>{buySnapshotLocked ? "✓" : "1"}</i>
+            <b>조건</b>
+          </span>
+          <em aria-hidden />
+          <span className={buyPaid ? "is-done" : buySnapshotLocked ? "is-current" : ""}>
+            <i aria-hidden>{buyPaid ? "✓" : "2"}</i>
+            <b>결제</b>
+          </span>
+          <em aria-hidden />
+          <span className={buyComplete ? "is-done" : buyPaid ? "is-current" : ""}>
+            <i aria-hidden>{buyComplete ? "✓" : "3"}</i>
+            <b>인계</b>
+          </span>
+        </div>
+      ) : null}
 
       <section className="trade-status" aria-live="polite">
         <p className="trade-status__title">{demandTitle}</p>
@@ -454,12 +480,17 @@ export function MatchChatPage() {
                 className={mine ? "chat-bubble chat-bubble--mine" : "chat-bubble"}
               >
                 <p>{m.body}</p>
-                <time dateTime={m.createdAt}>
-                  {new Date(m.createdAt).toLocaleTimeString("ko-KR", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </time>
+                <div className="chat-bubble__meta">
+                  <time dateTime={m.createdAt}>
+                    {new Date(m.createdAt).toLocaleTimeString("ko-KR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </time>
+                  {mine ? (
+                    <span>{m.readAt ? "읽음" : "전송됨"}</span>
+                  ) : null}
+                </div>
               </div>
             </div>
           );
