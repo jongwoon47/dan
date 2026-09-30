@@ -207,10 +207,8 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
   await page.goto("/");
   await settle(page);
   await expect(page.getByRole("heading", { name: "지금 사고 있는 사람들" })).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: "찾는 제품 구매수요 등록" }),
-  ).toBeVisible();
-  await expect(page.getByText("어떤 제품을 찾고 있나요?")).toBeVisible();
+  await expect(page.getByLabel("찾는 제품")).toBeVisible();
+  await expect(page.getByRole("button", { name: "구매수요 만들기" })).toBeVisible();
   await expect(page.getByText("Herman Miller Aeron Chair")).toBeVisible();
   await expect(page.getByRole("button", { name: /가구/ })).toBeVisible();
   await expectNoHorizontalOverflow(page);
@@ -305,6 +303,34 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
   await expect(page.getByRole("button", { name: "제안 보내기" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "12-seller-quick-offer.png"), fullPage: true });
+});
+
+
+test("open-catalog discovery searches beyond camera SKUs and carries intent forward", async ({ page }, testInfo) => {
+  const outDir = path.join("qa-screenshots", "dan-v1", testInfo.project.name);
+  mkdirSync(outDir, { recursive: true });
+
+  await page.goto("/feed");
+  await settle(page);
+
+  await expect(page.getByRole("heading", { name: "사람들이 지금 찾는 제품" })).toBeVisible();
+  await expect(page.getByText("Herman Miller Aeron Chair")).toBeVisible();
+  await page.getByLabel("Live Demand 검색").fill("Aeron");
+  await expect(page.getByText("Herman Miller Aeron Chair")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await page.screenshot({
+    path: path.join(outDir, "15-open-catalog-discovery.png"),
+    fullPage: true,
+  });
+
+  await page.getByLabel("Live Demand 검색").fill("Herman Miller Embody Chair");
+  await expect(page.getByText(/Embody Chair.*Live Demand가 아직 없어요/)).toBeVisible();
+  await page.getByRole("link", { name: "이 제품 구매수요 만들기" }).click();
+  await settle(page);
+
+  await expect(page).toHaveURL(/\/buy\/new\?q=/);
+  await expect(page.getByLabel("찾는 제품")).toHaveValue("Herman Miller Embody Chair");
+  await expectNoHorizontalOverflow(page);
 });
 
 
