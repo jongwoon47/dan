@@ -323,6 +323,18 @@ test("open-catalog discovery searches beyond camera SKUs and carries intent forw
     fullPage: true,
   });
 
+  await page.getByText("Herman Miller Aeron Chair").click();
+  await settle(page);
+  await expect(page.getByRole("button", { name: "Live Demand 공유" })).toBeVisible();
+  await expect(page.getByText(/명이 지금 찾고 있어요/)).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await page.screenshot({
+    path: path.join(outDir, "16-demand-detail-share.png"),
+    fullPage: true,
+  });
+
+  await page.goto("/feed");
+  await settle(page);
   await page.getByLabel("Live Demand 검색").fill("Herman Miller Embody Chair");
   await expect(page.getByText(/Embody Chair.*Live Demand가 아직 없어요/)).toBeVisible();
   await page.getByRole("link", { name: "이 제품 구매수요 만들기" }).click();
