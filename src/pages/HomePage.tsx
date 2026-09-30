@@ -71,6 +71,20 @@ export function HomePage() {
           </p>
         </div>
 
+        <Link to="/buy/new" className="home-intent-composer" aria-label="찾는 제품 구매수요 등록">
+          <span className="home-intent-composer__icon" aria-hidden>
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="10.5" cy="10.5" r="5.75" stroke="currentColor" strokeWidth="1.8" />
+              <path d="m15 15 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </span>
+          <span className="home-intent-composer__copy">
+            <strong>어떤 제품을 찾고 있나요?</strong>
+            <small>제품과 원하는 조건을 먼저 남겨보세요</small>
+          </span>
+          <span className="home-intent-composer__arrow" aria-hidden>›</span>
+        </Link>
+
         <div className="home-demand-tabs" role="tablist" aria-label="구매수요 보기">
           <Link to="/" className="home-demand-tab is-active" aria-current="page">
             Live Demand
