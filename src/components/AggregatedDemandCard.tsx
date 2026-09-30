@@ -19,6 +19,7 @@ export function AggregatedDemandCard({
       aggregate.recent7dDelta || aggregate.seekerCount,
     ),
   );
+  const growth = Math.max(0, aggregate.recent7dDelta);
   const subtitle =
     product.brand && product.model && product.model !== product.name
       ? `${product.brand} · ${product.model}`
@@ -30,17 +31,24 @@ export function AggregatedDemandCard({
       <div className="live-demand-card__body">
         <div className="live-demand-card__top">
           <div>
+            <div className="live-demand-card__eyebrow">
+              <span>{CATEGORY_LABEL[product.category]}</span>
+              {growth > 0 ? <strong>7일 +{growth}</strong> : null}
+            </div>
             <h3>{product.name}</h3>
             <span className="live-demand-card__finish">{subtitle}</span>
           </div>
           <span className="live-demand-card__chevron" aria-hidden>›</span>
         </div>
-        <p className="live-demand-card__signal">
-          <strong>구매수요 {aggregate.seekerCount}명</strong>
-        </p>
-        <p className="live-demand-card__meta">
-          {aggregate.fulfillmentSummary || "거래방식 확인"} · 최근 확인 {recentCount}명
-        </p>
+
+        <div className="live-demand-card__signals">
+          <span className="live-demand-card__demand">
+            <strong>{aggregate.seekerCount}</strong>명 찾는 중
+          </span>
+          <span>{aggregate.fulfillmentSummary || "거래방식 확인"}</span>
+          <span>최근 확인 {recentCount}명</span>
+        </div>
+
         {price > 0 ? (
           <p className="live-demand-card__price">
             최대 희망가 <strong>{formatWon(price)}</strong>
