@@ -332,6 +332,15 @@ body {
   outline-offset: 3px;
 }
 
+.home-intent-composer:hover {
+  border-color: rgba(111, 86, 235, .24);
+  box-shadow: 0 12px 28px rgba(62,49,104,.10);
+}
+
+.home-intent-composer:active {
+  transform: scale(.995);
+}
+
 .home-demand-tabs {
   position: relative;
   z-index: 1;
