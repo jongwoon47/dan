@@ -75,6 +75,7 @@ export function ProductVisual({
         "product-visual",
         `product-visual--${size}`,
         isCameraLike ? "product-visual--camera" : "product-visual--generic",
+        `product-visual--cat-${product.category}`,
       ].join(" ")}
       aria-hidden
     >
