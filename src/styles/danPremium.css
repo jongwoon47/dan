@@ -1512,3 +1512,21 @@ body {
   font-weight: 750;
   text-align: center;
 }
+
+
+.product-visual__category-glyph svg {
+  width: 62%;
+  height: 62%;
+  display: block;
+}
+
+.product-visual--sm .product-visual__category-glyph svg {
+  width: 60%;
+  height: 60%;
+}
+
+.product-visual--lg .product-visual__category-glyph {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.92),
+    0 12px 28px rgba(48,40,73,.10) !important;
+}
