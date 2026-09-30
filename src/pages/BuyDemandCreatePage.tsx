@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
 import { Chip, ChipGroup, Field, TextInput, TextSelect } from "@/components/ui/Input";
@@ -71,8 +71,10 @@ export function BuyDemandCreatePage() {
     getMyVerification,
   } = useDan();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialQuery = searchParams.get("q")?.trim() ?? "";
 
-  const [productQuery, setProductQuery] = useState("");
+  const [productQuery, setProductQuery] = useState(initialQuery);
   const [selectedProductId, setSelectedProductId] = useState("");
   const [category, setCategory] = useState<ProductCategory>("other");
   const [maxPrice, setMaxPrice] = useState("");
@@ -86,6 +88,17 @@ export function BuyDemandCreatePage() {
   const [error, setError] = useState("");
 
   useDeepHeader({ title: "구매수요 등록" });
+
+  useEffect(() => {
+    if (!initialQuery || selectedProductId || productQuery !== initialQuery) return;
+    const exact = products.find(
+      (product) => productMatchKey(product.name) === productMatchKey(initialQuery),
+    );
+    if (!exact) return;
+    setSelectedProductId(exact.id);
+    setProductQuery(exact.name);
+    setCategory(exact.category);
+  }, [initialQuery, productQuery, products, selectedProductId]);
 
   useEffect(() => {
     if (!isLoggedIn) {
