@@ -7,6 +7,7 @@ import { ShellChromeProvider, useShellChrome } from "./ShellChrome";
 import { deepFallback, defaultDeepTitle, getShellMode } from "./shellMode";
 import "@/styles/danBlueprint.css";
 import "./layout.css";
+import "@/styles/danPremium.css";
 
 function IconHome({ active }: { active?: boolean }) {
   return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden><path d="m4.5 10 7.5-6 7.5 6v9H14v-5h-4v5H4.5v-9Z" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinejoin="round" /></svg>;
