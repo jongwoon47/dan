@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
@@ -11,6 +12,7 @@ import "./pages.css";
 export function DemandDetailPage() {
   const { productId = "" } = useParams();
   const { getProduct, getAggregate, myOwnerships, myDemands, currentUser } = useDan();
+  const [shareStatus, setShareStatus] = useState("");
   const product = getProduct(productId);
   const aggregate = getAggregate(productId);
   const owned = myOwnerships.find((o) => o.productId === productId);
@@ -22,7 +24,44 @@ export function DemandDetailPage() {
       d.details.productId === productId,
   );
 
-  useDeepHeader({ title: product?.name ?? ko.seekingOnly, hide: !product });
+  async function shareDemand() {
+    if (!product) return;
+    const shareData = {
+      title: `${product.name} · DAN Live Demand`,
+      text: `${aggregate?.seekerCount ?? 0}명이 지금 ${product.name}을 찾고 있어요.`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        setShareStatus("공유했어요");
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareData.url);
+        setShareStatus("링크를 복사했어요");
+      } else {
+        setShareStatus("주소창의 링크를 복사해 주세요");
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setShareStatus("공유하지 못했어요");
+    }
+  }
+
+  useDeepHeader({
+    title: product?.name ?? ko.seekingOnly,
+    hide: !product,
+    right: product ? (
+      <button
+        type="button"
+        className="deep-header-share"
+        onClick={() => void shareDemand()}
+        aria-label="Live Demand 공유"
+      >
+        공유
+      </button>
+    ) : undefined,
+  });
 
   if (!product || !aggregate) {
     return (
@@ -49,6 +88,10 @@ export function DemandDetailPage() {
           </p>
         </div>
       </section>
+
+      {shareStatus ? (
+        <p className="share-status" role="status">{shareStatus}</p>
+      ) : null}
 
       <section className="demand-detail-summary">
         <div>
@@ -89,7 +132,7 @@ export function DemandDetailPage() {
         </section>
       ) : (
         <p className="detail-foot">
-          같은 제품을 찾고 있나요? <Link to="/buy/new">나도 구매수요 등록</Link>
+          같은 제품을 찾고 있나요? <Link to={`/buy/new?q=${encodeURIComponent(product.name)}`}>나도 구매수요 등록</Link>
         </p>
       )}
     </div>
