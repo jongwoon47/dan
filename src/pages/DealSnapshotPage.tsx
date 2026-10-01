@@ -130,11 +130,28 @@ export function DealSnapshotPage() {
   return (
     <div className="page-stack page-narrow deal-page">
       <section className="deal-product-card deal-product-card--snapshot">
-        <ProductVisual product={product} size="sm" />
-        <div>
-          <p className="eyebrow">Deal Snapshot</p>
-          <h1 className="page-title">{product.name}</h1>
-          <strong className="deal-price">{formatWon(sell.minimumPrice)}</strong>
+        <div className="deal-product-card__main">
+          <ProductVisual product={product} size="sm" />
+          <div>
+            <p className="eyebrow">Deal Snapshot</p>
+            <h1 className="page-title">{product.name}</h1>
+            <strong className="deal-price">{formatWon(sell.minimumPrice)}</strong>
+          </div>
+          <span className="deal-product-card__heart" aria-hidden>♡</span>
+        </div>
+        <div className="deal-product-card__stats">
+          <div>
+            <strong>{evidence.usageCount != null ? evidence.usageCount.toLocaleString("ko-KR") : "—"}</strong>
+            <span>{product.category === "camera" ? "컷수" : "사용량"}</span>
+          </div>
+          <div>
+            <strong>{evidence.cosmeticNotes || "미제출"}</strong>
+            <span>외관 상태</span>
+          </div>
+          <div>
+            <strong>{evidence.knownIssues || "없음"}</strong>
+            <span>기능 이상</span>
+          </div>
         </div>
       </section>
 
