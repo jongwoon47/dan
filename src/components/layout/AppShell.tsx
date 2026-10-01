@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { NetworkStatusBanner } from "@/components/system/NetworkStatusBanner";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import { DeepHeader } from "./DeepHeader";
@@ -71,6 +72,8 @@ function AppShellInner() {
       ) : null}
 
       {showDeepHeader && deepTitle ? <DeepHeader title={deepTitle} subtitle={header?.subtitle} right={header?.right} fallbackTo={deepFallback(pathname)} /> : null}
+
+      <NetworkStatusBanner />
 
       <main className="app-main"><Outlet /></main>
 
