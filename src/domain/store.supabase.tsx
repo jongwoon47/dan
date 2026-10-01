@@ -47,12 +47,14 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const mutationInFlightRef = useRef(false);
+  const refreshGenerationRef = useRef(0);
   const lastRecoveryRefreshRef = useRef(0);
   const [activities, setActivities] = useState<
     import("@/domain/types").ActivityEvent[]
   >([]);
 
   const refresh = useCallback(async () => {
+    const generation = ++refreshGenerationRef.current;
     setLoadState((prev) => (prev === "ready" ? "ready" : "loading"));
     setError(null);
     try {
@@ -61,6 +63,8 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         api.listActiveDemands(),
         api.listBuyAggregates(),
       ]);
+      if (generation !== refreshGenerationRef.current) return;
+
       setProducts(productRows);
       setDemands(demandRows);
       setAggregates(aggRows);
@@ -94,6 +98,8 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
           ]),
         ];
         const openOwns = await api.listOwnershipsByIds(ownershipIds);
+        if (generation !== refreshGenerationRef.current) return;
+
         const ownMap = new Map<string, Ownership>();
         for (const o of [...owns, ...openOwns]) ownMap.set(o.id, o);
 
@@ -117,18 +123,23 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         setResponses([]);
         setMatches([]);
       }
+      if (generation !== refreshGenerationRef.current) return;
       setLoadState("ready");
+
       if (auth.user) {
         try {
           const acts = await api.listActivityRemote();
-          setActivities(acts);
+          if (generation === refreshGenerationRef.current) {
+            setActivities(acts);
+          }
         } catch {
           /* activity is best-effort */
         }
-      } else {
+      } else if (generation === refreshGenerationRef.current) {
         setActivities([]);
       }
-    } catch (e) {
+    } catch {
+      if (generation !== refreshGenerationRef.current) return;
       setError(ko.loadFailed);
       setLoadState("error");
     }
