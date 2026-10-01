@@ -18,7 +18,7 @@ begin
       and schemaname = 'public'
       and tablename = 'messages'
   ) then
-    alter publication supabase_realtime add table public.messages;
+    execute 'alter publication supabase_realtime add table public.messages';
   end if;
 end
 $$;
