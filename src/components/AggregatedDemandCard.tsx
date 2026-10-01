@@ -38,7 +38,11 @@ export function AggregatedDemandCard({
             <h3>{product.name}</h3>
             <span className="live-demand-card__finish">{subtitle}</span>
           </div>
-          <span className="live-demand-card__chevron" aria-hidden>›</span>
+          <span className="live-demand-card__favorite" aria-hidden>
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M20.8 8.7c0 5.4-8.8 10.2-8.8 10.2S3.2 14.1 3.2 8.7A4.5 4.5 0 0 1 12 7.3a4.5 4.5 0 0 1 8.8 1.4Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+            </svg>
+          </span>
         </div>
 
         <div className="live-demand-card__signals">
