@@ -51,6 +51,7 @@ returns table (
   avg_price numeric,
   highest_intent_price numeric,
   recent_7d_delta integer,
+  fulfillment_summary text,
   latest_demand_at timestamptz,
   total_count bigint
 )
@@ -76,6 +77,14 @@ as $$
       count(*) filter (
         where d.created_at >= now() - interval '7 days'
       )::integer as recent_7d_delta,
+      case
+        when bool_or(d.trade_method = 'any')
+          or (bool_or(d.trade_method = 'meetup') and bool_or(d.trade_method = 'shipping'))
+          then '직거래 · 택배'
+        when bool_or(d.trade_method = 'shipping') then '택배'
+        when bool_or(d.trade_method = 'meetup') then '직거래'
+        else '거래방식 확인'
+      end as fulfillment_summary,
       max(d.created_at) as latest_demand_at
     from public.products p
     join public.demands d
@@ -95,6 +104,33 @@ as $$
         or coalesce(p.brand, '') ilike '%' || trim(p_query) || '%'
         or coalesce(p.model, '') ilike '%' || trim(p_query) || '%'
         or p.category ilike '%' || trim(p_query) || '%'
+        or (
+          case p.category
+            when 'electronics' then '전자기기'
+            when 'computer' then '컴퓨터 노트북'
+            when 'gaming' then '게임'
+            when 'audio' then '오디오'
+            when 'camera' then '카메라'
+            when 'lens' then '렌즈'
+            when 'home_appliance' then '생활가전'
+            when 'furniture' then '가구'
+            when 'fashion' then '패션'
+            when 'shoes' then '신발'
+            when 'watches_accessories' then '시계 액세서리'
+            when 'sports' then '스포츠'
+            when 'outdoor' then '아웃도어'
+            when 'camping' then '캠핑'
+            when 'hobby_collectible' then '취미 수집'
+            when 'baby_kids' then '유아 아동'
+            when 'books_media' then '도서 미디어'
+            when 'musical_instrument' then '악기'
+            when 'beauty' then '뷰티'
+            when 'pet' then '반려동물'
+            when 'tools' then '공구'
+            when 'auto' then '자동차용품'
+            else '기타'
+          end
+        ) ilike '%' || trim(p_query) || '%'
         or public.canonical_product_key(p.canonical_name)
           like '%' || public.canonical_product_key(trim(p_query)) || '%'
       )
