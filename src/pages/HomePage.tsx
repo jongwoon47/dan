@@ -37,7 +37,9 @@ export function HomePage() {
   );
 
   const heroProducts = useMemo(() => {
-    const picks = [
+    const products = [];
+    const seen = new Set<string>();
+    const candidates = [
       liveProducts.find(
         (item) => item.kind === "aggregated" && item.product.category === "camera",
       ),
@@ -51,12 +53,13 @@ export function HomePage() {
         (item) => item.kind === "aggregated" && item.product.category === "furniture",
       ),
     ];
-    const seen = new Set<string>();
-    return picks.filter((item) => {
-      if (!item || item.kind !== "aggregated" || seen.has(item.product.id)) return false;
+
+    for (const item of candidates) {
+      if (!item || item.kind !== "aggregated" || seen.has(item.product.id)) continue;
       seen.add(item.product.id);
-      return true;
-    });
+      products.push(item.product);
+    }
+    return products;
   }, [liveProducts]);
 
   const categoryRows = useMemo(() => {
@@ -99,13 +102,11 @@ export function HomePage() {
         </div>
 
         <div className="home-hero-products" aria-hidden>
-          {heroProducts.map((item, index) =>
-            item.kind === "aggregated" ? (
-              <span key={item.product.id} className={`home-hero-product home-hero-product--${index + 1}`}>
-                <ProductVisual product={item.product} size="md" />
-              </span>
-            ) : null,
-          )}
+          {heroProducts.map((product, index) => (
+            <span key={product.id} className={`home-hero-product home-hero-product--${index + 1}`}>
+              <ProductVisual product={product} size="md" />
+            </span>
+          ))}
         </div>
 
         <form
