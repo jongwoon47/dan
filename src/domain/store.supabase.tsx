@@ -374,6 +374,15 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
           return [];
         }
       },
+      subscribeMessages: (matchId, onMessage, onStatus) => {
+        if (!currentUser) return () => undefined;
+        try {
+          return api.subscribeMessagesRemote(matchId, onMessage, onStatus);
+        } catch {
+          onStatus?.("CHANNEL_ERROR");
+          return () => undefined;
+        }
+      },
       sendMessage: async (matchId, body) => {
         if (!currentUser) {
           assignLogin();
