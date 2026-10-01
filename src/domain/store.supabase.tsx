@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -45,6 +46,8 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const mutationInFlightRef = useRef(false);
+  const lastRecoveryRefreshRef = useRef(0);
   const [activities, setActivities] = useState<
     import("@/domain/types").ActivityEvent[]
   >([]);
@@ -136,6 +139,31 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
     void refresh();
   }, [auth.status, auth.user?.id, refresh]);
 
+  useEffect(() => {
+    if (auth.status === "loading") return;
+
+    const recover = () => {
+      if (typeof navigator !== "undefined" && !navigator.onLine) return;
+      const now = Date.now();
+      if (now - lastRecoveryRefreshRef.current < 1500) return;
+      lastRecoveryRefreshRef.current = now;
+      void refresh();
+    };
+
+    const onOnline = () => recover();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") recover();
+    };
+
+    window.addEventListener("online", onOnline);
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      window.removeEventListener("online", onOnline);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [auth.status, refresh]);
+
   const state: DanState = useMemo(
     () => ({
       currentUserId: auth.user?.id ?? null,
@@ -154,7 +182,8 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
 
   const run = useCallback(
     async <T,>(fn: () => Promise<T>): Promise<T | null> => {
-      if (busy) return null;
+      if (mutationInFlightRef.current) return null;
+      mutationInFlightRef.current = true;
       setBusy(true);
       setError(null);
       try {
@@ -166,10 +195,11 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         // Avoid stacking a global banner on the same mutation failure.
         return null;
       } finally {
+        mutationInFlightRef.current = false;
         setBusy(false);
       }
     },
-    [busy, refresh],
+    [refresh],
   );
 
   const value = useMemo<DanContextValue>(() => {
