@@ -138,13 +138,17 @@ export function DealSnapshotPage() {
         </div>
       </section>
 
-      <section className="deal-snapshot-card">
-        <div className="snapshot-section">
-          <span>제품 정보</span>
-          <strong>{product.name}</strong>
+      <section className="deal-snapshot-card deal-snapshot-card--focused">
+        <div className="snapshot-card-heading">
+          <div>
+            <span className="eyebrow">핵심 거래 조건</span>
+            <h2>확인해야 할 내용만 먼저 보여드려요.</h2>
+          </div>
+          <strong>{formatWon(sell.minimumPrice)}</strong>
         </div>
+
         {evidence.usageCount != null ? (
-          <div className="snapshot-section">
+          <div className="snapshot-section snapshot-section--key">
             <span>{product.category === "camera" ? "컷수" : "사용량 / 횟수"}</span>
             <strong>
               {product.category === "camera"
@@ -153,42 +157,58 @@ export function DealSnapshotPage() {
             </strong>
           </div>
         ) : null}
-        <div className="snapshot-section">
-          <span>구매일</span>
-          <strong>{evidence.purchaseDate || "미제출"}</strong>
-        </div>
-        <div className="snapshot-section">
-          <span>보증기간</span>
-          <strong>{evidence.warrantyUntil || "미제출"}</strong>
-        </div>
-        <div className="snapshot-section">
-          <span>식별번호 끝자리</span>
-          <strong>{evidence.serialLast4 ? `••••${evidence.serialLast4}` : "미제출"}</strong>
-        </div>
-        <div className="snapshot-section">
-          <span>구성품</span>
-          <strong>{evidence.components.join(", ") || "없음"}</strong>
-        </div>
-        <div className="snapshot-section">
+        <div className="snapshot-section snapshot-section--key">
           <span>외관</span>
           <strong>{evidence.cosmeticNotes || "미제출"}</strong>
         </div>
-        <div className="snapshot-section">
+        <div className="snapshot-section snapshot-section--key">
           <span>기능 이상</span>
           <strong>{evidence.knownIssues || "미제출"}</strong>
         </div>
-        <div className="snapshot-section">
-          <span>수리 이력</span>
-          <strong>{evidence.repairHistory || "없음"}</strong>
-        </div>
-        <div className="snapshot-section">
-          <span>침수 / 물손상 이력</span>
-          <strong>{evidence.waterDamageStatement || "미제출"}</strong>
-        </div>
-        <div className="snapshot-section">
+        <div className="snapshot-section snapshot-section--key">
           <span>거래 방식</span>
           <strong>{formatFulfillmentSummary(demand.fulfillmentOptions)}</strong>
         </div>
+
+        <details className="snapshot-details">
+          <summary>
+            <span>
+              <strong>판매자 제출 상세</strong>
+              <small>구매·보증·식별번호·구성품·수리 이력</small>
+            </span>
+            <span className="snapshot-details__chevron" aria-hidden>⌄</span>
+          </summary>
+          <div className="snapshot-details__body">
+            <div className="snapshot-section">
+              <span>제품 정보</span>
+              <strong>{product.name}</strong>
+            </div>
+            <div className="snapshot-section">
+              <span>구매일</span>
+              <strong>{evidence.purchaseDate || "미제출"}</strong>
+            </div>
+            <div className="snapshot-section">
+              <span>보증기간</span>
+              <strong>{evidence.warrantyUntil || "미제출"}</strong>
+            </div>
+            <div className="snapshot-section">
+              <span>식별번호 끝자리</span>
+              <strong>{evidence.serialLast4 ? `••••${evidence.serialLast4}` : "미제출"}</strong>
+            </div>
+            <div className="snapshot-section">
+              <span>구성품</span>
+              <strong>{evidence.components.join(", ") || "없음"}</strong>
+            </div>
+            <div className="snapshot-section">
+              <span>수리 이력</span>
+              <strong>{evidence.repairHistory || "없음"}</strong>
+            </div>
+            <div className="snapshot-section">
+              <span>침수 / 물손상 이력</span>
+              <strong>{evidence.waterDamageStatement || "미제출"}</strong>
+            </div>
+          </div>
+        </details>
       </section>
 
       <section className="snapshot-lock-notice">
