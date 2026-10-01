@@ -18,7 +18,7 @@ import { useDan } from "@/domain/danContext";
 import type { ChatMessage, DealSnapshot, Demand, Match } from "@/domain/types";
 import "./pages.css";
 
-const POLL_MS = 8000;
+const POLL_MS = 60_000;
 const CHAT_STATUSES = new Set(["CONNECTED", "COMPLETED", "CLOSED"]);
 
 function dayKey(iso: string) {
@@ -79,6 +79,7 @@ export function MatchChatPage() {
     getDemand,
     currentUser,
     listMessages,
+    subscribeMessages,
     sendMessage,
     markMessagesRead,
     confirmMatchCompletion,
@@ -127,6 +128,8 @@ export function MatchChatPage() {
     "spam" | "fraud" | "abuse" | "other"
   >("spam");
   const [toast, setToast] = useState<string | null>(null);
+  const [newMessageCount, setNewMessageCount] = useState(0);
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
   const initialScrollDone = useRef(false);
@@ -149,14 +152,48 @@ export function MatchChatPage() {
 
   useEffect(() => {
     void load();
+
+    const unsubscribe = subscribeMessages(
+      matchId,
+      (message) => {
+        setMessages((prev) => {
+          const index = prev.findIndex((item) => item.id === message.id);
+          if (index >= 0) {
+            const next = [...prev];
+            next[index] = message;
+            return next;
+          }
+          return [...prev, message].sort((a, b) =>
+            a.createdAt.localeCompare(b.createdAt),
+          );
+        });
+
+        if (message.senderId !== currentUser?.id) {
+          if (!stickToBottomRef.current) {
+            setNewMessageCount((count) => count + 1);
+          }
+          void markMessagesRead(matchId);
+        }
+      },
+      (status) => setRealtimeConnected(status === "SUBSCRIBED"),
+    );
+
     const onFocus = () => void load();
     window.addEventListener("focus", onFocus);
     const timer = window.setInterval(() => void load(), POLL_MS);
+
     return () => {
+      unsubscribe();
       window.removeEventListener("focus", onFocus);
       window.clearInterval(timer);
     };
-  }, [load]);
+  }, [
+    currentUser?.id,
+    load,
+    markMessagesRead,
+    matchId,
+    subscribeMessages,
+  ]);
 
   useEffect(() => {
     if (!matchId || demand?.type !== "BUY") {
@@ -188,6 +225,7 @@ export function MatchChatPage() {
     if (!el) return;
     const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
     stickToBottomRef.current = distance < 80;
+    if (stickToBottomRef.current) setNewMessageCount(0);
   }
 
   useEffect(() => {
@@ -196,13 +234,13 @@ export function MatchChatPage() {
     if (!initialScrollDone.current || stickToBottomRef.current) {
       el.scrollTop = el.scrollHeight;
       initialScrollDone.current = true;
+      setNewMessageCount(0);
     }
   }, [messages, loading, match?.status, match?.buyerCompletedAt, match?.sellerCompletedAt]);
 
   const demandTitle = useMemo(() => demand?.title ?? ko.chatTitle, [demand]);
   const displayPeer = peerName || "상대";
-  const canSend =
-    match?.status === "CONNECTED" || match?.status === "COMPLETED";
+  const canSend = match?.status === "CONNECTED";
 
   function goBack() {
     navigateBack(navigate, "/chats");
@@ -271,6 +309,11 @@ export function MatchChatPage() {
             )}
           </h1>
           <p className="chat-page__demand">{demandTitle}</p>
+          {realtimeConnected ? (
+            <span className="chat-realtime-status">
+              <i aria-hidden /> 실시간
+            </span>
+          ) : null}
           {demand ? (
             <Link
               to={`/demand/item/${demand.id}`}
@@ -497,6 +540,21 @@ export function MatchChatPage() {
         })}
       </div>
 
+      {newMessageCount > 0 ? (
+        <button
+          type="button"
+          className="chat-new-message"
+          onClick={() => {
+            const el = threadRef.current;
+            if (el) el.scrollTop = el.scrollHeight;
+            stickToBottomRef.current = true;
+            setNewMessageCount(0);
+          }}
+        >
+          새 메시지 {newMessageCount}개 ↓
+        </button>
+      ) : null}
+
       {canSend ? (
         <form className="chat-composer" onSubmit={(e) => void onSend(e)}>
           <input
@@ -512,7 +570,9 @@ export function MatchChatPage() {
         </form>
       ) : (
         <p className="chat-composer chat-composer--closed muted">
-          {ko.tradeClosedTitle}
+          {match.status === "COMPLETED"
+            ? "거래가 완료되어 채팅이 읽기 전용이에요."
+            : ko.tradeClosedTitle}
         </p>
       )}
 
