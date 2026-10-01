@@ -1240,6 +1240,7 @@ export function DanProvider({ children }: { children: ReactNode }) {
         };
       },
       listMessages: async () => [],
+      subscribeMessages: () => () => undefined,
       sendMessage: async () => null,
       markMessagesRead: async () => undefined,
       activities: [],
