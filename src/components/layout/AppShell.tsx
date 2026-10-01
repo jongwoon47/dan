@@ -52,7 +52,14 @@ function AppShellInner() {
               <img className="brand__logo" src="/dan-logo.png" alt="" width={36} height={36} />
               <span className="brand__text"><span className="brand__mark">DAN</span><span className="brand__tag">{ko.brandTag}</span></span>
             </NavLink>
-            <NavLink to="/feed" className="top-nav__mobile-search" aria-label="구매수요 탐색"><IconSearch /></NavLink>
+            <div className="top-nav__mobile-actions">
+              <NavLink to="/feed" className="top-nav__mobile-search" aria-label="구매수요 탐색"><IconSearch /></NavLink>
+              {isLoggedIn ? (
+                <NavLink to="/activity" className="top-nav__mobile-bell" aria-label={unreadActivityCount > 0 ? `${ko.navActivity} ${unreadActivityCount}` : ko.navActivity}>
+                  {({ isActive }) => <span className="top-nav__bell-wrap"><IconBell active={isActive} />{bellBadge ? <span className="nav-badge nav-badge--float">{bellBadge}</span> : null}</span>}
+                </NavLink>
+              ) : null}
+            </div>
             <nav className="top-nav__links" aria-label="주요 메뉴">
               <NavLink to="/feed">{ko.navFeed}</NavLink><NavLink to="/create">{ko.navCreate}</NavLink><NavLink to="/chats">{ko.navChats}</NavLink><NavLink to="/my">{ko.navMy}</NavLink>
             </nav>
