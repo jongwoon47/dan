@@ -175,7 +175,12 @@ export function MatchChatPage() {
           void markMessagesRead(matchId);
         }
       },
-      (status) => setRealtimeConnected(status === "SUBSCRIBED"),
+      (status) => {
+        setRealtimeConnected(status === "SUBSCRIBED");
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          void load();
+        }
+      },
     );
 
     const onFocus = () => void load();
