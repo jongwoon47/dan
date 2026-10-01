@@ -1,3 +1,8 @@
+import {
+  STAGING_SEED_CONFIRM,
+  isForbiddenProductionTarget,
+} from "./environmentSeparation.ts";
+
 export type StagingSeedDecision = {
   ok: boolean;
   code: 0 | 1 | 2;
@@ -54,13 +59,21 @@ export function assertStagingSeedAllowed(
     };
   }
 
+  if (isForbiddenProductionTarget(dbUrl)) {
+    return {
+      ok: false,
+      code: 1,
+      message:
+        "REFUSED: staging seed cannot use the production Supabase project or dan.pages.dev.",
+    };
+  }
+
   const local = /@(localhost|127\.0\.0\.1)(:|\/)/i.test(dbUrl);
-  if (!local && env.DAN_STAGING_CONFIRM !== "seed-staging-only") {
+  if (!local && env.DAN_STAGING_CONFIRM !== STAGING_SEED_CONFIRM) {
     return {
       ok: false,
       code: 2,
-      message:
-        "NEEDS USER: remote staging seed requires DAN_STAGING_CONFIRM=seed-staging-only.",
+      message: `NEEDS USER: remote staging seed requires DAN_STAGING_CONFIRM=${STAGING_SEED_CONFIRM}.`,
     };
   }
 

@@ -1,6 +1,19 @@
+/**
+ * PRODUCTION-ONLY. Hardcoded public Supabase project ref.
+ * Do not run this for staging. See docs/STAGING.md.
+ */
 import { readFileSync, writeFileSync, unlinkSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
+
+if (
+  process.env.DAN_ENV === "staging" ||
+  process.env.DAN_SEED_TARGET === "staging"
+) {
+  throw new Error(
+    "REFUSED: this script targets the production Supabase project and must not run for staging.",
+  );
+}
 
 const REF = "wmznpuhqmmqunwtewntt";
 const URL = `https://api.supabase.com/v1/projects/${REF}/database/query`;

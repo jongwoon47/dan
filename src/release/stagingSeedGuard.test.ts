@@ -47,4 +47,15 @@ describe("assertStagingSeedAllowed", () => {
       }).ok,
     ).toBe(true);
   });
+
+  it("refuses the known production Supabase project ref", () => {
+    expect(
+      assertStagingSeedAllowed({
+        DAN_SEED_TARGET: "staging",
+        DAN_STAGING_CONFIRM: "seed-staging-only",
+        SUPABASE_DB_URL:
+          "postgresql://postgres:postgres@db.wmznpuhqmmqunwtewntt.supabase.co:5432/postgres",
+      }).code,
+    ).toBe(1);
+  });
 });

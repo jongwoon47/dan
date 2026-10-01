@@ -19,5 +19,10 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts", "scripts/seed-staging.ts"]
+  "include": [
+    "vite.config.ts",
+    "scripts/seed-staging.ts",
+    "scripts/assert-staging-deploy.ts",
+    "scripts/staging-workflow.test.ts"
+  ]
 }
