@@ -394,6 +394,10 @@ export async function searchLiveDemandRemote(input: {
       recent7dDelta: Number(row.recent_7d_delta ?? 0),
       highestIntentPrice: Number(row.highest_intent_price ?? 0),
       priceBuckets: [],
+      fulfillmentSummary:
+        typeof row.fulfillment_summary === "string"
+          ? row.fulfillment_summary
+          : undefined,
     },
     latestDemandAt: String(row.latest_demand_at ?? row.product_created_at),
   }));
