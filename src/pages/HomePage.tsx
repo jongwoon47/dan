@@ -67,7 +67,7 @@ export function HomePage() {
       <section className="home-demand-header">
         <div className="home-demand-heading">
           <span className="home-demand-kicker">Live Demand</span>
-          <h1>지금 사고 있는<br />사람들</h1>
+          <h1 aria-label="지금 사고 있는 사람들">지금 사고 있는<br />사람들</h1>
           <p>
             찾는 사람이 먼저 올려두면,
             <br />
