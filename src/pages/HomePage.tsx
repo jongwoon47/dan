@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AggregatedDemandCard } from "@/components/AggregatedDemandCard";
+import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDan } from "@/domain/danContext";
@@ -65,12 +66,23 @@ export function HomePage() {
     <div className="page-stack home-page home-page--v1">
       <section className="home-demand-header">
         <div className="home-demand-heading">
-          <h1>지금 사고 있는 사람들</h1>
+          <span className="home-demand-kicker">Live Demand</span>
+          <h1>지금 사고 있는<br />사람들</h1>
           <p>
             찾는 사람이 먼저 올려두면,
             <br />
             그 물건을 가진 사람이 판매를 제안해요.
           </p>
+        </div>
+
+        <div className="home-hero-products" aria-hidden>
+          {liveProducts.slice(0, 3).map((item, index) =>
+            item.kind === "aggregated" ? (
+              <span key={item.product.id} className={`home-hero-product home-hero-product--${index + 1}`}>
+                <ProductVisual product={item.product} size="md" />
+              </span>
+            ) : null,
+          )}
         </div>
 
         <form
@@ -135,6 +147,13 @@ export function HomePage() {
       </section>
 
       <section className="home-live-section">
+        <div className="home-live-heading">
+          <div>
+            <span>Live Demand</span>
+            <h2>지금 가장 많이 찾는 제품</h2>
+          </div>
+          <Link to="/feed">더보기 <span aria-hidden>›</span></Link>
+        </div>
         {visibleProducts.length === 0 ? (
           <EmptyState
             title="아직 이 카테고리의 구매수요가 없어요"
