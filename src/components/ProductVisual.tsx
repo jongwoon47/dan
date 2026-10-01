@@ -95,6 +95,17 @@ function ChairGlyph() {
   );
 }
 
+function hasNamedProductArt(product: Product): boolean {
+  const name = product.name.toLocaleLowerCase("en");
+  return (
+    product.category === "lens" ||
+    name.includes("iphone") ||
+    name.includes("macbook") ||
+    name.includes("aeron") ||
+    product.category === "furniture"
+  );
+}
+
 function NamedProductArt({ product }: { product: Product }) {
   const name = product.name.toLocaleLowerCase("en");
   if (product.category === "lens") return <LensGlyph />;
@@ -262,8 +273,7 @@ export function ProductVisual({
   size?: "sm" | "md" | "lg";
 }) {
   const isCamera = product.category === "camera";
-  const namedArt = <NamedProductArt product={product} />;
-  const hasNamedArt = Boolean(namedArt);
+  const hasNamedArt = hasNamedProductArt(product);
   return (
     <div
       className={[
@@ -278,7 +288,7 @@ export function ProductVisual({
       {isCamera ? (
         <CameraGlyph brand={product.brand} />
       ) : hasNamedArt ? (
-        namedArt
+        <NamedProductArt product={product} />
       ) : (
         <GenericProductGlyph category={product.category} />
       )}
