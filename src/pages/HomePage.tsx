@@ -44,11 +44,11 @@ export function HomePage() {
         (item) => item.kind === "aggregated" && item.product.category === "camera",
       ),
       liveProducts.find(
-        (item) =>
-          item.kind === "aggregated" &&
-          (item.product.category === "computer" ||
-            item.product.category === "electronics"),
-      ),
+        (item) => item.kind === "aggregated" && item.product.category === "computer",
+      ) ??
+        liveProducts.find(
+          (item) => item.kind === "aggregated" && item.product.category === "electronics",
+        ),
       liveProducts.find(
         (item) => item.kind === "aggregated" && item.product.category === "furniture",
       ),
@@ -86,7 +86,7 @@ export function HomePage() {
         category === "all" ||
         (item.kind === "aggregated" && item.product.category === category),
     )
-    .slice(0, 6);
+    .slice(0, 4);
 
   return (
     <div className="page-stack home-page home-page--v1">
