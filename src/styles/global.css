@@ -482,3 +482,30 @@ p {
   background: #fff;
   color: var(--dan-ink);
 }
+
+
+.network-status-banner {
+  position: sticky;
+  top: var(--nav-height);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 16px;
+  border-bottom: 1px solid #f4d8a6;
+  background: #fff8e8;
+  color: #7a5312;
+  font-size: .78rem;
+  font-weight: 750;
+  text-align: center;
+}
+
+.network-status-banner > span {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #d88b12;
+}
