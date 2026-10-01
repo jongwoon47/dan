@@ -39,7 +39,7 @@ npm run preview
 Do **not** use Deploy Cloudflare Pages or Deploy GitHub Pages for staging.
 Those workflows target the public project `dan` / GitHub Pages `/dan/`.
 
-Staging uses a separate Cloudflare project `dan-staging`, a separate Supabase
+Staging uses a separate Cloudflare project `dan-v1-staging-jongwoon`, a separate Supabase
 project, GitHub Environment `staging`, and `STAGING_*` secret names.
 Full checklist: [STAGING.md](./STAGING.md).
 

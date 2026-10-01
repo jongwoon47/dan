@@ -14,16 +14,16 @@
 Supabase staging project (별도 프로젝트)
 Auth / Postgres+RLS+RPC / Storage / Realtime
 
-Cloudflare Pages project: dan-staging
-URL: https://dan-staging.pages.dev
+Cloudflare Pages project: dan-v1-staging-jongwoon
+URL: https://dan-v1-staging-jongwoon.pages.dev
 ```
 
 Workers, Edge Functions, 결제사, analytics 업체는 없다.
 
 | 구분 | production (건드리지 않음) | staging |
 |------|---------------------------|---------|
-| Cloudflare Pages 프로젝트 | `dan` | `dan-staging` |
-| Pages URL | `https://dan.pages.dev` | `https://dan-staging.pages.dev` |
+| Cloudflare Pages 프로젝트 | `dan` | `dan-v1-staging-jongwoon` |
+| Pages URL | `https://dan.pages.dev` | `https://dan-v1-staging-jongwoon.pages.dev` |
 | GitHub Pages | `main` → `/dan/` | 사용하지 않음 |
 | Supabase | 기존 공개 프로젝트. 레거시 스크립트 ref `wmznpuhqmmqunwtewntt` | 새로 만든 프로젝트만 |
 | GitHub secrets | `VITE_SUPABASE_*`, `CLOUDFLARE_*` | `STAGING_*` 만 |
@@ -54,6 +54,7 @@ production으로 보이는 값이 있으면 배포/seed를 진행하지 말고 �
 - `STAGING_CLOUDFLARE_API_TOKEN`
 - `STAGING_CLOUDFLARE_ACCOUNT_ID`
 - `STAGING_SUPABASE_DB_URL` (seed 전용. 프론트 빌드/배포 워크플로는 읽지 않음)
+- `DAN_STAGING_SUPABASE_PROJECT_REF` (원격 seed/migration expected ref. 프론트 빌드에는 넣지 않음)
 
 프론트/Actions에 넣지 말 것:
 
@@ -70,7 +71,7 @@ production으로 보이는 값이 있으면 배포/seed를 진행하지 말고 �
 - trigger: `workflow_dispatch` only. `main` push 없음
 - 입력 `confirm`이 `deploy-staging-only`가 아니면 실패
 - `main`에서 실행하면 실패
-- `--project-name=dan-staging` 하드코딩. `dan` 불가
+- `--project-name=dan-v1-staging-jongwoon` 하드코딩. `dan` 및 점유된 `dan-staging` 불가
 - `environment: staging`
 - 이 저장소 작업에서는 워크플로를 실행하지 않음
 
@@ -85,8 +86,8 @@ production으로 보이는 값이 있으면 배포/seed를 진행하지 말고 �
 4. [ ] Auth → Email provider ON
 5. [ ] Auth → Confirm email: staging 초기는 OFF (로컬 `supabase/config.toml`과 동일)
 6. [ ] Auth → URL configuration
-    - Site URL: `https://dan-staging.pages.dev`
-    - Redirect URLs: `https://dan-staging.pages.dev/**`, `http://localhost:5173/**`
+    - Site URL: `https://dan-v1-staging-jongwoon.pages.dev`
+    - Redirect URLs: `https://dan-v1-staging-jongwoon.pages.dev/**`, `http://localhost:5173/**`
 7. [ ] Migrations `0001_initial.sql` … `0041_realtime_discovery.sql`을 **순서대로** 적용
     - CLI: 새 프로젝트에만 `supabase link` 후 `supabase db push`
     - 또는 Dashboard SQL Editor에 파일 순서대로 붙여넣기
@@ -103,10 +104,10 @@ production으로 보이는 값이 있으면 배포/seed를 진행하지 말고 �
 
 ## Cloudflare staging checklist
 
-1. [ ] Cloudflare Pages에서 **새** 프로젝트 `dan-staging` 생성. 기존 공개 프로젝트 `dan`을 수정하지 않음
-2. [ ] Production 도메인, `dan.pages.dev` 커스텀 도메인을 staging에 연결하지 않음
-3. [ ] 예상 URL: `https://dan-staging.pages.dev`
-4. [ ] API token은 `dan-staging`에만 권한을 둔 새 토큰을 만들고 `STAGING_CLOUDFLARE_API_TOKEN`에 넣음. production 토큰을 복사하지 않음
+1. [ ] Cloudflare Pages에서 **새** 프로젝트 `dan-v1-staging-jongwoon` 생성. 기존 공개 프로젝트 `dan`을 수정하지 않음. 점유된 `dan-staging`은 쓰지 않음
+2. [ ] Production 도메인, `dan.pages.dev`, `dan-staging.pages.dev` 를 staging에 연결하지 않음
+3. [ ] 예상 URL: `https://dan-v1-staging-jongwoon.pages.dev`
+4. [ ] API token은 `dan-v1-staging-jongwoon`에만 권한을 둔 새 토큰을 만들고 `STAGING_CLOUDFLARE_API_TOKEN`에 넣음. production 토큰을 복사하지 않음
 5. [ ] `STAGING_CLOUDFLARE_ACCOUNT_ID` 입력
 6. [ ] GitHub Environment `staging` 생성. production environment와 공유하지 않음
 7. [ ] 워크플로 `Deploy Cloudflare Staging`은 secret이 준비된 뒤에만, `confirm=deploy-staging-only`로 사람이 실행

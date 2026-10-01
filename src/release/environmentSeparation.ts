@@ -5,8 +5,8 @@
  * `dan.pages.dev`, or the known production Supabase project ref.
  */
 
-export const STAGING_CLOUDFLARE_PROJECT = "dan-staging";
-export const STAGING_PAGES_URL = "https://dan-staging.pages.dev";
+export const STAGING_CLOUDFLARE_PROJECT = "dan-v1-staging-jongwoon";
+export const STAGING_PAGES_URL = "https://dan-v1-staging-jongwoon.pages.dev";
 export const STAGING_DEPLOY_CONFIRM = "deploy-staging-only";
 export const STAGING_SEED_CONFIRM = "seed-staging-only";
 export const STAGING_REMOTE_CONFIRM = "apply-staging-only";

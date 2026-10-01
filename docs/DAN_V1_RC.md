@@ -50,13 +50,13 @@ Supabase Auth / Postgres / Storage / Realtime. Cloudflare Pages 또는 GitHub Pa
 - GitHub Pages: `main` push와 `workflow_dispatch`. base `/dan/`. 워크플로 이름 Deploy GitHub Pages.
 - Cloudflare Pages: `workflow_dispatch`만. 프로젝트 이름은 `dan`이고 주석의 대상은 `https://dan.pages.dev`다. 이 워크플로는 staging 슬롯이 아니다.
 
-staging은 별도 문서 [STAGING.md](./STAGING.md)다. 공개 워크플로 `Deploy Cloudflare Pages`는 실행하면 `dan`으로 나간다. staging은 `Deploy Cloudflare Staging`만 쓰며, 프로젝트 이름은 `dan-staging`이다. 이 준비에서는 어느 쪽도 실행하지 않았다.
+staging은 별도 문서 [STAGING.md](./STAGING.md)다. 공개 워크플로 `Deploy Cloudflare Pages`는 실행하면 `dan`으로 나간다. staging은 `Deploy Cloudflare Staging`만 쓰며, 프로젝트 이름은 `dan-v1-staging-jongwoon`이다. 점유된 `dan-staging`은 쓰지 않는다.
 
 필요한 값 (production 값을 복사하지 않음):
 
 - 새 Supabase staging project URL / anon key (`STAGING_VITE_SUPABASE_*`)
-- Auth Site URL과 redirect allow-list (`http://localhost:5173`과 `https://dan-staging.pages.dev`)
-- Cloudflare 프로젝트 `dan-staging`, `STAGING_CLOUDFLARE_API_TOKEN`, `STAGING_CLOUDFLARE_ACCOUNT_ID`
+- Auth Site URL과 redirect allow-list (`http://localhost:5173`과 `https://dan-v1-staging-jongwoon.pages.dev`)
+- Cloudflare 프로젝트 `dan-v1-staging-jongwoon`, `STAGING_CLOUDFLARE_API_TOKEN`, `STAGING_CLOUDFLARE_ACCOUNT_ID`
 - Live Demand seed를 원격에 넣을 때 `SUPABASE_DB_URL` (staging DB만), `DAN_SEED_TARGET=staging`, `DAN_STAGING_CONFIRM=seed-staging-only`
 - seed 전에 staging 계정 1개 (프로필이 없으면 seed SQL이 수요를 만들지 않고 예외를 낸다)
 

@@ -3,7 +3,8 @@ name: Deploy Cloudflare Staging
 # Staging only. Never deploys the public Cloudflare project `dan`
 # and never reads production GitHub secrets (VITE_SUPABASE_*, CLOUDFLARE_*).
 # Do not enable push/main triggers. Do not run this workflow until a human
-# creates the dan-staging Pages project and staging GitHub secrets.
+# creates the dan-v1-staging-jongwoon Pages project and staging GitHub secrets.
+# Never use occupied dan-staging.pages.dev.
 
 on:
   workflow_dispatch:
@@ -26,10 +27,10 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: staging
-      url: https://dan-staging.pages.dev
+      url: https://dan-v1-staging-jongwoon.pages.dev
     env:
       DAN_ENV: staging
-      STAGING_CLOUDFLARE_PROJECT: dan-staging
+      STAGING_CLOUDFLARE_PROJECT: dan-v1-staging-jongwoon
       STAGING_DEPLOY_CONFIRM: ${{ inputs.confirm }}
       STAGING_VITE_SUPABASE_URL: ${{ secrets.STAGING_VITE_SUPABASE_URL }}
       STAGING_VITE_SUPABASE_ANON_KEY: ${{ secrets.STAGING_VITE_SUPABASE_ANON_KEY }}
@@ -45,8 +46,8 @@ jobs:
             echo "REFUSED: type deploy-staging-only"
             exit 1
           fi
-          if [ "${STAGING_CLOUDFLARE_PROJECT}" != "dan-staging" ]; then
-            echo "REFUSED: Cloudflare project must be dan-staging"
+          if [ "${STAGING_CLOUDFLARE_PROJECT}" != "dan-v1-staging-jongwoon" ]; then
+            echo "REFUSED: Cloudflare project must be dan-v1-staging-jongwoon"
             exit 1
           fi
 
@@ -67,9 +68,9 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.STAGING_VITE_SUPABASE_ANON_KEY }}
         run: npm run build
 
-      - name: Publish to Cloudflare Pages project dan-staging
+      - name: Publish to Cloudflare Pages project dan-v1-staging-jongwoon
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.STAGING_CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.STAGING_CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=dan-staging --commit-dirty=true
+          command: pages deploy dist --project-name=dan-v1-staging-jongwoon --commit-dirty=true

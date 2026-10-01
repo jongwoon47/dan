@@ -31,6 +31,12 @@ describe("assertStagingDeployAllowed", () => {
         STAGING_CLOUDFLARE_PROJECT: "dan",
       }).code,
     ).toBe(1);
+    expect(
+      assertStagingDeployAllowed({
+        ...staging,
+        STAGING_CLOUDFLARE_PROJECT: "dan-staging",
+      }).code,
+    ).toBe(1);
   });
 
   it("asks for confirmation and staging public values instead of inventing them", () => {

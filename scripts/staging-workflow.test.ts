@@ -19,7 +19,7 @@ describe("Cloudflare workflow isolation", () => {
     expect(yml).not.toContain(`--project-name=${STAGING_CLOUDFLARE_PROJECT}`);
   });
 
-  it("deploys staging only to dan-staging with staging secrets", () => {
+  it("deploys staging only to the isolated Cloudflare project with staging secrets", () => {
     const yml = readFileSync(
       path.join(root, ".github/workflows/deploy-cloudflare-staging.yml"),
       "utf8",

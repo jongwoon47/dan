@@ -1,7 +1,7 @@
 name: Deploy Cloudflare Pages
 
 # PRODUCTION. Target: https://dan.pages.dev (project name: dan).
-# Staging uses Deploy Cloudflare Staging / project dan-staging instead.
+# Staging uses Deploy Cloudflare Staging / project dan-v1-staging-jongwoon instead.
 # Manual until CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID are set.
 
 on:
