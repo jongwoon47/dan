@@ -2536,3 +2536,94 @@ body {
     right: 5px;
   }
 }
+
+
+/* Showcase parity micro-pass ---------------------------------------------- */
+
+.home-demand-header {
+  min-height: 338px;
+}
+
+.home-demand-heading {
+  width: 66%;
+}
+
+.home-demand-heading h1 {
+  max-width: none;
+  font-size: clamp(1.9rem, 8.3vw, 2.28rem);
+  line-height: 1.01;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+
+.home-hero-product--1 {
+  top: 61px;
+  right: 21px;
+  transform: rotate(-7deg) scale(.82);
+}
+
+.home-hero-product--2 {
+  top: 118px;
+  right: 70px;
+  transform: rotate(7deg) scale(.74);
+}
+
+.home-hero-product--3 {
+  top: 151px;
+  right: 8px;
+  transform: rotate(-4deg) scale(.70);
+}
+
+.trade-status {
+  padding: 10px 11px !important;
+}
+
+.trade-status__product {
+  grid-template-columns: 43px minmax(0,1fr);
+  gap: 9px;
+  margin-bottom: 6px;
+}
+
+.trade-status__product .product-visual--sm {
+  width: 43px !important;
+  height: 43px !important;
+  border-radius: 12px !important;
+}
+
+.trade-status__product span {
+  font-size: .59rem;
+}
+
+.trade-status__product strong {
+  font-size: .75rem;
+}
+
+.trade-status__state {
+  font-size: .84rem !important;
+}
+
+.trade-status__hint {
+  margin-top: 3px !important;
+  font-size: .68rem !important;
+  line-height: 1.38 !important;
+}
+
+.trade-status__actions {
+  margin-top: 7px !important;
+}
+
+.trade-status__actions .dan-btn {
+  min-height: 39px;
+  border-radius: 12px;
+  font-size: .74rem;
+}
+
+@media (max-width: 390px) {
+  .home-demand-heading {
+    width: 67%;
+  }
+
+  .home-demand-heading h1 {
+    font-size: 2rem;
+  }
+}
