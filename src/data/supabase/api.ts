@@ -17,6 +17,7 @@ import {
   productMatchKey,
 } from "@/domain/productName";
 import type {
+  ChatMessage,
   Demand,
   DemandAggregate,
   DealDispute,
@@ -26,6 +27,7 @@ import type {
   Match,
   Ownership,
   Product,
+  ProductCategory,
   Response,
   SellIntent,
   User,
@@ -349,6 +351,59 @@ export async function listBuyAggregates(): Promise<
   }));
 }
 
+export type RemoteLiveDemandRow = {
+  product: Product;
+  aggregate: DemandAggregate;
+  latestDemandAt: string;
+};
+
+export async function searchLiveDemandRemote(input: {
+  query?: string;
+  category?: ProductCategory | "all";
+  sort?: "popular" | "growing" | "price";
+  limit?: number;
+  offset?: number;
+}): Promise<{ rows: RemoteLiveDemandRow[]; total: number }> {
+  const { data, error } = await getSupabase().rpc("search_live_demand", {
+    p_query: input.query?.trim() ?? "",
+    p_category:
+      !input.category || input.category === "all" ? null : input.category,
+    p_sort: input.sort ?? "popular",
+    p_limit: input.limit ?? 24,
+    p_offset: input.offset ?? 0,
+  });
+  if (error) throw error;
+
+  const rawRows = (data ?? []) as Array<Record<string, unknown>>;
+  const rows: RemoteLiveDemandRow[] = rawRows.map((row) => ({
+    product: {
+      id: String(row.product_id),
+      name: String(row.canonical_name),
+      brand: String(row.brand ?? ""),
+      model: String(row.model ?? ""),
+      category: String(row.category) as ProductCategory,
+      imageHue: Number(row.image_hue ?? 220),
+      createdAt: String(row.product_created_at),
+    },
+    aggregate: {
+      productId: String(row.product_id),
+      seekerCount: Number(row.seeker_count ?? 0),
+      minPrice: Number(row.min_price ?? 0),
+      maxPrice: Number(row.max_price ?? 0),
+      avgPrice: Number(row.avg_price ?? 0),
+      recent7dDelta: Number(row.recent_7d_delta ?? 0),
+      highestIntentPrice: Number(row.highest_intent_price ?? 0),
+      priceBuckets: [],
+    },
+    latestDemandAt: String(row.latest_demand_at ?? row.product_created_at),
+  }));
+
+  return {
+    rows,
+    total: rawRows.length ? Number(rawRows[0]?.total_count ?? rawRows.length) : 0,
+  };
+}
+
 export async function createDemandRemote(input: CreateDemandInput): Promise<Demand> {
   const sb = getSupabase();
   const { data: auth } = await sb.auth.getUser();
@@ -613,28 +668,63 @@ export async function updateDemandRemote(input: {
   return demand;
 }
 
-export async function listMessagesRemote(matchId: string) {
-  const { data, error } = await getSupabase()
-    .from("messages")
-    .select("*")
-    .eq("match_id", matchId)
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []).map((row: {
-    id: string;
-    match_id: string;
-    sender_id: string;
-    body: string;
-    created_at: string;
-    read_at: string | null;
-  }) => ({
+type DbChatMessageRow = {
+  id: string;
+  match_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+  read_at: string | null;
+};
+
+function mapChatMessage(row: DbChatMessageRow): ChatMessage {
+  return {
     id: row.id,
     matchId: row.match_id,
     senderId: row.sender_id,
     body: row.body,
     createdAt: row.created_at,
     readAt: row.read_at ?? undefined,
-  }));
+  };
+}
+
+export async function listMessagesRemote(matchId: string): Promise<ChatMessage[]> {
+  const { data, error } = await getSupabase()
+    .from("messages")
+    .select("*")
+    .eq("match_id", matchId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return ((data ?? []) as DbChatMessageRow[]).map(mapChatMessage);
+}
+
+export function subscribeMessagesRemote(
+  matchId: string,
+  onMessage: (message: ChatMessage) => void,
+  onStatus?: (status: string) => void,
+): () => void {
+  const sb = getSupabase();
+  const channel = sb
+    .channel(`dan-match-${matchId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "messages",
+        filter: `match_id=eq.${matchId}`,
+      },
+      (payload) => {
+        const row = payload.new as unknown as DbChatMessageRow;
+        if (!row?.id || row.match_id !== matchId) return;
+        onMessage(mapChatMessage(row));
+      },
+    )
+    .subscribe((status) => onStatus?.(status));
+
+  return () => {
+    void sb.removeChannel(channel);
+  };
 }
 
 export async function sendMessageRemote(matchId: string, body: string) {
