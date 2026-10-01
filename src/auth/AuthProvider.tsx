@@ -43,34 +43,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setStatus("authenticated");
       return;
     }
+
     let cancelled = false;
+    let sessionRevision = 0;
     const sb = getSupabase();
 
-    sb.auth.getSession().then(async ({ data }) => {
-      if (cancelled) return;
-      setSession(data.session);
-      if (data.session) {
-        const u = await api.fetchSessionUser();
-        if (!cancelled) {
-          setUser(u);
-          setStatus("authenticated");
-        }
-      } else {
-        setUser(null);
-        setStatus("anonymous");
-      }
+    const fallbackUser = (next: Session): User => ({
+      id: next.user.id,
+      name: next.user.email ?? "DAN user",
+      defaultArea: "",
     });
 
-    const { data: sub } = sb.auth.onAuthStateChange(async (_event, next) => {
+    const applySession = async (next: Session | null) => {
+      const revision = ++sessionRevision;
+      if (cancelled) return;
       setSession(next);
-      if (next) {
-        const u = await api.fetchSessionUser();
-        setUser(u);
-        setStatus("authenticated");
-      } else {
+
+      if (!next) {
         setUser(null);
         setStatus("anonymous");
+        return;
       }
+
+      try {
+        const profileUser = await api.fetchSessionUser();
+        if (cancelled || revision !== sessionRevision) return;
+        setUser(profileUser ?? fallbackUser(next));
+        setError(null);
+        setStatus("authenticated");
+      } catch {
+        if (cancelled || revision !== sessionRevision) return;
+        // Preserve an otherwise valid auth session even when the profile
+        // request is temporarily unavailable. The data provider owns retry UX.
+        setUser(fallbackUser(next));
+        setError("profile");
+        setStatus("authenticated");
+      }
+    };
+
+    void sb.auth
+      .getSession()
+      .then(({ data, error: sessionError }) => {
+        if (sessionError) throw sessionError;
+        return applySession(data.session);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSession(null);
+        setUser(null);
+        setError("auth");
+        setStatus("anonymous");
+      });
+
+    const { data: sub } = sb.auth.onAuthStateChange((_event, next) => {
+      void applySession(next);
     });
 
     return () => {
@@ -102,7 +128,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     setError(null);
     if (mode === "demo") return;
-    await api.signOut();
+    try {
+      await api.signOut();
+    } catch (e) {
+      setError("auth");
+      throw e;
+    }
   }, [mode]);
 
   const value = useMemo<AuthContextValue>(

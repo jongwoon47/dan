@@ -1,23 +1,16 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
-import { ko } from "@/copy/ko";
 import { DanProvider } from "@/domain/store";
 import { HomePage } from "@/pages/HomePage";
 
 describe("HomePage", () => {
-  it("renders composer-first home and mixed demand feed", () => {
-    render(
-      <DanProvider>
-        <MemoryRouter>
-          <HomePage />
-        </MemoryRouter>
-      </DanProvider>,
-    );
-
-    expect(screen.getByRole("heading", { name: ko.composerTitle })).toBeInTheDocument();
-    expect(screen.getAllByText(ko.typeBuy).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(ko.typeTask).length).toBeGreaterThan(0);
-    expect(screen.getByText(ko.feedNowTitle)).toBeInTheDocument();
+  it("renders the open-catalog DAN live-demand home", () => {
+    render(<DanProvider><MemoryRouter><HomePage /></MemoryRouter></DanProvider>);
+    expect(screen.getByRole("heading",{ name:"지금 사고 있는 사람들" })).toBeInTheDocument();
+    expect(screen.getByText("iPhone 15 Pro")).toBeInTheDocument();
+    expect(screen.getByRole("button",{ name:/전자기기/ })).toBeInTheDocument();
+    expect(screen.getByRole("link",{ name:/내 구매수요/ })).toHaveAttribute("href","/my");
+    expect(screen.getByText(/전체 \d+/)).toBeInTheDocument();
   });
 });

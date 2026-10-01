@@ -31,6 +31,15 @@ describe("productMatchKey", () => {
     expect(productMatchKey("에어팟 프로 2")).toBe(
       productMatchKey("AirPods Pro 2"),
     );
+    expect(productMatchKey("후지필름 X100VI")).toBe(
+      productMatchKey("Fujifilm X100VI"),
+    );
+    expect(productMatchKey("소니 A7 IV")).toBe(
+      productMatchKey("Sony A7 IV"),
+    );
+    expect(productMatchKey("닌텐도 스위치 OLED")).toBe(
+      productMatchKey("Nintendo Switch OLED"),
+    );
   });
 
   it("finds catalog rows by match key", () => {

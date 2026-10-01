@@ -9,16 +9,17 @@ import {
 } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { ProductVisual } from "@/components/ProductVisual";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
-import type { ChatMessage, Demand, Match } from "@/domain/types";
+import type { ChatMessage, DealSnapshot, Demand, Match } from "@/domain/types";
 import "./pages.css";
 
-const POLL_MS = 8000;
+const POLL_MS = 60_000;
 const CHAT_STATUSES = new Set(["CONNECTED", "COMPLETED", "CLOSED"]);
 
 function dayKey(iso: string) {
@@ -77,20 +78,25 @@ export function MatchChatPage() {
   const {
     myMatches,
     getDemand,
+    getProduct,
     currentUser,
     listMessages,
+    subscribeMessages,
     sendMessage,
     markMessagesRead,
     confirmMatchCompletion,
     closeMatch,
+    cancelDeal,
     reopenDemandAfterTradeClose,
     blockUser,
     reportUser,
     getPublicProfile,
+    getDealSnapshot,
     busy,
   } = useDan();
   const match = myMatches.find((m) => m.id === matchId);
   const demand = match ? getDemand(match.demandId) : undefined;
+  const chatProduct = match?.productId ? getProduct(match.productId) : undefined;
   const isDemandOwner =
     Boolean(currentUser && demand && demand.userId === currentUser.id);
   const canReopenDemand =
@@ -113,6 +119,7 @@ export function MatchChatPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [peerName, setPeerName] = useState("");
+  const [dealSnapshot, setDealSnapshot] = useState<DealSnapshot | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const onMenuOpenChange = useCallback((open: boolean) => {
     setMenuOpen(open);
@@ -124,6 +131,8 @@ export function MatchChatPage() {
     "spam" | "fraud" | "abuse" | "other"
   >("spam");
   const [toast, setToast] = useState<string | null>(null);
+  const [newMessageCount, setNewMessageCount] = useState(0);
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
   const initialScrollDone = useRef(false);
@@ -146,14 +155,67 @@ export function MatchChatPage() {
 
   useEffect(() => {
     void load();
+
+    const unsubscribe = subscribeMessages(
+      matchId,
+      (message) => {
+        setMessages((prev) => {
+          const index = prev.findIndex((item) => item.id === message.id);
+          if (index >= 0) {
+            const next = [...prev];
+            next[index] = message;
+            return next;
+          }
+          return [...prev, message].sort((a, b) =>
+            a.createdAt.localeCompare(b.createdAt),
+          );
+        });
+
+        if (message.senderId !== currentUser?.id) {
+          if (!stickToBottomRef.current) {
+            setNewMessageCount((count) => count + 1);
+          }
+          void markMessagesRead(matchId);
+        }
+      },
+      (status) => {
+        setRealtimeConnected(status === "SUBSCRIBED");
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          void load();
+        }
+      },
+    );
+
     const onFocus = () => void load();
     window.addEventListener("focus", onFocus);
     const timer = window.setInterval(() => void load(), POLL_MS);
+
     return () => {
+      unsubscribe();
       window.removeEventListener("focus", onFocus);
       window.clearInterval(timer);
     };
-  }, [load]);
+  }, [
+    currentUser?.id,
+    load,
+    markMessagesRead,
+    matchId,
+    subscribeMessages,
+  ]);
+
+  useEffect(() => {
+    if (!matchId || demand?.type !== "BUY") {
+      setDealSnapshot(null);
+      return;
+    }
+    let cancelled = false;
+    void getDealSnapshot(matchId).then((row) => {
+      if (!cancelled) setDealSnapshot(row);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [getDealSnapshot, matchId, demand?.type, match?.dealStage]);
 
   useEffect(() => {
     if (!peerId) return;
@@ -171,6 +233,7 @@ export function MatchChatPage() {
     if (!el) return;
     const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
     stickToBottomRef.current = distance < 80;
+    if (stickToBottomRef.current) setNewMessageCount(0);
   }
 
   useEffect(() => {
@@ -179,13 +242,13 @@ export function MatchChatPage() {
     if (!initialScrollDone.current || stickToBottomRef.current) {
       el.scrollTop = el.scrollHeight;
       initialScrollDone.current = true;
+      setNewMessageCount(0);
     }
   }, [messages, loading, match?.status, match?.buyerCompletedAt, match?.sellerCompletedAt]);
 
   const demandTitle = useMemo(() => demand?.title ?? ko.chatTitle, [demand]);
   const displayPeer = peerName || "상대";
-  const canSend =
-    match?.status === "CONNECTED" || match?.status === "COMPLETED";
+  const canSend = match?.status === "CONNECTED";
 
   function goBack() {
     navigateBack(navigate, "/chats");
@@ -213,11 +276,21 @@ export function MatchChatPage() {
       setBody(text);
       return;
     }
-    await load();
+    setMessages((prev) =>
+      prev.some((message) => message.id === result.id)
+        ? prev
+        : [...prev, result],
+    );
+    setError(null);
+    void load();
   }
 
   const mineDone = currentUser ? iConfirmed(match, currentUser.id) : false;
   const peerDone = currentUser ? peerConfirmed(match, currentUser.id) : false;
+  const isBuyTrade = demand?.type === "BUY";
+  const buySnapshotLocked = Boolean(dealSnapshot?.lockedAt);
+  const buyPaid = match.paymentStatus === "PAID";
+  const buyComplete = match.status === "COMPLETED";
 
   let lastDay = "";
 
@@ -244,6 +317,11 @@ export function MatchChatPage() {
             )}
           </h1>
           <p className="chat-page__demand">{demandTitle}</p>
+          {realtimeConnected ? (
+            <span className="chat-realtime-status">
+              <i aria-hidden /> 실시간
+            </span>
+          ) : null}
           {demand ? (
             <Link
               to={`/demand/item/${demand.id}`}
@@ -272,8 +350,37 @@ export function MatchChatPage() {
         ) : null}
       </header>
 
+      {isBuyTrade ? (
+        <div className="chat-deal-progress" aria-label="거래 진행 단계">
+          <span className={buySnapshotLocked ? "is-done" : "is-current"}>
+            <i aria-hidden>{buySnapshotLocked ? "✓" : "1"}</i>
+            <b>조건</b>
+          </span>
+          <em aria-hidden />
+          <span className={buyPaid ? "is-done" : buySnapshotLocked ? "is-current" : ""}>
+            <i aria-hidden>{buyPaid ? "✓" : "2"}</i>
+            <b>결제</b>
+          </span>
+          <em aria-hidden />
+          <span className={buyComplete ? "is-done" : buyPaid ? "is-current" : ""}>
+            <i aria-hidden>{buyComplete ? "✓" : "3"}</i>
+            <b>인계</b>
+          </span>
+        </div>
+      ) : null}
+
       <section className="trade-status" aria-live="polite">
-        <p className="trade-status__title">{demandTitle}</p>
+        {isBuyTrade && chatProduct ? (
+          <div className="trade-status__product">
+            <ProductVisual product={chatProduct} size="sm" />
+            <div>
+              <span>{chatProduct.brand || "DAN"}</span>
+              <strong>{demandTitle}</strong>
+            </div>
+          </div>
+        ) : (
+          <p className="trade-status__title">{demandTitle}</p>
+        )}
         {match.status === "COMPLETED" ? (
           <>
             <p className="trade-status__state">✓ {ko.tradeDoneTitle}</p>
@@ -305,6 +412,61 @@ export function MatchChatPage() {
             ) : (
               <p className="trade-status__hint">{ko.tradePeerClosed}</p>
             )}
+          </>
+        ) : isBuyTrade && !buySnapshotLocked ? (
+          <>
+            <p className="trade-status__state">거래 조건 확인이 먼저 필요해요</p>
+            <p className="trade-status__hint">
+              판매자가 제출한 상태와 가격을 양쪽이 확인하면 Deal Snapshot이 고정됩니다.
+            </p>
+            <div className="trade-status__actions">
+              <Button to={`/deal/${match.id}/snapshot`} fullWidth>
+                거래 조건 확인
+              </Button>
+              <Button
+                fullWidth
+                variant="secondary"
+                disabled={busy}
+                onClick={() => setConfirm("cancel")}
+              >
+                거래 취소
+              </Button>
+            </div>
+          </>
+        ) : isBuyTrade && !buyPaid ? (
+          <>
+            <p className="trade-status__state">안전결제 연결 전 단계예요</p>
+            <p className="trade-status__hint">
+              Deal Snapshot은 확정됐습니다. PG 안전결제가 실제 연동되기 전에는 이 화면에서 실거래 완료 처리를 허용하지 않습니다.
+            </p>
+            <div className="trade-status__actions">
+              <Button to={`/deal/${match.id}/payment`} fullWidth>
+                안전결제
+              </Button>
+              <Button to={`/deal/${match.id}/snapshot`} fullWidth variant="secondary">
+                확정된 거래 조건 보기
+              </Button>
+              <Button
+                fullWidth
+                variant="secondary"
+                disabled={busy}
+                onClick={() => setConfirm("cancel")}
+              >
+                거래 취소
+              </Button>
+            </div>
+          </>
+        ) : isBuyTrade && buyPaid ? (
+          <>
+            <p className="trade-status__state">물품 인계 확인 단계예요</p>
+            <p className="trade-status__hint">
+              거래 완료는 채팅이 아니라 잠긴 Deal Snapshot과 실제 물품을 다시 확인하는 화면에서 진행합니다.
+            </p>
+            <div className="trade-status__actions">
+              <Button to={`/deal/${match.id}/handoff`} fullWidth>
+                물품 인계 최종 확인
+              </Button>
+            </div>
           </>
         ) : peerDone && !mineDone ? (
           <>
@@ -379,17 +541,37 @@ export function MatchChatPage() {
                 className={mine ? "chat-bubble chat-bubble--mine" : "chat-bubble"}
               >
                 <p>{m.body}</p>
-                <time dateTime={m.createdAt}>
-                  {new Date(m.createdAt).toLocaleTimeString("ko-KR", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </time>
+                <div className="chat-bubble__meta">
+                  <time dateTime={m.createdAt}>
+                    {new Date(m.createdAt).toLocaleTimeString("ko-KR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </time>
+                  {mine ? (
+                    <span>{m.readAt ? "읽음" : "전송됨"}</span>
+                  ) : null}
+                </div>
               </div>
             </div>
           );
         })}
       </div>
+
+      {newMessageCount > 0 ? (
+        <button
+          type="button"
+          className="chat-new-message"
+          onClick={() => {
+            const el = threadRef.current;
+            if (el) el.scrollTop = el.scrollHeight;
+            stickToBottomRef.current = true;
+            setNewMessageCount(0);
+          }}
+        >
+          새 메시지 {newMessageCount}개 ↓
+        </button>
+      ) : null}
 
       {canSend ? (
         <form className="chat-composer" onSubmit={(e) => void onSend(e)}>
@@ -406,7 +588,9 @@ export function MatchChatPage() {
         </form>
       ) : (
         <p className="chat-composer chat-composer--closed muted">
-          {ko.tradeClosedTitle}
+          {match.status === "COMPLETED"
+            ? "거래가 완료되어 채팅이 읽기 전용이에요."
+            : ko.tradeClosedTitle}
         </p>
       )}
 
@@ -432,7 +616,17 @@ export function MatchChatPage() {
         danger
         onCancel={() => setConfirm(null)}
         onConfirm={() => {
-          void closeMatch(matchId).then((updated) => {
+          const action =
+            demand?.type === "BUY"
+              ? cancelDeal({
+                  matchId,
+                  reason:
+                    currentUser?.id === match.buyerId
+                      ? "BUYER_CHANGED_MIND"
+                      : "SELLER_CHANGED_MIND",
+                })
+              : closeMatch(matchId);
+          void action.then((updated) => {
             setConfirm(null);
             if (!updated) setError(ko.genericError);
           });
