@@ -1,18 +1,26 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AggregatedDemandCard } from "@/components/AggregatedDemandCard";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { TextInput } from "@/components/ui/Input";
+import {
+  searchLiveDemandRemote,
+  type RemoteLiveDemandRow,
+} from "@/data/supabase/api";
+import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
 import {
   filterAndSortLiveDemand,
   liveDemandCategoryCounts,
   type LiveDemandCategory,
+  type LiveDemandRow,
   type LiveDemandSort,
 } from "@/domain/liveDemandDiscovery";
 import { CATEGORY_LABEL } from "@/domain/types";
 import "./pages.css";
 import "@/components/feedCards.css";
+
+const PAGE_SIZE = 24;
 
 const SORT_OPTIONS: Array<{ value: LiveDemandSort; label: string }> = [
   { value: "popular", label: "인기" },
@@ -20,18 +28,34 @@ const SORT_OPTIONS: Array<{ value: LiveDemandSort; label: string }> = [
   { value: "price", label: "희망가" },
 ];
 
+function toFeedRow(row: RemoteLiveDemandRow): LiveDemandRow {
+  return {
+    kind: "aggregated",
+    id: `remote:${row.product.id}`,
+    product: row.product,
+    aggregate: row.aggregate,
+    sortAt: row.latestDemandAt,
+  };
+}
+
 export function DemandFeedPage() {
   const { demandFeed } = useDan();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<LiveDemandCategory>("all");
   const [sort, setSort] = useState<LiveDemandSort>("popular");
+  const [page, setPage] = useState(0);
+  const [remoteRows, setRemoteRows] = useState<LiveDemandRow[]>([]);
+  const [remoteTotal, setRemoteTotal] = useState(0);
+  const [remoteLoading, setRemoteLoading] = useState(false);
+  const [remoteReady, setRemoteReady] = useState(false);
+  const productionDiscovery = getDataMode() === "supabase";
 
   const categoryRows = useMemo(
     () => liveDemandCategoryCounts(demandFeed),
     [demandFeed],
   );
 
-  const filtered = useMemo(
+  const localRows = useMemo(
     () =>
       filterAndSortLiveDemand(demandFeed, {
         query,
@@ -41,13 +65,80 @@ export function DemandFeedPage() {
     [category, demandFeed, query, sort],
   );
 
+  useEffect(() => {
+    if (!productionDiscovery) {
+      setRemoteRows([]);
+      setRemoteTotal(0);
+      setRemoteReady(false);
+      return;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      setRemoteLoading(true);
+      void searchLiveDemandRemote({
+        query,
+        category,
+        sort,
+        limit: PAGE_SIZE,
+        offset: page * PAGE_SIZE,
+      })
+        .then((result) => {
+          if (cancelled) return;
+          const next = result.rows.map(toFeedRow);
+          setRemoteRows((prev) => {
+            if (page === 0) return next;
+            const map = new Map(prev.map((row) => [row.product.id, row]));
+            for (const row of next) map.set(row.product.id, row);
+            return [...map.values()];
+          });
+          setRemoteTotal(result.total);
+          setRemoteReady(true);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          // Keep the locally hydrated feed as a resilient fallback.
+          setRemoteReady(false);
+        })
+        .finally(() => {
+          if (!cancelled) setRemoteLoading(false);
+        });
+    }, 180);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [category, page, productionDiscovery, query, sort]);
+
+  const filtered =
+    productionDiscovery && remoteReady ? remoteRows : localRows;
+  const totalProducts =
+    productionDiscovery && remoteReady ? remoteTotal : filtered.length;
   const activeSeekers = filtered.reduce(
     (sum, row) => sum + row.aggregate.seekerCount,
     0,
   );
+  const hasMore =
+    productionDiscovery && remoteReady && filtered.length < remoteTotal;
   const demandHref = query.trim()
     ? `/buy/new?q=${encodeURIComponent(query.trim())}`
     : "/buy/new";
+
+  function updateQuery(value: string) {
+    setQuery(value);
+    setPage(0);
+  }
+
+  function updateCategory(value: LiveDemandCategory) {
+    setCategory(value);
+    setPage(0);
+  }
+
+  function updateSort(value: LiveDemandSort) {
+    setSort(value);
+    setPage(0);
+  }
 
   return (
     <div className="page-stack discovery-page">
@@ -70,7 +161,7 @@ export function DemandFeedPage() {
           </span>
           <TextInput
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => updateQuery(e.target.value)}
             placeholder="제품, 브랜드, 카테고리 검색"
             aria-label="Live Demand 검색"
             autoComplete="off"
@@ -80,7 +171,7 @@ export function DemandFeedPage() {
               type="button"
               className="discovery-search__clear"
               aria-label="검색어 지우기"
-              onClick={() => setQuery("")}
+              onClick={() => updateQuery("")}
             >
               ×
             </button>
@@ -91,7 +182,7 @@ export function DemandFeedPage() {
           <button
             type="button"
             className={category === "all" ? "discovery-chip is-active" : "discovery-chip"}
-            onClick={() => setCategory("all")}
+            onClick={() => updateCategory("all")}
           >
             전체
           </button>
@@ -100,7 +191,7 @@ export function DemandFeedPage() {
               key={itemCategory}
               type="button"
               className={category === itemCategory ? "discovery-chip is-active" : "discovery-chip"}
-              onClick={() => setCategory(itemCategory)}
+              onClick={() => updateCategory(itemCategory)}
             >
               {CATEGORY_LABEL[itemCategory]} <span>{count}</span>
             </button>
@@ -109,7 +200,10 @@ export function DemandFeedPage() {
 
         <div className="discovery-toolbar">
           <p className="discovery-summary" aria-live="polite">
-            <strong>{filtered.length}</strong>개 제품 · <strong>{activeSeekers}</strong>명 구매수요
+            <strong>{totalProducts}</strong>개 제품
+            {filtered.length > 0 ? (
+              <> · 현재 <strong>{activeSeekers}</strong>명 구매수요</>
+            ) : null}
           </p>
           <div className="discovery-sort" aria-label="정렬">
             {SORT_OPTIONS.map((option) => (
@@ -118,7 +212,7 @@ export function DemandFeedPage() {
                 type="button"
                 className={sort === option.value ? "is-active" : ""}
                 aria-pressed={sort === option.value}
-                onClick={() => setSort(option.value)}
+                onClick={() => updateSort(option.value)}
               >
                 {option.label}
               </button>
@@ -127,7 +221,7 @@ export function DemandFeedPage() {
         </div>
       </section>
 
-      {filtered.length === 0 ? (
+      {filtered.length === 0 && !remoteLoading ? (
         <EmptyState
           title={
             query.trim()
@@ -142,15 +236,34 @@ export function DemandFeedPage() {
           }
         />
       ) : (
-        <div className="live-demand-list live-demand-list--discovery">
-          {filtered.map((item) => (
-            <AggregatedDemandCard
-              key={item.id}
-              product={item.product}
-              aggregate={item.aggregate}
-            />
-          ))}
-        </div>
+        <>
+          <div
+            className="live-demand-list live-demand-list--discovery"
+            aria-busy={remoteLoading}
+          >
+            {filtered.map((item) => (
+              <AggregatedDemandCard
+                key={item.id}
+                product={item.product}
+                aggregate={item.aggregate}
+              />
+            ))}
+          </div>
+          {remoteLoading ? (
+            <p className="discovery-loading" role="status">
+              Live Demand 불러오는 중…
+            </p>
+          ) : null}
+          {hasMore ? (
+            <Button
+              variant="secondary"
+              fullWidth
+              onClick={() => setPage((value) => value + 1)}
+            >
+              더 보기
+            </Button>
+          ) : null}
+        </>
       )}
 
       <section className="discovery-create-banner">
