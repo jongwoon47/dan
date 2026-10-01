@@ -132,3 +132,74 @@
   border-radius: 18px;
   font-size: 1.15rem;
 }
+
+
+/* Premium named product artwork ------------------------------------------- */
+
+.product-visual--rich {
+  background:
+    radial-gradient(circle at 50% 28%, rgba(255,255,255,.98) 0 22%, rgba(255,255,255,.55) 44%, transparent 66%),
+    linear-gradient(145deg, #f6f3ff 0%, #ebe8f7 100%);
+}
+
+.product-visual__named-art {
+  width: 82%;
+  height: 82%;
+  display: block;
+  filter: drop-shadow(0 9px 8px rgba(30, 27, 47, .18));
+}
+
+.product-visual--sm .product-visual__named-art {
+  width: 82%;
+  height: 82%;
+}
+
+.product-visual--md .product-visual__named-art {
+  width: 80%;
+  height: 80%;
+}
+
+.product-visual--lg .product-visual__named-art {
+  width: min(48%, 190px);
+  height: min(70%, 150px);
+}
+
+.product-visual__named-art--phone {
+  width: 58% !important;
+}
+
+.product-visual__named-art--laptop {
+  width: 88% !important;
+}
+
+.product-visual__named-art--chair {
+  width: 70% !important;
+}
+
+.product-visual__named-art--lens {
+  width: 68% !important;
+}
+
+.product-visual--cat-electronics {
+  background:
+    radial-gradient(circle at 48% 28%, rgba(255,255,255,.98), transparent 45%),
+    linear-gradient(145deg, #eef3fb, #e5e9f3);
+}
+
+.product-visual--cat-computer {
+  background:
+    radial-gradient(circle at 48% 26%, rgba(255,255,255,.98), transparent 44%),
+    linear-gradient(145deg, #f0efff, #e2e1f8);
+}
+
+.product-visual--cat-furniture {
+  background:
+    radial-gradient(circle at 48% 26%, rgba(255,255,255,.98), transparent 46%),
+    linear-gradient(145deg, #f8f1e9, #eee7df);
+}
+
+.product-visual--cat-lens {
+  background:
+    radial-gradient(circle at 50% 26%, rgba(255,255,255,.98), transparent 44%),
+    linear-gradient(145deg, #f1eff6, #e5e2eb);
+}
