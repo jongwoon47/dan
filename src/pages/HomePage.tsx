@@ -44,8 +44,13 @@ export function HomePage() {
         (item) => item.kind === "aggregated" && item.product.category === "camera",
       ),
       liveProducts.find(
-        (item) => item.kind === "aggregated" && item.product.category === "computer",
+        (item) =>
+          item.kind === "aggregated" &&
+          item.product.name.toLocaleLowerCase("en").includes("macbook"),
       ) ??
+        liveProducts.find(
+          (item) => item.kind === "aggregated" && item.product.category === "computer",
+        ) ??
         liveProducts.find(
           (item) => item.kind === "aggregated" && item.product.category === "electronics",
         ),
