@@ -36,6 +36,29 @@ export function HomePage() {
     [demandFeed],
   );
 
+  const heroProducts = useMemo(() => {
+    const picks = [
+      liveProducts.find(
+        (item) => item.kind === "aggregated" && item.product.category === "camera",
+      ),
+      liveProducts.find(
+        (item) =>
+          item.kind === "aggregated" &&
+          (item.product.category === "computer" ||
+            item.product.category === "electronics"),
+      ),
+      liveProducts.find(
+        (item) => item.kind === "aggregated" && item.product.category === "furniture",
+      ),
+    ];
+    const seen = new Set<string>();
+    return picks.filter((item) => {
+      if (!item || item.kind !== "aggregated" || seen.has(item.product.id)) return false;
+      seen.add(item.product.id);
+      return true;
+    });
+  }, [liveProducts]);
+
   const categoryRows = useMemo(() => {
     const counts = new Map<ProductCategory, number>();
     for (const item of liveProducts) {
@@ -76,7 +99,7 @@ export function HomePage() {
         </div>
 
         <div className="home-hero-products" aria-hidden>
-          {liveProducts.slice(0, 3).map((item, index) =>
+          {heroProducts.map((item, index) =>
             item.kind === "aggregated" ? (
               <span key={item.product.id} className={`home-hero-product home-hero-product--${index + 1}`}>
                 <ProductVisual product={item.product} size="md" />
