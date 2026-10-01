@@ -14,7 +14,8 @@
     "test:e2e:browser": "node --env-file=.env.local scripts/e2e-browser.mjs",
     "test:qa:mobile": "npx playwright test --config=playwright.visual.config.ts",
     "test:watch": "vitest",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "db:seed:staging": "node --experimental-strip-types scripts/seed-staging.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

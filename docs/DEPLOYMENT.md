@@ -34,6 +34,23 @@ npm run build
 npm run preview
 ```
 
+## Staging
+
+Use the same Cloudflare Pages build or `workflow_dispatch` on Deploy Cloudflare Pages. Put staging values in the environment secrets below. Do not reuse a production Supabase project.
+
+`npm run db:seed:staging` writes Live Demand rows only when `DAN_SEED_TARGET=staging` and `SUPABASE_DB_URL` are set. It exits before any write when those are missing, when demo mode is on, or when `DAN_ENV` / `NODE_ENV` is `production`.
+
+GitHub Actions secret names used by the existing workflows:
+
+| Name | Where | Secret? |
+|------|--------|---------|
+| `VITE_SUPABASE_URL` | Pages and Cloudflare build | No (public project URL) |
+| `VITE_SUPABASE_ANON_KEY` | Pages and Cloudflare build | Public client key |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare deploy | Yes |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare deploy | Yes |
+
+`VITE_BASE=/dan/` is set in the GitHub Pages workflow and is not a secret. There is no payment-provider secret in this repository.
+
 ## Cost assumption
 
 Fixed server cost target: **$0 / month** on Cloudflare Pages free + Supabase free tier, within free limits. No always-on app server.

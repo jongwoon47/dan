@@ -1,4 +1,5 @@
 import { navigateBack } from "@/lib/navBack";
+import { realtimeNotice } from "@/lib/realtimeStatus";
 import {
   useCallback,
   useEffect,
@@ -132,7 +133,7 @@ export function MatchChatPage() {
   >("spam");
   const [toast, setToast] = useState<string | null>(null);
   const [newMessageCount, setNewMessageCount] = useState(0);
-  const [realtimeConnected, setRealtimeConnected] = useState(false);
+  const [realtimeStatus, setRealtimeStatus] = useState("");
   const threadRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
   const initialScrollDone = useRef(false);
@@ -179,7 +180,7 @@ export function MatchChatPage() {
         }
       },
       (status) => {
-        setRealtimeConnected(status === "SUBSCRIBED");
+        setRealtimeStatus(status);
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
           void load();
         }
@@ -317,9 +318,14 @@ export function MatchChatPage() {
             )}
           </h1>
           <p className="chat-page__demand">{demandTitle}</p>
-          {realtimeConnected ? (
+          {realtimeNotice(realtimeStatus) === "live" ? (
             <span className="chat-realtime-status">
               <i aria-hidden /> 실시간
+            </span>
+          ) : null}
+          {realtimeNotice(realtimeStatus) === "recovering" ? (
+            <span className="chat-realtime-status" role="status">
+              실시간 연결이 끊겼어요. 메시지는 자동으로 다시 불러옵니다.
             </span>
           ) : null}
           {demand ? (
