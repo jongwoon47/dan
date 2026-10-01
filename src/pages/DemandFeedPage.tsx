@@ -125,17 +125,26 @@ export function DemandFeedPage() {
     ? `/buy/new?q=${encodeURIComponent(query.trim())}`
     : "/buy/new";
 
+  function resetRemoteDiscovery() {
+    setRemoteRows([]);
+    setRemoteTotal(0);
+    setRemoteReady(false);
+  }
+
   function updateQuery(value: string) {
+    resetRemoteDiscovery();
     setQuery(value);
     setPage(0);
   }
 
   function updateCategory(value: LiveDemandCategory) {
+    resetRemoteDiscovery();
     setCategory(value);
     setPage(0);
   }
 
   function updateSort(value: LiveDemandSort) {
+    resetRemoteDiscovery();
     setSort(value);
     setPage(0);
   }
