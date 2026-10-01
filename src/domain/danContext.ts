@@ -126,6 +126,11 @@ export interface DanContextValue {
   /** After CLOSED match: demand owner reactivates MATCHED → ACTIVE. */
   reopenDemandAfterTradeClose: (matchId: string) => Promise<Demand | null>;
   listMessages: (matchId: string) => Promise<ChatMessage[]>;
+  subscribeMessages: (
+    matchId: string,
+    onMessage: (message: ChatMessage) => void,
+    onStatus?: (status: string) => void,
+  ) => () => void;
   sendMessage: (matchId: string, body: string) => Promise<ChatMessage | null>;
   markMessagesRead: (matchId: string) => Promise<void>;
   activities: ActivityEvent[];
