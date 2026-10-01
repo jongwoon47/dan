@@ -59,7 +59,7 @@ export function HomePage() {
         category === "all" ||
         (item.kind === "aggregated" && item.product.category === category),
     )
-    .slice(0, 12);
+    .slice(0, 6);
 
   return (
     <div className="page-stack home-page home-page--v1">
@@ -154,6 +154,17 @@ export function HomePage() {
             )}
           </div>
         )}
+        {visibleProducts.length > 0 ? (
+          <div className="home-live-footer">
+            <div>
+              <strong>더 많은 제품을 찾고 있나요?</strong>
+              <span>전체 Live Demand에서 검색·카테고리·급상승 순으로 탐색할 수 있어요.</span>
+            </div>
+            <Button to="/feed" variant="secondary">
+              전체 탐색
+            </Button>
+          </div>
+        ) : null}
       </section>
 
       <section className="seller-entry-banner">
