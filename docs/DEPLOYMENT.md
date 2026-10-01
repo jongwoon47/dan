@@ -34,13 +34,18 @@ npm run build
 npm run preview
 ```
 
-## Staging
+## Staging (separate from production)
 
-Use the same Cloudflare Pages build or `workflow_dispatch` on Deploy Cloudflare Pages. Put staging values in the environment secrets below. Do not reuse a production Supabase project.
+Do **not** use Deploy Cloudflare Pages or Deploy GitHub Pages for staging.
+Those workflows target the public project `dan` / GitHub Pages `/dan/`.
 
-`npm run db:seed:staging` writes Live Demand rows only when `DAN_SEED_TARGET=staging` and `SUPABASE_DB_URL` are set. It exits before any write when those are missing, when demo mode is on, or when `DAN_ENV` / `NODE_ENV` is `production`.
+Staging uses a separate Cloudflare project `dan-v1-staging-jongwoon`, a separate Supabase
+project, GitHub Environment `staging`, and `STAGING_*` secret names.
+Full checklist: [STAGING.md](./STAGING.md).
 
-GitHub Actions secret names used by the existing workflows:
+`npm run db:seed:staging` writes Live Demand rows only when `DAN_SEED_TARGET=staging` and `SUPABASE_DB_URL` are set. Localhost still works without a project ref. Remote seed also needs `DAN_STAGING_CONFIRM=seed-staging-only` and `DAN_STAGING_SUPABASE_PROJECT_REF` matching the database host. It exits before any write when those are missing, when demo mode is on, when `DAN_ENV` / `NODE_ENV` is `production`, or when the URL is the known production Supabase project.
+
+GitHub Actions secret names used by the **production** workflows (do not copy into staging):
 
 | Name | Where | Secret? |
 |------|--------|---------|
@@ -48,6 +53,16 @@ GitHub Actions secret names used by the existing workflows:
 | `VITE_SUPABASE_ANON_KEY` | Pages and Cloudflare build | Public client key |
 | `CLOUDFLARE_API_TOKEN` | Cloudflare deploy | Yes |
 | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare deploy | Yes |
+
+Staging GitHub secret names (Environment `staging` only):
+
+| Name | Where | Secret? |
+|------|--------|---------|
+| `STAGING_VITE_SUPABASE_URL` | Deploy Cloudflare Staging build | Staging public URL |
+| `STAGING_VITE_SUPABASE_ANON_KEY` | Deploy Cloudflare Staging build | Staging public client key |
+| `STAGING_CLOUDFLARE_API_TOKEN` | Deploy Cloudflare Staging | Yes, staging-scoped |
+| `STAGING_CLOUDFLARE_ACCOUNT_ID` | Deploy Cloudflare Staging | Yes |
+| `STAGING_SUPABASE_DB_URL` | Manual seed only, not the deploy workflow | Yes |
 
 `VITE_BASE=/dan/` is set in the GitHub Pages workflow and is not a secret. There is no payment-provider secret in this repository.
 

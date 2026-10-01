@@ -7,7 +7,7 @@
 | 구분 | 상태 |
 |------|------|
 | CODE COMPLETE | 예. V1 구매수요 → 제안 → 연결 → 증거 → snapshot → 결제 게이트 → 인계 → 완료/취소가 코드에 있다. |
-| STAGING READY | 아니오. staging Supabase, redirect domain, Cloudflare staging 프로젝트, DB URL이 없다. |
+| STAGING READY | 아니오. 저장소에는 staging 분리 설계와 워크플로가 있다. 대시보드 프로젝트와 secret은 아직 없다. |
 | REQUIRES EXTERNAL CREDENTIAL | Supabase URL, anon key, Auth redirect, Cloudflare token/account, staging DB URL. |
 | REQUIRES REAL USER VALIDATION | 두 명의 실제 계정으로 한 거래. demo와 unit test는 그 자리를 대신하지 않는다. |
 
@@ -50,15 +50,14 @@ Supabase Auth / Postgres / Storage / Realtime. Cloudflare Pages 또는 GitHub Pa
 - GitHub Pages: `main` push와 `workflow_dispatch`. base `/dan/`. 워크플로 이름 Deploy GitHub Pages.
 - Cloudflare Pages: `workflow_dispatch`만. 프로젝트 이름은 `dan`이고 주석의 대상은 `https://dan.pages.dev`다. 이 워크플로는 staging 슬롯이 아니다.
 
-staging에 쓰려면 별도의 Supabase 프로젝트와 별도의 Pages 프로젝트가 필요하다. 지금 워크플로를 실행하면 공개 대상 `dan`으로 빌드가 나간다. 이번 준비에서는 실행하지 않았다.
+staging은 별도 문서 [STAGING.md](./STAGING.md)다. 공개 워크플로 `Deploy Cloudflare Pages`는 실행하면 `dan`으로 나간다. staging은 `Deploy Cloudflare Staging`만 쓰며, 프로젝트 이름은 `dan-v1-staging-jongwoon`이다. 점유된 `dan-staging`은 쓰지 않는다.
 
-필요한 값:
+필요한 값 (production 값을 복사하지 않음):
 
-- Supabase staging project URL
-- anon/publishable key
-- Auth Site URL과 redirect allow-list (`http://localhost:5173`과 staging origin)
-- staging Pages 프로젝트 이름과 Cloudflare token/account
-- Live Demand seed를 원격에 넣을 때 `SUPABASE_DB_URL`, `DAN_SEED_TARGET=staging`, `DAN_STAGING_CONFIRM=seed-staging-only`
+- 새 Supabase staging project URL / anon key (`STAGING_VITE_SUPABASE_*`)
+- Auth Site URL과 redirect allow-list (`http://localhost:5173`과 `https://dan-v1-staging-jongwoon.pages.dev`)
+- Cloudflare 프로젝트 `dan-v1-staging-jongwoon`, `STAGING_CLOUDFLARE_API_TOKEN`, `STAGING_CLOUDFLARE_ACCOUNT_ID`
+- Live Demand seed를 원격에 넣을 때 `SUPABASE_DB_URL` (staging DB만), `DAN_SEED_TARGET=staging`, `DAN_STAGING_CONFIRM=seed-staging-only`
 - seed 전에 staging 계정 1개 (프로필이 없으면 seed SQL이 수요를 만들지 않고 예외를 낸다)
 
 ## 10. Beta E2E checklist
@@ -74,7 +73,7 @@ staging에 쓰려면 별도의 Supabase 프로젝트와 별도의 Pages 프로�
 - staging/production 자격증명 없음. 가짜 값으로 채우지 않음.
 - analytics 이벤트가 화면에서 아직 호출되지 않음. contract만 있다.
 - 두 사용자 Realtime E2E는 자격증명 없이 실행하지 않음.
-- Cloudflare 워크플로의 프로젝트 이름이 공개 `dan`이라 staging으로 바로 쓸 수 없음.
+- staging/production 대시보드 프로젝트와 GitHub secret이 아직 없음. 워크플로는 작성만 하고 실행하지 않음.
 - 알 수 없는 경로는 404 문구 없이 홈으로 보낸다. 기존 동작이라 이번 릴리스에서 바꾸지 않음.
 - demo 사용자 이름은 fixture 고정이라 "긴 사용자명"은 채팅 제목(긴 제품명)으로만 자동화했다.
 

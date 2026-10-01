@@ -1,3 +1,12 @@
+import {
+  STAGING_PROJECT_REF_ENV,
+  STAGING_SEED_CONFIRM,
+  containsProductionSupabaseRef,
+  extractSupabaseProjectRef,
+  isForbiddenProductionTarget,
+  isLocalPostgresUrl,
+} from "./environmentSeparation.ts";
+
 export type StagingSeedDecision = {
   ok: boolean;
   code: 0 | 1 | 2;
@@ -54,13 +63,60 @@ export function assertStagingSeedAllowed(
     };
   }
 
-  const local = /@(localhost|127\.0\.0\.1)(:|\/)/i.test(dbUrl);
-  if (!local && env.DAN_STAGING_CONFIRM !== "seed-staging-only") {
+  if (isForbiddenProductionTarget(dbUrl)) {
+    return {
+      ok: false,
+      code: 1,
+      message:
+        "REFUSED: staging seed cannot use the production Supabase project or dan.pages.dev.",
+    };
+  }
+
+  if (isLocalPostgresUrl(dbUrl)) {
+    return { ok: true, code: 0, message: "staging seed allowed" };
+  }
+
+  if (env.DAN_STAGING_CONFIRM !== STAGING_SEED_CONFIRM) {
     return {
       ok: false,
       code: 2,
+      message: `NEEDS USER: remote staging seed requires DAN_STAGING_CONFIRM=${STAGING_SEED_CONFIRM}.`,
+    };
+  }
+
+  const expected = env.DAN_STAGING_SUPABASE_PROJECT_REF?.trim() ?? "";
+  if (!expected) {
+    return {
+      ok: false,
+      code: 2,
+      message: `NEEDS USER: ${STAGING_PROJECT_REF_ENV} must match the remote staging database. Do not hardcode a project ref.`,
+    };
+  }
+
+  if (containsProductionSupabaseRef(expected)) {
+    return {
+      ok: false,
+      code: 1,
+      message: "REFUSED: staging seed cannot use a production Supabase project ref.",
+    };
+  }
+
+  const actual = extractSupabaseProjectRef(dbUrl);
+  if (!actual) {
+    return {
+      ok: false,
+      code: 1,
       message:
-        "NEEDS USER: remote staging seed requires DAN_STAGING_CONFIRM=seed-staging-only.",
+        "REFUSED: could not read a Supabase project ref from SUPABASE_DB_URL.",
+    };
+  }
+
+  if (containsProductionSupabaseRef(actual) || actual !== expected.toLowerCase()) {
+    return {
+      ok: false,
+      code: 1,
+      message:
+        "REFUSED: SUPABASE_DB_URL project ref does not match DAN_STAGING_SUPABASE_PROJECT_REF.",
     };
   }
 
