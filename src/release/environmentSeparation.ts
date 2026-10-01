@@ -9,14 +9,17 @@ export const STAGING_CLOUDFLARE_PROJECT = "dan-staging";
 export const STAGING_PAGES_URL = "https://dan-staging.pages.dev";
 export const STAGING_DEPLOY_CONFIRM = "deploy-staging-only";
 export const STAGING_SEED_CONFIRM = "seed-staging-only";
+export const STAGING_REMOTE_CONFIRM = "apply-staging-only";
+export const PRODUCTION_REMOTE_CONFIRM = "apply-production-only";
 export const STAGING_GITHUB_ENVIRONMENT = "staging";
+export const STAGING_PROJECT_REF_ENV = "DAN_STAGING_SUPABASE_PROJECT_REF";
 
 export const PRODUCTION_CLOUDFLARE_PROJECT = "dan";
 export const PRODUCTION_PAGES_HOSTS = ["dan.pages.dev"] as const;
 
 /**
- * Hardcoded in legacy production-only scripts (`scripts/apply-migrations-remote.mjs`,
- * `scripts/apply-0016.mjs`). Staging URL/DB values must not contain this ref.
+ * Deny-list only. Never use these as a script default or implicit target.
+ * Legacy apply scripts used to hardcode the first ref as the execution URL.
  */
 export const PRODUCTION_SUPABASE_PROJECT_REFS = [
   "wmznpuhqmmqunwtewntt",
@@ -59,4 +62,27 @@ export function isForbiddenProductionTarget(value: string): boolean {
 
 export function isProductionCloudflareProject(name: string): boolean {
   return name.trim() === PRODUCTION_CLOUDFLARE_PROJECT;
+}
+
+export function isLocalPostgresUrl(value: string): boolean {
+  return /@(localhost|127\.0\.0\.1)(:|\/)/i.test(value);
+}
+
+/** Public project ref from a URL or host. Returns null when it cannot be determined. */
+export function extractSupabaseProjectRef(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const dbHost = trimmed.match(/@db\.([a-z0-9]+)\.supabase\.co(?:[:/?#]|$)/i);
+  if (dbHost?.[1]) return dbHost[1].toLowerCase();
+
+  const apiHost = trimmed.match(/^https?:\/\/([a-z0-9]+)\.supabase\.co(?:[:/?#]|$)/i);
+  if (apiHost?.[1]) return apiHost[1].toLowerCase();
+
+  if (/pooler\.supabase\.com/i.test(trimmed)) {
+    const poolerUser = trimmed.match(/:\/\/(?:postgres\.)([a-z0-9]+)[:@]/i);
+    if (poolerUser?.[1]) return poolerUser[1].toLowerCase();
+  }
+
+  return null;
 }

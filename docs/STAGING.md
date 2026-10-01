@@ -38,9 +38,10 @@ production secret 이름은 staging 워크플로가 읽지 않는다.
 
 가드:
 
-- `src/release/environmentSeparation.ts` — production 식별자 목록
+- `src/release/environmentSeparation.ts` — production 식별자 deny-list
 - `npm run assert:staging-deploy` — 배포 전 검사
-- `npm run db:seed:staging` — production env, demo, 알려진 production project ref 거부
+- `npm run db:seed:staging` — 로컬은 유지. 원격은 `DAN_STAGING_SUPABASE_PROJECT_REF`가 DB URL의 project ref와 일치해야 함. production ref는 항상 거부
+- `scripts/apply-migrations-remote.mjs` / `scripts/apply-0016.mjs` — default-deny. `DAN_ENV`와 confirm, 명시적 project ref 없이 원격 작업을 하지 않음. production ref를 기본값으로 쓰지 않음
 
 production으로 보이는 값이 있으면 배포/seed를 진행하지 말고 이 문서의 STOP POINT에서 멈춘다.
 
@@ -89,7 +90,7 @@ production으로 보이는 값이 있으면 배포/seed를 진행하지 말고 �
 7. [ ] Migrations `0001_initial.sql` … `0041_realtime_discovery.sql`을 **순서대로** 적용
     - CLI: 새 프로젝트에만 `supabase link` 후 `supabase db push`
     - 또는 Dashboard SQL Editor에 파일 순서대로 붙여넣기
-    - `scripts/apply-migrations-remote.mjs` / `scripts/apply-0016.mjs`는 production ref가 하드코딩되어 있으므로 **사용 금지**
+    - `scripts/apply-migrations-remote.mjs` / `scripts/apply-0016.mjs`는 default-deny다. staging이면 `DAN_ENV=staging`, `DAN_REMOTE_CONFIRM=apply-staging-only`, `DAN_STAGING_SUPABASE_PROJECT_REF`가 필요하다. 값이 없으면 실행하지 말고 SQL Editor를 쓴다.
 8. [ ] `0004` / `0018` 카탈로그 행은 마이그레이션에 포함됨. `supabase/seed.sql`은 `select 1`만 하므로 사용자/거래를 심지 않음
 9. [ ] Storage: `0022`가 private bucket `dan-v1-evidence`와 RLS를 만듦. 별도 public URL 변수 없음
 10. [ ] RLS / RPC: 마이그레이션이 전부. Edge Function 디렉터리 없음. 배포할 function 없음
@@ -97,7 +98,7 @@ production으로 보이는 값이 있으면 배포/seed를 진행하지 말고 �
 12. [ ] `service_role` only RPC (`settlement_mark_paid`, `settlement_mark_refunded`, `expire_unpaid_deals`, `ops_*`)는 앱 env가 아님
 13. [ ] staging에서 회원가입 1개 (프로필 필요)
 14. [ ] 로컬 또는 사람이 연결한 staging DB에서만:
-    `DAN_SEED_TARGET=staging DAN_STAGING_CONFIRM=seed-staging-only DAN_ENV=staging SUPABASE_DB_URL=... npm run db:seed:staging`
+    `DAN_SEED_TARGET=staging DAN_STAGING_CONFIRM=seed-staging-only DAN_ENV=staging DAN_STAGING_SUPABASE_PROJECT_REF=<staging-ref> SUPABASE_DB_URL=... npm run db:seed:staging`
 15. [ ] GitHub Environment `staging`에 `STAGING_*` secret 입력. production 값 복사 금지
 
 ## Cloudflare staging checklist

@@ -1,9 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { assertStagingSeedAllowed } from "./stagingSeedGuard";
+import { PRODUCTION_SUPABASE_PROJECT_REFS } from "./environmentSeparation";
 
 const local = {
   DAN_SEED_TARGET: "staging",
   SUPABASE_DB_URL: "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
+};
+
+const stagingRef = "stgstgprojectref001";
+const remote = {
+  DAN_SEED_TARGET: "staging",
+  DAN_STAGING_CONFIRM: "seed-staging-only",
+  DAN_STAGING_SUPABASE_PROJECT_REF: stagingRef,
+  SUPABASE_DB_URL: `postgresql://postgres:postgres@db.${stagingRef}.supabase.co:5432/postgres`,
 };
 
 describe("assertStagingSeedAllowed", () => {
@@ -34,27 +43,50 @@ describe("assertStagingSeedAllowed", () => {
   });
 
   it("asks for confirmation before writing a remote database", () => {
-    const remote = assertStagingSeedAllowed({
+    const unconfirmed = assertStagingSeedAllowed({
       DAN_SEED_TARGET: "staging",
-      SUPABASE_DB_URL: "postgresql://postgres:postgres@db.example.supabase.co:5432/postgres",
+      SUPABASE_DB_URL: remote.SUPABASE_DB_URL,
     });
-    expect(remote.code).toBe(2);
+    expect(unconfirmed.code).toBe(2);
+  });
+
+  it("asks for an expected staging project ref before remote seed", () => {
     expect(
       assertStagingSeedAllowed({
         DAN_SEED_TARGET: "staging",
         DAN_STAGING_CONFIRM: "seed-staging-only",
-        SUPABASE_DB_URL: "postgresql://postgres:postgres@db.example.supabase.co:5432/postgres",
-      }).ok,
-    ).toBe(true);
+        SUPABASE_DB_URL: remote.SUPABASE_DB_URL,
+      }).code,
+    ).toBe(2);
+  });
+
+  it("refuses a remote seed whose project ref does not match", () => {
+    expect(
+      assertStagingSeedAllowed({
+        ...remote,
+        DAN_STAGING_SUPABASE_PROJECT_REF: "otherstagingref0001",
+      }).code,
+    ).toBe(1);
+  });
+
+  it("allows a matching remote staging ref without contacting the database", () => {
+    expect(assertStagingSeedAllowed(remote).ok).toBe(true);
   });
 
   it("refuses the known production Supabase project ref", () => {
+    const prodRef = PRODUCTION_SUPABASE_PROJECT_REFS[0];
     expect(
       assertStagingSeedAllowed({
         DAN_SEED_TARGET: "staging",
         DAN_STAGING_CONFIRM: "seed-staging-only",
-        SUPABASE_DB_URL:
-          "postgresql://postgres:postgres@db.wmznpuhqmmqunwtewntt.supabase.co:5432/postgres",
+        DAN_STAGING_SUPABASE_PROJECT_REF: prodRef,
+        SUPABASE_DB_URL: `postgresql://postgres:postgres@db.${prodRef}.supabase.co:5432/postgres`,
+      }).code,
+    ).toBe(1);
+    expect(
+      assertStagingSeedAllowed({
+        ...remote,
+        DAN_STAGING_SUPABASE_PROJECT_REF: prodRef,
       }).code,
     ).toBe(1);
   });

@@ -1,22 +1,25 @@
 /**
- * PRODUCTION-ONLY. Hardcoded public Supabase project ref.
- * Do not run this for staging. Staging must use a new project and
- * `supabase db push` / SQL Editor. See docs/STAGING.md.
+ * Remote SQL apply. Default-deny.
+ * Requires DAN_ENV plus a matching confirm and an explicit project ref.
+ * Never defaults to a production Supabase project ref. See docs/STAGING.md.
  */
 import { readFileSync, writeFileSync, unlinkSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
+import { assertRemoteMigrationAllowed } from "../src/release/remoteDbTargetGuard.ts";
 
-if (
-  process.env.DAN_ENV === "staging" ||
-  process.env.DAN_SEED_TARGET === "staging"
-) {
-  throw new Error(
-    "REFUSED: this script targets the production Supabase project and must not run for staging.",
-  );
+const decision = assertRemoteMigrationAllowed(process.env);
+if (!decision.ok) {
+  console.error(decision.message);
+  process.exit(decision.code);
 }
 
-const REF = "wmznpuhqmmqunwtewntt";
+const REF = decision.projectRef ?? "";
+if (!REF) {
+  console.error("REFUSED: missing resolved project ref.");
+  process.exit(1);
+}
+
 const URL = `https://api.supabase.com/v1/projects/${REF}/database/query`;
 
 function getAccessToken() {

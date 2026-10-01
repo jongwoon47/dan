@@ -43,7 +43,7 @@ Staging uses a separate Cloudflare project `dan-staging`, a separate Supabase
 project, GitHub Environment `staging`, and `STAGING_*` secret names.
 Full checklist: [STAGING.md](./STAGING.md).
 
-`npm run db:seed:staging` writes Live Demand rows only when `DAN_SEED_TARGET=staging` and `SUPABASE_DB_URL` are set. It exits before any write when those are missing, when demo mode is on, when `DAN_ENV` / `NODE_ENV` is `production`, or when the URL contains the known production Supabase project ref.
+`npm run db:seed:staging` writes Live Demand rows only when `DAN_SEED_TARGET=staging` and `SUPABASE_DB_URL` are set. Localhost still works without a project ref. Remote seed also needs `DAN_STAGING_CONFIRM=seed-staging-only` and `DAN_STAGING_SUPABASE_PROJECT_REF` matching the database host. It exits before any write when those are missing, when demo mode is on, when `DAN_ENV` / `NODE_ENV` is `production`, or when the URL is the known production Supabase project.
 
 GitHub Actions secret names used by the **production** workflows (do not copy into staging):
 
