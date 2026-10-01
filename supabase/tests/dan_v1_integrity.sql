@@ -1,6 +1,6 @@
 begin;
 
-select plan(74);
+select plan(78);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -557,6 +557,42 @@ select has_trigger(
   'demands',
   'trg_matched_buy_terms_immutable',
   'MATCHED BUY commercial terms are frozen in the database'
+);
+
+select has_function(
+  'public',
+  'search_live_demand',
+  array['text','text','text','integer','integer'],
+  'server-side Live Demand search RPC exists'
+);
+
+select ok(
+  has_function_privilege(
+    'anon',
+    'public.search_live_demand(text,text,text,integer,integer)',
+    'EXECUTE'
+  ),
+  'public discovery can execute server-side Live Demand search'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'messages'
+  ),
+  'messages are published to Supabase Realtime'
+);
+
+select ok(
+  (
+    select relreplident = 'f'
+    from pg_class
+    where oid = 'public.messages'::regclass
+  ),
+  'messages use full replica identity for read-receipt updates'
 );
 
 select * from finish();
