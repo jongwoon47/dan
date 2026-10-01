@@ -9,6 +9,7 @@ import {
 } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { ProductVisual } from "@/components/ProductVisual";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
@@ -77,6 +78,7 @@ export function MatchChatPage() {
   const {
     myMatches,
     getDemand,
+    getProduct,
     currentUser,
     listMessages,
     subscribeMessages,
@@ -94,6 +96,7 @@ export function MatchChatPage() {
   } = useDan();
   const match = myMatches.find((m) => m.id === matchId);
   const demand = match ? getDemand(match.demandId) : undefined;
+  const chatProduct = match?.productId ? getProduct(match.productId) : undefined;
   const isDemandOwner =
     Boolean(currentUser && demand && demand.userId === currentUser.id);
   const canReopenDemand =
@@ -367,7 +370,17 @@ export function MatchChatPage() {
       ) : null}
 
       <section className="trade-status" aria-live="polite">
-        <p className="trade-status__title">{demandTitle}</p>
+        {isBuyTrade && chatProduct ? (
+          <div className="trade-status__product">
+            <ProductVisual product={chatProduct} size="sm" />
+            <div>
+              <span>{chatProduct.brand || "DAN"}</span>
+              <strong>{demandTitle}</strong>
+            </div>
+          </div>
+        ) : (
+          <p className="trade-status__title">{demandTitle}</p>
+        )}
         {match.status === "COMPLETED" ? (
           <>
             <p className="trade-status__state">✓ {ko.tradeDoneTitle}</p>
