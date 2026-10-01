@@ -45,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     let cancelled = false;
+    let sessionRevision = 0;
     const sb = getSupabase();
 
     const fallbackUser = (next: Session): User => ({
@@ -54,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     const applySession = async (next: Session | null) => {
+      const revision = ++sessionRevision;
       if (cancelled) return;
       setSession(next);
 
@@ -65,12 +67,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       try {
         const profileUser = await api.fetchSessionUser();
-        if (cancelled) return;
+        if (cancelled || revision !== sessionRevision) return;
         setUser(profileUser ?? fallbackUser(next));
         setError(null);
         setStatus("authenticated");
       } catch {
-        if (cancelled) return;
+        if (cancelled || revision !== sessionRevision) return;
         // Preserve an otherwise valid auth session even when the profile
         // request is temporarily unavailable. The data provider owns retry UX.
         setUser(fallbackUser(next));
