@@ -147,9 +147,18 @@ export function OfferDetailPage() {
           <Button to="/my?tab=offers" variant="secondary" fullWidth>받은 제안으로 돌아가기</Button>
         </section>
       ) : match.status === "CONNECTED" ? (
-        <Button to={"/deal/" + match.id + "/evidence"} fullWidth size="lg">
-          판매자 증거 확인
-        </Button>
+        <div className="section-stack">
+          <section className="offer-next-state">
+            <strong>판매자와 연결됐어요</strong>
+            <p>먼저 대화로 세부 조건을 확인하고, 실제 거래로 진행할 때 판매자 Evidence를 확인하세요.</p>
+          </section>
+          <Button to={"/match/" + match.id} fullWidth size="lg">
+            대화 시작
+          </Button>
+          <Button to={"/deal/" + match.id + "/evidence"} fullWidth variant="secondary">
+            판매자 Evidence 확인
+          </Button>
+        </div>
       ) : match.status === "COMPLETED" ? (
         <Button to={"/deal/" + match.id + "/complete"} fullWidth variant="secondary">
           완료된 거래 보기
