@@ -1,6 +1,9 @@
 import {
   STAGING_CLOUDFLARE_PROJECT,
   STAGING_DEPLOY_CONFIRM,
+  STAGING_PROJECT_REF_ENV,
+  containsProductionSupabaseRef,
+  extractSupabaseProjectRef,
   isForbiddenProductionTarget,
   isProductionCloudflareProject,
 } from "./environmentSeparation.ts";
@@ -44,7 +47,10 @@ export function assertStagingDeployAllowed(
 
   const project =
     env.STAGING_CLOUDFLARE_PROJECT?.trim() ?? STAGING_CLOUDFLARE_PROJECT;
-  if (isProductionCloudflareProject(project) || project !== STAGING_CLOUDFLARE_PROJECT) {
+  if (
+    isProductionCloudflareProject(project) ||
+    project !== STAGING_CLOUDFLARE_PROJECT
+  ) {
     return {
       ok: false,
       code: 1,
@@ -72,9 +78,45 @@ export function assertStagingDeployAllowed(
     };
   }
 
+  const expectedRef =
+    env.DAN_STAGING_SUPABASE_PROJECT_REF?.trim().toLowerCase() ?? "";
+  if (!expectedRef) {
+    return {
+      ok: false,
+      code: 2,
+      message: `NEEDS USER: ${STAGING_PROJECT_REF_ENV} must identify the exact staging Supabase project.`,
+    };
+  }
+  if (containsProductionSupabaseRef(expectedRef)) {
+    return {
+      ok: false,
+      code: 1,
+      message: "REFUSED: the expected staging Supabase ref is a production ref.",
+    };
+  }
+
+  const actualRef = extractSupabaseProjectRef(url);
+  if (!actualRef) {
+    return {
+      ok: false,
+      code: 1,
+      message:
+        "REFUSED: STAGING_VITE_SUPABASE_URL must expose a Supabase project ref.",
+    };
+  }
+  if (actualRef !== expectedRef) {
+    return {
+      ok: false,
+      code: 1,
+      message:
+        "REFUSED: STAGING_VITE_SUPABASE_URL does not match DAN_STAGING_SUPABASE_PROJECT_REF.",
+    };
+  }
+
   const inspected = [
     url,
     anon,
+    expectedRef,
     env.STAGING_SUPABASE_DB_URL ?? "",
     env.STAGING_PAGES_URL ?? "",
   ];

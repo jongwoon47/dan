@@ -49,7 +49,7 @@ function AppShellInner() {
         <header className="top-nav">
           <div className="top-nav__inner">
             <NavLink to="/" className="brand" aria-label="DAN 홈">
-              <img className="brand__logo" src="/dan-logo.png" alt="" width={36} height={36} />
+              <img className="brand__logo" src={`${import.meta.env.BASE_URL}dan-logo.png`} alt="" width={36} height={36} />
               <span className="brand__text"><span className="brand__mark">DAN</span><span className="brand__tag">{ko.brandTag}</span></span>
             </NavLink>
             <div className="top-nav__mobile-actions">

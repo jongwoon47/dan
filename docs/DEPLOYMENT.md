@@ -12,9 +12,12 @@
 |------|---------|-------|
 | `VITE_SUPABASE_URL` | No | Project URL |
 | `VITE_SUPABASE_ANON_KEY` | Treat as public client key | Never use service_role |
-| `VITE_DATA_MODE` | No | Optional `demo` to force localStorage adapter |
+| `VITE_DAN_ENV` | No | Deployment identity: `staging` or `production`; deployed builds fail closed without Supabase config |
+| `VITE_DATA_MODE` | No | Local/test only. Do not force `demo` in staging/production |
 
 Do not commit `.env` / `.env.local`.
+
+Production workflows are fail-closed: both public Supabase values must be present, the URL must match the configured production project ref, and browser keys that look like `service_role` / `sb_secret` are refused before publish. Staging has an independent exact project-ref guard.
 
 ## Supabase
 
@@ -63,6 +66,7 @@ Staging GitHub secret names (Environment `staging` only):
 | `STAGING_CLOUDFLARE_API_TOKEN` | Deploy Cloudflare Staging | Yes, staging-scoped |
 | `STAGING_CLOUDFLARE_ACCOUNT_ID` | Deploy Cloudflare Staging | Yes |
 | `STAGING_SUPABASE_DB_URL` | Manual seed only, not the deploy workflow | Yes |
+| `DAN_STAGING_SUPABASE_PROJECT_REF` | Deploy guard + remote seed/migration identity | Staging project ref |
 
 `VITE_BASE=/dan/` is set in the GitHub Pages workflow and is not a secret. There is no payment-provider secret in this repository.
 

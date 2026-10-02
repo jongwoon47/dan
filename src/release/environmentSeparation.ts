@@ -32,6 +32,7 @@ export const STAGING_GITHUB_SECRET_NAMES = [
   "STAGING_CLOUDFLARE_API_TOKEN",
   "STAGING_CLOUDFLARE_ACCOUNT_ID",
   "STAGING_SUPABASE_DB_URL",
+  "DAN_STAGING_SUPABASE_PROJECT_REF",
 ] as const;
 
 /** Production GitHub secret names. Staging workflows must not read these. */

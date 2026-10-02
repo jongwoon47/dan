@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import { AuthProvider } from "@/auth/AuthProvider";
 import { AppShell } from "@/components/layout/AppShell";
@@ -21,6 +21,7 @@ import { HandoffPage } from "@/pages/HandoffPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { MatchChatPage } from "@/pages/MatchChatPage";
 import { MyDanPage } from "@/pages/MyDanPage";
+import { NotFoundPage } from "@/pages/NotFoundPage";
 import { OfferDetailPage } from "@/pages/OfferDetailPage";
 import { OwnershipPage } from "@/pages/OwnershipPage";
 import { ProfilePage } from "@/pages/ProfilePage";
@@ -71,7 +72,7 @@ export default function App() {
                 element={<SellIntentPage />}
               />
               <Route path="my" element={<MyDanPage />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

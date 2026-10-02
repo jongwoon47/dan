@@ -34,6 +34,7 @@ jobs:
       STAGING_DEPLOY_CONFIRM: ${{ inputs.confirm }}
       STAGING_VITE_SUPABASE_URL: ${{ secrets.STAGING_VITE_SUPABASE_URL }}
       STAGING_VITE_SUPABASE_ANON_KEY: ${{ secrets.STAGING_VITE_SUPABASE_ANON_KEY }}
+      DAN_STAGING_SUPABASE_PROJECT_REF: ${{ secrets.DAN_STAGING_SUPABASE_PROJECT_REF }}
     steps:
       - name: Refuse production branch and project
         run: |
@@ -64,6 +65,7 @@ jobs:
       - name: Build staging bundle
         env:
           VITE_BASE: /
+          VITE_DAN_ENV: staging
           VITE_SUPABASE_URL: ${{ secrets.STAGING_VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.STAGING_VITE_SUPABASE_ANON_KEY }}
         run: npm run build
