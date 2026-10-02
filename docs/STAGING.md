@@ -32,9 +32,9 @@ Workers, Edge Functions, 결제사, analytics 업체는 없다.
 
 ## Environment separation
 
-프론트엔드는 빌드 시 `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`만 읽는다.
-staging 워크플로는 **GitHub secret 이름** `STAGING_VITE_SUPABASE_*`를 읽어 빌드 env로만 넘긴다.
-production secret 이름은 staging 워크플로가 읽지 않는다.
+프론트엔드는 빌드 시 `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`와 공개 런타임 식별자 `VITE_DAN_ENV`를 읽는다.
+staging 워크플로는 **GitHub secret 이름** `STAGING_VITE_SUPABASE_*`를 읽어 빌드 env로 넘기고, `DAN_STAGING_SUPABASE_PROJECT_REF`를 배포 전 guard에만 넘긴다.
+staging/production 빌드는 Supabase 공개 값이 빠지면 demo로 fallback하지 않고 실패한다. production secret 이름은 staging 워크플로가 읽지 않는다.
 
 가드:
 
@@ -100,6 +100,8 @@ production으로 보이는 값이 있으면 배포/seed를 진행하지 말고 �
 13. [ ] staging에서 회원가입 1개 (프로필 필요)
 14. [ ] 로컬 또는 사람이 연결한 staging DB에서만:
     `DAN_SEED_TARGET=staging DAN_STAGING_CONFIRM=seed-staging-only DAN_ENV=staging DAN_STAGING_SUPABASE_PROJECT_REF=<staging-ref> SUPABASE_DB_URL=... npm run db:seed:staging`
+    - staging seed는 공개 Live Demand 집계에 보이도록 선택된 첫 staging 프로필의 **phone verification만** synthetic test 상태로 표시한다.
+    - identity/payout verification은 건드리지 않는다. production에서 이 seed를 쓰면 안 된다.
 15. [ ] GitHub Environment `staging`에 `STAGING_*` secret 입력. production 값 복사 금지
 
 ## Cloudflare staging checklist
