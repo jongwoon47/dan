@@ -46,4 +46,32 @@ describe("resolveDataMode", () => {
       }),
     ).toThrow(/production Supabase/i);
   });
+
+  it("requires the configured production Supabase project in production", () => {
+    const prodRef = PRODUCTION_SUPABASE_PROJECT_REFS[0];
+    expect(
+      resolveDataMode({
+        runtime: "production",
+        url: `https://${prodRef}.supabase.co`,
+        anonKey: "sb_publishable_test",
+      }),
+    ).toBe("supabase");
+    expect(() =>
+      resolveDataMode({
+        runtime: "production",
+        url: "https://stgstgprojectref001.supabase.co",
+        anonKey: "sb_publishable_test",
+      }),
+    ).toThrow(/configured production Supabase/i);
+  });
+
+  it("refuses secret/service-role frontend keys", () => {
+    expect(() =>
+      resolveDataMode({
+        runtime: "production",
+        url: `https://${PRODUCTION_SUPABASE_PROJECT_REFS[0]}.supabase.co`,
+        anonKey: "sb_secret_never_ship_this",
+      }),
+    ).toThrow(/secret\/service-role/i);
+  });
 });
