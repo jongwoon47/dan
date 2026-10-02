@@ -114,7 +114,114 @@ export function BuyDemandCreatePage() {
       setPhoneVerified(status.phoneVerified);
       setVerificationLoaded(true);
     });
-    return (
+    return () => {
+      cancelled = true;
+    };
+  }, [getMyVerification, isLoggedIn]);
+
+  const selectedProduct = products.find((product) => product.id === selectedProductId);
+  const suggestions = useMemo(
+    () => filterProductSuggestions(products, productQuery, 6),
+    [products, productQuery],
+  );
+  const queryMatchesSelected = Boolean(
+    selectedProduct &&
+      productMatchKey(selectedProduct.name) === productMatchKey(productQuery),
+  );
+  const exactCatalogMatch = suggestions.find(
+    (product) => productMatchKey(product.name) === productMatchKey(productQuery),
+  );
+
+  const price = parseMoneyInput(maxPrice);
+  const meetupNeeded = tradeMethod === "meetup" || tradeMethod === "any";
+  const canSubmit = Boolean(
+    productQuery.trim() &&
+      price > 0 &&
+      (!meetupNeeded || area.trim()),
+  );
+
+  function chooseProduct(productId: string) {
+    const product = products.find((item) => item.id === productId);
+    if (!product) return;
+    setSelectedProductId(product.id);
+    setProductQuery(product.name);
+    setCategory(product.category);
+    setError("");
+  }
+
+  function changeQuery(value: string) {
+    setProductQuery(value);
+    if (
+      selectedProduct &&
+      productMatchKey(selectedProduct.name) !== productMatchKey(value)
+    ) {
+      setSelectedProductId("");
+    }
+  }
+
+  async function submit() {
+    if (!canSubmit || submitting) return;
+    if (!isLoggedIn) {
+      navigate("/login?next=/buy/new");
+      return;
+    }
+    if (!phoneVerified) {
+      setError("Live Demand를 공개하려면 휴대폰 본인확인이 필요해요.");
+      return;
+    }
+
+    setSubmitting(true);
+    setError("");
+    try {
+      const product =
+        queryMatchesSelected && selectedProduct
+          ? selectedProduct
+          : exactCatalogMatch ??
+            (await ensureProduct(productQuery.trim(), category));
+
+      if (!product) {
+        setError("제품을 등록하지 못했어요. 잠시 후 다시 시도해 주세요.");
+        return;
+      }
+
+      const fulfillmentOptions =
+        tradeMethod === "shipping"
+          ? [{ mode: "SHIPPING" as const }]
+          : tradeMethod === "any"
+            ? [
+                { mode: "SHIPPING" as const },
+                { mode: "MEETUP" as const, place: placeFromLabel(area.trim()) },
+              ]
+            : [
+                { mode: "MEETUP" as const, place: placeFromLabel(area.trim()) },
+              ];
+
+      const preferenceText = extraCondition.trim()
+        ? ` · 추가 조건: ${extraCondition.trim()}`
+        : "";
+
+      const created = await createDemand({
+        type: "BUY",
+        title: product.name,
+        description: `${product.name} 구매수요${preferenceText}`,
+        productId: product.id,
+        maxPrice: price,
+        conditionPreference: condition,
+        tradeMethod,
+        fulfillmentOptions,
+      });
+
+      if (!created) {
+        setError("구매수요를 등록하지 못했어요.");
+        return;
+      }
+      navigate("/my?tab=demands");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
     <div className="page-stack page-narrow camera-demand-create camera-demand-create--blueprint">
       <section className="create-v1-intro">
         <span className="eyebrow">Live Demand</span>
