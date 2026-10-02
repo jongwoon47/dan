@@ -32,6 +32,24 @@ begin
     raise exception 'NEEDS USER: sign up one staging account before seeding Live Demands';
   end if;
 
+  -- Staging-only synthetic demand must survive the production visibility rule.
+  -- This marks only the selected seed profile as phone-verified; it does not
+  -- claim identity or payout verification and never runs without the outer
+  -- staging DB/ref/confirmation guards in scripts/seed-staging.ts.
+  insert into public.user_verifications (
+    user_id,
+    phone_verified_at,
+    updated_at
+  )
+  values (v_user, now(), now())
+  on conflict (user_id) do update
+  set
+    phone_verified_at = coalesce(
+      user_verifications.phone_verified_at,
+      excluded.phone_verified_at
+    ),
+    updated_at = now();
+
   insert into public.demands (
     user_id,
     type,
