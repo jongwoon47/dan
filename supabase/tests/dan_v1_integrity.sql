@@ -1,6 +1,6 @@
 begin;
 
-select plan(78);
+select plan(80);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -442,6 +442,22 @@ select ok(
     in pg_get_functiondef('public.seller_connect_match(uuid)'::regprocedure)
   ) > 0,
   'seller connect is retry-safe after connection'
+);
+
+select ok(
+  position(
+    'seller evidence required before connect'
+    in pg_get_functiondef('public.seller_connect_match(uuid)'::regprocedure)
+  ) = 0,
+  'seller can connect and open chat before detailed evidence'
+);
+
+select ok(
+  position(
+    'deal_stage = ''EVIDENCE_PENDING'''
+    in pg_get_functiondef('public.seller_connect_match(uuid)'::regprocedure)
+  ) > 0,
+  'connected BUY enters evidence-pending stage'
 );
 
 select ok(
