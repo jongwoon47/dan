@@ -17,6 +17,8 @@
 
 Do not commit `.env` / `.env.local`.
 
+Production workflows are fail-closed: both public Supabase values must be present, the URL must match the configured production project ref, and browser keys that look like `service_role` / `sb_secret` are refused before publish. Staging has an independent exact project-ref guard.
+
 ## Supabase
 
 1. Create project (Free tier)
