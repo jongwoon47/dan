@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
 import { Chip, ChipGroup, Field, TextInput } from "@/components/ui/Input";
@@ -37,8 +37,11 @@ function fileToDataUrl(file: File): Promise<string> {
 export function QuickOfferPage() {
   const { productId = "" } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const targetDemandId = searchParams.get("target")?.trim() || undefined;
   const {
     getProduct,
+    getDemand,
     getAggregate,
     myOwnerships,
     createOwnership,
@@ -48,6 +51,11 @@ export function QuickOfferPage() {
 
   const product = getProduct(productId);
   const aggregate = getAggregate(productId);
+  const targetDemand = targetDemandId ? getDemand(targetDemandId) : undefined;
+  const targetBuyDemand =
+    targetDemand?.type === "BUY" && targetDemand.details.productId === productId
+      ? targetDemand
+      : undefined;
   const existingOwnership = myOwnerships.find(
     (row) => row.productId === productId && row.status === "OWNED",
   );
@@ -56,7 +64,11 @@ export function QuickOfferPage() {
     existingOwnership?.condition ?? null,
   );
   const [price, setPrice] = useState(
-    aggregate?.highestIntentPrice ? String(aggregate.highestIntentPrice) : "",
+    targetBuyDemand?.details.maxPrice
+      ? String(targetBuyDemand.details.maxPrice)
+      : aggregate?.highestIntentPrice
+        ? String(aggregate.highestIntentPrice)
+        : "",
   );
   const [usageCount, setUsageCount] = useState("");
   const [conditionNote, setConditionNote] = useState("");
@@ -79,7 +91,7 @@ export function QuickOfferPage() {
 
   const typedPrice = parseMoneyInput(price);
   const showUsageCount = product.category === "camera";
-  const canSubmit = Boolean(condition && typedPrice > 0 && quickPhotoUrl);
+  const canSubmit = Boolean(condition && typedPrice > 0);
 
   async function pickPhoto(file?: File) {
     setPhotoError("");
@@ -125,6 +137,7 @@ export function QuickOfferPage() {
         approxUsageCount:
           showUsageCount && usageCount ? Number(usageCount) : undefined,
         conditionNote: conditionNote.trim() || undefined,
+        targetDemandId: targetBuyDemand?.id,
         tradeMethod,
         quickPhotoUrl: quickPhotoUrl || undefined,
       });
@@ -153,7 +166,15 @@ export function QuickOfferPage() {
         </div>
       </section>
 
-      {aggregate?.highestIntentPrice ? (
+      {targetBuyDemand ? (
+        <section className="live-demand-banner">
+          <span>선택한 구매수요 · 최대 희망가</span>
+          <strong>{formatWon(targetBuyDemand.details.maxPrice)}</strong>
+          <button type="button" onClick={() => setPrice(String(targetBuyDemand.details.maxPrice))}>
+            이 가격 사용
+          </button>
+        </section>
+      ) : aggregate?.highestIntentPrice ? (
         <section className="live-demand-banner">
           <span>현재 최고 구매 희망가</span>
           <strong>{formatWon(aggregate.highestIntentPrice)}</strong>
@@ -232,13 +253,13 @@ export function QuickOfferPage() {
 
         <div>
           <p className="field-inline-label">
-            현재 사진 1장 <span className="required-mark">필수</span>
+            현재 사진 1장 <span className="optional-mark">선택</span>
           </p>
           <label className="evidence-upload evidence-upload--quick">
             {quickPhotoUrl ? (
               <img src={quickPhotoUrl} alt="현재 물품" />
             ) : (
-              <span>현재 가지고 있는 물품 사진 1장을 추가해 주세요</span>
+              <span>있다면 현재 물품 사진을 추가해 주세요</span>
             )}
             <input
               type="file"
@@ -252,8 +273,7 @@ export function QuickOfferPage() {
         <div className="quick-offer-note">
           <strong>Quick Offer는 이 정도면 충분해요</strong>
           <p>
-            구매자가 관심을 보인 뒤에만 식별정보·보증·구성품·상세 상태
-            증거를 요청합니다.
+            사진 없이도 바로 제안할 수 있어요. 구매자가 관심을 보이고 서로 연결된 뒤에만 촬영 코드·식별정보·구성품·상세 상태 증거를 요청합니다.
           </p>
         </div>
 

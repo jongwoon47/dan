@@ -356,7 +356,9 @@ test("open catalog accepts a product that is not pre-seeded", async ({ page }, t
   await page.getByLabel("찾는 제품").fill("Herman Miller Embody Chair");
   await page.getByLabel("제품 카테고리").selectOption("furniture");
   await page.getByLabel("최대 구매 희망가").fill("1800000");
-  await page.getByRole("button", { name: "구매수요 등록하기" }).click();
+  await page.getByRole("button", { name: "다음 · 조건 확인" }).click();
+  await expect(page.getByRole("heading", { name: "이 조건으로 구매자를 기다릴게요." })).toBeVisible();
+  await page.getByRole("button", { name: "이 조건으로 구매수요 등록" }).click();
   await settle(page);
 
   await expect(page).toHaveURL(/\/my/);
@@ -380,7 +382,7 @@ test("BUY chat cancellation uses structured deal cancellation", async ({ page },
   await page.goto("/match/visual-match-x100vi");
   await settle(page);
 
-  await expect(page.getByText("거래 조건 확인이 먼저 필요해요")).toBeVisible();
+  await expect(page.getByText("판매자 증거가 준비됐어요")).toBeVisible();
   await page.getByRole("button", { name: "거래 취소" }).click();
   await expect(page.getByText("이 거래를 종료할까요?")).toBeVisible();
   await page.getByRole("button", { name: "거래 종료" }).click();

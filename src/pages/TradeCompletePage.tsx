@@ -1,18 +1,42 @@
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
+import type { DealSnapshot, PublicProfile } from "@/domain/types";
+import { formatWon } from "@/lib/format";
 import "./pages.css";
 
 export function TradeCompletePage() {
   const { matchId = "" } = useParams();
-  const { myMatches, currentUser, getProduct } = useDan();
+  const {
+    myMatches,
+    currentUser,
+    getProduct,
+    getDealSnapshot,
+    getPublicProfile,
+  } = useDan();
   const match = myMatches.find((row) => row.id === matchId);
   const product = match?.productId ? getProduct(match.productId) : undefined;
+  const [snapshot, setSnapshot] = useState<DealSnapshot | null>(null);
+  const [peer, setPeer] = useState<PublicProfile | null>(null);
 
   useDeepHeader({ title: "거래 완료" });
+
+  useEffect(() => {
+    if (!matchId || !match || !currentUser) return;
+    const peerId =
+      currentUser.id === match.buyerId ? match.sellerId : match.buyerId;
+    void Promise.all([
+      getDealSnapshot(matchId),
+      getPublicProfile(peerId),
+    ]).then(([dealSnapshot, publicProfile]) => {
+      setSnapshot(dealSnapshot);
+      setPeer(publicProfile);
+    });
+  }, [currentUser, getDealSnapshot, getPublicProfile, match, matchId]);
 
   if (!match || !product || !currentUser) {
     return <EmptyState title="거래 정보를 찾을 수 없어요" action={<Button to="/my">내 구매수요</Button>} />;
@@ -40,7 +64,41 @@ export function TradeCompletePage() {
 
       <section className="trade-complete-product">
         <ProductVisual product={product} size="sm" />
-        <div><strong>{product.name}</strong><span>거래 완료</span></div>
+        <div>
+          <strong>{product.name}</strong>
+          <span>
+            {snapshot ? formatWon(snapshot.agreedPrice) : "거래 완료"}
+          </span>
+        </div>
+      </section>
+
+      <section className="deal-snapshot-card trade-receipt">
+        <div className="snapshot-section">
+          <span>거래 상태</span>
+          <strong>완료</strong>
+        </div>
+        <div className="snapshot-section">
+          <span>최종 거래 금액</span>
+          <strong>{snapshot ? formatWon(snapshot.agreedPrice) : "확인 중"}</strong>
+        </div>
+        <div className="snapshot-section">
+          <span>거래 상대</span>
+          <strong>{peer?.displayName || "상대"}</strong>
+        </div>
+        <div className="snapshot-section">
+          <span>완료 시각</span>
+          <strong>
+            {match.completedAt
+              ? new Date(match.completedAt).toLocaleString("ko-KR", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "완료"}
+          </strong>
+        </div>
       </section>
 
       <Button to={"/profile/" + peerId} fullWidth variant="secondary">

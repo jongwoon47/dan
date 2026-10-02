@@ -74,3 +74,26 @@ BUY 보안 게이트 때문에 full remote E2E는 매번 새 랜덤 구매자/�
 ## 막혔을 때
 
 각 화면은 상태와 다음 행동을 갖고 있다. 거래를 못 찾으면 내 구매수요로, snapshot이 없으면 조건 확인으로, 결제가 서버에서 확인되기 전에는 인계를 진행하지 않는다. 전체 로드 실패는 다시 시도, 오프라인은 상단 배너, 렌더 예외는 다시 불러오기 / 홈.
+
+
+## Demand-first connection order
+
+BUY의 사용자 흐름은 아래 순서를 고정한다.
+
+```text
+Live Demand
+→ Quick Offer (가격 + 상태, 사진 선택)
+→ 구매자 관심
+→ 판매자 연결
+→ 채팅
+→ 판매자 Evidence (촬영 코드 + 현재 보유 증거)
+→ Deal Snapshot 양측 확인/잠금
+→ 안전결제
+→ 인계
+→ 완료 또는 분쟁
+```
+
+- Quick Offer 단계에서 상세 Evidence를 강제하지 않는다.
+- CONNECTED 이후에는 양쪽이 채팅할 수 있다.
+- Evidence가 없으면 Deal Snapshot을 확정할 수 없다.
+- 실제 결제/인계 안전 경계는 기존과 동일하게 유지한다.

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { Field, TextInput } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProductVisual } from "@/components/ProductVisual";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
@@ -9,6 +10,17 @@ import type { DealEvidence, DealSnapshot } from "@/domain/types";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
 import { formatWon } from "@/lib/format";
 import "./pages.css";
+
+function snapshotText(
+  snapshot: Record<string, unknown> | undefined,
+  section: string,
+  key: string,
+): string {
+  const block = snapshot?.[section];
+  if (!block || typeof block !== "object") return "";
+  const value = (block as Record<string, unknown>)[key];
+  return typeof value === "string" ? value : "";
+}
 
 export function DealSnapshotPage() {
   const { matchId = "" } = useParams();
@@ -32,6 +44,8 @@ export function DealSnapshotPage() {
 
   const [evidence, setEvidence] = useState<DealEvidence | null>(null);
   const [snapshot, setSnapshot] = useState<DealSnapshot | null>(null);
+  const [handoffPlace, setHandoffPlace] = useState("");
+  const [handoffAt, setHandoffAt] = useState("");
   const [error, setError] = useState("");
 
   useDeepHeader({ title: "거래 조건 확인" });
@@ -42,9 +56,17 @@ export function DealSnapshotPage() {
       ([e, d]) => {
         setEvidence(e);
         setSnapshot(d);
+        if (d) {
+          setHandoffPlace(snapshotText(d.snapshot, "handoff", "place"));
+          setHandoffAt(snapshotText(d.snapshot, "handoff", "at"));
+        }
       },
     );
   }, [getDealEvidence, getDealSnapshot, matchId]);
+
+  const meetupRequired = Boolean(
+    demand?.fulfillmentOptions.some((option) => option.mode === "MEETUP"),
+  );
 
   const payload = useMemo(() => {
     if (!match || !demand || !product || !sell || !evidence) return null;
@@ -73,9 +95,20 @@ export function DealSnapshotPage() {
       },
       handoff: {
         method: formatFulfillmentSummary(demand.fulfillmentOptions),
+        place: meetupRequired ? handoffPlace.trim() : "",
+        at: meetupRequired ? handoffAt : "",
       },
     };
-  }, [match, demand, product, sell, evidence]);
+  }, [
+    match,
+    demand,
+    product,
+    sell,
+    evidence,
+    meetupRequired,
+    handoffPlace,
+    handoffAt,
+  ]);
 
   if (!match || !demand || !product || !sell || !currentUser) {
     return (
@@ -94,8 +127,11 @@ export function DealSnapshotPage() {
     ? Boolean(snapshot?.sellerConfirmedAt)
     : Boolean(snapshot?.buyerConfirmedAt);
 
+  const appointmentReady =
+    !meetupRequired || Boolean(handoffPlace.trim() && handoffAt);
+
   async function confirm() {
-    if (!payload || busy) return;
+    if (!payload || !appointmentReady || busy) return;
     const activeSell = sell;
     if (!activeSell) return;
     setError("");
@@ -228,6 +264,61 @@ export function DealSnapshotPage() {
         </details>
       </section>
 
+      {meetupRequired ? (
+        <section className="deal-snapshot-card snapshot-appointment">
+          <div className="snapshot-card-heading">
+            <div>
+              <span className="eyebrow">직거래 약속</span>
+              <h2>만날 장소와 시간을 거래 조건에 함께 고정해요.</h2>
+            </div>
+          </div>
+          {snapshot?.lockedAt ? (
+            <>
+              <div className="snapshot-section snapshot-section--key">
+                <span>만남 장소</span>
+                <strong>{handoffPlace || "미정"}</strong>
+              </div>
+              <div className="snapshot-section snapshot-section--key">
+                <span>약속 시간</span>
+                <strong>
+                  {handoffAt
+                    ? new Date(handoffAt).toLocaleString("ko-KR", {
+                        month: "long",
+                        day: "numeric",
+                        weekday: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "미정"}
+                </strong>
+              </div>
+            </>
+          ) : (
+            <div className="section-stack">
+              <Field
+                label="만남 장소"
+                hint="연결 전에는 공개되지 않고, 이 거래의 두 참여자만 확인하는 조건이에요."
+              >
+                <TextInput
+                  value={handoffPlace}
+                  onChange={(event) => setHandoffPlace(event.target.value)}
+                  placeholder="예: 강남역 11번 출구 스타벅스 앞"
+                  maxLength={120}
+                />
+              </Field>
+              <Field label="약속 시간">
+                <input
+                  className="dan-input"
+                  type="datetime-local"
+                  value={handoffAt}
+                  onChange={(event) => setHandoffAt(event.target.value)}
+                />
+              </Field>
+            </div>
+          )}
+        </section>
+      ) : null}
+
       <section className="snapshot-lock-notice">
         <strong>위 조건으로 거래를 진행합니다.</strong>
         <p>양쪽이 확인하면 Deal Snapshot이 잠기고 이후에는 수정할 수 없어요. 실제 물건과 다른 내용이 있다면 확인 전에 판매자와 다시 조율하세요.</p>
@@ -260,8 +351,16 @@ export function DealSnapshotPage() {
         </>
       ) : (
         <>
+          {meetupRequired && !appointmentReady ? (
+            <p className="form-error">직거래 장소와 시간을 입력해야 거래 조건을 확인할 수 있어요.</p>
+          ) : null}
           {error ? <p className="form-error">{error}</p> : null}
-          <Button fullWidth size="lg" disabled={busy || !payload || myConfirmed} onClick={() => void confirm()}>
+          <Button
+            fullWidth
+            size="lg"
+            disabled={busy || !payload || !appointmentReady || myConfirmed}
+            onClick={() => void confirm()}
+          >
             {myConfirmed ? "상대 확인 대기 중" : "이 거래조건을 확인했습니다"}
           </Button>
         </>

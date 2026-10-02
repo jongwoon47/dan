@@ -108,7 +108,7 @@ describe("store mutations / login race", () => {
     ).toBeUndefined();
   });
 
-  it("buyer interest materializes, then seller can connect", async () => {
+  it("buyer interest connects before evidence, then evidence unlocks deal review", async () => {
     const { result } = renderHook(() => useDan(), { wrapper });
 
     act(() => {
@@ -148,7 +148,10 @@ describe("store mutations / login race", () => {
     });
     expect(
       result.current.state.matches.find((m) => m.id === interested!.id)?.status,
-    ).toBe("BUYER_INTERESTED");
+    ).toBe("CONNECTED");
+    expect(
+      result.current.state.matches.find((m) => m.id === interested!.id)?.dealStage,
+    ).toBe("EVIDENCE_PENDING");
 
     let challengeCode = "";
     await act(async () => {
@@ -169,13 +172,9 @@ describe("store mutations / login race", () => {
       expect(evidence).toBeTruthy();
     });
 
-    await act(async () => {
-      await result.current.connectAsSeller(interested!.id);
-    });
-
     expect(
-      result.current.state.matches.find((m) => m.id === interested!.id)?.status,
-    ).toBe("CONNECTED");
+      result.current.state.matches.find((m) => m.id === interested!.id)?.dealStage,
+    ).toBe("EVIDENCE_READY");
   });
 
 

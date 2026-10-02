@@ -2296,3 +2296,59 @@
   font-size: 0.68rem !important;
   font-weight: 800;
 }
+
+
+/* Demand-first buyer selection ------------------------------------------------ */
+.buyer-demand-list {
+  display: grid;
+  gap: 12px;
+}
+
+.buyer-demand-list .section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.buyer-demand-list .section-heading h2 {
+  margin: 3px 0 0;
+  font-size: 1.05rem;
+  letter-spacing: -0.025em;
+}
+
+.buyer-demand-list__rows {
+  display: grid;
+  gap: 9px;
+}
+
+.buyer-demand-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  border: 1px solid var(--dan-border);
+  border-radius: 14px;
+  background: var(--dan-surface);
+}
+
+.buyer-demand-row__main {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.buyer-demand-row__main > span,
+.buyer-demand-row__main > small {
+  color: var(--dan-ink-muted);
+  font-size: 0.75rem;
+}
+
+.buyer-demand-row__main > strong {
+  font-size: 0.95rem;
+}
+
+.demand-create-review {
+  overflow: hidden;
+}

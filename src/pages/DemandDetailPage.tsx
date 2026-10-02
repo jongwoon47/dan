@@ -6,12 +6,14 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
+import { formatFulfillmentSummary } from "@/domain/fulfillment";
+import { CONDITION_LABEL, isBuyDemand, type BuyDemand } from "@/domain/types";
 import { formatWon } from "@/lib/format";
 import "./pages.css";
 
 export function DemandDetailPage() {
   const { productId = "" } = useParams();
-  const { getProduct, getAggregate, myOwnerships, myDemands, currentUser } = useDan();
+  const { getProduct, getAggregate, myOwnerships, myDemands, currentUser, state } = useDan();
   const [shareStatus, setShareStatus] = useState("");
   const product = getProduct(productId);
   const aggregate = getAggregate(productId);
@@ -23,6 +25,16 @@ export function DemandDetailPage() {
       d.userId === currentUser?.id &&
       d.details.productId === productId,
   );
+  const activeBuyerDemands = state.demands
+    .filter(
+      (d): d is BuyDemand =>
+        isBuyDemand(d) &&
+        d.status === "ACTIVE" &&
+        d.details.productId === productId &&
+        d.userId !== currentUser?.id,
+    )
+    .sort((a, b) => b.details.maxPrice - a.details.maxPrice)
+    .slice(0, 12);
 
   async function shareDemand() {
     if (!product) return;
@@ -106,6 +118,42 @@ export function DemandDetailPage() {
           <span>구매자 희망 거래 방식</span>
           <strong>{aggregate.fulfillmentSummary || "거래방식 확인"}</strong>
         </div>
+      </section>
+
+      <section className="detail-section buyer-demand-list">
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">Active buyers</span>
+            <h2>이 제품을 기다리는 구매수요</h2>
+          </div>
+          <span>{activeBuyerDemands.length}개</span>
+        </div>
+        {activeBuyerDemands.length > 0 ? (
+          <div className="buyer-demand-list__rows">
+            {activeBuyerDemands.map((demand, index) => (
+              <div key={demand.id} className="buyer-demand-row">
+                <div className="buyer-demand-row__main">
+                  <span>구매수요 {index + 1}</span>
+                  <strong>최대 {formatWon(demand.details.maxPrice)}</strong>
+                  <small>
+                    {CONDITION_LABEL[demand.details.conditionPreference]} · {formatFulfillmentSummary(demand.fulfillmentOptions)}
+                  </small>
+                </div>
+                <Button
+                  to={`/demand/${product.id}/offer?target=${encodeURIComponent(demand.id)}`}
+                  variant="secondary"
+                  size="sm"
+                >
+                  이 구매자에게 제안
+                </Button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="section-desc">
+            현재 개별 공개 구매수요가 없어요. 제품 전체 수요에는 아래에서 바로 판매 제안을 남길 수 있어요.
+          </p>
+        )}
       </section>
 
       <section className="seller-action-card">

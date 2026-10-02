@@ -21,6 +21,7 @@ import {
 } from "@/domain/types";
 import {
   formatDigitsGrouped,
+  formatWon,
   digitsOnly,
   parseMoneyInput,
 } from "@/lib/format";
@@ -86,6 +87,7 @@ export function BuyDemandCreatePage() {
   const [verificationLoaded, setVerificationLoaded] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [error, setError] = useState("");
+  const [reviewing, setReviewing] = useState(false);
 
   useDeepHeader({ title: "구매수요 등록" });
 
@@ -219,10 +221,66 @@ export function BuyDemandCreatePage() {
     }
   }
 
+  if (reviewing) {
+    return (
+      <div className="page-stack page-narrow camera-demand-create camera-demand-create--blueprint">
+        <section className="create-v1-intro">
+          <span className="eyebrow">2 / 2 · 확인</span>
+          <h1 className="page-title">이 조건으로 구매자를 기다릴게요.</h1>
+          <p>공개되는 핵심 조건을 마지막으로 확인해 주세요.</p>
+        </section>
+
+        <section className="deal-snapshot-card demand-create-review">
+          <div className="snapshot-section">
+            <span>제품</span>
+            <strong>{productQuery.trim()}</strong>
+          </div>
+          <div className="snapshot-section">
+            <span>최대 구매 희망가</span>
+            <strong>{formatWon(price)}</strong>
+          </div>
+          <div className="snapshot-section">
+            <span>허용 상태</span>
+            <strong>{CONDITION_LABEL[condition]}</strong>
+          </div>
+          <div className="snapshot-section">
+            <span>거래 방식</span>
+            <strong>{TRADE_LABEL[tradeMethod]}</strong>
+          </div>
+          {meetupNeeded ? (
+            <div className="snapshot-section">
+              <span>직거래 지역</span>
+              <strong>{area.trim()}</strong>
+            </div>
+          ) : null}
+          {extraCondition.trim() ? (
+            <div className="snapshot-section">
+              <span>추가 조건</span>
+              <strong>{extraCondition.trim()}</strong>
+            </div>
+          ) : null}
+        </section>
+
+        <div className="live-demand-rule">
+          <strong>Live Demand에는 실제 구매 의사가 있는 조건만 올려주세요.</strong>
+          <p>구매수요는 7일 단위로 다시 확인하며, 언제든 My DAN에서 관리할 수 있어요.</p>
+        </div>
+
+        {error ? <p className="form-error">{error}</p> : null}
+        <Button fullWidth size="lg" disabled={submitting} onClick={() => void submit()}>
+          {submitting ? "등록 중…" : "이 조건으로 구매수요 등록"}
+        </Button>
+        <Button fullWidth variant="secondary" disabled={submitting} onClick={() => setReviewing(false)}>
+          조건 수정
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="page-stack page-narrow camera-demand-create camera-demand-create--blueprint">
       <section className="create-v1-intro">
-        <span className="eyebrow">Live Demand</span>
+        <span className="eyebrow">1 / 2 · 조건 입력</span>
         <h1 className="page-title">사고 싶은 물건을 먼저 알려주세요.</h1>
         <p>
           목록에 없는 제품도 직접 입력할 수 있어요. 수요가 생기면 가진 사람이
@@ -398,9 +456,12 @@ export function BuyDemandCreatePage() {
           submitting ||
           (isLoggedIn && verificationLoaded && !phoneVerified)
         }
-        onClick={() => void submit()}
+        onClick={() => {
+          setError("");
+          setReviewing(true);
+        }}
       >
-        {submitting ? "등록 중…" : "구매수요 등록하기"}
+        다음 · 조건 확인
       </Button>
     </div>
   );

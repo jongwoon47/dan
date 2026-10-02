@@ -289,6 +289,16 @@ export function MatchChatPage() {
   const mineDone = currentUser ? iConfirmed(match, currentUser.id) : false;
   const peerDone = currentUser ? peerConfirmed(match, currentUser.id) : false;
   const isBuyTrade = demand?.type === "BUY";
+  const isSeller = Boolean(currentUser && match.sellerId === currentUser.id);
+  const buyEvidenceReady = [
+    "EVIDENCE_READY",
+    "DEAL_REVIEW",
+    "DEAL_LOCKED",
+    "PAYMENT_PENDING",
+    "PAID",
+    "HANDOFF_READY",
+    "COMPLETED",
+  ].includes(match.dealStage ?? "");
   const buySnapshotLocked = Boolean(dealSnapshot?.lockedAt);
   const buyPaid = match.paymentStatus === "PAID";
   const buyComplete = match.status === "COMPLETED";
@@ -358,18 +368,23 @@ export function MatchChatPage() {
 
       {isBuyTrade ? (
         <div className="chat-deal-progress" aria-label="거래 진행 단계">
-          <span className={buySnapshotLocked ? "is-done" : "is-current"}>
-            <i aria-hidden>{buySnapshotLocked ? "✓" : "1"}</i>
+          <span className={buyEvidenceReady ? "is-done" : "is-current"}>
+            <i aria-hidden>{buyEvidenceReady ? "✓" : "1"}</i>
+            <b>증거</b>
+          </span>
+          <em aria-hidden />
+          <span className={buySnapshotLocked ? "is-done" : buyEvidenceReady ? "is-current" : ""}>
+            <i aria-hidden>{buySnapshotLocked ? "✓" : "2"}</i>
             <b>조건</b>
           </span>
           <em aria-hidden />
           <span className={buyPaid ? "is-done" : buySnapshotLocked ? "is-current" : ""}>
-            <i aria-hidden>{buyPaid ? "✓" : "2"}</i>
+            <i aria-hidden>{buyPaid ? "✓" : "3"}</i>
             <b>결제</b>
           </span>
           <em aria-hidden />
           <span className={buyComplete ? "is-done" : buyPaid ? "is-current" : ""}>
-            <i aria-hidden>{buyComplete ? "✓" : "3"}</i>
+            <i aria-hidden>{buyComplete ? "✓" : "4"}</i>
             <b>인계</b>
           </span>
         </div>
@@ -419,15 +434,45 @@ export function MatchChatPage() {
               <p className="trade-status__hint">{ko.tradePeerClosed}</p>
             )}
           </>
+        ) : isBuyTrade && !buyEvidenceReady ? (
+          <>
+            <p className="trade-status__state">연결됐어요 · 먼저 대화해 보세요</p>
+            <p className="trade-status__hint">
+              거래를 계속 진행하기로 했다면 판매자가 촬영 코드와 상세 상태 증거를 제출합니다.
+              증거가 준비되기 전에는 거래 조건을 잠그거나 결제할 수 없어요.
+            </p>
+            <div className="trade-status__actions">
+              {isSeller ? (
+                <Button to={`/deal/${match.id}/evidence`} fullWidth>
+                  판매자 증거 제출
+                </Button>
+              ) : (
+                <Button to={`/offer/${match.id}`} fullWidth variant="secondary">
+                  판매 제안 다시 보기
+                </Button>
+              )}
+              <Button
+                fullWidth
+                variant="secondary"
+                disabled={busy}
+                onClick={() => setConfirm("cancel")}
+              >
+                거래 취소
+              </Button>
+            </div>
+          </>
         ) : isBuyTrade && !buySnapshotLocked ? (
           <>
-            <p className="trade-status__state">거래 조건 확인이 먼저 필요해요</p>
+            <p className="trade-status__state">판매자 증거가 준비됐어요</p>
             <p className="trade-status__hint">
-              판매자가 제출한 상태와 가격을 양쪽이 확인하면 Deal Snapshot이 고정됩니다.
+              제출된 상태와 가격을 확인하고 양쪽이 같은 Deal Snapshot을 확정하세요.
             </p>
             <div className="trade-status__actions">
               <Button to={`/deal/${match.id}/snapshot`} fullWidth>
                 거래 조건 확인
+              </Button>
+              <Button to={`/deal/${match.id}/evidence`} fullWidth variant="secondary">
+                판매자 증거 보기
               </Button>
               <Button
                 fullWidth
