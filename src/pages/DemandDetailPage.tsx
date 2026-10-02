@@ -7,7 +7,7 @@ import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
-import { CONDITION_LABEL, isBuyDemand } from "@/domain/types";
+import { CONDITION_LABEL, isBuyDemand, type BuyDemand } from "@/domain/types";
 import { formatWon } from "@/lib/format";
 import "./pages.css";
 
@@ -27,7 +27,7 @@ export function DemandDetailPage() {
   );
   const activeBuyerDemands = state.demands
     .filter(
-      (d) =>
+      (d): d is BuyDemand =>
         isBuyDemand(d) &&
         d.status === "ACTIVE" &&
         d.details.productId === productId &&
