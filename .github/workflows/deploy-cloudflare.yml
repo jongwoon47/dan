@@ -28,6 +28,13 @@ jobs:
           set -euo pipefail
           test -n "${VITE_SUPABASE_URL:-}" || { echo "REFUSED: VITE_SUPABASE_URL is missing"; exit 1; }
           test -n "${VITE_SUPABASE_ANON_KEY:-}" || { echo "REFUSED: VITE_SUPABASE_ANON_KEY is missing"; exit 1; }
+          case "${VITE_SUPABASE_URL}" in
+            *wmznpuhqmmqunwtewntt.supabase.co*) ;;
+            *) echo "REFUSED: production build must target the configured production Supabase project"; exit 1 ;;
+          esac
+          case "${VITE_SUPABASE_ANON_KEY}" in
+            *service_role*|*sb_secret*) echo "REFUSED: browser build cannot use a secret/service-role key"; exit 1 ;;
+          esac
       - name: Build
         env:
           VITE_DAN_ENV: production
