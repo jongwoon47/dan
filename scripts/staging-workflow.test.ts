@@ -17,6 +17,8 @@ describe("Cloudflare workflow isolation", () => {
     );
     expect(yml).toContain(`--project-name=${PRODUCTION_CLOUDFLARE_PROJECT} `);
     expect(yml).not.toContain(`--project-name=${STAGING_CLOUDFLARE_PROJECT}`);
+    expect(yml).toContain("VITE_DAN_ENV: production");
+    expect(yml).toContain("Assert production frontend config");
   });
 
   it("deploys staging only to the isolated Cloudflare project with staging secrets", () => {
@@ -36,5 +38,7 @@ describe("Cloudflare workflow isolation", () => {
     expect(yml).toContain("${{ secrets.STAGING_VITE_SUPABASE_ANON_KEY }}");
     expect(yml).toContain("${{ secrets.STAGING_CLOUDFLARE_API_TOKEN }}");
     expect(yml).toContain("${{ secrets.STAGING_CLOUDFLARE_ACCOUNT_ID }}");
+    expect(yml).toContain("${{ secrets.DAN_STAGING_SUPABASE_PROJECT_REF }}");
+    expect(yml).toContain("VITE_DAN_ENV: staging");
   });
 });
