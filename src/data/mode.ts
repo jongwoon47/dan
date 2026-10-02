@@ -46,8 +46,14 @@ export function resolveDataMode(input: DataModeInput): DataMode {
   }
 
   if (url && anonKey) {
+    if (/service_role|sb_secret/i.test(anonKey)) {
+      throw new Error("Browser Supabase configuration cannot use a secret/service-role key.");
+    }
     if (runtime === "staging" && containsProductionSupabaseRef(url)) {
       throw new Error("Staging cannot use the production Supabase project.");
+    }
+    if (runtime === "production" && !containsProductionSupabaseRef(url)) {
+      throw new Error("Production must use the configured production Supabase project.");
     }
     return "supabase";
   }
