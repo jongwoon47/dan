@@ -21,7 +21,11 @@ interface AuthContextValue {
   session: Session | null;
   user: User | null;
   error: string | null;
-  signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  signUp: (
+    email: string,
+    password: string,
+    displayName: string,
+  ) => Promise<{ confirmationRequired: boolean }>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   clearError: () => void;
@@ -108,7 +112,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = useCallback(async (email: string, password: string, displayName: string) => {
     setError(null);
     try {
-      await api.signUp(email, password, displayName);
+      const data = await api.signUp(email, password, displayName);
+      return { confirmationRequired: !data.session };
     } catch (e) {
       setError("auth");
       throw e;
