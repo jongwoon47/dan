@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
 import { Chip, ChipGroup, Field, TextInput } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
+import { formatFulfillmentSummary } from "@/domain/fulfillment";
 import type { ItemCondition, Ownership, TradeMethod } from "@/domain/types";
 import { CONDITION_LABEL } from "@/domain/types";
 import {
@@ -37,9 +38,11 @@ function fileToDataUrl(file: File): Promise<string> {
 export function QuickOfferPage() {
   const { productId = "" } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const {
     getProduct,
     getAggregate,
+    getDemand,
     myOwnerships,
     createOwnership,
     createSellIntent,
@@ -48,6 +51,14 @@ export function QuickOfferPage() {
 
   const product = getProduct(productId);
   const aggregate = getAggregate(productId);
+  const targetDemandId = searchParams.get("demand")?.trim() ?? "";
+  const rawTargetDemand = targetDemandId ? getDemand(targetDemandId) : undefined;
+  const targetDemand =
+    rawTargetDemand?.type === "BUY" &&
+    rawTargetDemand.status === "ACTIVE" &&
+    rawTargetDemand.details.productId === productId
+      ? rawTargetDemand
+      : undefined;
   const existingOwnership = myOwnerships.find(
     (row) => row.productId === productId && row.status === "OWNED",
   );
@@ -56,7 +67,11 @@ export function QuickOfferPage() {
     existingOwnership?.condition ?? null,
   );
   const [price, setPrice] = useState(
-    aggregate?.highestIntentPrice ? String(aggregate.highestIntentPrice) : "",
+    targetDemand?.details.maxPrice
+      ? String(targetDemand.details.maxPrice)
+      : aggregate?.highestIntentPrice
+        ? String(aggregate.highestIntentPrice)
+        : "",
   );
   const [usageCount, setUsageCount] = useState("");
   const [conditionNote, setConditionNote] = useState("");
@@ -79,7 +94,7 @@ export function QuickOfferPage() {
 
   const typedPrice = parseMoneyInput(price);
   const showUsageCount = product.category === "camera";
-  const canSubmit = Boolean(condition && typedPrice > 0 && quickPhotoUrl);
+  const canSubmit = Boolean(condition && typedPrice > 0);
 
   async function pickPhoto(file?: File) {
     setPhotoError("");
@@ -122,6 +137,7 @@ export function QuickOfferPage() {
       const offer = await createSellIntent({
         ownershipId: ownership.id,
         minimumPrice: typedPrice,
+        targetDemandId: targetDemand?.id,
         approxUsageCount:
           showUsageCount && usageCount ? Number(usageCount) : undefined,
         conditionNote: conditionNote.trim() || undefined,
@@ -153,7 +169,21 @@ export function QuickOfferPage() {
         </div>
       </section>
 
-      {aggregate?.highestIntentPrice ? (
+      {targetDemand ? (
+        <section className="target-demand-card">
+          <div>
+            <span>선택한 구매수요</span>
+            <strong>최대 {formatWon(targetDemand.details.maxPrice)}</strong>
+          </div>
+          <div className="target-demand-card__facts">
+            <span>{CONDITION_LABEL[targetDemand.details.conditionPreference]}</span>
+            <span>{formatFulfillmentSummary(targetDemand.fulfillmentOptions)}</span>
+          </div>
+          <p>이 구매수요에만 제안합니다. 구매자가 관심을 보이면 서로 연결한 뒤 대화할 수 있어요.</p>
+        </section>
+      ) : null}
+
+      {!targetDemand && aggregate?.highestIntentPrice ? (
         <section className="live-demand-banner">
           <span>현재 최고 구매 희망가</span>
           <strong>{formatWon(aggregate.highestIntentPrice)}</strong>
@@ -232,13 +262,13 @@ export function QuickOfferPage() {
 
         <div>
           <p className="field-inline-label">
-            현재 사진 1장 <span className="required-mark">필수</span>
+            현재 사진 1장 <span className="optional-mark">선택</span>
           </p>
           <label className="evidence-upload evidence-upload--quick">
             {quickPhotoUrl ? (
               <img src={quickPhotoUrl} alt="현재 물품" />
             ) : (
-              <span>현재 가지고 있는 물품 사진 1장을 추가해 주세요</span>
+              <span>원하면 현재 물품 사진 1장을 미리 추가할 수 있어요</span>
             )}
             <input
               type="file"
@@ -252,8 +282,8 @@ export function QuickOfferPage() {
         <div className="quick-offer-note">
           <strong>Quick Offer는 이 정도면 충분해요</strong>
           <p>
-            구매자가 관심을 보인 뒤에만 식별정보·보증·구성품·상세 상태
-            증거를 요청합니다.
+            가격과 상태만으로 먼저 제안할 수 있어요. 구매자가 관심을 보이고
+            서로 연결된 뒤 실제 거래를 진행할 때 상세 Evidence를 제출합니다.
           </p>
         </div>
 
