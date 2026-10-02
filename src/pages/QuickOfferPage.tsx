@@ -79,7 +79,7 @@ export function QuickOfferPage() {
 
   const typedPrice = parseMoneyInput(price);
   const showUsageCount = product.category === "camera";
-  const canSubmit = Boolean(condition && typedPrice > 0 && quickPhotoUrl);
+  const canSubmit = Boolean(condition && typedPrice > 0);
 
   async function pickPhoto(file?: File) {
     setPhotoError("");
@@ -232,13 +232,13 @@ export function QuickOfferPage() {
 
         <div>
           <p className="field-inline-label">
-            현재 사진 1장 <span className="required-mark">필수</span>
+            현재 사진 1장 <span className="optional-mark">선택</span>
           </p>
           <label className="evidence-upload evidence-upload--quick">
             {quickPhotoUrl ? (
               <img src={quickPhotoUrl} alt="현재 물품" />
             ) : (
-              <span>현재 가지고 있는 물품 사진 1장을 추가해 주세요</span>
+              <span>있다면 현재 물품 사진을 추가해 주세요</span>
             )}
             <input
               type="file"
@@ -252,8 +252,7 @@ export function QuickOfferPage() {
         <div className="quick-offer-note">
           <strong>Quick Offer는 이 정도면 충분해요</strong>
           <p>
-            구매자가 관심을 보인 뒤에만 식별정보·보증·구성품·상세 상태
-            증거를 요청합니다.
+            사진 없이도 바로 제안할 수 있어요. 구매자가 관심을 보이고 서로 연결된 뒤에만 촬영 코드·식별정보·구성품·상세 상태 증거를 요청합니다.
           </p>
         </div>
 
