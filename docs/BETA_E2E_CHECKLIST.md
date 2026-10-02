@@ -11,9 +11,21 @@
 | demo UI / 레이아웃 | `npm run test:qa:mobile` | 없음 |
 | 결제 게이트 (supabase 모드 UI) | `npm test`의 `SafePaymentPage.productionGate` | 없음 |
 | supabase 어댑터는 demo 결제를 거부 | `npm test`의 `paymentBoundary` | 없음 |
-| 두 계정 API E2E | `npm run test:e2e:remote` | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, demo가 아닐 것 |
+| 두 계정 API E2E | `npm run test:e2e:remote` | Supabase 공개 값 + 아래의 미리 검증된 staging A/B 계정 |
 | RLS | `npm run test:e2e:security` | 위와 같음 |
 | 두 브라우저 | `npm run test:e2e:browser` | 위와 같음 |
+
+## staging 사전 조건
+
+BUY 보안 게이트 때문에 full remote E2E는 매번 새 랜덤 구매자/판매자를 만들지 않는다.
+
+- 구매자 A: phone verification 완료
+- 판매자 B: phone + identity + payout verification 완료, seller type 설정
+- A/B는 서로 다른 **staging 전용 테스트 계정**이어야 한다.
+- `.env.local`에 `DAN_E2E_BUYER_EMAIL`, `DAN_E2E_BUYER_PASSWORD`, `DAN_E2E_SELLER_EMAIL`, `DAN_E2E_SELLER_PASSWORD`를 넣는다. 저장소에 커밋하지 않는다.
+- production 계정/credential은 사용하지 않는다.
+- 인증 provider가 아직 없으면 staging SQL Editor/운영 경로에서 해당 테스트 계정에만 verification을 부여한다. 실제 사용자 verification을 흉내 내어 production에 넣지 않는다.
+- 보안 block probe는 테스트가 끝나면 삭제해 A/B 계정을 다음 run에서도 재사용할 수 있게 한다.
 
 ## A. 구매자
 
