@@ -17,7 +17,7 @@ import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
-import type { ChatMessage, DealSnapshot, Demand, Match } from "@/domain/types";
+import type { ChatMessage, DealEvidence, DealSnapshot, Demand, Match } from "@/domain/types";
 import "./pages.css";
 
 const POLL_MS = 60_000;
@@ -92,6 +92,7 @@ export function MatchChatPage() {
     blockUser,
     reportUser,
     getPublicProfile,
+    getDealEvidence,
     getDealSnapshot,
     busy,
   } = useDan();
@@ -120,6 +121,7 @@ export function MatchChatPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [peerName, setPeerName] = useState("");
+  const [dealEvidence, setDealEvidence] = useState<DealEvidence | null>(null);
   const [dealSnapshot, setDealSnapshot] = useState<DealSnapshot | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const onMenuOpenChange = useCallback((open: boolean) => {
@@ -206,17 +208,22 @@ export function MatchChatPage() {
 
   useEffect(() => {
     if (!matchId || demand?.type !== "BUY") {
+      setDealEvidence(null);
       setDealSnapshot(null);
       return;
     }
     let cancelled = false;
-    void getDealSnapshot(matchId).then((row) => {
-      if (!cancelled) setDealSnapshot(row);
-    });
+    void Promise.all([getDealEvidence(matchId), getDealSnapshot(matchId)]).then(
+      ([evidence, snapshot]) => {
+        if (cancelled) return;
+        setDealEvidence(evidence);
+        setDealSnapshot(snapshot);
+      },
+    );
     return () => {
       cancelled = true;
     };
-  }, [getDealSnapshot, matchId, demand?.type, match?.dealStage]);
+  }, [getDealEvidence, getDealSnapshot, matchId, demand?.type, match?.dealStage]);
 
   useEffect(() => {
     if (!peerId) return;
@@ -289,6 +296,8 @@ export function MatchChatPage() {
   const mineDone = currentUser ? iConfirmed(match, currentUser.id) : false;
   const peerDone = currentUser ? peerConfirmed(match, currentUser.id) : false;
   const isBuyTrade = demand?.type === "BUY";
+  const isSeller = Boolean(currentUser && match.sellerId === currentUser.id);
+  const buyEvidenceReady = Boolean(dealEvidence);
   const buySnapshotLocked = Boolean(dealSnapshot?.lockedAt);
   const buyPaid = match.paymentStatus === "PAID";
   const buyComplete = match.status === "COMPLETED";
@@ -357,19 +366,24 @@ export function MatchChatPage() {
       </header>
 
       {isBuyTrade ? (
-        <div className="chat-deal-progress" aria-label="거래 진행 단계">
-          <span className={buySnapshotLocked ? "is-done" : "is-current"}>
-            <i aria-hidden>{buySnapshotLocked ? "✓" : "1"}</i>
+        <div className="chat-deal-progress chat-deal-progress--four" aria-label="거래 진행 단계">
+          <span className={buyEvidenceReady ? "is-done" : "is-current"}>
+            <i aria-hidden>{buyEvidenceReady ? "✓" : "1"}</i>
+            <b>증거</b>
+          </span>
+          <em aria-hidden />
+          <span className={buySnapshotLocked ? "is-done" : buyEvidenceReady ? "is-current" : ""}>
+            <i aria-hidden>{buySnapshotLocked ? "✓" : "2"}</i>
             <b>조건</b>
           </span>
           <em aria-hidden />
           <span className={buyPaid ? "is-done" : buySnapshotLocked ? "is-current" : ""}>
-            <i aria-hidden>{buyPaid ? "✓" : "2"}</i>
+            <i aria-hidden>{buyPaid ? "✓" : "3"}</i>
             <b>결제</b>
           </span>
           <em aria-hidden />
           <span className={buyComplete ? "is-done" : buyPaid ? "is-current" : ""}>
-            <i aria-hidden>{buyComplete ? "✓" : "3"}</i>
+            <i aria-hidden>{buyComplete ? "✓" : "4"}</i>
             <b>인계</b>
           </span>
         </div>
@@ -418,6 +432,26 @@ export function MatchChatPage() {
             ) : (
               <p className="trade-status__hint">{ko.tradePeerClosed}</p>
             )}
+          </>
+        ) : isBuyTrade && !buyEvidenceReady ? (
+          <>
+            <p className="trade-status__state">판매자 Evidence가 필요해요</p>
+            <p className="trade-status__hint">
+              연결과 채팅은 시작됐습니다. 실제 거래로 넘어가기 전에 현재 보유 사진과 상태 정보를 확인합니다.
+            </p>
+            <div className="trade-status__actions">
+              <Button to={`/deal/${match.id}/evidence`} fullWidth variant={isSeller ? "primary" : "secondary"}>
+                {isSeller ? "Evidence 제출" : "Evidence 상태 보기"}
+              </Button>
+              <Button
+                fullWidth
+                variant="secondary"
+                disabled={busy}
+                onClick={() => setConfirm("cancel")}
+              >
+                거래 취소
+              </Button>
+            </div>
           </>
         ) : isBuyTrade && !buySnapshotLocked ? (
           <>
