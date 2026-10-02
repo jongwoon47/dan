@@ -6,14 +6,14 @@
 
 | 구분 | 상태 |
 |------|------|
-| CODE COMPLETE | 예. V1 구매수요 → 제안 → 연결 → 증거 → snapshot → 결제 게이트 → 인계 → 완료/취소가 코드에 있다. |
+| CODE COMPLETE | 예. V1 구매수요 → Quick Offer → 구매자 관심 → 연결/채팅 → 증거 → snapshot → 결제 게이트 → 인계 → 완료/취소가 코드에 있다. |
 | STAGING READY | 아니오. 저장소에는 staging 분리 설계와 워크플로가 있다. 대시보드 프로젝트와 secret은 아직 없다. |
 | REQUIRES EXTERNAL CREDENTIAL | Supabase URL, anon key, Auth redirect, Cloudflare token/account, staging DB URL. |
 | REQUIRES REAL USER VALIDATION | 두 명의 실제 계정으로 한 거래. demo와 unit test는 그 자리를 대신하지 않는다. |
 
 ## 1. 현재 V1 기능
 
-구매자가 제품을 찾고, 카탈로그에 없으면 이름과 카테고리로 구매수요를 만든다. 판매자는 Live Demand에 Quick Offer와 증거를 낸다. 구매자는 제안을 보고 관심을 표시하고, 판매자가 연결한다. 채팅, Deal Snapshot, 안전결제 게이트, 직거래 인계, 완료, 취소, Trust History가 있다.
+구매자가 제품을 찾고, 카탈로그에 없으면 이름과 카테고리로 구매수요를 만든다. 판매자는 Live Demand에서 제품 전체 수요 또는 특정 구매수요에 가벼운 Quick Offer를 보낸다. 사진은 선택이다. 구매자는 제안을 보고 관심을 표시하고, 판매자가 연결해 먼저 채팅한다. 실제 거래를 계속할 때 판매자가 촬영 코드 기반 증거를 제출한다. Deal Snapshot, 안전결제 게이트, 직거래 인계, 완료, 취소, Trust History가 있다.
 
 ## 2. 사용자 flow
 
@@ -25,7 +25,7 @@
 
 ## 4. DB migrations
 
-`supabase/migrations/0001_initial.sql`부터 `0041_realtime_discovery.sql`까지 순서대로 적용한다. `0004`와 `0018`은 공개 제품 카탈로그 행이다. 사용자, 수요, 거래를 demo로 심지 않는다. `supabase/seed.sql`은 `select 1`만 한다. staging Live Demand는 `npm run db:seed:staging`일 때만 들어간다.
+`supabase/migrations/0001_initial.sql`부터 `0042_connect_before_evidence.sql`까지 순서대로 적용한다. `0004`와 `0018`은 공개 제품 카탈로그 행이다. 사용자, 수요, 거래를 demo로 심지 않는다. `supabase/seed.sql`은 `select 1`만 한다. staging Live Demand는 `npm run db:seed:staging`일 때만 들어간다.
 
 ## 5. Realtime
 
@@ -79,7 +79,7 @@ staging은 별도 문서 [STAGING.md](./STAGING.md)다. 공개 워크플로 `Dep
 
 ## 13. Launch checklist
 
-- [ ] staging Supabase에 migrations `0001`–`0041` 적용
+- [ ] staging Supabase에 migrations `0001`–`0042` 적용
 - [ ] Auth redirect에 staging origin과 localhost 추가
 - [ ] 프론트 빌드에 staging 공개 키만 주입
 - [ ] production 빌드에 demo seed 명령이 들어가지 않음
