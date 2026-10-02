@@ -2906,3 +2906,61 @@ body {
     font-size: .6rem;
   }
 }
+
+
+/* Locked Deal Snapshot handoff terms */
+.handoff-plan-card {
+  display: grid;
+  gap: 14px;
+  padding: 17px;
+  border: 1px solid #ddd7f4;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #faf8ff, #fff);
+}
+
+.handoff-plan-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.handoff-plan-card__head h2 {
+  margin: 4px 0 0;
+  font-size: 1.02rem;
+  letter-spacing: -.02em;
+}
+
+.handoff-plan-card__head small {
+  max-width: 9rem;
+  color: var(--dan-ink-muted);
+  font-size: .68rem;
+  line-height: 1.4;
+  text-align: right;
+}
+
+.handoff-method-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 8px;
+}
+
+.handoff-method-toggle button {
+  min-height: 44px;
+  border: 1px solid var(--dan-border-strong);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--dan-ink-secondary);
+  font-weight: 800;
+}
+
+.handoff-method-toggle button.is-selected {
+  border-color: #7560ef;
+  background: #eeeaff;
+  color: #5944d4;
+}
+
+.handoff-plan-fields {
+  display: grid;
+  gap: 12px;
+}
