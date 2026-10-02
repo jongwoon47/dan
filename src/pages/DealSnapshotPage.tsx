@@ -6,9 +6,24 @@ import { ProductVisual } from "@/components/ProductVisual";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
 import type { DealEvidence, DealSnapshot } from "@/domain/types";
-import { formatFulfillmentSummary } from "@/domain/fulfillment";
+import { formatFulfillmentSummary, primaryPublicPlace } from "@/domain/fulfillment";
 import { formatWon } from "@/lib/format";
 import "./pages.css";
+
+function handoffValue(snapshot: DealSnapshot | null, key: string): string {
+  const handoff = snapshot?.snapshot?.handoff;
+  if (!handoff || typeof handoff !== "object") return "";
+  const value = (handoff as Record<string, unknown>)[key];
+  return typeof value === "string" ? value : "";
+}
+
+function toLocalDateTimeInput(value: string): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
 
 export function DealSnapshotPage() {
   const { matchId = "" } = useParams();
@@ -32,6 +47,9 @@ export function DealSnapshotPage() {
 
   const [evidence, setEvidence] = useState<DealEvidence | null>(null);
   const [snapshot, setSnapshot] = useState<DealSnapshot | null>(null);
+  const [agreedMethod, setAgreedMethod] = useState<"meetup" | "shipping">("meetup");
+  const [agreedPlace, setAgreedPlace] = useState("");
+  const [agreedAt, setAgreedAt] = useState("");
   const [error, setError] = useState("");
 
   useDeepHeader({ title: "거래 조건 확인" });
@@ -42,9 +60,26 @@ export function DealSnapshotPage() {
       ([e, d]) => {
         setEvidence(e);
         setSnapshot(d);
+
+        const storedMethod = handoffValue(d, "agreedMethod");
+        const fallbackMethod =
+          demand?.type === "BUY" && demand.details.tradeMethod === "shipping"
+            ? "shipping"
+            : "meetup";
+        setAgreedMethod(
+          storedMethod === "shipping" || storedMethod === "meetup"
+            ? storedMethod
+            : fallbackMethod,
+        );
+
+        const fallbackPlace = demand
+          ? primaryPublicPlace(demand.fulfillmentOptions)?.publicLabel ?? ""
+          : "";
+        setAgreedPlace(handoffValue(d, "agreedPlace") || fallbackPlace);
+        setAgreedAt(toLocalDateTimeInput(handoffValue(d, "agreedAt")));
       },
     );
-  }, [getDealEvidence, getDealSnapshot, matchId]);
+  }, [demand, getDealEvidence, getDealSnapshot, matchId]);
 
   const payload = useMemo(() => {
     if (!match || !demand || !product || !sell || !evidence) return null;
@@ -73,9 +108,15 @@ export function DealSnapshotPage() {
       },
       handoff: {
         method: formatFulfillmentSummary(demand.fulfillmentOptions),
+        agreedMethod,
+        agreedPlace: agreedMethod === "meetup" ? agreedPlace.trim() : "",
+        agreedAt:
+          agreedMethod === "meetup" && agreedAt
+            ? new Date(agreedAt).toISOString()
+            : "",
       },
     };
-  }, [match, demand, product, sell, evidence]);
+  }, [match, demand, product, sell, evidence, agreedMethod, agreedPlace, agreedAt]);
 
   if (!match || !demand || !product || !sell || !currentUser) {
     return (
@@ -93,6 +134,21 @@ export function DealSnapshotPage() {
   const peerConfirmed = isBuyer
     ? Boolean(snapshot?.sellerConfirmedAt)
     : Boolean(snapshot?.buyerConfirmedAt);
+  const demandTradeMethod = demand.type === "BUY" ? demand.details.tradeMethod : "meetup";
+  const meetupAllowed = demandTradeMethod !== "shipping";
+  const shippingAllowed = demandTradeMethod !== "meetup";
+  const handoffReady =
+    agreedMethod === "shipping" || Boolean(agreedPlace.trim() && agreedAt);
+  const storedMethod = handoffValue(snapshot, "agreedMethod");
+  const storedPlace = handoffValue(snapshot, "agreedPlace");
+  const storedAt = toLocalDateTimeInput(handoffValue(snapshot, "agreedAt"));
+  const termsChanged = Boolean(
+    snapshot &&
+      (storedMethod !== agreedMethod ||
+        (agreedMethod === "meetup" &&
+          (storedPlace !== agreedPlace.trim() || storedAt !== agreedAt))),
+  );
+  const effectiveMyConfirmed = myConfirmed && !termsChanged;
 
   async function confirm() {
     if (!payload || busy) return;
@@ -155,6 +211,65 @@ export function DealSnapshotPage() {
         </div>
       </section>
 
+      {!snapshot?.lockedAt ? (
+        <section className="handoff-plan-card">
+          <div className="handoff-plan-card__head">
+            <div>
+              <span className="eyebrow">인계 약속</span>
+              <h2>어떻게 물건을 주고받을까요?</h2>
+            </div>
+            <small>양쪽이 같은 조건을 확인해야 잠겨요.</small>
+          </div>
+
+          <div className="handoff-method-toggle" role="group" aria-label="최종 거래 방식">
+            {meetupAllowed ? (
+              <button
+                type="button"
+                className={agreedMethod === "meetup" ? "is-selected" : ""}
+                onClick={() => setAgreedMethod("meetup")}
+              >
+                직거래
+              </button>
+            ) : null}
+            {shippingAllowed ? (
+              <button
+                type="button"
+                className={agreedMethod === "shipping" ? "is-selected" : ""}
+                onClick={() => setAgreedMethod("shipping")}
+              >
+                택배
+              </button>
+            ) : null}
+          </div>
+
+          {agreedMethod === "meetup" ? (
+            <div className="handoff-plan-fields">
+              <label className="field">
+                <span>만남 장소</span>
+                <input
+                  className="dan-input"
+                  value={agreedPlace}
+                  maxLength={200}
+                  onChange={(event) => setAgreedPlace(event.target.value)}
+                  placeholder="예: 강남역 11번 출구"
+                />
+              </label>
+              <label className="field">
+                <span>만남 시간</span>
+                <input
+                  className="dan-input"
+                  type="datetime-local"
+                  value={agreedAt}
+                  onChange={(event) => setAgreedAt(event.target.value)}
+                />
+              </label>
+            </div>
+          ) : (
+            <p className="section-desc">택배 거래로 확정합니다. 발송과 수령 세부사항은 채팅에서 조율하세요.</p>
+          )}
+        </section>
+      ) : null}
+
       <section className="deal-snapshot-card deal-snapshot-card--focused">
         <div className="snapshot-card-heading">
           <div>
@@ -183,9 +298,21 @@ export function DealSnapshotPage() {
           <strong>{evidence.knownIssues || "미제출"}</strong>
         </div>
         <div className="snapshot-section snapshot-section--key">
-          <span>거래 방식</span>
-          <strong>{formatFulfillmentSummary(demand.fulfillmentOptions)}</strong>
+          <span>최종 거래 방식</span>
+          <strong>{agreedMethod === "meetup" ? "직거래" : "택배"}</strong>
         </div>
+        {agreedMethod === "meetup" ? (
+          <>
+            <div className="snapshot-section snapshot-section--key">
+              <span>만남 장소</span>
+              <strong>{agreedPlace.trim() || "확인 필요"}</strong>
+            </div>
+            <div className="snapshot-section snapshot-section--key">
+              <span>만남 시간</span>
+              <strong>{agreedAt ? new Date(agreedAt).toLocaleString("ko-KR") : "확인 필요"}</strong>
+            </div>
+          </>
+        ) : null}
 
         <details className="snapshot-details">
           <summary>
@@ -261,8 +388,8 @@ export function DealSnapshotPage() {
       ) : (
         <>
           {error ? <p className="form-error">{error}</p> : null}
-          <Button fullWidth size="lg" disabled={busy || !payload || myConfirmed} onClick={() => void confirm()}>
-            {myConfirmed ? "상대 확인 대기 중" : "이 거래조건을 확인했습니다"}
+          <Button fullWidth size="lg" disabled={busy || !payload || !handoffReady || effectiveMyConfirmed} onClick={() => void confirm()}>
+            {effectiveMyConfirmed ? "상대 확인 대기 중" : termsChanged ? "변경한 조건 다시 확인" : "이 거래조건을 확인했습니다"}
           </Button>
         </>
       )}
