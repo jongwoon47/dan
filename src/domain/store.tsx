@@ -490,11 +490,9 @@ function reducer(state: DanState, action: Action): DanState {
       if (!current) return state;
       const transitioned = transitionSellerConnect(current, actorId);
       if (!transitioned) return state;
-      if (!state.dealEvidence.some((x) => x.matchId === current.id)) return state;
-
       const matches = state.matches.map((m) => {
         if (m.id === action.matchId) {
-          return { ...transitioned, dealStage: "EVIDENCE_READY" as const };
+          return { ...transitioned, dealStage: "EVIDENCE_PENDING" as const };
         }
         const sameDemand =
           m.demandId === current.demandId &&

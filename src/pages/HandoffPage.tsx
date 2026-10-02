@@ -16,6 +16,19 @@ const DISPUTE_OPTIONS: Array<{ value: DealDisputeReason; label: string }> = [
   { value: "OTHER", label: "기타" },
 ];
 
+function formatSnapshotDate(value: string): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return value;
+  return date.toLocaleString("ko-KR", {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function snapshotString(
   snapshot: Record<string, unknown>,
   path: string[],
@@ -105,12 +118,24 @@ export function HandoffPage() {
           : Number(usage).toLocaleString("ko-KR"),
       ]);
     }
+    const agreedMethod =
+      snapshotString(payload, ["handoff", "agreedMethod"]) ||
+      snapshotString(payload, ["handoff", "method"]);
+    const agreedPlace = snapshotString(payload, ["handoff", "agreedPlace"]);
+    const agreedAt = snapshotString(payload, ["handoff", "agreedAt"]);
+
     rows.push(
       ["구성품", snapshotString(payload, ["evidence", "components"]) || "없음"],
       ["외관", snapshotString(payload, ["evidence", "cosmeticNotes"]) || "미제출"],
       ["기능 이상", snapshotString(payload, ["evidence", "knownIssues"]) || "미제출"],
-      ["거래 방식", snapshotString(payload, ["handoff", "method"]) || "직거래"],
+      ["거래 방식", agreedMethod === "shipping" ? "택배" : "직거래"],
     );
+    if (agreedMethod !== "shipping") {
+      rows.push(
+        ["만남 장소", agreedPlace || "확인 필요"],
+        ["만남 시간", formatSnapshotDate(agreedAt) || "확인 필요"],
+      );
+    }
     return rows;
   }, [product?.category, product?.name, snapshot]);
 

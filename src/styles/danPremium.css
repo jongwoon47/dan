@@ -2627,3 +2627,340 @@ body {
     font-size: 2rem;
   }
 }
+
+
+/* UX convergence: buyer selection, focused demand creation, targeted offers */
+.buyer-demand-list-section {
+  display: grid;
+  gap: 14px;
+}
+
+.buyer-demand-list-section__head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.buyer-demand-list-section__head h2 {
+  margin: 4px 0 0;
+  font-size: 1.12rem;
+  letter-spacing: -.025em;
+}
+
+.buyer-demand-list-section__head > strong {
+  flex: 0 0 auto;
+  color: var(--dan-accent-text);
+  font-size: .78rem;
+}
+
+.buyer-demand-list {
+  display: grid;
+  gap: 10px;
+}
+
+.buyer-demand-row,
+.target-demand-card,
+.demand-review-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #e6e2ef;
+  border-radius: 20px;
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 8px 22px rgba(42,35,66,.045);
+}
+
+.buyer-demand-row__main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.buyer-demand-row__main > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.buyer-demand-row__main span,
+.target-demand-card p {
+  color: var(--dan-ink-muted);
+  font-size: .76rem;
+  line-height: 1.45;
+}
+
+.buyer-demand-row__price {
+  flex: 0 0 auto;
+  color: var(--dan-accent-text);
+  font-size: .92rem;
+}
+
+.buyer-demand-row__facts,
+.target-demand-card__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.buyer-demand-row__facts span,
+.target-demand-card__facts span {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #f2efff;
+  color: #5843d1;
+  font-size: .7rem;
+  font-weight: 800;
+}
+
+.target-demand-card {
+  border-color: #dcd5ff;
+  background: linear-gradient(145deg, #f8f6ff, #fff);
+}
+
+.target-demand-card > div:first-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.target-demand-card > div:first-child span {
+  color: var(--dan-ink-secondary);
+  font-size: .76rem;
+}
+
+.target-demand-card > div:first-child strong {
+  color: var(--dan-accent-text);
+  font-size: 1rem;
+}
+
+.target-demand-card p {
+  margin: 0;
+}
+
+.optional-mark {
+  color: var(--dan-ink-muted);
+  font-size: .72rem;
+  font-weight: 700;
+}
+
+.create-stepper {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 8px;
+}
+
+.create-stepper > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 7px 9px;
+  border-radius: 12px;
+  background: #f5f4f8;
+  color: #96929d;
+}
+
+.create-stepper i {
+  display: grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  border-radius: 999px;
+  background: #e8e6ed;
+  font-style: normal;
+  font-size: .65rem;
+  font-weight: 900;
+}
+
+.create-stepper b {
+  font-size: .72rem;
+}
+
+.create-stepper .is-current {
+  background: #eeeaff;
+  color: #5842d4;
+}
+
+.create-stepper .is-current i {
+  background: #6a50ee;
+  color: #fff;
+}
+
+.create-stepper .is-done {
+  background: #edf8f3;
+  color: #187555;
+}
+
+.create-stepper .is-done i {
+  background: #ccecdc;
+  color: #117653;
+}
+
+.create-actions {
+  display: grid;
+  grid-template-columns: minmax(0,.72fr) minmax(0,1.28fr);
+  gap: 10px;
+}
+
+.create-selected-product {
+  margin: 0;
+}
+
+.demand-review-card__product {
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.demand-review-card__product > div {
+  display: grid;
+  gap: 2px;
+}
+
+.demand-review-card__product span,
+.demand-review-card__product small {
+  color: var(--dan-ink-muted);
+  font-size: .72rem;
+}
+
+.demand-review-card dl {
+  margin: 0;
+  overflow: hidden;
+  border-top: 1px solid var(--dan-border);
+}
+
+.demand-review-card dl > div {
+  display: grid;
+  grid-template-columns: 7rem minmax(0,1fr);
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--dan-border);
+}
+
+.demand-review-card dt {
+  color: var(--dan-ink-muted);
+  font-size: .76rem;
+}
+
+.demand-review-card dd {
+  margin: 0;
+  text-align: right;
+  font-size: .82rem;
+  font-weight: 800;
+}
+
+.chat-deal-progress--four {
+  grid-template-columns: auto 1fr auto 1fr auto 1fr auto;
+  gap: 5px;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.chat-deal-progress--four > span {
+  min-width: 36px;
+}
+
+.trade-complete-receipt {
+  overflow: hidden;
+  border: 1px solid #e6e2ef;
+  border-radius: 20px;
+  background: rgba(255,255,255,.96);
+}
+
+.trade-complete-receipt > div {
+  display: grid;
+  grid-template-columns: 7rem minmax(0,1fr);
+  gap: 12px;
+  padding: 13px 16px;
+  border-top: 1px solid var(--dan-border);
+}
+
+.trade-complete-receipt > div:first-child {
+  border-top: 0;
+}
+
+.trade-complete-receipt span {
+  color: var(--dan-ink-muted);
+  font-size: .78rem;
+}
+
+.trade-complete-receipt strong {
+  text-align: right;
+  font-size: .85rem;
+}
+
+@media (max-width: 390px) {
+  .chat-deal-progress--four {
+    gap: 3px;
+  }
+
+  .chat-deal-progress--four > span {
+    min-width: 32px;
+  }
+
+  .chat-deal-progress--four > span b {
+    font-size: .6rem;
+  }
+}
+
+
+/* Locked Deal Snapshot handoff terms */
+.handoff-plan-card {
+  display: grid;
+  gap: 14px;
+  padding: 17px;
+  border: 1px solid #ddd7f4;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #faf8ff, #fff);
+}
+
+.handoff-plan-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.handoff-plan-card__head h2 {
+  margin: 4px 0 0;
+  font-size: 1.02rem;
+  letter-spacing: -.02em;
+}
+
+.handoff-plan-card__head small {
+  max-width: 9rem;
+  color: var(--dan-ink-muted);
+  font-size: .68rem;
+  line-height: 1.4;
+  text-align: right;
+}
+
+.handoff-method-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 8px;
+}
+
+.handoff-method-toggle button {
+  min-height: 44px;
+  border: 1px solid var(--dan-border-strong);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--dan-ink-secondary);
+  font-weight: 800;
+}
+
+.handoff-method-toggle button.is-selected {
+  border-color: #7560ef;
+  background: #eeeaff;
+  color: #5944d4;
+}
+
+.handoff-plan-fields {
+  display: grid;
+  gap: 12px;
+}

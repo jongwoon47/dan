@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
@@ -6,13 +6,16 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
+import { primaryPublicPlace } from "@/domain/fulfillment";
+import { CONDITION_LABEL, type BuyDemand, type PublicProfile } from "@/domain/types";
 import { formatWon } from "@/lib/format";
 import "./pages.css";
 
 export function DemandDetailPage() {
   const { productId = "" } = useParams();
-  const { getProduct, getAggregate, myOwnerships, myDemands, currentUser } = useDan();
+  const { getProduct, getAggregate, getPublicProfile, state, myOwnerships, myDemands, currentUser } = useDan();
   const [shareStatus, setShareStatus] = useState("");
+  const [buyerProfiles, setBuyerProfiles] = useState<Record<string, PublicProfile>>({});
   const product = getProduct(productId);
   const aggregate = getAggregate(productId);
   const owned = myOwnerships.find((o) => o.productId === productId);
@@ -23,6 +26,42 @@ export function DemandDetailPage() {
       d.userId === currentUser?.id &&
       d.details.productId === productId,
   );
+  const buyerDemands = useMemo(
+    () =>
+      state.demands
+        .filter(
+          (d): d is BuyDemand =>
+            d.type === "BUY" &&
+            d.status === "ACTIVE" &&
+            d.details.productId === productId &&
+            d.userId !== currentUser?.id,
+        )
+        .sort(
+          (a, b) =>
+            b.details.maxPrice - a.details.maxPrice ||
+            b.createdAt.localeCompare(a.createdAt),
+        )
+        .slice(0, 8),
+    [currentUser?.id, productId, state.demands],
+  );
+
+  useEffect(() => {
+    if (buyerDemands.length === 0) return;
+    let cancelled = false;
+    void Promise.all(
+      buyerDemands.map(async (demand) => [demand.userId, await getPublicProfile(demand.userId)] as const),
+    ).then((rows) => {
+      if (cancelled) return;
+      const next: Record<string, PublicProfile> = {};
+      for (const [userId, profile] of rows) {
+        if (profile) next[userId] = profile;
+      }
+      setBuyerProfiles(next);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [buyerDemands, getPublicProfile]);
 
   async function shareDemand() {
     if (!product) return;
@@ -108,14 +147,50 @@ export function DemandDetailPage() {
         </div>
       </section>
 
+      {buyerDemands.length > 0 ? (
+        <section className="buyer-demand-list-section">
+          <div className="buyer-demand-list-section__head">
+            <div>
+              <span className="eyebrow">구매자 선택</span>
+              <h2>누구에게 판매할지 먼저 고르세요.</h2>
+            </div>
+            <strong>{buyerDemands.length}개 수요</strong>
+          </div>
+          <div className="buyer-demand-list">
+            {buyerDemands.map((demand) => {
+              const profile = buyerProfiles[demand.userId];
+              const place = primaryPublicPlace(demand.fulfillmentOptions)?.publicLabel;
+              return (
+                <article key={demand.id} className="buyer-demand-row">
+                  <div className="buyer-demand-row__main">
+                    <div>
+                      <strong>{profile?.displayName || "구매자"}</strong>
+                      <span>{place || profile?.defaultArea || "거래 지역 협의"}</span>
+                    </div>
+                    <strong className="buyer-demand-row__price">최대 {formatWon(demand.details.maxPrice)}</strong>
+                  </div>
+                  <div className="buyer-demand-row__facts">
+                    <span>{CONDITION_LABEL[demand.details.conditionPreference]}</span>
+                    <span>{demand.details.tradeMethod === "meetup" ? "직거래" : demand.details.tradeMethod === "shipping" ? "택배" : "직거래 · 택배"}</span>
+                  </div>
+                  <Button to={`/demand/${product.id}/offer?demand=${encodeURIComponent(demand.id)}`} fullWidth>
+                    이 구매자에게 제안
+                  </Button>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
       <section className="seller-action-card">
         <div>
           <span>이 제품을 가지고 있나요?</span>
-          <h2>가격과 기본 상태만 적고 바로 제안하세요.</h2>
-          <p>구매자가 관심을 보인 뒤에 상세 증거와 거래 조건을 확정합니다.</p>
+          <h2>{buyerDemands.length > 0 ? "특정 구매자를 고르지 않아도 제안할 수 있어요." : "가격과 기본 상태만 적고 바로 제안하세요."}</h2>
+          <p>Quick Offer는 가볍게 보내고, 서로 연결된 뒤 대화와 상세 Evidence를 진행합니다.</p>
         </div>
         <Button to={`/demand/${product.id}/offer`} fullWidth size="lg">
-          판매 제안하기
+          {buyerDemands.length > 0 ? "전체 구매수요에 제안" : "판매 제안하기"}
         </Button>
         {owned ? <small>등록한 내 물건 정보를 재사용할 수 있어요.</small> : null}
       </section>

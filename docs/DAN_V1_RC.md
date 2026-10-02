@@ -13,7 +13,7 @@
 
 ## 1. 현재 V1 기능
 
-구매자가 제품을 찾고, 카탈로그에 없으면 이름과 카테고리로 구매수요를 만든다. 판매자는 Live Demand에 Quick Offer와 증거를 낸다. 구매자는 제안을 보고 관심을 표시하고, 판매자가 연결한다. 채팅, Deal Snapshot, 안전결제 게이트, 직거래 인계, 완료, 취소, Trust History가 있다.
+구매자가 제품을 찾고, 카탈로그에 없으면 이름과 카테고리로 구매수요를 만든다. 제품 상세에서는 공개된 개별 구매수요를 비교할 수 있고 판매자는 특정 수요를 골라 Quick Offer를 보내거나 제품 전체 수요에 제안할 수 있다. Quick Offer의 사진은 선택이며 가격·상태 중심으로 가볍게 보낸다. 구매자가 관심을 표시하면 판매자가 연결하고 채팅을 먼저 연다. 실제 거래로 넘어갈 때 판매자 Evidence를 제출하고, 최종 거래 방식과 직거래 장소·시간을 포함한 Deal Snapshot을 양쪽이 확인해 잠근다. 이후 안전결제 게이트, 인계, 완료/취소/분쟁, Trust History가 이어진다.
 
 ## 2. 사용자 flow
 
@@ -25,7 +25,7 @@
 
 ## 4. DB migrations
 
-`supabase/migrations/0001_initial.sql`부터 `0041_realtime_discovery.sql`까지 순서대로 적용한다. `0004`와 `0018`은 공개 제품 카탈로그 행이다. 사용자, 수요, 거래를 demo로 심지 않는다. `supabase/seed.sql`은 `select 1`만 한다. staging Live Demand는 `npm run db:seed:staging`일 때만 들어간다.
+`supabase/migrations/0001_initial.sql`부터 `0044_snapshot_handoff_terms.sql`까지 순서대로 적용한다. `0004`와 `0018`은 공개 제품 카탈로그 행이다. 사용자, 수요, 거래를 demo로 심지 않는다. `supabase/seed.sql`은 `select 1`만 한다. staging Live Demand는 `npm run db:seed:staging`일 때만 들어간다.
 
 ## 5. Realtime
 
@@ -79,7 +79,7 @@ staging은 별도 문서 [STAGING.md](./STAGING.md)다. 공개 워크플로 `Dep
 
 ## 13. Launch checklist
 
-- [ ] staging Supabase에 migrations `0001`–`0041` 적용
+- [ ] staging Supabase에 migrations `0001`–`0044` 적용
 - [ ] Auth redirect에 staging origin과 localhost 추가
 - [ ] 프론트 빌드에 staging 공개 키만 주입
 - [ ] production 빌드에 demo seed 명령이 들어가지 않음

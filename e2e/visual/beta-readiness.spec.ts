@@ -144,8 +144,10 @@ for (const width of [320, 390, 430]) {
     await page.goto("/buy/new");
     await settle(page);
     await page.getByLabel("찾는 제품").fill(LONG_NAME);
+    await expectControlInView(page, "조건 입력하기");
+    await page.getByRole("button", { name: "조건 입력하기" }).click();
     await page.getByLabel("최대 구매 희망가").fill("128500000");
-    await expectControlInView(page, "구매수요 등록하기");
+    await expectControlInView(page, "확인하기");
     await expectNoHorizontalOverflow(page);
   });
 }
@@ -155,7 +157,7 @@ test("a short viewport still reaches the create CTA", async ({ page }) => {
   await page.goto("/buy/new");
   await settle(page);
   await page.getByLabel("찾는 제품").focus();
-  await expectControlInView(page, "구매수요 등록하기");
+  await expectControlInView(page, "조건 입력하기");
   await expectNoHorizontalOverflow(page);
 });
 

@@ -22,6 +22,33 @@ export async function signUp(page: Page, email: string, displayName: string) {
   await expect(page).not.toHaveURL(/\/login/, { timeout: 30_000 });
 }
 
+export async function signIn(page: Page, email: string, password: string) {
+  await page.goto("/login");
+  await page.getByLabel("이메일").fill(email);
+  await page.getByLabel("비밀번호").fill(password);
+  await page.getByRole("button", { name: "로그인" }).click();
+  await expect(page).not.toHaveURL(/\/login/, { timeout: 30_000 });
+}
+
+export async function createBuyDemandV1(
+  page: Page,
+  productName: string,
+  maxPrice: string,
+) {
+  await page.goto("/buy/new");
+  await page.getByLabel("찾는 제품").fill(productName);
+  await page.getByRole("button", { name: "조건 입력하기" }).click();
+  await page.getByLabel("최대 구매 희망가").fill(maxPrice);
+
+  const shipping = page.getByRole("button", { name: "택배", exact: true });
+  await shipping.click();
+
+  await page.getByRole("button", { name: "확인하기" }).click();
+  await expect(page.getByRole("heading", { name: "이 조건으로 사람을 찾아볼게요." })).toBeVisible();
+  await page.getByRole("button", { name: "구매수요 등록", exact: true }).click();
+  await expect(page).toHaveURL(/\/my/, { timeout: 30_000 });
+}
+
 export async function createTaskDemand(page: Page, title: string) {
   await page.goto("/create?type=TASK");
   await page.getByRole("radio", { name: "심부름" }).click();

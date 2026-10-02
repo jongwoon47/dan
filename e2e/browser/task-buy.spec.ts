@@ -1,37 +1,44 @@
 import { expect, test } from "@playwright/test";
 import {
   acceptFirstOpenResponse,
-  createBuyDemand,
+  createBuyDemandV1,
   createTaskDemand,
   openFeedDemandByTitle,
   respondToDemand,
-  signUp,
+  signIn,
   uniqueTag,
 } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 
 test("two-user TASK and BUY flows against live Supabase", async ({ browser }) => {
-  test.setTimeout(240_000);
+  test.setTimeout(300_000);
   test.skip(
     !process.env.VITE_SUPABASE_URL || !process.env.VITE_SUPABASE_ANON_KEY,
     "Missing Supabase env",
   );
   test.skip(process.env.VITE_DATA_MODE === "demo", "Requires supabase data mode");
 
+  const buyerEmail = process.env.DAN_E2E_BUYER_EMAIL;
+  const buyerPassword = process.env.DAN_E2E_BUYER_PASSWORD;
+  const sellerEmail = process.env.DAN_E2E_SELLER_EMAIL;
+  const sellerPassword = process.env.DAN_E2E_SELLER_PASSWORD;
+  test.skip(
+    !buyerEmail || !buyerPassword || !sellerEmail || !sellerPassword,
+    "Requires pre-verified staging buyer/seller accounts",
+  );
+
   const tag = uniqueTag();
-  const emailA = `dan.browser.a.${tag}@example.com`;
-  const emailB = `dan.browser.b.${tag}@example.com`;
   const taskTitle = `E2E TASK ${tag}`;
-  const productName = `E2E Cam ${tag}`;
+  const productName = `E2E Product ${tag}`;
 
   const contextA = await browser.newContext();
   const contextB = await browser.newContext();
   const pageA = await contextA.newPage();
   const pageB = await contextB.newPage();
 
-  await signUp(pageA, emailA, "Browser A");
-  await signUp(pageB, emailB, "Browser B");
+  await signIn(pageA, buyerEmail!, buyerPassword!);
+  await signIn(pageB, sellerEmail!, sellerPassword!);
 
   // --- TASK: A creates → B responds → A accepts ---
   const taskUrl = await createTaskDemand(pageA, taskTitle);
@@ -53,51 +60,66 @@ test("two-user TASK and BUY flows against live Supabase", async ({ browser }) =>
   await pageB.reload();
   await expect(pageB.getByText("E2E hello")).toBeVisible({ timeout: 20_000 });
 
-  // --- BUY: A creates → B owns + sell intent → A interest → B connect ---
-  await createBuyDemand(pageA, productName, "500000");
+  // --- BUY: A posts a verified demand → B targets that buyer with a low-friction Quick Offer ---
+  await createBuyDemandV1(pageA, productName, "500000");
 
-  await openFeedDemandByTitle(pageB, productName, "물건 구매");
-  await pageB.getByRole("link", { name: "가지고 있어요" }).click();
-  await expect(pageB).toHaveURL(/\/demand\/.+\/own/);
+  await pageB.goto("/feed");
+  await pageB.getByPlaceholder("제품, 지역, 키워드로 찾기").fill(productName);
+  const productLink = pageB.getByRole("link").filter({ hasText: productName }).first();
+  await expect(productLink).toBeVisible({ timeout: 30_000 });
+  await productLink.click();
+
+  const targetBuyer = pageB.getByRole("link", { name: "이 구매자에게 제안" }).first();
+  await expect(targetBuyer).toBeVisible({ timeout: 30_000 });
+  await targetBuyer.click();
+
   await pageB.getByRole("button", { name: "거의 새것" }).click();
-  await pageB.getByRole("button", { name: "내 물건으로 등록" }).click();
-  await expect(pageB.getByRole("heading", { name: "등록했어요" })).toBeVisible({
-    timeout: 20_000,
-  });
-  await pageB.getByRole("button", { name: "이 가격이면 팔 수도 있어요" }).click();
-  await expect(pageB).toHaveURL(/\/ownership\/.+\/sell-intent/);
-  await pageB.getByLabel("최소 희망가").fill("400000");
-  await pageB.getByRole("button", { name: "이 가격이면 팔 수도 있어요" }).click();
-  await expect(pageB).toHaveURL(/\/(my|chats)/, { timeout: 30_000 });
+  await pageB.getByLabel("희망 판매가").fill("400000");
+  await pageB.getByRole("button", { name: "제안 보내기" }).click();
+  await expect(pageB).toHaveURL(/\/my/, { timeout: 30_000 });
 
-  await pageA.goto("/my");
+  // A expresses interest.
+  await pageA.goto("/my?tab=offers");
   await pageA.reload();
-  await expect(pageA.getByText(productName).first()).toBeVisible({ timeout: 30_000 });
-  await pageA.getByRole("button", { name: "거래 의사 보내기" }).click();
-  await expect(pageA.getByText("상대 응답 대기")).toBeVisible({ timeout: 20_000 });
-
-  await pageB.goto("/my");
-  await pageB.reload();
-  await pageB.getByRole("button", { name: "연결하기" }).click();
-  await expect(pageB.getByRole("button", { name: "연결하기" })).toHaveCount(0, {
+  const offerDetail = pageA.getByRole("link", { name: "제안 상세 보기" }).first();
+  await expect(offerDetail).toBeVisible({ timeout: 30_000 });
+  await offerDetail.click();
+  await pageA.getByRole("button", { name: "관심있어요" }).click();
+  await expect(pageA.getByText("판매자에게 관심을 보냈어요")).toBeVisible({
     timeout: 20_000,
   });
+
+  // B connects before detailed Evidence. Chat must be available immediately.
+  await pageB.goto("/my?tab=selling");
+  await pageB.reload();
+  const connect = pageB.getByRole("button", {
+    name: "구매자가 관심을 보였어요 · 연결하기",
+  });
+  await expect(connect).toBeVisible({ timeout: 30_000 });
+  await connect.click();
+
   await pageB.goto("/chats");
   await pageB.reload();
-  const buyChat = pageB
-    .getByRole("link", { name: /Browser A/ })
-    .filter({ hasText: "대화를 시작해 보세요" });
+  const buyChat = pageB.getByRole("link").filter({ hasText: productName }).first();
   await expect(buyChat).toBeVisible({ timeout: 30_000 });
   await buyChat.click();
   await expect(pageB.getByRole("button", { name: "보내기" })).toBeVisible({
     timeout: 20_000,
   });
+  await expect(pageB.getByText("판매자 Evidence가 필요해요")).toBeVisible();
+
+  await pageB.getByLabel("메시지 입력").fill("연결됐어요. 상태를 먼저 확인해 주세요.");
+  await pageB.getByRole("button", { name: "보내기" }).click();
 
   await pageA.goto("/chats");
   await pageA.reload();
-  await expect(pageA.getByRole("link", { name: /Browser B/ }).first()).toBeVisible({
+  const buyerChat = pageA.getByRole("link").filter({ hasText: productName }).first();
+  await expect(buyerChat).toBeVisible({ timeout: 30_000 });
+  await buyerChat.click();
+  await expect(pageA.getByText("연결됐어요. 상태를 먼저 확인해 주세요.")).toBeVisible({
     timeout: 20_000,
   });
+  await expect(pageA.getByText("판매자 Evidence가 필요해요")).toBeVisible();
 
   await contextA.close();
   await contextB.close();

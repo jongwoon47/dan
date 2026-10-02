@@ -190,28 +190,23 @@ try {
   assert((before.data ?? []).length === 0, "POTENTIAL persisted");
   report.potentialPersisted = "NO";
 
-  const own = await b
-    .from("ownerships")
-    .insert({
-      user_id: userB.id,
-      product_id: productId,
-      condition: "like_new",
-      status: "OWNED",
-    })
-    .select("*")
-    .single();
+  // Normal clients cannot insert ownerships/sell_intents directly.
+  // Exercise the same retry-safe mutation boundary used by the app.
+  const own = await b.rpc("ensure_ownership", {
+    p_product_id: productId,
+    p_condition: "like_new",
+  });
   if (own.error) throw own.error;
-  const sell = await b
-    .from("sell_intents")
-    .insert({
-      ownership_id: own.data.id,
-      user_id: userB.id,
-      product_id: productId,
-      minimum_price: 1_200_000,
-      status: "OPEN",
-    })
-    .select("*")
-    .single();
+
+  const sell = await b.rpc("upsert_quick_offer", {
+    p_ownership_id: own.data.id,
+    p_minimum_price: 1_200_000,
+    p_target_demand_id: buyRpc.data.id,
+    p_trade_method: "shipping",
+    p_approx_usage_count: null,
+    p_condition_note: "E2E current item",
+    p_quick_photo_url: null,
+  });
   if (sell.error) throw sell.error;
 
   const interest = await a.rpc("express_buyer_interest", {
@@ -225,6 +220,24 @@ try {
   });
   if (connect.error) throw connect.error;
   assert(connect.data.status === "CONNECTED", "buy connect");
+  assert(
+    connect.data.deal_stage === "EVIDENCE_PENDING",
+    "connected BUY should open chat before detailed evidence",
+  );
+
+  // The agreed flow is Interest → Connect/Chat → Evidence. Verify that BUY
+  // messaging is already available before the seller submits detailed Evidence.
+  const buyChat = await a.rpc("send_message", {
+    p_match_id: connect.data.id,
+    p_body: "연결됐어요. 상태를 먼저 이야기해요.",
+  });
+  if (buyChat.error) throw buyChat.error;
+
+  const buyChatRows = await b
+    .from("messages")
+    .select("id,body")
+    .eq("match_id", connect.data.id);
+  assert((buyChatRows.data ?? []).length >= 1, "BUY chat before evidence missing");
   report.buy = "PASS";
 
   // Security
