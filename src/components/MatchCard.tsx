@@ -166,17 +166,17 @@ export function MatchCard({ match }: { match: Match }) {
 
       <div className="match-card__actions">
         {isSeller && match.status === "BUYER_INTERESTED" ? (
-          <Button fullWidth to={`/deal/${match.id}/evidence`}>
-            구매자가 관심을 보였어요 · 증거 제출
+          <Button fullWidth onClick={() => void onConnect()} disabled={busy}>
+            {busy ? "연결 중…" : "구매자가 관심을 보였어요 · 연결하기"}
           </Button>
         ) : null}
         {match.status === "CONNECTED" || match.status === "COMPLETED" ? (
           <div className="match-card__connected">
-            <p>{match.status === "COMPLETED" ? ko.tradeDoneTitle : "상세 증거가 준비됐어요. 거래 조건을 확인하세요."}</p>
+            <p>{match.status === "COMPLETED" ? ko.tradeDoneTitle : "거래가 연결됐어요. 먼저 대화하고 실제 거래 전 Evidence를 제출하세요."}</p>
+            <Button to={`/match/${match.id}`} fullWidth>{ko.openChat}</Button>
             {match.status === "CONNECTED" ? (
-              <Button to={`/deal/${match.id}/snapshot`} fullWidth>거래 조건 확인</Button>
+              <Button to={`/deal/${match.id}/evidence`} fullWidth variant="secondary">판매자 Evidence</Button>
             ) : null}
-            <Button to={`/match/${match.id}`} fullWidth variant="secondary">{ko.openChat}</Button>
           </div>
         ) : null}
       </div>
