@@ -17,10 +17,25 @@ if (mode === "demo") {
   process.exit(1);
 }
 
+const buyerEmail = process.env.DAN_E2E_BUYER_EMAIL;
+const buyerPassword = process.env.DAN_E2E_BUYER_PASSWORD;
+const sellerEmail = process.env.DAN_E2E_SELLER_EMAIL;
+const sellerPassword = process.env.DAN_E2E_SELLER_PASSWORD;
+
+if (!buyerEmail || !buyerPassword || !sellerEmail || !sellerPassword) {
+  console.error(
+    "BLOCKED: full BUY E2E requires pre-verified staging buyer/seller credentials " +
+      "(DAN_E2E_BUYER_EMAIL/PASSWORD and DAN_E2E_SELLER_EMAIL/PASSWORD).",
+  );
+  process.exit(2);
+}
+if (buyerEmail.trim().toLowerCase() === sellerEmail.trim().toLowerCase()) {
+  console.error("FAIL: buyer and seller E2E accounts must be different.");
+  process.exit(1);
+}
+
 const ts = Date.now();
 const password = "DanE2eLive-Pass1!";
-const emailA = `dan.e2e.a.${ts}@example.com`;
-const emailB = `dan.e2e.b.${ts}@example.com`;
 const emailC = `dan.e2e.c.${ts}@example.com`;
 
 function client() {
@@ -48,6 +63,16 @@ async function signup(sb, email, name) {
   return data.session.user;
 }
 
+async function signin(sb, email, accountPassword, label) {
+  const { data, error } = await sb.auth.signInWithPassword({
+    email,
+    password: accountPassword,
+  });
+  if (error) throw error;
+  assert(data.session, `no session for pre-verified ${label} account`);
+  return data.session.user;
+}
+
 const report = {
   task: "FAIL",
   buy: "FAIL",
@@ -62,8 +87,8 @@ try {
   const a = client();
   const b = client();
   const c = client();
-  const userA = await signup(a, emailA, "E2E A");
-  const userB = await signup(b, emailB, "E2E B");
+  const userA = await signin(a, buyerEmail, buyerPassword, "buyer");
+  const userB = await signin(b, sellerEmail, sellerPassword, "seller");
   const userC = await signup(c, emailC, "E2E C");
   log("auth", { a: userA.id, b: userB.id, c: userC.id });
 
@@ -165,28 +190,23 @@ try {
   assert((before.data ?? []).length === 0, "POTENTIAL persisted");
   report.potentialPersisted = "NO";
 
-  const own = await b
-    .from("ownerships")
-    .insert({
-      user_id: userB.id,
-      product_id: productId,
-      condition: "like_new",
-      status: "OWNED",
-    })
-    .select("*")
-    .single();
+  // Normal clients cannot insert ownerships/sell_intents directly.
+  // Exercise the same retry-safe mutation boundary used by the app.
+  const own = await b.rpc("ensure_ownership", {
+    p_product_id: productId,
+    p_condition: "like_new",
+  });
   if (own.error) throw own.error;
-  const sell = await b
-    .from("sell_intents")
-    .insert({
-      ownership_id: own.data.id,
-      user_id: userB.id,
-      product_id: productId,
-      minimum_price: 1_200_000,
-      status: "OPEN",
-    })
-    .select("*")
-    .single();
+
+  const sell = await b.rpc("upsert_quick_offer", {
+    p_ownership_id: own.data.id,
+    p_minimum_price: 1_200_000,
+    p_target_demand_id: buyRpc.data.id,
+    p_trade_method: "shipping",
+    p_approx_usage_count: null,
+    p_condition_note: "E2E current item",
+    p_quick_photo_url: null,
+  });
   if (sell.error) throw sell.error;
 
   const interest = await a.rpc("express_buyer_interest", {
@@ -200,6 +220,24 @@ try {
   });
   if (connect.error) throw connect.error;
   assert(connect.data.status === "CONNECTED", "buy connect");
+  assert(
+    connect.data.deal_stage === "EVIDENCE_PENDING",
+    "connected BUY should open chat before detailed evidence",
+  );
+
+  // The agreed flow is Interest → Connect/Chat → Evidence. Verify that BUY
+  // messaging is already available before the seller submits detailed Evidence.
+  const buyChat = await a.rpc("send_message", {
+    p_match_id: connect.data.id,
+    p_body: "연결됐어요. 상태를 먼저 이야기해요.",
+  });
+  if (buyChat.error) throw buyChat.error;
+
+  const buyChatRows = await b
+    .from("messages")
+    .select("id,body")
+    .eq("match_id", connect.data.id);
+  assert((buyChatRows.data ?? []).length >= 1, "BUY chat before evidence missing");
   report.buy = "PASS";
 
   // Security
@@ -226,6 +264,15 @@ try {
     p_body: "should fail",
   });
   assert(blockedMsg.error, "blocked message should fail");
+
+  // A/B are reusable pre-verified staging accounts. Do not leave the security
+  // probe block behind or the next E2E run would fail for the wrong reason.
+  const unblock = await a
+    .from("blocks")
+    .delete()
+    .eq("blocker_id", userA.id)
+    .eq("blocked_id", userB.id);
+  if (unblock.error) throw unblock.error;
 
   console.log(
     JSON.stringify(

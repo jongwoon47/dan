@@ -1,21 +1,21 @@
 :root {
   /* DAN identity — soft marketplace surface + cyan-teal accent */
-  --dan-bg: #f7f8fa;
-  --dan-bg-elevated: #eef2f4;
+  --dan-bg: #f8f8fc;
+  --dan-bg-elevated: #f1effb;
   --dan-surface: #ffffff;
   --dan-ink: #14161a;
   --dan-ink-secondary: #4b5563;
   --dan-ink-muted: #6b7280;
-  --dan-border: #e8eaee;
-  --dan-border-strong: #d5dae0;
-  --dan-accent: #0b8573;
-  --dan-accent-pressed: #097564;
-  --dan-accent-soft: #e6f7f3;
-  --dan-accent-text: #086656;
+  --dan-border: #e9e6f3;
+  --dan-border-strong: #d8d2ec;
+  --dan-accent: #5b3ff2;
+  --dan-accent-pressed: #4930d4;
+  --dan-accent-soft: #f0ecff;
+  --dan-accent-text: #4930cf;
   --dan-warn: #b54708;
   --dan-warn-soft: #fffaeb;
   --dan-danger: #b42318;
-  --dan-success: #067647;
+  --dan-success: #15845b;
 
   /* Spacing rhythm: 4 / 8 / 12 / 16 / 24 / 32 / 40 */
   --space-xs: 4px;
@@ -416,3 +416,96 @@ p {
   padding: 0;
 }
 
+
+
+.fatal-error {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(102,80,244,.10), transparent 28rem),
+    var(--dan-bg);
+}
+
+.fatal-error__card {
+  width: min(100%, 440px);
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+  border: 1px solid var(--dan-border);
+  border-radius: 24px;
+  background: var(--dan-surface);
+  box-shadow: 0 18px 44px rgba(42,34,68,.08);
+}
+
+.fatal-error__mark {
+  width: max-content;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: var(--dan-accent-soft);
+  color: var(--dan-accent-text);
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .05em;
+}
+
+.fatal-error__card h1 {
+  font-size: 1.45rem;
+  letter-spacing: -.035em;
+}
+
+.fatal-error__card p {
+  color: var(--dan-ink-secondary);
+  font-size: .9rem;
+  line-height: 1.6;
+}
+
+.fatal-error__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.fatal-error__actions button {
+  min-height: 48px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--dan-accent);
+  color: #fff;
+  font-weight: 800;
+}
+
+.fatal-error__actions button.is-secondary {
+  border: 1px solid var(--dan-border-strong);
+  background: #fff;
+  color: var(--dan-ink);
+}
+
+
+.network-status-banner {
+  position: sticky;
+  top: var(--nav-height);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 16px;
+  border-bottom: 1px solid #f4d8a6;
+  background: #fff8e8;
+  color: #7a5312;
+  font-size: .78rem;
+  font-weight: 750;
+  text-align: center;
+}
+
+.network-status-banner > span {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #d88b12;
+}
