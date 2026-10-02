@@ -1,6 +1,6 @@
 begin;
 
-select plan(80);
+select plan(82);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -39,6 +39,18 @@ select ok(
     in pg_get_functiondef('public.confirm_deal_snapshot(uuid,numeric,jsonb)'::regprocedure)
   ) > 0,
   'Deal Snapshot is built from canonical V1 payload'
+);
+
+select ok(
+  position(
+    'agreedMethod'
+    in pg_get_functiondef('public.confirm_deal_snapshot(uuid,numeric,jsonb)'::regprocedure)
+  ) > 0
+  and position(
+    'agreedAt'
+    in pg_get_functiondef('public.confirm_deal_snapshot(uuid,numeric,jsonb)'::regprocedure)
+  ) > 0,
+  'Deal Snapshot canonicalizes mutually confirmed handoff terms'
 );
 
 select has_function(
@@ -497,6 +509,14 @@ select has_trigger(
   'sell_intents',
   'trg_sell_intent_marketplace_policy',
   'Quick Offer edits remain marketplace-policy gated'
+);
+
+select ok(
+  position(
+    'current item photo required'
+    in pg_get_functiondef('public.upsert_quick_offer(uuid,numeric,uuid,text,integer,text,text)'::regprocedure)
+  ) = 0,
+  'Quick Offer can be sent without a photo; detailed Evidence remains a later gate'
 );
 
 select ok(
