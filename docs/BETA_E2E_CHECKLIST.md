@@ -39,14 +39,20 @@ BUY 보안 게이트 때문에 full remote E2E는 매번 새 랜덤 구매자/�
 
 - [ ] 회원가입 / 로그인.
 - [ ] Live Demand에서 A의 수요를 찾는다.
-- [ ] Quick Offer 제출.
-- [ ] 판매자 증거 제출 (사진 없는 상태 포함). demo 레이아웃: `e2e/visual/beta-readiness.spec.ts`.
+- [ ] 제품 상세에서 A의 개별 구매수요를 선택해 Quick Offer 제출. 제품 전체 수요에 보내는 일반 제안 경로도 확인한다.
+- [ ] Quick Offer는 사진 없이 제출 가능하고, 사진을 선택적으로 붙일 수도 있다.
 
 ## A. 제안
 
 - [ ] 받은 제안 목록.
 - [ ] 제안 상세.
-- [ ] Interest / 연결.
+- [ ] Interest.
+
+## B. 연결
+
+- [ ] 구매자의 Interest를 확인한다.
+- [ ] 판매자가 Connect를 수락한다. 이 시점에는 상세 Evidence가 아직 없어도 된다.
+- [ ] 연결 직후 A/B 모두 채팅에 들어갈 수 있다.
 
 ## A/B. 채팅
 
@@ -58,8 +64,10 @@ BUY 보안 게이트 때문에 full remote E2E는 매번 새 랜덤 구매자/�
 
 ## 거래
 
-- [ ] seller evidence.
-- [ ] Deal Snapshot 양측 확인 후 잠금.
+- [ ] 채팅 후 seller Evidence 제출. Snapshot은 Evidence 없이는 진행되지 않는다.
+- [ ] Deal Snapshot에서 최종 거래 방식 확인.
+- [ ] 직거래면 만남 장소와 시간을 입력한다.
+- [ ] Deal Snapshot 양측 확인 후 잠금. 한쪽이 장소/시간을 바꾸면 상대의 이전 확인은 다시 필요하다.
 - [ ] payment gate. 잠긴 snapshot 이후에만 들어간다.
 - [ ] demo에서만 "결제하기"가 보인다. production/supabase 모드에서는 그 버튼이 없고 `simulateSafePaymentDemo`는 `false`다. PG를 흉내 내어 PAID로 만들지 않는다.
 - [ ] handoff.
