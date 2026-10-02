@@ -21,7 +21,7 @@
 
 ## 3. Architecture
 
-정적 SPA다. `VITE_DATA_MODE=demo`이거나 Supabase 공개 값이 없으면 localStorage demo 어댑터다. URL과 anon key가 있고 demo가 아니면 Supabase Postgres + RLS + RPC다. 브라우저 데이터 접근은 anon/publishable key뿐이다. `service_role`은 SQL 권한에만 있고 앱 환경변수로 읽지 않는다.
+정적 SPA다. 로컬에서는 Supabase 공개 값이 없으면 localStorage demo 어댑터를 쓸 수 있다. staging/production은 `VITE_DAN_ENV`가 명시되고 Supabase 공개 값이 빠지거나 demo가 강제되면 앱이 fail-closed 한다. URL과 anon key가 정상일 때 Supabase Postgres + RLS + RPC를 사용한다. 브라우저 데이터 접근은 anon/publishable key뿐이다. `service_role`은 SQL 권한에만 있고 앱 환경변수로 읽지 않는다.
 
 ## 4. DB migrations
 
@@ -72,9 +72,9 @@ staging은 별도 문서 [STAGING.md](./STAGING.md)다. 공개 워크플로 `Dep
 
 - staging/production 자격증명 없음. 가짜 값으로 채우지 않음.
 - analytics 이벤트가 화면에서 아직 호출되지 않음. contract만 있다.
-- 두 사용자 Realtime E2E는 자격증명 없이 실행하지 않음.
+- 두 사용자 Realtime/BUY E2E는 staging 자격증명과 미리 검증된 테스트 구매자/판매자 계정 없이 실행하지 않음.
 - staging/production 대시보드 프로젝트와 GitHub secret이 아직 없음. 워크플로는 작성만 하고 실행하지 않음.
-- 알 수 없는 경로는 404 문구 없이 홈으로 보낸다. 기존 동작이라 이번 릴리스에서 바꾸지 않음.
+- 실제 결제사/verification provider는 외부 의존성이다. beta는 안전결제 gate와 staging test verification까지만 검증한다.
 - demo 사용자 이름은 fixture 고정이라 "긴 사용자명"은 채팅 제목(긴 제품명)으로만 자동화했다.
 
 ## 13. Launch checklist
@@ -97,7 +97,7 @@ staging은 별도 문서 [STAGING.md](./STAGING.md)다. 공개 워크플로 `Dep
 | network / discovery failure | 전체 로드 실패 시 "불러오지 못했어요."와 다시 시도 |
 | auth expired | 세션 없으면 anonymous, 로그인이 필요한 화면은 로그인 안내 |
 | unauthorized | RLS와 "찾을 수 없어요" empty |
-| 404 | 알 수 없는 경로는 홈. 삭제된 거래는 empty |
+| 404 | 알 수 없는 경로는 명시적 404 + 홈 복구. 삭제된 거래는 empty |
 | expired / canceled / completed | 라이프사이클과 채팅 읽기 전용, 취소 문구 |
 | no seller evidence | 증거 전 단계 안내 |
 | missing photo | 사진 없으면 제품 색면. 테스트로 overflow 확인 |
