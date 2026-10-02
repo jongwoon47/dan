@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
 import { Chip, ChipGroup, Field, TextInput } from "@/components/ui/Input";
@@ -37,8 +37,11 @@ function fileToDataUrl(file: File): Promise<string> {
 export function QuickOfferPage() {
   const { productId = "" } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const targetDemandId = searchParams.get("target")?.trim() || undefined;
   const {
     getProduct,
+    getDemand,
     getAggregate,
     myOwnerships,
     createOwnership,
@@ -48,6 +51,11 @@ export function QuickOfferPage() {
 
   const product = getProduct(productId);
   const aggregate = getAggregate(productId);
+  const targetDemand = targetDemandId ? getDemand(targetDemandId) : undefined;
+  const targetBuyDemand =
+    targetDemand?.type === "BUY" && targetDemand.details.productId === productId
+      ? targetDemand
+      : undefined;
   const existingOwnership = myOwnerships.find(
     (row) => row.productId === productId && row.status === "OWNED",
   );
@@ -56,7 +64,11 @@ export function QuickOfferPage() {
     existingOwnership?.condition ?? null,
   );
   const [price, setPrice] = useState(
-    aggregate?.highestIntentPrice ? String(aggregate.highestIntentPrice) : "",
+    targetBuyDemand?.details.maxPrice
+      ? String(targetBuyDemand.details.maxPrice)
+      : aggregate?.highestIntentPrice
+        ? String(aggregate.highestIntentPrice)
+        : "",
   );
   const [usageCount, setUsageCount] = useState("");
   const [conditionNote, setConditionNote] = useState("");
@@ -125,6 +137,7 @@ export function QuickOfferPage() {
         approxUsageCount:
           showUsageCount && usageCount ? Number(usageCount) : undefined,
         conditionNote: conditionNote.trim() || undefined,
+        targetDemandId: targetBuyDemand?.id,
         tradeMethod,
         quickPhotoUrl: quickPhotoUrl || undefined,
       });
@@ -153,7 +166,15 @@ export function QuickOfferPage() {
         </div>
       </section>
 
-      {aggregate?.highestIntentPrice ? (
+      {targetBuyDemand ? (
+        <section className="live-demand-banner">
+          <span>선택한 구매수요 · 최대 희망가</span>
+          <strong>{formatWon(targetBuyDemand.details.maxPrice)}</strong>
+          <button type="button" onClick={() => setPrice(String(targetBuyDemand.details.maxPrice))}>
+            이 가격 사용
+          </button>
+        </section>
+      ) : aggregate?.highestIntentPrice ? (
         <section className="live-demand-banner">
           <span>현재 최고 구매 희망가</span>
           <strong>{formatWon(aggregate.highestIntentPrice)}</strong>
