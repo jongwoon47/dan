@@ -26,6 +26,7 @@ export function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [busy, setBusy] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   if (mode === "demo") {
     return <Navigate to={next} replace />;
@@ -38,14 +39,23 @@ export function LoginPage() {
     e.preventDefault();
     clearError();
     setLocalError(null);
+    setNotice(null);
     setBusy(true);
     try {
       if (isSignUp) {
-        await signUp(
+        const result = await signUp(
           email.trim(),
           password,
           displayName.trim() || email.split("@")[0]!,
         );
+        if (result.confirmationRequired) {
+          setIsSignUp(false);
+          setPassword("");
+          setNotice(
+            "가입 확인 메일을 보냈어요. 이메일의 링크를 확인한 뒤 로그인해 주세요.",
+          );
+          return;
+        }
       } else {
         await signIn(email.trim(), password);
       }
@@ -62,7 +72,7 @@ export function LoginPage() {
   return (
     <div className="auth-screen">
       <div className="auth-screen__brand">
-        <img src="/dan-logo.png" alt="" width={56} height={56} />
+        <img src={`${import.meta.env.BASE_URL}dan-logo.png`} alt="" width={56} height={56} />
         <p className="auth-screen__mark">DAN</p>
         <h1 className="auth-screen__headline">{ko.authHeadline}</h1>
         <p className="section-desc">
@@ -106,6 +116,11 @@ export function LoginPage() {
             {shownError}
           </p>
         ) : null}
+        {notice ? (
+          <p className="section-desc" role="status">
+            {notice}
+          </p>
+        ) : null}
         <Button fullWidth type="submit" disabled={busy} size="lg">
           {busy ? ko.saving : isSignUp ? ko.createAccount : ko.login}
         </Button>
@@ -118,6 +133,7 @@ export function LoginPage() {
           setIsSignUp((v) => !v);
           clearError();
           setLocalError(null);
+          setNotice(null);
         }}
       >
         {isSignUp ? ko.haveAccount : ko.needAccount}
