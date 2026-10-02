@@ -154,6 +154,9 @@ function tradeFixture(stage: Stage) {
     },
     handoff: {
       method: "서울 · 직거래",
+      agreedMethod: "meetup",
+      agreedPlace: "강남역 11번 출구",
+      agreedAt: new Date(now + 2 * 60 * 60 * 1000).toISOString(),
       fulfillmentOptions: demand.fulfillmentOptions,
     },
   };
@@ -216,10 +219,11 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
 
   await page.goto("/buy/new");
   await settle(page);
-  await expect(page.getByRole("heading", { name: "사고 싶은 물건을 먼저 알려주세요." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "무엇을 사고 싶나요?" })).toBeVisible();
   await expect(page.getByText("찾는 제품")).toBeVisible();
-  await expect(page.getByText("필수 조건")).toBeVisible();
-  await expect(page.getByText("선호 조건")).toBeVisible();
+  await expect(page.getByText("제품", { exact: true })).toBeVisible();
+  await expect(page.getByText("조건", { exact: true })).toBeVisible();
+  await expect(page.getByText("확인", { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "02-demand-create.png"), fullPage: true });
 
@@ -285,7 +289,9 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
   await installTradeFixture(page, "complete");
   await page.goto("/deal/visual-match-x100vi/complete");
   await settle(page);
-  await expect(page.getByRole("heading", { name: "거래가 완료됐어요!" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "거래가 완료됐어요" })).toBeVisible();
+  await expect(page.getByText("거래 금액")).toBeVisible();
+  await expect(page.getByText("완료일")).toBeVisible();
   await expect(page.getByRole("link", { name: "내 거래 이력 보기" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "10-trade-complete.png"), fullPage: true });
@@ -355,8 +361,12 @@ test("open catalog accepts a product that is not pre-seeded", async ({ page }, t
 
   await page.getByLabel("찾는 제품").fill("Herman Miller Embody Chair");
   await page.getByLabel("제품 카테고리").selectOption("furniture");
+  await page.getByRole("button", { name: "조건 입력하기" }).click();
   await page.getByLabel("최대 구매 희망가").fill("1800000");
-  await page.getByRole("button", { name: "구매수요 등록하기" }).click();
+  await page.getByRole("button", { name: "택배", exact: true }).click();
+  await page.getByRole("button", { name: "확인하기" }).click();
+  await expect(page.getByRole("heading", { name: "이 조건으로 사람을 찾아볼게요." })).toBeVisible();
+  await page.getByRole("button", { name: "구매수요 등록", exact: true }).click();
   await settle(page);
 
   await expect(page).toHaveURL(/\/my/);
