@@ -1,24 +1,27 @@
 import { describe, expect, it } from "vitest";
 import { assertStagingDeployAllowed } from "./stagingDeployGuard";
 import {
+  PRODUCTION_SUPABASE_PROJECT_REFS,
   STAGING_CLOUDFLARE_PROJECT,
   STAGING_DEPLOY_CONFIRM,
 } from "./environmentSeparation";
 
+const stagingRef = "stgstgprojectref001";
 const staging = {
   DAN_ENV: "staging",
   STAGING_DEPLOY_CONFIRM,
   STAGING_CLOUDFLARE_PROJECT,
-  STAGING_VITE_SUPABASE_URL: "https://example-staging.supabase.co",
+  DAN_STAGING_SUPABASE_PROJECT_REF: stagingRef,
+  STAGING_VITE_SUPABASE_URL: `https://${stagingRef}.supabase.co`,
   STAGING_VITE_SUPABASE_ANON_KEY: "sb_publishable_staging_placeholder",
 };
 
 describe("assertStagingDeployAllowed", () => {
-  it("allows a staging-only Cloudflare project with staging secrets", () => {
+  it("allows only the exact staging Cloudflare and Supabase projects", () => {
     expect(assertStagingDeployAllowed(staging).ok).toBe(true);
   });
 
-  it("refuses production env, main, and the public dan project", () => {
+  it("refuses production env, main, and non-staging Cloudflare projects", () => {
     expect(
       assertStagingDeployAllowed({ ...staging, DAN_ENV: "production" }).code,
     ).toBe(1);
@@ -39,7 +42,7 @@ describe("assertStagingDeployAllowed", () => {
     ).toBe(1);
   });
 
-  it("asks for confirmation and staging public values instead of inventing them", () => {
+  it("requires confirmation, public values, and an expected staging project ref", () => {
     expect(
       assertStagingDeployAllowed({
         ...staging,
@@ -52,16 +55,39 @@ describe("assertStagingDeployAllowed", () => {
         STAGING_VITE_SUPABASE_URL: undefined,
       }).code,
     ).toBe(2);
-  });
-
-  it("refuses production Supabase ref, pages host, and service_role", () => {
     expect(
       assertStagingDeployAllowed({
         ...staging,
-        STAGING_VITE_SUPABASE_URL:
-          "https://wmznpuhqmmqunwtewntt.supabase.co",
+        DAN_STAGING_SUPABASE_PROJECT_REF: undefined,
+      }).code,
+    ).toBe(2);
+  });
+
+  it("refuses a mismatched or production Supabase project ref", () => {
+    expect(
+      assertStagingDeployAllowed({
+        ...staging,
+        DAN_STAGING_SUPABASE_PROJECT_REF: "differentstagingref",
       }).code,
     ).toBe(1);
+
+    const prodRef = PRODUCTION_SUPABASE_PROJECT_REFS[0];
+    expect(
+      assertStagingDeployAllowed({
+        ...staging,
+        DAN_STAGING_SUPABASE_PROJECT_REF: prodRef,
+      }).code,
+    ).toBe(1);
+    expect(
+      assertStagingDeployAllowed({
+        ...staging,
+        STAGING_VITE_SUPABASE_URL: `https://${prodRef}.supabase.co`,
+        DAN_STAGING_SUPABASE_PROJECT_REF: prodRef,
+      }).code,
+    ).toBe(1);
+  });
+
+  it("refuses production pages targets and service-role-like frontend values", () => {
     expect(
       assertStagingDeployAllowed({
         ...staging,
