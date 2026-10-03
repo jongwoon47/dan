@@ -67,7 +67,9 @@ function tradeFixture(stage: Stage) {
     minimumPrice: 2_130_000,
     targetDemandId: demand.id,
     tradeMethod: "meetup",
-    quickPhotoUrl: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='68'%3E%3Crect width='96' height='68' fill='%23e7e7ef'/%3E%3Ccircle cx='48' cy='34' r='18' fill='%236b7280'/%3E%3C/svg%3E",
+    // Quick Offer photos are optional. Keep the visual fixture photo-less so QA
+    // exercises the real compact no-photo product treatment instead of a fake placeholder.
+    quickPhotoUrl: undefined,
     approxUsageCount: 2_400,
     conditionNote: "상태 좋음 · 상단 미세스크래치",
     status: stage === "received" ? "OPEN" : "MATCHED",
