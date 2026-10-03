@@ -3289,3 +3289,97 @@ body {
     height: 64px !important;
   }
 }
+
+
+/* Korean typography correction pass */
+body,
+button,
+input,
+select,
+textarea {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+.page-title,
+.section-title,
+.home-demand-heading h1,
+.trust-card__name,
+.dan-field__label,
+.demand-condition-heading h2,
+.my-block__title,
+.dan-btn,
+strong {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  letter-spacing: -.015em;
+}
+
+.page-title,
+.home-demand-heading h1,
+.trust-card__name {
+  font-weight: 700;
+}
+
+.section-title,
+.demand-condition-heading h2,
+.dan-field__label,
+.dan-btn,
+strong {
+  font-weight: 600;
+}
+
+.home-demand-heading h1 {
+  max-width: 15ch;
+  line-height: 1.12;
+}
+
+.camera-demand-create--blueprint .create-v1-intro .page-title {
+  max-width: 18ch;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.camera-demand-create--blueprint .create-v1-intro > p,
+.home-demand-heading p,
+.section-desc,
+.dan-field__hint,
+.offer-next-state > p,
+.live-demand-rule p {
+  word-break: keep-all;
+  line-height: 1.6;
+}
+
+.eyebrow,
+.home-demand-kicker,
+.home-live-heading > div > span {
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.offer-detail-price,
+.deal-price,
+.payment-product-card h1 {
+  font-weight: 700 !important;
+  letter-spacing: -.01em !important;
+}
+
+@media (max-width: 430px) {
+  .home-demand-heading h1 {
+    max-width: 13ch;
+    font-size: 2rem;
+  }
+
+  .camera-demand-create--blueprint .create-v1-intro .page-title {
+    font-size: 1.68rem;
+  }
+}
