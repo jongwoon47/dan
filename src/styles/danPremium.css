@@ -4099,3 +4099,222 @@ body {
     min-height: 82px !important;
   }
 }
+
+
+/* Profile finish pass */
+.profile-page {
+  gap: 18px !important;
+}
+
+.trust-card {
+  gap: 16px !important;
+  padding: 18px !important;
+  border: 1px solid #ececf0 !important;
+  border-radius: 24px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+.trust-card__identity {
+  gap: 14px !important;
+  align-items: center !important;
+}
+
+.avatar-initial--lg {
+  width: 60px !important;
+  height: 60px !important;
+  border-radius: 18px !important;
+  background: #f0effc !important;
+  color: #5b50cf !important;
+  box-shadow: none !important;
+}
+
+.trust-card__name {
+  font-size: 1.35rem !important;
+  font-weight: 700 !important;
+}
+
+.trust-card__area,
+.trust-card__auth,
+.trust-card__joined {
+  color: #7d8089 !important;
+}
+
+.trust-card__bio,
+.trust-card__bio-cta {
+  padding: 13px 14px !important;
+  border: 0 !important;
+  border-radius: 14px !important;
+  background: #f7f7f9 !important;
+  color: #62656f !important;
+  text-decoration: none !important;
+  box-shadow: none !important;
+}
+
+.trust-card__joined {
+  margin: 0 !important;
+  font-size: .8rem !important;
+}
+
+.trust-card__stats {
+  padding: 12px 14px !important;
+  border: 0 !important;
+  border-radius: 14px !important;
+  background: #f7f7f9 !important;
+}
+
+.trust-history {
+  display: grid;
+  gap: 12px;
+  padding: 16px !important;
+  border: 1px solid #ececf0 !important;
+  border-radius: 18px !important;
+  background: #fff !important;
+}
+
+.trust-history__head {
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.trust-history__head > strong {
+  color: #242429 !important;
+  font-size: 1rem !important;
+  font-weight: 680 !important;
+}
+
+.trust-history__badges {
+  gap: 6px !important;
+}
+
+.trust-history__badges > span:not(.trust-verified-badge) {
+  color: #8a8d96 !important;
+  font-size: .72rem !important;
+}
+
+.trust-verified-badge {
+  padding: 4px 8px !important;
+  border-radius: 999px !important;
+  background: #edf8f2 !important;
+  color: #25815c !important;
+  font-size: .72rem !important;
+  font-weight: 650 !important;
+}
+
+.trust-summary-strip {
+  overflow: hidden;
+  border: 1px solid #ececf0 !important;
+  border-radius: 16px !important;
+  background: #fafafa !important;
+  box-shadow: none !important;
+}
+
+.trust-summary-strip > div {
+  min-height: 64px !important;
+  padding: 10px 6px !important;
+}
+
+.trust-summary-strip strong {
+  color: #29292f !important;
+  font-size: 1rem !important;
+}
+
+.trust-summary-strip span {
+  color: #858892 !important;
+  font-size: .68rem !important;
+}
+
+.trust-fact-list > div {
+  min-height: 44px !important;
+  border-color: #ededf0 !important;
+}
+
+.trust-history__note {
+  color: #858892 !important;
+  font-size: .76rem !important;
+  line-height: 1.55 !important;
+}
+
+.profile-trade-history {
+  gap: 10px !important;
+  padding-top: 2px;
+}
+
+.profile-trade-history__head strong {
+  color: #242429 !important;
+  font-size: .98rem !important;
+  font-weight: 680 !important;
+}
+
+.profile-trade-history__head span {
+  color: #8a8d96 !important;
+  font-size: .72rem !important;
+}
+
+.profile-trade-tabs {
+  border-bottom-color: #ececf0 !important;
+}
+
+.profile-trade-tabs button {
+  color: #858892 !important;
+  font-weight: 580 !important;
+}
+
+.profile-trade-tabs button.is-active {
+  color: #29292f !important;
+  font-weight: 680 !important;
+}
+
+.profile-trade-tabs button.is-active::after {
+  background: #6257df !important;
+}
+
+.trust-card__recent {
+  padding: 14px !important;
+  border-radius: 16px !important;
+  background: #f7f7f9 !important;
+}
+
+.trust-card__recent .text-link {
+  color: #554bc5 !important;
+  text-decoration: none !important;
+}
+
+.trust-card__actions {
+  gap: 8px !important;
+}
+
+.trust-card__actions .dan-btn--ghost {
+  min-height: 44px !important;
+  border: 1px solid #e8e8ed !important;
+  background: #f8f8fa !important;
+  color: #5f626b !important;
+}
+
+.trust-card__actions > .dan-btn--ghost:last-child {
+  border-color: transparent !important;
+  background: transparent !important;
+  color: #8a8d96 !important;
+}
+
+.deal-product-card--snapshot {
+  overflow: hidden;
+}
+
+.deal-product-card--snapshot .deal-product-card__main {
+  min-height: 108px;
+}
+
+@media (max-width: 430px) {
+  .home-demand-heading {
+    width: 78% !important;
+  }
+
+  .home-demand-heading h1 {
+    font-size: 1.88rem !important;
+  }
+
+  .trust-card {
+    padding: 16px !important;
+  }
+}
