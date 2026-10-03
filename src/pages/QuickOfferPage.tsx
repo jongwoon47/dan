@@ -156,7 +156,7 @@ export function QuickOfferPage() {
       <section className="deal-product-card quick-offer-product-card">
         <ProductVisual product={product} size="sm" />
         <div>
-          <p className="eyebrow">Quick Offer</p>
+          <p className="eyebrow">판매 제안</p>
           <h1 className="page-title">{product.name}</h1>
           {aggregate?.seekerCount ? (
             <p className="quick-offer-signal">
