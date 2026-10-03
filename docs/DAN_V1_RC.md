@@ -11,6 +11,17 @@
 | REQUIRES EXTERNAL CREDENTIAL | Supabase URL, anon key, Auth redirect, Cloudflare token/account, staging DB URL. |
 | REQUIRES REAL USER VALIDATION | 두 명의 실제 계정으로 한 거래. demo와 unit test는 그 자리를 대신하지 않는다. |
 
+
+## Final RC gate
+
+- Release branch: `release/dan-v1-beta-rc2`
+- Validated HEAD before this documentation-only note: `dce6fb64e3caa536535d92cdde47dc6514802091`
+- CI #350 / run `37120253101`
+- verify: PASS
+- Supabase local start/reset/DB tests: PASS
+- mobile visual QA: PASS
+- production merge/deploy: NOT PERFORMED
+
 ## 1. 현재 V1 기능
 
 구매자가 제품을 찾고, 카탈로그에 없으면 이름과 카테고리로 구매수요를 만든다. 판매자는 Live Demand에서 제품 전체 수요 또는 특정 구매수요에 가벼운 Quick Offer를 보낸다. 사진은 선택이다. 구매자는 제안을 보고 관심을 표시하고, 판매자가 연결해 먼저 채팅한다. 실제 거래를 계속할 때 판매자가 촬영 코드 기반 증거를 제출한다. Deal Snapshot, 안전결제 게이트, 직거래 인계, 완료, 취소, Trust History가 있다.
