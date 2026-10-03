@@ -1774,11 +1774,11 @@
 
 .camera-model-option {
   display: grid;
-  grid-template-columns: 58px 1fr;
+  grid-template-columns: 66px minmax(0, 1fr);
   gap: 12px;
   align-items: center;
   width: 100%;
-  min-height: 74px;
+  min-height: 82px;
   padding: 10px 12px;
   border: 1px solid var(--dan-border);
   border-radius: 16px;

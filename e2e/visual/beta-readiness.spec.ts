@@ -187,3 +187,59 @@ test("empty activity, empty chat, long evidence, and a missing photo stay in fra
   await expect(page.getByRole("img", { name: /판매자가 올린 현재 물품/ })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });
+
+
+test("BUY catalog cards keep product media separate from copy", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 780 });
+  await page.goto("/buy/new");
+  await settle(page);
+
+  const input = page.getByLabel("찾는 제품");
+  await input.fill("MacBook");
+
+  const suggestion = page.locator(".product-suggestion").first();
+  await expect(suggestion).toBeVisible();
+  const suggestionVisual = suggestion.locator(".product-visual--sm");
+  const suggestionCopy = suggestion.locator("span").nth(0);
+  const visualBox = await suggestionVisual.boundingBox();
+  const copyBox = await suggestionCopy.boundingBox();
+  expect(visualBox).not.toBeNull();
+  expect(copyBox).not.toBeNull();
+  expect(visualBox!.x + visualBox!.width + 6).toBeLessThanOrEqual(copyBox!.x);
+
+  await suggestion.click();
+  const selected = page.locator(".selected-product-card");
+  await expect(selected).toBeVisible();
+  const selectedVisual = selected.locator(".product-visual--sm");
+  const selectedCopy = selected.locator(":scope > div:not(.product-visual)").first();
+  const selectedVisualBox = await selectedVisual.boundingBox();
+  const selectedCopyBox = await selectedCopy.boundingBox();
+  expect(selectedVisualBox).not.toBeNull();
+  expect(selectedCopyBox).not.toBeNull();
+  expect(selectedVisualBox!.x + selectedVisualBox!.width + 6).toBeLessThanOrEqual(selectedCopyBox!.x);
+
+  await expectNoHorizontalOverflow(page);
+});
+
+
+test("BUY review header back returns to condition entry", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 });
+  await page.goto("/buy/new");
+  await settle(page);
+
+  await page.getByLabel("찾는 제품").fill("MacBook Pro 14 M4");
+  await page.getByLabel("최대 구매 희망가").fill("2500000");
+  await page.getByRole("button", { name: "다음 · 조건 확인" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "이 조건으로 구매자를 기다릴게요." }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "뒤로가기" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "사고 싶은 물건을 알려주세요." }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/\/buy\/new/);
+  await expectNoHorizontalOverflow(page);
+});

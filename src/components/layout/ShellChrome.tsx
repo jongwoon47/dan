@@ -16,6 +16,10 @@ export type DeepHeaderConfig = {
   rightKey?: string | number | boolean;
   /** Hide AppShell deep header — page renders its own (e.g. chat). */
   hide?: boolean;
+  /** Optional page-specific back action for multi-step flows. */
+  onBack?: () => void;
+  /** Change this when onBack behavior should re-sync. */
+  backKey?: string | number | boolean;
 };
 
 type ShellChromeValue = {
@@ -53,6 +57,7 @@ export function useDeepHeader(config: DeepHeaderConfig) {
   const subtitle = config.subtitle ?? "";
   const hide = Boolean(config.hide);
   const rightKey = config.rightKey;
+  const backKey = config.backKey;
 
   useEffect(() => {
     setHeader({
@@ -60,8 +65,9 @@ export function useDeepHeader(config: DeepHeaderConfig) {
       subtitle: config.subtitle,
       hide,
       right: config.right,
+      onBack: config.onBack,
     });
     return () => setHeader(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setHeader, title, subtitle, hide, rightKey]);
+  }, [setHeader, title, subtitle, hide, rightKey, backKey]);
 }

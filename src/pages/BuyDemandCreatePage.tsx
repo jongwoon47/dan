@@ -89,7 +89,11 @@ export function BuyDemandCreatePage() {
   const [error, setError] = useState("");
   const [reviewing, setReviewing] = useState(false);
 
-  useDeepHeader({ title: "구매수요 등록" });
+  useDeepHeader({
+    title: "구매수요 등록",
+    onBack: reviewing ? () => setReviewing(false) : undefined,
+    backKey: reviewing,
+  });
 
   useEffect(() => {
     if (!initialQuery || selectedProductId || productQuery !== initialQuery) return;
@@ -227,7 +231,7 @@ export function BuyDemandCreatePage() {
         <section className="create-v1-intro">
           <span className="eyebrow">2 / 2 · 확인</span>
           <h1 className="page-title">이 조건으로 구매자를 기다릴게요.</h1>
-          <p>공개되는 핵심 조건을 마지막으로 확인해 주세요.</p>
+          <p>공개될 핵심 조건만 마지막으로 확인해 주세요.</p>
         </section>
 
         <section className="deal-snapshot-card demand-create-review">
@@ -281,17 +285,17 @@ export function BuyDemandCreatePage() {
     <div className="page-stack page-narrow camera-demand-create camera-demand-create--blueprint">
       <section className="create-v1-intro">
         <span className="eyebrow">1 / 2 · 조건 입력</span>
-        <h1 className="page-title">사고 싶은 물건을 먼저 알려주세요.</h1>
+        <h1 className="page-title">사고 싶은 물건을 알려주세요.</h1>
         <p>
-          목록에 없는 제품도 직접 입력할 수 있어요. 수요가 생기면 가진 사람이
-          판매를 제안합니다.
+          목록에 없어도 직접 입력할 수 있어요. 찾는 물건을 먼저 올리면 가진 사람이
+          판매를 제안해요.
         </p>
       </section>
 
       <section className="product-search-section">
         <Field
           label="찾는 제품"
-          hint="제품이 목록에 없어도 입력한 이름으로 새 구매수요를 만들 수 있어요."
+          hint="목록에 없어도 입력한 이름으로 바로 구매수요를 만들 수 있어요."
         >
           <TextInput
             value={productQuery}
@@ -355,7 +359,7 @@ export function BuyDemandCreatePage() {
 
       <Field
         label="최대 구매 희망가"
-        hint="이 금액 이하라면 실제로 구매를 검토할 가격이에요."
+        hint="실제로 구매할 의향이 있는 최대 금액을 적어주세요."
       >
         <TextInput
           inputMode="numeric"
