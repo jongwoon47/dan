@@ -2627,3 +2627,79 @@ body {
     font-size: 2rem;
   }
 }
+
+
+/* Mobile readability pass — comfortable Korean text hierarchy */
+@media (max-width: 859px) {
+  body {
+    line-height: 1.5;
+  }
+
+  .dan-field__label,
+  .camera-demand-create--blueprint .dan-field__label {
+    font-size: .875rem;
+    line-height: 1.4;
+  }
+
+  .dan-field__hint,
+  .camera-demand-create--blueprint .dan-field__hint {
+    color: var(--dan-ink-secondary);
+    font-size: .8125rem;
+    line-height: 1.55;
+  }
+
+  .demand-filter {
+    font-size: .78rem;
+    line-height: 1.25;
+  }
+
+  .live-demand-card__finish,
+  .live-demand-card__signal,
+  .live-demand-card__meta {
+    font-size: .78rem;
+    line-height: 1.45;
+  }
+
+  .live-demand-card__price {
+    font-size: .78rem !important;
+    line-height: 1.45;
+  }
+
+  .live-demand-card__signal strong,
+  .demand-condition-heading span,
+  .evidence-form-divider small,
+  .trade-progress-row small,
+  .profile-trade-history__head span,
+  .profile-trade-row span,
+  .seller-offer-row > div span,
+  .offer-seller-card__head > div span,
+  .payment-product-card span,
+  .product-suggestion small,
+  .new-product-hint span,
+  .selected-product-card span,
+  .quick-offer-photo > summary small,
+  .snapshot-details summary small,
+  .home-live-heading > a {
+    font-size: .78rem;
+    line-height: 1.5;
+  }
+
+  .selected-product-card small,
+  .payment-production-note,
+  .quick-offer-note p,
+  .chat-thread .section-desc {
+    font-size: .8125rem;
+    line-height: 1.55;
+  }
+
+  .trade-status__hint {
+    font-size: .78rem !important;
+    line-height: 1.5 !important;
+  }
+
+  .bottom-nav--v1 a > span:last-child {
+    font-size: .72rem;
+    line-height: 1.2;
+    letter-spacing: -.015em;
+  }
+}
