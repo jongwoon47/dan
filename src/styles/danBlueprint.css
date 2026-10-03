@@ -1198,28 +1198,50 @@
 
 .selected-product-card {
   display: grid;
-  grid-template-columns: 58px minmax(0,1fr);
-  gap: 11px;
+  grid-template-columns: 66px minmax(0,1fr);
+  gap: 14px;
   align-items: center;
-  padding: 11px;
+  min-height: 88px;
+  padding: 13px 14px;
   border: 1px solid #dcd7ff;
-  border-radius: 13px;
+  border-radius: 16px;
   background: #faf9ff;
 }
 
-.selected-product-card > div {
-  display: grid;
-  gap: 2px;
+.selected-product-card .product-visual--sm {
+  width: 62px;
+  height: 62px;
+  border-radius: 14px;
 }
 
-.selected-product-card span,
-.selected-product-card small {
+.selected-product-card > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  align-content: center;
+}
+
+.selected-product-card span {
   color: var(--dan-ink-muted);
-  font-size: .68rem;
+  font-size: .72rem;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .selected-product-card strong {
-  font-size: .86rem;
+  min-width: 0;
+  color: var(--dan-ink);
+  font-size: .95rem;
+  font-weight: 850;
+  line-height: 1.35;
+  letter-spacing: -.02em;
+  overflow-wrap: anywhere;
+}
+
+.selected-product-card small {
+  color: var(--dan-ink-secondary);
+  font-size: .74rem;
+  line-height: 1.4;
 }
 
 .demand-filter {
