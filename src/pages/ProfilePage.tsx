@@ -283,7 +283,7 @@ export function ProfilePage() {
                   {profile.identityVerified ? (
                     <span className="trust-verified-badge">본인인증 완료</span>
                   ) : null}
-                  <span>거래 기록</span>
+                  <span>사실 기반 거래 기록</span>
                 </div>
               </div>
 
