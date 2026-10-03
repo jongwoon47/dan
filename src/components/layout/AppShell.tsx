@@ -80,7 +80,7 @@ function AppShellInner() {
         </header>
       ) : null}
 
-      {showDeepHeader && deepTitle ? <DeepHeader title={deepTitle} subtitle={header?.subtitle} right={header?.right} fallbackTo={deepFallback(pathname)} /> : null}
+      {showDeepHeader && deepTitle ? <DeepHeader title={deepTitle} subtitle={header?.subtitle} right={header?.right} fallbackTo={deepFallback(pathname)} onBack={header?.onBack} /> : null}
 
       <NetworkStatusBanner />
 
