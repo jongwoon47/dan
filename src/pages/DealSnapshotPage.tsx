@@ -114,7 +114,7 @@ export function DealSnapshotPage() {
     return (
       <EmptyState
         title="거래 정보를 찾을 수 없어요"
-        action={<Button to="/my" variant="secondary">My DAN</Button>}
+        action={<Button to="/my" variant="secondary">내 거래</Button>}
       />
     );
   }
@@ -171,20 +171,6 @@ export function DealSnapshotPage() {
           <div>
             <h1 className="page-title">{product.name}</h1>
             <strong className="deal-price">{formatWon(sell.minimumPrice)}</strong>
-          </div>
-        </div>
-        <div className="deal-product-card__stats">
-          <div>
-            <strong>{evidence.usageCount != null ? evidence.usageCount.toLocaleString("ko-KR") : "—"}</strong>
-            <span>{product.category === "camera" ? "컷수" : "사용량"}</span>
-          </div>
-          <div>
-            <strong>{evidence.cosmeticNotes || "미제출"}</strong>
-            <span>외관 상태</span>
-          </div>
-          <div>
-            <strong>{evidence.knownIssues || "없음"}</strong>
-            <span>기능 이상</span>
           </div>
         </div>
       </section>
