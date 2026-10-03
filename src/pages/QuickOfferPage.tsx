@@ -203,7 +203,7 @@ export function QuickOfferPage() {
           </ChipGroup>
         </div>
 
-        <Field label="희망 판매가" hint="구매자는 가격과 기본 상태를 먼저 확인해요.">
+        <Field label="희망 판매가" hint="가격과 상태를 먼저 보여줘요.">
           <TextInput
             inputMode="numeric"
             value={formatDigitsGrouped(price)}
@@ -215,7 +215,7 @@ export function QuickOfferPage() {
         {showUsageCount ? (
           <Field
             label="대략적인 컷수"
-            hint="구매자가 관심을 보이면 정확한 컷수와 상세 증거를 제출해요."
+            hint="관심이 연결되면 정확한 정보만 추가하면 돼요."
           >
             <TextInput
               inputMode="numeric"
@@ -255,7 +255,7 @@ export function QuickOfferPage() {
           <summary>
             <span>
               <strong>사진 추가</strong>
-              <small>선택 · 지금은 없어도 제안할 수 있어요</small>
+              <small>선택 · 없어도 제안 가능</small>
             </span>
             <span aria-hidden>⌄</span>
           </summary>
@@ -264,7 +264,7 @@ export function QuickOfferPage() {
               {quickPhotoUrl ? (
                 <img src={quickPhotoUrl} alt="현재 물품" />
               ) : (
-                <span>현재 물품 사진을 추가하면 구매자가 제안을 더 쉽게 확인할 수 있어요.</span>
+                <span>사진이 있으면 제안을 더 쉽게 확인할 수 있어요.</span>
               )}
               <input
                 type="file"
@@ -277,9 +277,9 @@ export function QuickOfferPage() {
         </details>
 
         <div className="quick-offer-note">
-          <strong>지금은 가격과 상태면 충분해요</strong>
+          <strong>가격과 상태만 입력하면 돼요</strong>
           <p>
-            구매자가 관심을 보이고 연결된 뒤, 실제 거래를 계속할 때만 촬영 코드와 상세 증거를 제출합니다.
+            관심이 연결된 뒤에만 상세 증거를 제출해요.
           </p>
         </div>
 
