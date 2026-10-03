@@ -169,7 +169,7 @@ export function DealSnapshotPage() {
         <div className="deal-product-card__main">
           <ProductVisual product={product} size="sm" />
           <div>
-            <p className="eyebrow">Deal Snapshot</p>
+            <p className="eyebrow">거래 조건</p>
             <h1 className="page-title">{product.name}</h1>
             <strong className="deal-price">{formatWon(sell.minimumPrice)}</strong>
           </div>
@@ -195,7 +195,7 @@ export function DealSnapshotPage() {
         <div className="snapshot-card-heading">
           <div>
             <span className="eyebrow">핵심 거래 조건</span>
-            <h2>확인해야 할 내용만 먼저 보여드려요.</h2>
+            <h2>거래 전, 아래 조건을 확인해 주세요.</h2>
           </div>
           <strong>{formatWon(sell.minimumPrice)}</strong>
         </div>
