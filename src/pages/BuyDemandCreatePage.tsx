@@ -296,7 +296,7 @@ export function BuyDemandCreatePage() {
       <section className="product-search-section commerce-panel commerce-panel--product">
         <Field
           label="찾는 제품"
-          hint="목록에 없어도 입력한 이름으로 바로 구매수요를 만들 수 있어요."
+          hint="목록에 없어도 직접 등록할 수 있어요."
         >
           <TextInput
             value={productQuery}
@@ -343,7 +343,7 @@ export function BuyDemandCreatePage() {
             </div>
           </div>
         ) : (
-          <Field label="제품 카테고리" hint="새 제품으로 등록될 때 사용할 분류예요.">
+          <Field label="제품 카테고리" hint="새 제품일 때 필요한 분류예요.">
             <TextSelect
               value={category}
               onChange={(event) => setCategory(event.target.value as ProductCategory)}
@@ -361,7 +361,7 @@ export function BuyDemandCreatePage() {
       <section className="commerce-panel commerce-panel--price">
         <Field
           label="최대 구매 희망가"
-          hint="실제로 구매할 의향이 있는 최대 금액을 적어주세요."
+          hint="구매 가능한 최대 금액을 적어주세요."
         >
           <TextInput
             inputMode="numeric"
@@ -426,7 +426,7 @@ export function BuyDemandCreatePage() {
         </div>
         <Field
           label="추가로 원하는 조건"
-          hint="색상, 사이즈, 용량, 구성품처럼 이 제품에서 중요한 조건을 자유롭게 적어주세요."
+          hint="색상·사이즈·용량·구성품처럼 꼭 원하는 조건만 적어주세요."
         >
           <TextInput
             value={extraCondition}
@@ -437,19 +437,15 @@ export function BuyDemandCreatePage() {
       </section>
 
       <div className="live-demand-rule">
-        <strong>구매수요는 7일 단위로 다시 확인해요.</strong>
-        <p>
-          오래된 수요가 계속 노출되지 않도록 실제 구매 의사를 주기적으로
-          확인합니다.
-        </p>
+        <strong>구매수요는 7일마다 확인해요.</strong>
+        <p>구매 의사가 사라진 오래된 수요는 자동으로 정리돼요.</p>
       </div>
 
       {isLoggedIn && verificationLoaded && !phoneVerified ? (
         <div className="verification-gate">
           <strong>휴대폰 본인확인이 필요해요</strong>
           <p>
-            공개 구매수요와 희망가는 실제 구매 의사가 확인된 계정만 Live
-            Demand에 반영합니다.
+            공개 구매수요와 희망가는 본인확인을 마친 계정만 실시간 수요에 반영돼요.
           </p>
         </div>
       ) : null}
