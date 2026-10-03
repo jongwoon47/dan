@@ -261,7 +261,7 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
 
   await page.goto("/deal/visual-match-x100vi/snapshot");
   await settle(page);
-  await expect(page.getByText("거래 조건", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "거래 조건을 확인해 주세요" })).toBeVisible();
   await expect(page.getByText("확인하면 이 조건으로 거래가 확정돼요.")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "07-deal-snapshot.png"), fullPage: true });
