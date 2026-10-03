@@ -183,7 +183,7 @@ test("empty activity, empty chat, long evidence, and a missing photo stay in fra
 
   await page.goto("/offer/edge-match");
   await settle(page);
-  await expect(page.getByText("Quick Offer", { exact: true })).toBeVisible();
+  await expect(page.getByText("판매 제안", { exact: true })).toBeVisible();
   await expect(page.getByRole("img", { name: /판매자가 올린 현재 물품/ })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });
@@ -232,13 +232,13 @@ test("BUY review header back returns to condition entry", async ({ page }) => {
   await page.getByRole("button", { name: "다음 · 조건 확인" }).click();
 
   await expect(
-    page.getByRole("heading", { name: "이 조건으로 구매자를 기다릴게요." }),
+    page.getByRole("heading", { name: "이 조건으로 구매수요를 올릴게요." }),
   ).toBeVisible();
 
   await page.getByRole("button", { name: "뒤로가기" }).click();
 
   await expect(
-    page.getByRole("heading", { name: "사고 싶은 물건을 알려주세요." }),
+    page.getByRole("heading", { name: "어떤 물건을 찾고 있나요?" }),
   ).toBeVisible();
   await expect(page).toHaveURL(/\/buy\/new/);
   await expectNoHorizontalOverflow(page);
