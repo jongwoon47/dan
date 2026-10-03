@@ -283,7 +283,7 @@ export function ProfilePage() {
                   {profile.identityVerified ? (
                     <span className="trust-verified-badge">본인인증 완료</span>
                   ) : null}
-                  <span>사실 기반 거래 기록</span>
+                  <span>거래 기록</span>
                 </div>
               </div>
 
@@ -299,7 +299,7 @@ export function ProfilePage() {
               </div>
 
               <p className="trust-history__note">
-                사용자 신고나 선택만으로 귀책을 표시하지 않습니다. 확정된 운영 기록만 반영합니다.
+                운영으로 확정된 기록만 표시해요.
               </p>
             </div>
 
@@ -307,7 +307,7 @@ export function ProfilePage() {
               <section className="profile-trade-history">
                 <div className="profile-trade-history__head">
                   <strong>내 거래 내역</strong>
-                  <span>확정된 거래 상태만 표시해요</span>
+                  <span>확정된 기록만 표시</span>
                 </div>
                 <div className="profile-trade-tabs" role="tablist" aria-label="거래 내역">
                   <button type="button" className={historyTab === "completed" ? "is-active" : ""} onClick={() => setHistoryTab("completed")}>완료</button>
