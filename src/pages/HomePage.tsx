@@ -98,7 +98,7 @@ export function HomePage() {
       <section className="home-demand-header">
         <div className="home-demand-heading">
           <span className="home-demand-kicker">실시간 수요</span>
-          <h1 aria-label="사고 싶은 물건이 있나요?">사고 싶은 물건이 있나요?</h1>
+          <h1 aria-label="사고 싶은 물건이 있나요?">사고 싶은 물건이<br />있나요?</h1>
           <p>찾는 물건을 올려두면, 가진 사람이 판매를 제안해요.</p>
         </div>
 
