@@ -285,9 +285,9 @@ export function BuyDemandCreatePage() {
     <div className="page-stack page-narrow camera-demand-create camera-demand-create--blueprint">
       <section className="create-v1-intro">
         <span className="eyebrow">1 / 2 · 조건 입력</span>
-        <h1 className="page-title">사고 싶은 물건을 먼저 알려주세요.</h1>
+        <h1 className="page-title">사고 싶은 물건을 알려주세요.</h1>
         <p>
-          목록에 없어도 직접 입력할 수 있어요. 찾는 사람이 먼저 올리면 가진 사람이
+          목록에 없어도 직접 입력할 수 있어요. 찾는 물건을 먼저 올리면 가진 사람이
           판매를 제안해요.
         </p>
       </section>
