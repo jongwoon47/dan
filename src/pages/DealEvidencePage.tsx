@@ -101,7 +101,7 @@ export function DealEvidencePage() {
   }, [getMyVerification, isSeller]);
 
   useEffect(() => {
-    if (!matchId || !isSeller) return;
+    if (!matchId || !isSeller || match?.status !== "CONNECTED") return;
     let cancelled = false;
     setChallengeError("");
     void issueDealEvidenceChallenge(matchId).then((row) => {
@@ -115,7 +115,7 @@ export function DealEvidencePage() {
     return () => {
       cancelled = true;
     };
-  }, [issueDealEvidenceChallenge, isSeller, matchId]);
+  }, [issueDealEvidenceChallenge, isSeller, match?.status, matchId]);
 
   useEffect(() => {
     if (!matchId) return;
