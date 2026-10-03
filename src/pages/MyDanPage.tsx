@@ -113,7 +113,7 @@ export function MyDanPage() {
           <h1 className="page-title">내 구매수요</h1>
         </div>
         <Link to={"/profile/" + currentUser?.id} className="my-dan__name">
-          프로필
+          프로필 보기 <span aria-hidden>›</span>
         </Link>
       </header>
 
