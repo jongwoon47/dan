@@ -210,7 +210,7 @@ export function DealSnapshotPage() {
           <summary>
             <span>
               <strong>판매자 제출 상세</strong>
-              <small>구매·보증·식별번호·구성품·수리 이력</small>
+              <small>보증·구성품·수리 이력</small>
             </span>
             <span className="snapshot-details__chevron" aria-hidden>⌄</span>
           </summary>
@@ -279,7 +279,7 @@ export function DealSnapshotPage() {
             <div className="section-stack">
               <Field
                 label="만남 장소"
-                hint="연결 전에는 공개되지 않고, 이 거래의 두 참여자만 확인하는 조건이에요."
+                hint="이 거래 참여자만 볼 수 있어요."
               >
                 <TextInput
                   value={handoffPlace}
@@ -303,7 +303,7 @@ export function DealSnapshotPage() {
 
       <section className="snapshot-lock-notice">
         <strong>확인하면 이 조건으로 거래가 확정돼요.</strong>
-        <p>양쪽이 확인한 뒤에는 조건을 바꿀 수 없어요. 다른 내용이 있다면 확인 전에 채팅에서 조율해 주세요.</p>
+        <p>양쪽 확인 후에는 수정할 수 없어요. 다르면 먼저 채팅에서 조율하세요.</p>
       </section>
 
       <section className="deal-confirm-state">
@@ -322,8 +322,7 @@ export function DealSnapshotPage() {
             <div>
               <strong>거래 조건이 확정됐어요</strong>
               <p>
-                이제 안전결제 상태를 확인한 뒤 현장에서 같은 Deal Snapshot을
-                다시 대조합니다.
+                안전결제 후 현장에서 같은 거래 조건을 다시 확인하세요.
               </p>
             </div>
           </section>
