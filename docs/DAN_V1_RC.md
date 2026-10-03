@@ -1,13 +1,13 @@
 # DAN V1 release candidate
 
-기준 HEAD `fbf2bcde7dfc6dcc4c655e7234a2c30635b0915f`. 이 문서는 그 커밋의 기능과 디자인을 유지한 채 베타 준비 상태를 적는다.
+기준 브랜치 `release/dan-v1-beta-rc2`, 디자인 동결 기준 HEAD `4f2b7021cf8fd562390e0704db7fd7c505871cfe`. 이 문서는 해당 기능·디자인을 더 이상 임의 변경하지 않고 실제 staging/두 사용자 검증으로 넘기기 위한 베타 준비 상태를 적는다.
 
 ## 상태
 
 | 구분 | 상태 |
 |------|------|
-| CODE COMPLETE | 예. V1 구매수요 → Quick Offer → 구매자 관심 → 연결/채팅 → 증거 → snapshot → 결제 게이트 → 인계 → 완료/취소가 코드에 있다. |
-| STAGING READY | 아니오. 저장소에는 staging 분리 설계와 워크플로가 있다. 대시보드 프로젝트와 secret은 아직 없다. |
+| CODE COMPLETE | 예. V1 구매수요 → Quick Offer → 구매자 관심 → 연결/채팅 → 증거 → snapshot → 결제 게이트 → 인계 → 완료/취소가 코드에 있다. 디자인은 comfort/readability pass에서 동결했다. |
+| STAGING READY | 아직 아니오. 저장소와 배포 guard는 준비됐고, 실제 별도 Supabase staging 프로젝트 / Cloudflare Pages staging 프로젝트 / GitHub `staging` secret 생성이 남아 있다. |
 | REQUIRES EXTERNAL CREDENTIAL | Supabase URL, anon key, Auth redirect, Cloudflare token/account, staging DB URL. |
 | REQUIRES REAL USER VALIDATION | 두 명의 실제 계정으로 한 거래. demo와 unit test는 그 자리를 대신하지 않는다. |
 
@@ -76,6 +76,16 @@ staging은 별도 문서 [STAGING.md](./STAGING.md)다. 공개 워크플로 `Dep
 - staging/production 대시보드 프로젝트와 GitHub secret이 아직 없음. 워크플로는 작성만 하고 실행하지 않음.
 - 실제 결제사/verification provider는 외부 의존성이다. beta는 안전결제 gate와 staging test verification까지만 검증한다.
 - demo 사용자 이름은 fixture 고정이라 "긴 사용자명"은 채팅 제목(긴 제품명)으로만 자동화했다.
+
+## 12.5 Design freeze verification
+
+- Design branch final HEAD: `4f2b7021cf8fd562390e0704db7fd7c505871cfe`
+- Validation: CI #349
+- verify: PASS
+- Supabase local reset / DB tests: PASS
+- mobile visual QA: PASS
+- final visual direction: reduced helper-copy fatigue, calmer card hierarchy, readable muted text
+- 이후 디자인 변경은 실제 베타에서 관찰된 문제만 대상으로 한다.
 
 ## 13. Launch checklist
 
