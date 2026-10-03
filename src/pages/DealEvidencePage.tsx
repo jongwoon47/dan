@@ -48,7 +48,6 @@ export function DealEvidencePage() {
     getMyVerification,
     getDealEvidence,
     upsertDealEvidence,
-    connectAsSeller,
     busy,
   } = useDan();
   const match = myMatches.find((m) => m.id === matchId);
@@ -156,6 +155,16 @@ export function DealEvidencePage() {
     ],
   );
 
+  if (isSeller && match?.status === "BUYER_INTERESTED") {
+    return (
+      <EmptyState
+        title="먼저 구매자와 연결해 주세요"
+        body="관심이 확인됐다면 먼저 연결해 대화하세요. 실제 거래를 계속할 때 이 단계에서 증거를 제출합니다."
+        action={<Button to="/my?tab=selling">판매 제안으로 돌아가기</Button>}
+      />
+    );
+  }
+
   const showUsageCount = product?.category === "camera";
   const componentOptions = product ? componentOptionsFor(product) : [];
 
@@ -221,9 +230,6 @@ export function DealEvidencePage() {
     if (!row) {
       setSubmitError("증거를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
       return;
-    }
-    if (activeMatch.status === "BUYER_INTERESTED") {
-      await connectAsSeller(activeMatch.id);
     }
     navigate(`/deal/${activeMatch.id}/snapshot`);
   }
