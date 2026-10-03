@@ -231,7 +231,7 @@ export function BuyDemandCreatePage() {
         <section className="create-v1-intro">
           <span className="eyebrow">2 / 2 · 확인</span>
           <h1 className="page-title">이 조건으로 구매수요를 올릴게요.</h1>
-          <p>공개될 핵심 조건만 마지막으로 확인해 주세요.</p>
+          <p>공개할 조건만 확인해 주세요.</p>
         </section>
 
         <section className="deal-snapshot-card demand-create-review">
@@ -267,7 +267,7 @@ export function BuyDemandCreatePage() {
 
         <div className="live-demand-rule">
           <strong>Live Demand에는 실제 구매 의사가 있는 조건만 올려주세요.</strong>
-          <p>구매수요는 7일 단위로 다시 확인하며, 언제든 My DAN에서 관리할 수 있어요.</p>
+          <p>7일마다 다시 확인하고, My DAN에서 언제든 관리할 수 있어요.</p>
         </div>
 
         {error ? <p className="form-error">{error}</p> : null}
@@ -289,14 +289,14 @@ export function BuyDemandCreatePage() {
         <span className="eyebrow">1 / 2 · 조건 입력</span>
         <h1 className="page-title">어떤 물건을 찾고 있나요?</h1>
         <p>
-          목록에 없어도 직접 입력할 수 있어요. 올린 수요를 보고 가진 사람이 판매를 제안해요.
+          찾는 물건과 조건만 적어주세요. 가진 사람이 판매를 제안해요.
         </p>
       </section>
 
       <section className="product-search-section commerce-panel commerce-panel--product">
         <Field
           label="찾는 제품"
-          hint="목록에 없어도 직접 등록할 수 있어요."
+          hint="없으면 새 제품으로 등록할 수 있어요."
         >
           <TextInput
             value={productQuery}
@@ -361,7 +361,7 @@ export function BuyDemandCreatePage() {
       <section className="commerce-panel commerce-panel--price">
         <Field
           label="최대 구매 희망가"
-          hint="구매 가능한 최대 금액을 적어주세요."
+          hint="최대 금액만 입력해 주세요."
         >
           <TextInput
             inputMode="numeric"
@@ -426,7 +426,7 @@ export function BuyDemandCreatePage() {
         </div>
         <Field
           label="추가로 원하는 조건"
-          hint="색상·사이즈·용량·구성품처럼 꼭 원하는 조건만 적어주세요."
+          hint="꼭 필요한 조건만 적어주세요."
         >
           <TextInput
             value={extraCondition}
@@ -437,15 +437,15 @@ export function BuyDemandCreatePage() {
       </section>
 
       <div className="live-demand-rule">
-        <strong>구매수요는 7일마다 확인해요.</strong>
-        <p>구매 의사가 사라진 오래된 수요는 자동으로 정리돼요.</p>
+        <strong>수요는 7일마다 확인해요.</strong>
+        <p>오래된 수요는 자동으로 정리돼요.</p>
       </div>
 
       {isLoggedIn && verificationLoaded && !phoneVerified ? (
         <div className="verification-gate">
           <strong>휴대폰 본인확인이 필요해요</strong>
           <p>
-            공개 구매수요와 희망가는 본인확인을 마친 계정만 실시간 수요에 반영돼요.
+            본인확인 후 구매수요가 공개돼요.
           </p>
         </div>
       ) : null}
