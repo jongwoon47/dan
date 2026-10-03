@@ -98,8 +98,8 @@ export function HomePage() {
       <section className="home-demand-header">
         <div className="home-demand-heading">
           <span className="home-demand-kicker">실시간 수요</span>
-          <h1 aria-label="사고 싶은 물건이 있나요?">사고 싶은 물건이<br />있나요?</h1>
-          <p>찾는 물건을 올려두면, 가진 사람이 판매를 제안해요.</p>
+          <h1 aria-label="찾는 물건이 있나요?">찾는 물건이<br />있나요?</h1>
+          <p>원하는 물건을 올려두면, 가진 사람이 판매를 제안해요.</p>
         </div>
 
         <div className="home-hero-products" aria-hidden>
@@ -134,7 +134,7 @@ export function HomePage() {
               autoComplete="off"
               aria-label="찾는 제품"
             />
-            <small>없어도 괜찮아요 · 바로 새 구매수요를 만들 수 있어요</small>
+            <small>목록에 없어도 바로 등록할 수 있어요</small>
           </label>
           <button type="submit" className="home-intent-composer__submit" aria-label="구매수요 만들기">
             <span aria-hidden>›</span>
