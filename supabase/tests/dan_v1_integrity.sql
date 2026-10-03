@@ -1,6 +1,6 @@
 begin;
 
-select plan(78);
+select plan(79);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -170,6 +170,14 @@ select has_function(
   'upsert_quick_offer',
   array['uuid','numeric','uuid','text','integer','text','text'],
   'Quick Offer write RPC exists'
+);
+
+select ok(
+  position(
+    'current item photo required'
+    in pg_get_functiondef('public.upsert_quick_offer(uuid,numeric,uuid,text,integer,text,text)'::regprocedure)
+  ) = 0,
+  'Quick Offer photo remains optional'
 );
 
 select has_trigger(
