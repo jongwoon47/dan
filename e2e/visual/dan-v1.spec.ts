@@ -208,7 +208,7 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
 
   await page.goto("/");
   await settle(page);
-  await expect(page.getByRole("heading", { name: "지금 누군가 찾고 있어요" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "사고 싶은 물건이 있나요?" })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "찾는 제품" })).toBeVisible();
   await expect(page.getByRole("button", { name: "구매수요 만들기" })).toBeVisible();
   await expect(page.getByText("iPhone 15 Pro")).toBeVisible();
@@ -246,7 +246,7 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
   await settle(page);
   await expect(page.getByText("판매 제안", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "관심 있어요" })).toBeVisible();
-  await expect(page.getByText("Trust History 자세히 보기")).toBeVisible();
+  await expect(page.getByText("거래 이력 보기")).toBeVisible();
   await expect(page.locator(".offer-detail-product--catalog .product-visual")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "05-offer-detail.png"), fullPage: true });
