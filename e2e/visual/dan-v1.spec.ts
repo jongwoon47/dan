@@ -294,14 +294,14 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
 
   await page.goto("/profile/user-you");
   await settle(page);
-  await expect(page.getByText("Trust History")).toBeVisible();
+  await expect(page.getByText("거래 신뢰 기록")).toBeVisible();
   await expect(page.getByText("사실 기반 거래 기록")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "11-trust-history.png"), fullPage: true });
 
   await page.goto("/demand/prod-fuji-x100vi/offer");
   await settle(page);
-  await expect(page.getByText("판매 제안", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "판매 제안하기" })).toBeVisible();
   await expect(page.getByRole("button", { name: "제안 보내기" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "12-seller-quick-offer.png"), fullPage: true });
