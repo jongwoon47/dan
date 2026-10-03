@@ -4709,3 +4709,339 @@ button {
     font-size: .8rem !important;
   }
 }
+
+
+/* DAN comfort pass — lower cognitive load, calmer mobile reading */
+:root {
+  --dan-bg: #f7f7f9;
+  --dan-bg-elevated: #f2f2f5;
+  --dan-surface: #ffffff;
+  --dan-ink: #1b1b1f;
+  --dan-ink-secondary: #555963;
+  --dan-ink-muted: #70747e;
+  --dan-border: #ededf1;
+  --dan-border-strong: #dedfe5;
+}
+
+body {
+  background: var(--dan-bg) !important;
+  color: var(--dan-ink) !important;
+  line-height: 1.58 !important;
+}
+
+.section-desc,
+.dan-field__hint,
+.eyebrow,
+.home-demand-kicker,
+.live-demand-card__finish,
+.live-demand-card__meta,
+.offer-detail-facts span,
+.offer-seller-card__facts span,
+.snapshot-section span,
+.trust-history__note,
+.profile-trade-history__head span {
+  color: var(--dan-ink-muted) !important;
+}
+
+@media (max-width: 859px) {
+  .app-main {
+    padding-top: 18px !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .page-stack {
+    gap: 24px !important;
+  }
+
+  .section-stack {
+    gap: 16px !important;
+  }
+
+  .page-title {
+    font-size: 1.62rem !important;
+    line-height: 1.22 !important;
+  }
+
+  .section-title,
+  .demand-condition-heading h2,
+  .snapshot-card-heading h2,
+  .my-demand-section-head strong {
+    font-size: 1rem !important;
+    line-height: 1.35 !important;
+  }
+
+  .section-desc,
+  .dan-field__hint,
+  .quick-offer-note p,
+  .offer-next-state > p,
+  .live-demand-rule p,
+  .snapshot-lock-notice p,
+  .trust-history__note {
+    font-size: .84rem !important;
+    line-height: 1.62 !important;
+  }
+
+  .eyebrow,
+  .home-demand-kicker {
+    font-size: .78rem !important;
+  }
+
+  .dan-field__label,
+  .field-inline-label {
+    color: #383a42 !important;
+    font-size: .9rem !important;
+    line-height: 1.4 !important;
+  }
+
+  .dan-input,
+  .composer-sheet input,
+  .composer-sheet textarea {
+    min-height: 52px !important;
+    border-color: #e5e6ea !important;
+    background: #fafafa !important;
+    color: #202126 !important;
+    font-size: .94rem !important;
+    line-height: 1.45 !important;
+    box-shadow: none !important;
+  }
+
+  .dan-input::placeholder,
+  .composer-sheet input::placeholder,
+  .composer-sheet textarea::placeholder {
+    color: #9a9da5 !important;
+  }
+
+  .dan-input:focus,
+  .composer-sheet input:focus,
+  .composer-sheet textarea:focus {
+    border-color: #aaa4e8 !important;
+    background: #fff !important;
+    box-shadow: 0 0 0 3px rgba(98,87,223,.07) !important;
+  }
+
+  .dan-btn {
+    min-height: 52px !important;
+    font-size: .94rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .dan-chip,
+  .condition-option,
+  .preference-check,
+  .evidence-chip {
+    font-size: .82rem !important;
+    line-height: 1.35 !important;
+  }
+
+  /* BUY creation: use whitespace, not boxes, for hierarchy */
+  .camera-demand-create--blueprint {
+    gap: 20px !important;
+  }
+
+  .camera-demand-create--blueprint .create-v1-intro {
+    padding-bottom: 2px !important;
+  }
+
+  .camera-demand-create--blueprint .create-v1-intro > p {
+    max-width: 30rem;
+    color: #656972 !important;
+    font-size: .9rem !important;
+    line-height: 1.62 !important;
+  }
+
+  .commerce-panel,
+  .camera-demand-create--blueprint .product-search-section,
+  .camera-demand-create--blueprint .demand-condition-section {
+    gap: 16px !important;
+    padding: 18px !important;
+    border: 1px solid #efeff2 !important;
+    border-radius: 18px !important;
+    background: #fff !important;
+  }
+
+  .selected-product-card {
+    padding: 14px !important;
+    background: #f7f7f9 !important;
+  }
+
+  .live-demand-rule {
+    padding: 14px 15px !important;
+    border: 0 !important;
+    background: #f1f1f4 !important;
+    box-shadow: none !important;
+  }
+
+  .live-demand-rule strong {
+    color: #4a4d56 !important;
+    font-size: .86rem !important;
+  }
+
+  /* Quick offer */
+  .quick-offer-page--blueprint {
+    gap: 20px !important;
+  }
+
+  .quick-offer-product-card,
+  .quick-offer-photo,
+  .quick-offer-note,
+  .offer-next-state {
+    box-shadow: none !important;
+  }
+
+  .quick-offer-form {
+    gap: 18px !important;
+  }
+
+  .quick-offer-note {
+    padding: 14px 15px !important;
+    border: 0 !important;
+    background: #f2f2f5 !important;
+  }
+
+  .quick-offer-note strong {
+    color: #41444c !important;
+    font-size: .88rem !important;
+  }
+
+  .evidence-upload--quick {
+    min-height: 132px !important;
+    border: 1px dashed #d9dbe1 !important;
+    background: #fafafa !important;
+  }
+
+  /* Offer detail: denser facts, calmer trust block */
+  .offer-detail-page {
+    gap: 18px !important;
+  }
+
+  .offer-detail-product--catalog,
+  .offer-detail-facts,
+  .offer-seller-card {
+    border-color: #efeff2 !important;
+  }
+
+  .offer-detail-facts > div {
+    min-height: 56px !important;
+  }
+
+  .offer-detail-facts span,
+  .offer-seller-card__facts span {
+    font-size: .8rem !important;
+  }
+
+  .offer-detail-facts strong {
+    font-size: .9rem !important;
+  }
+
+  .offer-seller-card__facts {
+    background: #f7f7f9 !important;
+  }
+
+  .offer-next-state {
+    padding: 15px !important;
+    border: 0 !important;
+    background: #f4f4f7 !important;
+  }
+
+  /* Snapshot: one visual group, fewer competing boxes */
+  .deal-page {
+    gap: 18px !important;
+  }
+
+  .deal-product-card--snapshot,
+  .deal-snapshot-card--focused,
+  .snapshot-appointment {
+    border-color: #efeff2 !important;
+    box-shadow: none !important;
+  }
+
+  .snapshot-card-heading {
+    padding: 16px 16px 14px !important;
+  }
+
+  .snapshot-section {
+    min-height: 56px !important;
+    padding: 13px 16px !important;
+  }
+
+  .snapshot-section span {
+    font-size: .8rem !important;
+  }
+
+  .snapshot-section strong {
+    font-size: .9rem !important;
+    line-height: 1.45 !important;
+  }
+
+  .snapshot-details summary {
+    min-height: 58px !important;
+  }
+
+  .snapshot-lock-notice {
+    padding: 15px 16px !important;
+    border: 0 !important;
+    background: #f2f2f5 !important;
+  }
+
+  .deal-confirm-state {
+    gap: 10px !important;
+  }
+
+  .confirm-state {
+    min-height: 74px !important;
+    border-color: #ececf0 !important;
+    border-radius: 16px !important;
+  }
+
+  .confirm-state span {
+    color: #777b84 !important;
+    font-size: .78rem !important;
+  }
+
+  .confirm-state strong {
+    font-size: .92rem !important;
+  }
+
+  /* Profile / history */
+  .trust-card,
+  .trust-history,
+  .profile-trade-list {
+    border-color: #efeff2 !important;
+    box-shadow: none !important;
+  }
+
+  .trust-card__bio,
+  .trust-card__stats,
+  .trust-card__recent {
+    background: #f7f7f9 !important;
+  }
+
+  .trust-summary-strip {
+    border-color: #efeff2 !important;
+    background: #fafafa !important;
+  }
+
+  .trust-summary-strip span {
+    color: #737781 !important;
+    font-size: .76rem !important;
+  }
+
+  .trust-history__note {
+    padding-top: 2px;
+  }
+
+  /* Bottom navigation should recede */
+  .bottom-nav--v1 {
+    background: rgba(251,251,252,.98) !important;
+    box-shadow: 0 -1px 0 rgba(0,0,0,.035) !important;
+  }
+
+  .bottom-nav--v1 a {
+    color: #858993 !important;
+  }
+
+  .bottom-nav--v1 a.active {
+    color: #5b52d0 !important;
+  }
+}
