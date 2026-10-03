@@ -1,0 +1,54 @@
+name: Deploy DAN Demo Preview
+
+# Temporary click-through demo. This does NOT deploy production and does not use Supabase.
+# It publishes a Cloudflare Pages preview branch under the existing "dan" Pages project.
+
+on:
+  push:
+    branches:
+      - test/dan-v1-demo-preview
+  workflow_dispatch:
+
+concurrency:
+  group: dan-demo-preview
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  deploy-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Verify demo-only build
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "test/dan-v1-demo-preview"
+          echo "DAN demo preview: local mock data only; no Supabase credentials."
+
+      - name: Build demo
+        env:
+          VITE_BASE: /
+          VITE_DAN_ENV: development
+          VITE_DATA_MODE: demo
+          VITE_DAN_DATA_MODE: demo
+          VITE_SUPABASE_URL: ""
+          VITE_SUPABASE_ANON_KEY: ""
+        run: npm run build
+
+      - name: Publish Cloudflare preview only
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=dan --branch=dan-v1-demo-preview --commit-dirty=true
