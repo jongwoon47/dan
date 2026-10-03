@@ -204,7 +204,7 @@ export function MyDanPage() {
             <EmptyState
               title="아직 받은 제안이 없어요"
               body="구매수요를 본 판매자가 판매 제안을 보내면 여기에 표시돼요."
-              action={<Button to="/" variant="secondary">Live Demand 보기</Button>}
+              action={<Button to="/" variant="secondary">실시간 수요 보기</Button>}
             />
           )}
         </section>
@@ -260,7 +260,7 @@ export function MyDanPage() {
           ) : (
             <EmptyState
               title="보낸 판매 제안이 없어요"
-              body="Live Demand에서 가지고 있는 물건을 찾아 Quick Offer를 보내세요."
+              body="실시간 수요에서 가지고 있는 물건을 찾아 Quick Offer를 보내세요."
               action={<Button to="/">구매수요 보기</Button>}
             />
           )}
