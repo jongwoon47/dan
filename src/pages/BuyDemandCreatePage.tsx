@@ -271,12 +271,14 @@ export function BuyDemandCreatePage() {
         </div>
 
         {error ? <p className="form-error">{error}</p> : null}
-        <Button fullWidth size="lg" disabled={submitting} onClick={() => void submit()}>
-          {submitting ? "등록 중…" : "이 조건으로 구매수요 등록"}
-        </Button>
-        <Button fullWidth variant="secondary" disabled={submitting} onClick={() => setReviewing(false)}>
-          조건 수정
-        </Button>
+        <div className="create-review-actions">
+          <Button fullWidth size="lg" disabled={submitting} onClick={() => void submit()}>
+            {submitting ? "등록 중…" : "이 조건으로 구매수요 등록"}
+          </Button>
+          <Button fullWidth variant="secondary" disabled={submitting} onClick={() => setReviewing(false)}>
+            조건 수정
+          </Button>
+        </div>
       </div>
     );
   }
@@ -292,7 +294,7 @@ export function BuyDemandCreatePage() {
         </p>
       </section>
 
-      <section className="product-search-section">
+      <section className="product-search-section commerce-panel commerce-panel--product">
         <Field
           label="찾는 제품"
           hint="목록에 없어도 입력한 이름으로 바로 구매수요를 만들 수 있어요."
@@ -357,19 +359,21 @@ export function BuyDemandCreatePage() {
         )}
       </section>
 
-      <Field
-        label="최대 구매 희망가"
-        hint="실제로 구매할 의향이 있는 최대 금액을 적어주세요."
-      >
-        <TextInput
-          inputMode="numeric"
-          value={formatDigitsGrouped(maxPrice)}
-          onChange={(event) => setMaxPrice(digitsOnly(event.target.value))}
-          placeholder="예: 850,000"
-        />
-      </Field>
+      <section className="commerce-panel commerce-panel--price">
+        <Field
+          label="최대 구매 희망가"
+          hint="실제로 구매할 의향이 있는 최대 금액을 적어주세요."
+        >
+          <TextInput
+            inputMode="numeric"
+            value={formatDigitsGrouped(maxPrice)}
+            onChange={(event) => setMaxPrice(digitsOnly(event.target.value))}
+            placeholder="예: 850,000"
+          />
+        </Field>
+      </section>
 
-      <section className="demand-condition-section">
+      <section className="demand-condition-section commerce-panel">
         <div className="demand-condition-heading">
           <h2>필수 조건</h2>
           <span>거래 가능한 범위</span>
@@ -416,7 +420,7 @@ export function BuyDemandCreatePage() {
         ) : null}
       </section>
 
-      <section className="demand-condition-section">
+      <section className="demand-condition-section commerce-panel commerce-panel--optional">
         <div className="demand-condition-heading">
           <h2>선호 조건</h2>
           <span>선택 입력</span>
@@ -452,21 +456,23 @@ export function BuyDemandCreatePage() {
       ) : null}
 
       {error ? <p className="form-error">{error}</p> : null}
-      <Button
-        fullWidth
-        size="lg"
-        disabled={
-          !canSubmit ||
-          submitting ||
-          (isLoggedIn && verificationLoaded && !phoneVerified)
-        }
-        onClick={() => {
-          setError("");
-          setReviewing(true);
-        }}
-      >
-        다음 · 조건 확인
-      </Button>
+      <div className="create-sticky-action">
+        <Button
+          fullWidth
+          size="lg"
+          disabled={
+            !canSubmit ||
+            submitting ||
+            (isLoggedIn && verificationLoaded && !phoneVerified)
+          }
+          onClick={() => {
+            setError("");
+            setReviewing(true);
+          }}
+        >
+          다음 · 조건 확인
+        </Button>
+      </div>
     </div>
   );
 }
