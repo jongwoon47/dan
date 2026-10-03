@@ -237,7 +237,7 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
   await settle(page);
   await expect(page.getByRole("heading", { name: "받은 제안" })).toBeVisible();
   await expect(page.getByRole("link", { name: "제안 상세 보기" })).toBeVisible();
-  await expect(page.getByAltText("Fujifilm X100VI 판매자가 올린 현재 물품")).toBeVisible();
+  await expect(page.locator(".received-offer-card .product-visual").first()).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "04-received-offers.png"), fullPage: true });
 
@@ -247,7 +247,7 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
   await expect(page.getByText("Quick Offer", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "관심있어요" })).toBeVisible();
   await expect(page.getByText("Trust History 자세히 보기")).toBeVisible();
-  await expect(page.getByAltText("Fujifilm X100VI 판매자가 올린 현재 물품")).toBeVisible();
+  await expect(page.locator(".offer-detail-product--catalog .product-visual")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "05-offer-detail.png"), fullPage: true });
 
