@@ -195,8 +195,27 @@
     line-height:1.18;
   }
   .camera-demand-create--blueprint .create-v1-intro > p {
-    font-size:.88rem;
+    font-size:.9rem;
+    line-height:1.58;
+  }
+  .camera-demand-create--blueprint .dan-field {
+    gap:7px;
+  }
+  .camera-demand-create--blueprint .dan-field__label {
+    font-size:.86rem;
+    font-weight:800;
+    line-height:1.35;
+  }
+  .camera-demand-create--blueprint .dan-field__hint {
+    color:var(--dan-ink-secondary);
+    font-size:.79rem;
     line-height:1.5;
+  }
+  .camera-demand-create--blueprint .dan-input {
+    min-height:52px;
+    padding:13px 15px;
+    border-radius:14px;
+    line-height:1.4;
   }
   .camera-demand-card { display:grid; gap:14px; }
   .camera-demand-card > .product-visual { width:100%; }
@@ -344,7 +363,7 @@
   }
 
   @media (max-width:380px) {
-    .live-demand-card { grid-template-columns:58px minmax(0,1fr); padding:10px; }
+    .live-demand-card { grid-template-columns:66px minmax(0,1fr); padding:10px; }
     .preference-check-grid { grid-template-columns:1fr; }
   }
 }
@@ -1125,7 +1144,7 @@
 /* DAN open-catalog BUY creation */
 .product-search-section {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .product-suggestion-list {
@@ -1138,11 +1157,11 @@
 
 .product-suggestion {
   display: grid;
-  grid-template-columns: 52px minmax(0,1fr) auto;
-  gap: 10px;
+  grid-template-columns: 66px minmax(0,1fr) auto;
+  gap: 12px;
   align-items: center;
-  min-height: 68px;
-  padding: 8px 11px;
+  min-height: 78px;
+  padding: 9px 12px;
   border: 0;
   border-top: 1px solid var(--dan-border);
   background: #fff;
@@ -1156,20 +1175,22 @@
 
 .product-suggestion > span:nth-child(2) {
   display: grid;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
 }
 
 .product-suggestion strong {
   overflow: hidden;
-  font-size: .84rem;
+  font-size: .9rem;
+  line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .product-suggestion small {
   color: var(--dan-ink-muted);
-  font-size: .68rem;
+  font-size: .72rem;
+  line-height: 1.35;
 }
 
 .product-suggestion > span:last-child {
@@ -1251,7 +1272,8 @@
 
 @media (max-width: 380px) {
   .product-suggestion {
-    grid-template-columns: 48px minmax(0,1fr) auto;
+    grid-template-columns: 62px minmax(0,1fr) auto;
+    gap: 10px;
   }
 }
 
