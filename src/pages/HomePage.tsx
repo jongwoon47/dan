@@ -98,12 +98,8 @@ export function HomePage() {
       <section className="home-demand-header">
         <div className="home-demand-heading">
           <span className="home-demand-kicker">Live Demand</span>
-          <h1 aria-label="지금 사고 있는 사람들">지금 사고 있는<br />사람들</h1>
-          <p>
-            찾는 사람이 먼저 올려두면,
-            <br />
-            그 물건을 가진 사람이 판매를 제안해요.
-          </p>
+          <h1 aria-label="지금 누군가 찾고 있어요">지금 누군가 찾고 있어요</h1>
+          <p>사고 싶은 물건을 올리면, 가진 사람이 판매를 제안해요.</p>
         </div>
 
         <div className="home-hero-products" aria-hidden>
