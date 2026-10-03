@@ -220,3 +220,26 @@ test("BUY catalog cards keep product media separate from copy", async ({ page })
 
   await expectNoHorizontalOverflow(page);
 });
+
+
+test("BUY review header back returns to condition entry", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 });
+  await page.goto("/buy/new");
+  await settle(page);
+
+  await page.getByLabel("찾는 제품").fill("MacBook Pro 14 M4");
+  await page.getByLabel("최대 구매 희망가").fill("2500000");
+  await page.getByRole("button", { name: "다음 · 조건 확인" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "이 조건으로 구매자를 기다릴게요." }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "뒤로가기" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "사고 싶은 물건을 먼저 알려주세요." }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/\/buy\/new/);
+  await expectNoHorizontalOverflow(page);
+});
