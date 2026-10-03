@@ -79,7 +79,7 @@ export function OfferDetailPage() {
 
   return (
     <div className="page-stack page-narrow offer-detail-page">
-      <section className="offer-detail-product">
+      <section className={sell.quickPhotoUrl ? "offer-detail-product offer-detail-product--photo" : "offer-detail-product offer-detail-product--catalog"}>
         {sell.quickPhotoUrl ? (
           <img
             className="offer-detail-product__photo"
@@ -87,7 +87,7 @@ export function OfferDetailPage() {
             alt={`${product.name} 판매자가 올린 현재 물품`}
           />
         ) : (
-          <ProductVisual product={product} size="lg" />
+          <ProductVisual product={product} size="sm" />
         )}
         <div>
           <p className="eyebrow">Quick Offer</p>
@@ -143,7 +143,7 @@ export function OfferDetailPage() {
       ) : match.status === "BUYER_INTERESTED" ? (
         <section className="offer-next-state">
           <strong>판매자에게 관심을 보냈어요</strong>
-          <p>판매자가 실제 물건의 증거를 제출하면 다음 단계로 이동할 수 있어요.</p>
+          <p>판매자가 연결을 수락하면 바로 채팅할 수 있어요. 실제 거래를 계속할 때만 상세 증거를 확인합니다.</p>
           <Button to="/my?tab=offers" variant="secondary" fullWidth>받은 제안으로 돌아가기</Button>
         </section>
       ) : match.status === "CONNECTED" ? (

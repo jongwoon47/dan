@@ -145,15 +145,6 @@ export function HomePage() {
           </button>
         </form>
 
-        <div className="home-demand-tabs" role="tablist" aria-label="구매수요 보기">
-          <Link to="/" className="home-demand-tab is-active" aria-current="page">
-            Live Demand
-          </Link>
-          <Link to="/my" className="home-demand-tab">
-            내 구매수요
-          </Link>
-        </div>
-
         <div className="home-demand-filters" aria-label="제품 카테고리">
           <button
             type="button"
