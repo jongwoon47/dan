@@ -90,7 +90,7 @@ export function OfferDetailPage() {
           <ProductVisual product={product} size="sm" />
         )}
         <div>
-          <p className="eyebrow">Quick Offer</p>
+          <p className="eyebrow">판매 제안</p>
           <h1 className="page-title">{product.name}</h1>
           <strong className="offer-detail-price">{formatWon(sell.minimumPrice)}</strong>
         </div>
@@ -132,13 +132,13 @@ export function OfferDetailPage() {
           <div><strong>{sellerProfile?.unresolvedDisputeCount ?? 0}</strong><span>미해결 분쟁</span></div>
         </div>
         <Button to={"/profile/" + match.sellerId} variant="ghost" fullWidth>
-          Trust History 자세히 보기
+          거래 이력 보기
         </Button>
       </section>
 
       {match.status === "POTENTIAL" ? (
         <Button fullWidth size="lg" disabled={busy} onClick={() => void interest()}>
-          {busy ? "처리 중…" : "관심있어요"}
+          {busy ? "처리 중…" : "관심 있어요"}
         </Button>
       ) : match.status === "BUYER_INTERESTED" ? (
         <section className="offer-next-state">
