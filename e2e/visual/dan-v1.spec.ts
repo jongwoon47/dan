@@ -208,7 +208,7 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
 
   await page.goto("/");
   await settle(page);
-  await expect(page.getByRole("heading", { name: "사고 싶은 물건이 있나요?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "찾는 물건이 있나요?" })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "찾는 제품" })).toBeVisible();
   await expect(page.getByRole("button", { name: "구매수요 만들기" })).toBeVisible();
   await expect(page.getByText("iPhone 15 Pro")).toBeVisible();
