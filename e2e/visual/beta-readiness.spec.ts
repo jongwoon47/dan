@@ -238,7 +238,7 @@ test("BUY review header back returns to condition entry", async ({ page }) => {
   await page.getByRole("button", { name: "뒤로가기" }).click();
 
   await expect(
-    page.getByRole("heading", { name: "사고 싶은 물건을 먼저 알려주세요." }),
+    page.getByRole("heading", { name: "사고 싶은 물건을 알려주세요." }),
   ).toBeVisible();
   await expect(page).toHaveURL(/\/buy\/new/);
   await expectNoHorizontalOverflow(page);
