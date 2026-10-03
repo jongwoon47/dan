@@ -211,7 +211,7 @@ test("BUY catalog cards keep product media separate from copy", async ({ page })
   const selected = page.locator(".selected-product-card");
   await expect(selected).toBeVisible();
   const selectedVisual = selected.locator(".product-visual--sm");
-  const selectedCopy = selected.locator(":scope > div");
+  const selectedCopy = selected.locator(":scope > div:not(.product-visual)").first();
   const selectedVisualBox = await selectedVisual.boundingBox();
   const selectedCopyBox = await selectedCopy.boundingBox();
   expect(selectedVisualBox).not.toBeNull();
