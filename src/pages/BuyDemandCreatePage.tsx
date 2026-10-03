@@ -89,7 +89,11 @@ export function BuyDemandCreatePage() {
   const [error, setError] = useState("");
   const [reviewing, setReviewing] = useState(false);
 
-  useDeepHeader({ title: "구매수요 등록" });
+  useDeepHeader({
+    title: "구매수요 등록",
+    onBack: reviewing ? () => setReviewing(false) : undefined,
+    backKey: reviewing,
+  });
 
   useEffect(() => {
     if (!initialQuery || selectedProductId || productQuery !== initialQuery) return;
