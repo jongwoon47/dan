@@ -4360,3 +4360,352 @@ body {
     max-width: 13.5rem !important;
   }
 }
+
+
+/* DAN final legibility + native-density pass */
+html,
+body,
+button,
+input,
+textarea,
+select {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  letter-spacing: 0 !important;
+  line-height: 1.55;
+}
+
+p,
+span,
+small,
+label,
+input,
+textarea,
+button {
+  word-break: keep-all;
+}
+
+.page-title,
+.section-title,
+.home-demand-heading h1,
+.trust-card__name {
+  letter-spacing: -.018em !important;
+}
+
+.page-title,
+.home-demand-heading h1,
+.trust-card__name {
+  font-weight: 700 !important;
+}
+
+.section-title,
+.dan-field__label,
+.field-inline-label,
+.demand-condition-heading h2,
+.snapshot-card-heading h2,
+.my-demand-section-head strong,
+.home-live-heading h2 {
+  font-weight: 600 !important;
+}
+
+.dan-btn,
+.home-intent-composer__copy strong,
+.live-demand-card__top h3,
+.live-demand-card__price strong,
+.received-offer-card__price,
+.offer-detail-facts strong,
+.offer-seller-card strong,
+.snapshot-section strong,
+.confirm-state strong,
+.profile-trade-history__head strong,
+.trust-history__head > strong {
+  font-weight: 600 !important;
+}
+
+.offer-detail-price,
+.deal-price,
+.trade-complete-product strong {
+  font-weight: 700 !important;
+}
+
+.eyebrow,
+.home-demand-kicker,
+.section-desc,
+.dan-field__hint,
+.live-demand-card__finish,
+.live-demand-card__meta,
+.offer-detail-facts span,
+.offer-seller-card__facts span,
+.snapshot-section span,
+.snapshot-lock-notice p,
+.profile-trade-history__head span,
+.trust-history__note {
+  letter-spacing: 0 !important;
+}
+
+@media (max-width: 859px) {
+  .app-main {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .page-stack {
+    gap: 22px !important;
+  }
+
+  .section-stack {
+    gap: 14px !important;
+  }
+
+  .eyebrow,
+  .home-demand-kicker {
+    font-size: .78rem !important;
+    line-height: 1.45 !important;
+    font-weight: 600 !important;
+  }
+
+  .section-desc,
+  .dan-field__hint,
+  .camera-demand-create--blueprint .dan-field__hint,
+  .offer-next-state > p,
+  .live-demand-rule p,
+  .quick-offer-note p,
+  .snapshot-lock-notice p,
+  .trust-history__note {
+    font-size: .8125rem !important;
+    line-height: 1.6 !important;
+  }
+
+  .offer-detail-product--catalog .eyebrow,
+  .offer-seller-card__facts span,
+  .deal-product-card__stats span,
+  .trust-summary-strip span,
+  .trust-history__badges > span:not(.trust-verified-badge),
+  .profile-trade-history__head span {
+    font-size: .75rem !important;
+    line-height: 1.4 !important;
+  }
+
+  .deal-product-card__stats strong,
+  .snapshot-section span,
+  .snapshot-section strong,
+  .offer-detail-facts span,
+  .offer-detail-facts strong {
+    font-size: .8125rem !important;
+    line-height: 1.45 !important;
+  }
+
+  .bottom-nav--v1 a {
+    font-size: .72rem !important;
+    font-weight: 500 !important;
+  }
+
+  .bottom-nav--v1 a.active {
+    font-weight: 600 !important;
+  }
+
+  .home-demand-header {
+    border-radius: 24px !important;
+  }
+
+  .home-demand-heading p {
+    color: #666a74 !important;
+    font-size: .9rem !important;
+    line-height: 1.62 !important;
+  }
+
+  .home-intent-composer__copy small {
+    font-size: .78rem !important;
+  }
+
+  .demand-filter {
+    font-size: .8rem !important;
+    font-weight: 500 !important;
+  }
+
+  .live-demand-card {
+    border-radius: 18px !important;
+  }
+
+  .live-demand-card__top h3 {
+    font-size: 1rem !important;
+  }
+
+  .live-demand-card__finish,
+  .live-demand-card__signal,
+  .live-demand-card__meta,
+  .live-demand-card__price {
+    font-size: .8rem !important;
+    line-height: 1.45 !important;
+  }
+
+  .commerce-panel,
+  .camera-demand-create--blueprint .product-search-section,
+  .camera-demand-create--blueprint .demand-condition-section,
+  .offer-detail-product--catalog,
+  .offer-detail-facts,
+  .offer-seller-card,
+  .deal-product-card--snapshot,
+  .deal-snapshot-card--focused,
+  .snapshot-appointment,
+  .snapshot-lock-notice,
+  .trust-history,
+  .trade-complete-product {
+    border-radius: 18px !important;
+  }
+
+  .camera-demand-create--blueprint .dan-input {
+    font-size: .94rem !important;
+  }
+
+  .camera-demand-create--blueprint .dan-chip {
+    font-size: .82rem !important;
+    font-weight: 500 !important;
+  }
+
+  .camera-demand-create--blueprint .dan-chip.is-selected {
+    font-weight: 600 !important;
+  }
+
+  .offer-detail-facts > div,
+  .snapshot-section {
+    min-height: 54px !important;
+  }
+
+  .offer-seller-card__facts {
+    border-radius: 12px !important;
+  }
+
+  .deal-product-card__stats {
+    background: #f8f8fa !important;
+  }
+
+  .deal-snapshot-card--focused,
+  .snapshot-appointment {
+    overflow: hidden;
+  }
+
+  .snapshot-card-heading {
+    padding: 16px 16px 13px !important;
+  }
+
+  .snapshot-card-heading h2 {
+    font-size: .98rem !important;
+  }
+
+  .snapshot-section {
+    padding: 12px 16px !important;
+  }
+
+  .snapshot-section + .snapshot-section {
+    border-top: 1px solid #eeeeF2;
+  }
+
+  .snapshot-details {
+    border-top: 1px solid #eeeeF2;
+  }
+
+  .snapshot-details summary {
+    min-height: 54px !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .confirm-state {
+    min-height: 72px !important;
+    padding: 13px 14px !important;
+    border-radius: 14px !important;
+  }
+
+  .confirm-state span {
+    font-size: .75rem !important;
+    line-height: 1.4 !important;
+  }
+
+  .confirm-state strong {
+    font-size: .9rem !important;
+  }
+
+  .quick-offer-page--blueprint {
+    gap: 18px !important;
+  }
+
+  .quick-offer-product-card {
+    border-radius: 18px !important;
+    box-shadow: none !important;
+  }
+
+  .quick-offer-form {
+    gap: 16px !important;
+  }
+
+  .quick-offer-photo {
+    border-radius: 16px !important;
+  }
+
+  .evidence-upload--quick {
+    min-height: 138px !important;
+    border-radius: 16px !important;
+    background: #f8f8fa !important;
+  }
+
+  .quick-offer-note {
+    border: 0 !important;
+    border-radius: 14px !important;
+    background: #f4f4f7 !important;
+    box-shadow: none !important;
+  }
+
+  .offer-next-state {
+    border-radius: 16px !important;
+    background: #f7f7f9 !important;
+  }
+
+  .my-dan__header .page-title {
+    font-size: 1.55rem !important;
+  }
+
+  .my-demand-tabs {
+    gap: 4px !important;
+  }
+
+  .my-demand-tabs button {
+    font-weight: 500 !important;
+  }
+
+  .my-demand-tabs button.is-active {
+    font-weight: 600 !important;
+  }
+
+  .my-demand-card,
+  .seller-offer-row {
+    border-radius: 18px !important;
+  }
+
+  .trust-summary-strip span {
+    font-size: .75rem !important;
+  }
+
+  .trust-verified-badge {
+    font-size: .75rem !important;
+    font-weight: 600 !important;
+  }
+
+  .chat-page__demand,
+  .chat-page__view-demand {
+    font-size: .75rem !important;
+  }
+
+  .chat-deal-progress > span b {
+    font-size: .7rem !important;
+    font-weight: 500 !important;
+  }
+
+  .trade-status__hint {
+    font-size: .8rem !important;
+  }
+}
