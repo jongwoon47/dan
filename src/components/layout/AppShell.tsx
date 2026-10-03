@@ -2,6 +2,7 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { NetworkStatusBanner } from "@/components/system/NetworkStatusBanner";
 import { ko } from "@/copy/ko";
+import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
 import { DeepHeader } from "./DeepHeader";
 import { ShellChromeProvider, useShellChrome } from "./ShellChrome";
@@ -33,7 +34,7 @@ function IconBell({ active }: { active?: boolean }) {
 function formatUnreadBadge(count: number): string { if (count <= 0) return ""; if (count > 9) return "9+"; return String(count); }
 
 function AppShellInner() {
-  const { currentUser, isLoggedIn, login, logout, unreadActivityCount, unreadChatCount, unreadMyDanCount } = useDan();
+  const { currentUser, isLoggedIn, login, logout, resetDemo, unreadActivityCount, unreadChatCount, unreadMyDanCount } = useDan();
   const { pathname } = useLocation();
   const mode = getShellMode(pathname);
   const { header } = useShellChrome();
@@ -42,6 +43,7 @@ function AppShellInner() {
   const myBadge = formatUnreadBadge(unreadMyDanCount);
   const showDeepHeader = mode === "deep" && !header?.hide;
   const deepTitle = header?.title ?? defaultDeepTitle(pathname);
+  const isDemo = getDataMode() === "demo";
 
   return (
     <div className={mode === "root" ? "app-shell app-shell--root" : mode === "deep" ? "app-shell app-shell--deep" : "app-shell app-shell--auth"}>
@@ -81,6 +83,29 @@ function AppShellInner() {
       {showDeepHeader && deepTitle ? <DeepHeader title={deepTitle} subtitle={header?.subtitle} right={header?.right} fallbackTo={deepFallback(pathname)} /> : null}
 
       <NetworkStatusBanner />
+
+      {isDemo ? (
+        <aside className="demo-test-bar" aria-label="DAN 데모 테스트 사용자">
+          <span className="demo-test-bar__label">테스트 사용자</span>
+          <button
+            type="button"
+            className={currentUser?.id === "user-you" ? "demo-test-bar__user is-active" : "demo-test-bar__user"}
+            onClick={() => login("user-you")}
+          >
+            나 · 구매자
+          </button>
+          <button
+            type="button"
+            className={currentUser?.id === "user-jun" ? "demo-test-bar__user is-active" : "demo-test-bar__user"}
+            onClick={() => login("user-jun")}
+          >
+            준 · 판매자
+          </button>
+          <button type="button" className="demo-test-bar__reset" onClick={resetDemo}>
+            초기화
+          </button>
+        </aside>
+      ) : null}
 
       <main className="app-main"><Outlet /></main>
 
