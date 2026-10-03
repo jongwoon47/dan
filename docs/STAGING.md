@@ -4,7 +4,7 @@
 실제 staging 프로젝트 생성, secret 입력, 배포는 사람이 대시보드에서 한다.
 이 저장소는 이름을 고정하고, production 값을 재사용하면 중단한다.
 
-기준 브랜치: `release/dan-v1-beta-readiness`
+기준 브랜치: `release/dan-v1-staging-rc`
 
 ## Architecture
 
@@ -88,7 +88,7 @@ production으로 보이는 값이 있으면 배포/seed를 진행하지 말고 �
 6. [ ] Auth → URL configuration
     - Site URL: `https://dan-v1-staging-jongwoon.pages.dev`
     - Redirect URLs: `https://dan-v1-staging-jongwoon.pages.dev/**`, `http://localhost:5173/**`
-7. [ ] Migrations `0001_initial.sql` … `0041_realtime_discovery.sql`을 **순서대로** 적용
+7. [ ] Migrations `0001_initial.sql` … `0042_connect_before_evidence.sql`을 **순서대로** 적용
     - CLI: 새 프로젝트에만 `supabase link` 후 `supabase db push`
     - 또는 Dashboard SQL Editor에 파일 순서대로 붙여넣기
     - `scripts/apply-migrations-remote.mjs` / `scripts/apply-0016.mjs`는 default-deny다. staging이면 `DAN_ENV=staging`, `DAN_REMOTE_CONFIRM=apply-staging-only`, `DAN_STAGING_SUPABASE_PROJECT_REF`가 필요하다. 값이 없으면 실행하지 말고 SQL Editor를 쓴다.
@@ -96,13 +96,14 @@ production으로 보이는 값이 있으면 배포/seed를 진행하지 말고 �
 9. [ ] Storage: `0022`가 private bucket `dan-v1-evidence`와 RLS를 만듦. 별도 public URL 변수 없음
 10. [ ] RLS / RPC: 마이그레이션이 전부. Edge Function 디렉터리 없음. 배포할 function 없음
 11. [ ] Realtime: `0041`이 `public.messages`를 publication에 넣음. 별도 키 없음
-12. [ ] `service_role` only RPC (`settlement_mark_paid`, `settlement_mark_refunded`, `expire_unpaid_deals`, `ops_*`)는 앱 env가 아님
-13. [ ] staging에서 회원가입 1개 (프로필 필요)
-14. [ ] 로컬 또는 사람이 연결한 staging DB에서만:
+12. [ ] Demand flow: `0042`가 BUY 흐름을 `관심 → 연결/채팅 → Evidence → Deal Snapshot` 순서로 고정함
+13. [ ] `service_role` only RPC (`settlement_mark_paid`, `settlement_mark_refunded`, `expire_unpaid_deals`, `ops_*`)는 앱 env가 아님
+14. [ ] staging에서 회원가입 1개 (프로필 필요)
+15. [ ] 로컬 또는 사람이 연결한 staging DB에서만:
     `DAN_SEED_TARGET=staging DAN_STAGING_CONFIRM=seed-staging-only DAN_ENV=staging DAN_STAGING_SUPABASE_PROJECT_REF=<staging-ref> SUPABASE_DB_URL=... npm run db:seed:staging`
     - staging seed는 공개 Live Demand 집계에 보이도록 선택된 첫 staging 프로필의 **phone verification만** synthetic test 상태로 표시한다.
     - identity/payout verification은 건드리지 않는다. production에서 이 seed를 쓰면 안 된다.
-15. [ ] GitHub Environment `staging`에 `STAGING_*` secret 입력. production 값 복사 금지
+16. [ ] GitHub Environment `staging`에 `STAGING_*` secret 입력. production 값 복사 금지
 
 ## Cloudflare staging checklist
 
