@@ -2703,3 +2703,589 @@ body {
     letter-spacing: -.015em;
   }
 }
+
+
+/* -------------------------------------------------------------------------- */
+/* DAN commercial finish pass — less prototype, more native commerce product  */
+/* -------------------------------------------------------------------------- */
+
+:root {
+  --dan-bg: #f5f5f8;
+  --dan-bg-elevated: #efeff4;
+  --dan-surface: #ffffff;
+  --dan-ink: #121319;
+  --dan-ink-secondary: #555966;
+  --dan-ink-muted: #737886;
+  --dan-border: #e7e7ec;
+  --dan-border-strong: #d8d9e2;
+  --dan-accent: #6250e8;
+  --dan-accent-pressed: #5140d6;
+  --dan-accent-soft: #efedff;
+  --dan-accent-text: #5140cf;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --shadow-sm: 0 1px 2px rgba(17, 18, 26, .035), 0 8px 22px rgba(31, 28, 48, .04);
+  --shadow-md: 0 14px 34px rgba(31, 28, 48, .075);
+  --shadow-card: 0 18px 44px rgba(31, 28, 48, .085);
+}
+
+body {
+  letter-spacing: -.012em;
+  background:
+    radial-gradient(circle at 50% -12rem, rgba(101, 80, 232, .065), transparent 30rem),
+    var(--dan-bg);
+}
+
+.app-main {
+  max-width: 720px;
+}
+
+.page-title {
+  font-weight: 850;
+  letter-spacing: -.045em;
+}
+
+.section-title {
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+/* Make the chrome feel like an installed app rather than a web prototype. */
+.top-nav,
+.deep-header {
+  background: rgba(250, 250, 252, .94);
+  border-color: rgba(222, 222, 229, .86);
+}
+
+.bottom-nav--v1 {
+  background: rgba(251, 251, 253, .96);
+  border-color: rgba(221, 221, 228, .88);
+  box-shadow: 0 -10px 30px rgba(27, 25, 39, .055);
+}
+
+.bottom-nav__create-circle {
+  background: #6250e8 !important;
+  box-shadow: 0 8px 22px rgba(74, 57, 196, .26) !important;
+}
+
+/* Buttons: flatter and more product-like. */
+.dan-btn {
+  min-height: 52px;
+  border-radius: 16px;
+  letter-spacing: -.018em;
+}
+
+.dan-btn--primary {
+  background: #6250e8;
+  box-shadow: 0 7px 18px rgba(76, 59, 194, .20);
+}
+
+.dan-btn--primary:hover:not(:disabled) {
+  background: #5744dc;
+  box-shadow: 0 9px 22px rgba(76, 59, 194, .23);
+}
+
+.dan-btn--secondary {
+  background: #fff;
+  border-color: #dedee5;
+  box-shadow: none;
+}
+
+/* Inputs become quiet native surfaces; focus carries the brand instead. */
+.dan-input,
+.composer-sheet input,
+.composer-sheet textarea,
+.chat-composer input {
+  min-height: 54px;
+  border: 1px solid transparent;
+  border-radius: 15px;
+  background: #f6f6f9;
+  box-shadow: inset 0 0 0 1px rgba(214, 214, 222, .68);
+}
+
+.dan-input:focus,
+.composer-sheet input:focus,
+.composer-sheet textarea:focus,
+.chat-composer input:focus {
+  background: #fff;
+  border-color: rgba(98, 80, 232, .42);
+  box-shadow: 0 0 0 4px rgba(98, 80, 232, .085);
+}
+
+/* Home: one strong merchandising surface, fewer decorative borders. */
+.home-page--v1 {
+  gap: 24px;
+}
+
+.home-demand-header {
+  padding: 26px 22px 20px;
+  border: 0;
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 91% 7%, rgba(255,255,255,.9), transparent 34%),
+    linear-gradient(145deg, #eeeafd 0%, #f7f5ff 58%, #fbf9ff 100%);
+  box-shadow: 0 16px 40px rgba(54, 45, 102, .095);
+}
+
+.home-demand-header::after {
+  opacity: .55;
+}
+
+.home-demand-heading::before {
+  background: rgba(255,255,255,.72);
+  border: 0;
+}
+
+.home-demand-heading h1 {
+  max-width: 10.5ch;
+  font-size: clamp(1.95rem, 8vw, 2.55rem);
+  line-height: 1.03;
+  letter-spacing: -.06em;
+}
+
+.home-demand-heading p {
+  color: #5f6170;
+  font-size: .92rem;
+  line-height: 1.58;
+}
+
+.home-intent-composer {
+  min-height: 76px;
+  border: 0;
+  border-radius: 21px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(48, 41, 86, .105);
+}
+
+.home-intent-composer__copy small {
+  font-size: .79rem;
+  color: #747886;
+}
+
+.demand-filter {
+  min-height: 36px !important;
+  border: 0 !important;
+  background: rgba(255,255,255,.72) !important;
+  box-shadow: inset 0 0 0 1px rgba(214,211,224,.82);
+}
+
+.demand-filter.is-active {
+  background: #6250e8 !important;
+  box-shadow: none;
+}
+
+.live-demand-card {
+  border: 0;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.live-demand-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.seller-entry-banner {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+/* BUY creation: turn a long form into four commerce decisions. */
+.camera-demand-create--blueprint {
+  gap: 18px;
+  padding-bottom: 18px;
+}
+
+.camera-demand-create--blueprint .create-v1-intro {
+  padding: 4px 2px 6px;
+  gap: 7px;
+}
+
+.camera-demand-create--blueprint .create-v1-intro .eyebrow {
+  width: max-content;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #ebe8ff;
+  color: #5643cf;
+  font-size: .69rem;
+  font-weight: 850;
+  letter-spacing: .025em;
+}
+
+.camera-demand-create--blueprint .create-v1-intro .page-title {
+  max-width: 16ch;
+  font-size: clamp(1.72rem, 7.3vw, 2.05rem);
+  line-height: 1.1;
+}
+
+.camera-demand-create--blueprint .create-v1-intro > p {
+  max-width: 33rem;
+  color: #646875;
+  font-size: .91rem;
+  line-height: 1.62;
+}
+
+.commerce-panel,
+.camera-demand-create--blueprint .product-search-section,
+.camera-demand-create--blueprint .demand-condition-section {
+  display: grid;
+  gap: 15px;
+  padding: 18px;
+  border: 0;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.commerce-panel--product {
+  gap: 14px;
+}
+
+.commerce-panel--price .dan-input {
+  font-size: 1.08rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.camera-demand-create--blueprint .dan-field {
+  gap: 8px;
+}
+
+.camera-demand-create--blueprint .dan-field__label {
+  font-size: .91rem;
+  font-weight: 800;
+  color: #282a32;
+}
+
+.camera-demand-create--blueprint .dan-field__hint {
+  max-width: 34rem;
+  color: #767b88;
+  font-size: .80rem;
+  line-height: 1.5;
+}
+
+.camera-demand-create--blueprint .dan-input {
+  min-height: 56px;
+  padding: 14px 15px;
+  font-size: 1rem;
+}
+
+.demand-condition-heading {
+  align-items: flex-end;
+  padding-bottom: 2px;
+}
+
+.demand-condition-heading h2 {
+  font-size: 1.03rem;
+  font-weight: 850;
+  letter-spacing: -.025em;
+}
+
+.demand-condition-heading span {
+  color: #858996;
+  font-size: .75rem;
+  font-weight: 650;
+}
+
+.camera-demand-create--blueprint .dan-chip {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 0;
+  background: #f3f3f6;
+  color: #555966;
+  box-shadow: inset 0 0 0 1px rgba(217,217,224,.72);
+}
+
+.camera-demand-create--blueprint .dan-chip.is-selected {
+  background: #eeebff;
+  color: #4f3dcc;
+  box-shadow: inset 0 0 0 1px rgba(98,80,232,.16);
+}
+
+.selected-product-card {
+  grid-template-columns: 72px minmax(0,1fr);
+  gap: 15px;
+  min-height: 96px;
+  padding: 12px;
+  border: 0;
+  border-radius: 19px;
+  background: #f6f5fa;
+  box-shadow: inset 0 0 0 1px rgba(224,222,231,.7);
+}
+
+.selected-product-card .product-visual--sm {
+  width: 72px !important;
+  height: 72px !important;
+  border: 0;
+  border-radius: 16px !important;
+  box-shadow: 0 5px 15px rgba(34,31,47,.07);
+}
+
+.selected-product-card span {
+  color: #7a7e8a;
+  font-size: .75rem;
+}
+
+.selected-product-card strong {
+  font-size: .98rem;
+  line-height: 1.32;
+}
+
+.selected-product-card small {
+  color: #676b77;
+  font-size: .78rem;
+}
+
+.product-suggestion-list {
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid #e6e5eb;
+  background: #fff;
+}
+
+.product-suggestion {
+  min-height: 78px;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid #ededf1;
+  background: #fff;
+}
+
+.product-suggestion:last-child {
+  border-bottom: 0;
+}
+
+.product-suggestion:hover {
+  background: #f8f8fb;
+}
+
+.new-product-hint {
+  border: 0;
+  border-radius: 16px;
+  background: #f5f3ff;
+  color: #5140c9;
+}
+
+.live-demand-rule {
+  padding: 15px 16px;
+  border: 0 !important;
+  border-radius: 18px !important;
+  background: #efeff3 !important;
+  box-shadow: none !important;
+}
+
+.live-demand-rule strong {
+  color: #4e515c;
+}
+
+.live-demand-rule p {
+  color: #777b87;
+}
+
+.verification-gate {
+  border-radius: 18px;
+}
+
+.create-sticky-action,
+.create-review-actions {
+  position: sticky;
+  bottom: calc(var(--bottom-nav-height) + 10px);
+  z-index: 12;
+  display: grid;
+  gap: 8px;
+  margin: 2px -4px 0;
+  padding: 10px;
+  border: 1px solid rgba(218,218,226,.88);
+  border-radius: 20px;
+  background: rgba(250,250,252,.92);
+  box-shadow: 0 12px 34px rgba(28,26,42,.13);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+}
+
+.demand-create-review {
+  overflow: hidden;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 24px !important;
+  background: #fff;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.demand-create-review .snapshot-section {
+  min-height: 60px;
+  padding: 14px 17px;
+}
+
+.demand-create-review .snapshot-section > span {
+  color: #7a7e8a;
+}
+
+.demand-create-review .snapshot-section > strong {
+  font-size: .96rem;
+}
+
+/* Details and deal flow: consistent white transaction surfaces. */
+.offer-detail-facts,
+.offer-seller-card,
+.deal-snapshot-card,
+.trade-progress-card,
+.safe-payment-gate,
+.safe-payment-placeholder,
+.final-confirm-card,
+.snapshot-lock-notice,
+.trade-complete-card,
+.dispute-panel,
+.cancel-panel {
+  border: 0 !important;
+  background: #fff !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.offer-detail-facts,
+.offer-seller-card,
+.deal-snapshot-card,
+.trade-progress-card,
+.safe-payment-gate,
+.safe-payment-placeholder,
+.final-confirm-card,
+.snapshot-lock-notice,
+.trade-complete-card {
+  border-radius: 22px !important;
+}
+
+.snapshot-section,
+.offer-detail-facts > div {
+  border-color: #ededf1 !important;
+}
+
+.deal-price,
+.offer-detail-price {
+  color: #4132a8 !important;
+}
+
+/* My DAN and inbox surfaces become grouped native lists. */
+.my-block .app-row-list,
+.profile-trade-list,
+.chat-list {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.my-block__title {
+  color: #666a76;
+  font-size: .84rem;
+  letter-spacing: -.012em;
+}
+
+.app-row,
+.chat-list__row,
+.profile-trade-row {
+  border-color: #ededf1;
+}
+
+.my-secondary {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Chat: cleaner conversation canvas. */
+.chat-page {
+  border: 0;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.chat-thread {
+  background: #f7f7f9;
+}
+
+.chat-bubble {
+  background: #fff;
+  border: 0;
+  box-shadow: 0 1px 2px rgba(26,25,34,.06), 0 4px 12px rgba(26,25,34,.035);
+}
+
+.chat-bubble--mine {
+  background: #6250e8;
+  box-shadow: 0 6px 15px rgba(76,59,194,.16);
+}
+
+.chat-composer {
+  border-top: 1px solid #ededf1;
+}
+
+/* Completion feels conclusive rather than prototype-like. */
+.trade-complete-hero {
+  border: 0;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(98,80,232,.13), transparent 44%),
+    #fff;
+  box-shadow: var(--shadow-md);
+}
+
+.trade-complete-check {
+  background: #6250e8;
+}
+
+@media (max-width: 859px) {
+  body {
+    background: #f5f5f8;
+  }
+
+  .app-main {
+    padding: 14px 14px calc(var(--bottom-nav-height) + 30px);
+  }
+
+  .page-stack {
+    gap: 20px;
+  }
+
+  .home-demand-header {
+    padding: 24px 18px 18px;
+  }
+
+  .camera-demand-create--blueprint {
+    gap: 16px;
+  }
+
+  .commerce-panel,
+  .camera-demand-create--blueprint .product-search-section,
+  .camera-demand-create--blueprint .demand-condition-section {
+    padding: 17px;
+    border-radius: 22px;
+  }
+
+  .create-sticky-action,
+  .create-review-actions {
+    bottom: calc(var(--bottom-nav-height) + 8px);
+  }
+
+  .bottom-nav--v1 a > span:last-child {
+    font-size: .72rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .commerce-panel,
+  .camera-demand-create--blueprint .product-search-section,
+  .camera-demand-create--blueprint .demand-condition-section {
+    padding: 15px;
+  }
+
+  .camera-demand-create--blueprint .create-v1-intro .page-title {
+    font-size: 1.62rem;
+  }
+
+  .selected-product-card {
+    grid-template-columns: 64px minmax(0,1fr);
+  }
+
+  .selected-product-card .product-visual--sm {
+    width: 64px !important;
+    height: 64px !important;
+  }
+}
