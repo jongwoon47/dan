@@ -143,15 +143,14 @@ export function OfferDetailPage() {
       ) : match.status === "BUYER_INTERESTED" ? (
         <section className="offer-next-state">
           <strong>판매자에게 관심을 보냈어요</strong>
-          <p>판매자가 연결을 수락하면 바로 채팅할 수 있어요. 실제 거래를 계속할 때만 상세 증거를 확인합니다.</p>
+          <p>판매자가 수락하면 채팅할 수 있어요. 상세 증거는 거래를 이어갈 때 확인해요.</p>
           <Button to="/my?tab=offers" variant="secondary" fullWidth>받은 제안으로 돌아가기</Button>
         </section>
       ) : match.status === "CONNECTED" ? (
         <section className="offer-next-state">
           <strong>판매자와 연결됐어요</strong>
           <p>
-            먼저 대화해 거래 의사를 확인하세요. 판매자가 상세 증거를 제출하면
-            Deal Snapshot에서 최종 조건을 확인할 수 있어요.
+            먼저 채팅으로 거래 의사를 확인하세요. 상세 증거가 올라오면 최종 조건을 확인할 수 있어요.
           </p>
           <Button to={"/match/" + match.id} fullWidth size="lg">
             채팅 시작하기
