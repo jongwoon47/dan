@@ -1,8 +1,15 @@
 # DAN V1 베타 두 사용자 E2E 체크리스트
 
-기준 코드: `feature/dan-v1-demand-first-trust-flow`의 `fbf2bcde`에서 분기한 release branch.
+기준 코드: `release/dan-v1-beta-rc2` / 디자인 동결 HEAD `4f2b7021cf8fd562390e0704db7fd7c505871cfe`.
 
 사용자 A는 구매자, 사용자 B는 판매자다. demo는 한 브라우저의 localStorage이고 로그인을 건너뛴다. 두 계정의 회원가입, Realtime, 읽음은 Supabase가 있을 때만 실제 값이다. 자격증명이 없으면 해당 칸은 차단으로 남긴다.
+
+## 실행 원칙
+
+- 디자인은 동결한다. 베타 중 실제 사용자가 막히는 문제만 수정한다.
+- production 계정/데이터/secret은 사용하지 않는다.
+- buyer A / seller B 두 개의 staging 전용 계정으로 전체 거래 흐름을 1회 이상 통과한다.
+- 막힌 단계는 코드 버그인지 외부 provider 미연결인지 구분해서 기록한다.
 
 ## 실행
 
