@@ -169,11 +169,9 @@ export function DealSnapshotPage() {
         <div className="deal-product-card__main">
           <ProductVisual product={product} size="sm" />
           <div>
-            <p className="eyebrow">거래 조건</p>
             <h1 className="page-title">{product.name}</h1>
             <strong className="deal-price">{formatWon(sell.minimumPrice)}</strong>
           </div>
-          <span className="deal-product-card__heart" aria-hidden>♡</span>
         </div>
         <div className="deal-product-card__stats">
           <div>
@@ -194,8 +192,7 @@ export function DealSnapshotPage() {
       <section className="deal-snapshot-card deal-snapshot-card--focused">
         <div className="snapshot-card-heading">
           <div>
-            <span className="eyebrow">핵심 거래 조건</span>
-            <h2>거래 전, 아래 조건을 확인해 주세요.</h2>
+            <h2>거래 조건을 확인해 주세요</h2>
           </div>
           <strong>{formatWon(sell.minimumPrice)}</strong>
         </div>
@@ -268,8 +265,7 @@ export function DealSnapshotPage() {
         <section className="deal-snapshot-card snapshot-appointment">
           <div className="snapshot-card-heading">
             <div>
-              <span className="eyebrow">직거래 약속</span>
-              <h2>만날 장소와 시간을 거래 조건에 함께 고정해요.</h2>
+              <h2>직거래 약속</h2>
             </div>
           </div>
           {snapshot?.lockedAt ? (
@@ -320,8 +316,8 @@ export function DealSnapshotPage() {
       ) : null}
 
       <section className="snapshot-lock-notice">
-        <strong>위 조건으로 거래를 진행합니다.</strong>
-        <p>양쪽이 확인하면 Deal Snapshot이 잠기고 이후에는 수정할 수 없어요. 실제 물건과 다른 내용이 있다면 확인 전에 판매자와 다시 조율하세요.</p>
+        <strong>확인하면 이 조건으로 거래가 확정돼요.</strong>
+        <p>양쪽이 확인한 뒤에는 조건을 바꿀 수 없어요. 다른 내용이 있다면 확인 전에 채팅에서 조율해 주세요.</p>
       </section>
 
       <section className="deal-confirm-state">
@@ -361,7 +357,7 @@ export function DealSnapshotPage() {
             disabled={busy || !payload || !appointmentReady || myConfirmed}
             onClick={() => void confirm()}
           >
-            {myConfirmed ? "상대 확인 대기 중" : "이 거래조건을 확인했습니다"}
+            {myConfirmed ? "상대 확인 대기 중" : "이 거래 조건을 확인했어요"}
           </Button>
         </>
       )}
