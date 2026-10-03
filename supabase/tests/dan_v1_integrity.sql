@@ -1,6 +1,6 @@
 begin;
 
-select plan(79);
+select plan(80);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -203,6 +203,14 @@ select ok(
 select ok(
   not has_table_privilege('authenticated', 'public.sell_intents', 'UPDATE'),
   'authenticated clients cannot directly update Quick Offers'
+);
+
+select ok(
+  position(
+    'sell_intent user must be auth uid'
+    in pg_get_functiondef('public.enforce_sell_intent_ownership()'::regprocedure)
+  ) = 0,
+  'sell intent integrity trigger does not block trusted cross-party lifecycle RPCs'
 );
 
 select has_function(
