@@ -58,7 +58,7 @@ export function TradeCompletePage() {
     <div className="page-stack page-narrow trade-complete-page">
       <section className="trade-complete-hero">
         <span className="trade-complete-check" aria-hidden>✓</span>
-        <h1>거래가 완료됐어요!</h1>
+        <h1>거래가 완료됐어요</h1>
         <p>양쪽의 인계 확인이 끝났고 거래 결과가 Trust History에 기록됐어요.</p>
       </section>
 
