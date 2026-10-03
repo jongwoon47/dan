@@ -217,7 +217,7 @@ export function MyDanPage() {
               <div className="my-demand-section-head">
                 <div>
                   <h2>구매자 반응</h2>
-                  <p>구매자가 관심을 보인 제안부터 증거 제출과 거래 조건 확정을 진행하세요.</p>
+                  <p>구매자가 관심을 보이면 먼저 연결해 대화하고, 거래를 계속할 때 증거와 조건을 확정하세요.</p>
                 </div>
               </div>
               <MatchList matches={sellerMatches} emptyWhenZero={false} />
