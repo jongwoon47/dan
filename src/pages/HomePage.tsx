@@ -97,7 +97,7 @@ export function HomePage() {
     <div className="page-stack home-page home-page--v1">
       <section className="home-demand-header">
         <div className="home-demand-heading">
-          <span className="home-demand-kicker">Live Demand</span>
+          <span className="home-demand-kicker">실시간 수요</span>
           <h1 aria-label="지금 누군가 찾고 있어요">지금 누군가 찾고 있어요</h1>
           <p>사고 싶은 물건을 올리면, 가진 사람이 판매를 제안해요.</p>
         </div>
@@ -165,7 +165,7 @@ export function HomePage() {
       <section className="home-live-section">
         <div className="home-live-heading">
           <div>
-            <span>Live Demand</span>
+            <span>실시간 수요</span>
             <h2>지금 가장 많이 찾는 제품</h2>
           </div>
           <Link to="/feed">더보기 <span aria-hidden>›</span></Link>
@@ -193,7 +193,7 @@ export function HomePage() {
           <div className="home-live-footer">
             <div>
               <strong>더 많은 제품을 찾고 있나요?</strong>
-              <span>전체 Live Demand에서 검색·카테고리·급상승 순으로 탐색할 수 있어요.</span>
+              <span>전체 실시간 수요에서 검색·카테고리·급상승 순으로 탐색할 수 있어요.</span>
             </div>
             <Button to="/feed" variant="secondary">
               전체 탐색
@@ -208,7 +208,7 @@ export function HomePage() {
           <strong>판매글을 먼저 만들 필요 없이, 실제 구매수요에 바로 제안할 수 있어요.</strong>
         </div>
         <Button to="/feed" variant="secondary">
-          전체 Live Demand 보기
+          전체 실시간 수요 보기
         </Button>
       </section>
     </div>
