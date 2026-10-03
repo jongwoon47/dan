@@ -251,29 +251,35 @@ export function QuickOfferPage() {
           />
         </Field>
 
-        <div>
-          <p className="field-inline-label">
-            현재 사진 1장 <span className="optional-mark">선택</span>
-          </p>
-          <label className="evidence-upload evidence-upload--quick">
-            {quickPhotoUrl ? (
-              <img src={quickPhotoUrl} alt="현재 물품" />
-            ) : (
-              <span>있다면 현재 물품 사진을 추가해 주세요</span>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(event) => void pickPhoto(event.target.files?.[0])}
-            />
-          </label>
-          {photoError ? <p className="form-error">{photoError}</p> : null}
-        </div>
+        <details className="quick-offer-photo" open={Boolean(quickPhotoUrl)}>
+          <summary>
+            <span>
+              <strong>사진 추가</strong>
+              <small>선택 · 지금은 없어도 제안할 수 있어요</small>
+            </span>
+            <span aria-hidden>⌄</span>
+          </summary>
+          <div className="quick-offer-photo__body">
+            <label className="evidence-upload evidence-upload--quick">
+              {quickPhotoUrl ? (
+                <img src={quickPhotoUrl} alt="현재 물품" />
+              ) : (
+                <span>현재 물품 사진을 추가하면 구매자가 제안을 더 쉽게 확인할 수 있어요.</span>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(event) => void pickPhoto(event.target.files?.[0])}
+              />
+            </label>
+            {photoError ? <p className="form-error">{photoError}</p> : null}
+          </div>
+        </details>
 
         <div className="quick-offer-note">
-          <strong>Quick Offer는 이 정도면 충분해요</strong>
+          <strong>지금은 가격과 상태면 충분해요</strong>
           <p>
-            사진 없이도 바로 제안할 수 있어요. 구매자가 관심을 보이고 서로 연결된 뒤에만 촬영 코드·식별정보·구성품·상세 상태 증거를 요청합니다.
+            구매자가 관심을 보이고 연결된 뒤, 실제 거래를 계속할 때만 촬영 코드와 상세 증거를 제출합니다.
           </p>
         </div>
 
