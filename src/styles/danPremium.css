@@ -4318,3 +4318,45 @@ body {
     padding: 16px !important;
   }
 }
+
+
+/* Last visual cleanup pass */
+.home-demand-heading p {
+  max-width: 14rem !important;
+}
+
+.trust-history__head {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  align-items: start !important;
+  gap: 7px !important;
+}
+
+.trust-history__badges {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+}
+
+.trust-summary-strip span {
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+  line-height: 1.35 !important;
+}
+
+.deal-page > .form-error {
+  margin: 0 !important;
+  padding: 11px 13px !important;
+  border: 1px solid #f3d4d0 !important;
+  border-radius: 14px !important;
+  background: #fff6f5 !important;
+  color: #a53a32 !important;
+  font-size: .8rem !important;
+  line-height: 1.5 !important;
+}
+
+@media (max-width: 390px) {
+  .home-demand-heading p {
+    max-width: 13.5rem !important;
+  }
+}
