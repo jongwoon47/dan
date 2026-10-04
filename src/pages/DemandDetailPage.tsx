@@ -90,13 +90,13 @@ export function DemandDetailPage() {
       <section className="demand-detail-hero">
         <ProductVisual product={product} size="lg" />
         <div className="demand-detail-copy">
-          <span className="eyebrow">Live Demand</span>
+          <span className="eyebrow">구매 요청</span>
           <h1>{product.name}</h1>
           <p className="detail-hero__count">
             <strong>{aggregate.seekerCount}명</strong>이 지금 찾고 있어요
           </p>
           <p className="section-desc">
-            구매자가 원하는 물건과 가격을 먼저 올려둔 실제 수요예요.
+            찾는 사람들이 가격과 거래 조건을 먼저 남긴 요청이에요.
           </p>
         </div>
       </section>
@@ -123,8 +123,8 @@ export function DemandDetailPage() {
       <section className="detail-section buyer-demand-list">
         <div className="section-heading">
           <div>
-            <span className="eyebrow">Active buyers</span>
-            <h2>이 제품을 기다리는 구매수요</h2>
+            <span className="eyebrow">구매자</span>
+            <h2>이 제품을 찾는 사람들</h2>
           </div>
           <span>{activeBuyerDemands.length}개</span>
         </div>
@@ -144,7 +144,7 @@ export function DemandDetailPage() {
                   variant="secondary"
                   size="sm"
                 >
-                  이 구매자에게 제안
+                  제안하기
                 </Button>
               </div>
             ))}
@@ -160,7 +160,7 @@ export function DemandDetailPage() {
         <div>
           <span>이 제품을 가지고 있나요?</span>
           <h2>가격과 기본 상태만 적고 바로 제안하세요.</h2>
-          <p>구매자가 관심을 보인 뒤에 상세 증거와 거래 조건을 확정합니다.</p>
+          <p>상대가 선택하면 채팅에서 상품 정보와 거래 조건을 확인해요.</p>
         </div>
         <Button to={`/demand/${product.id}/offer`} fullWidth size="lg">
           판매 제안하기
@@ -171,16 +171,16 @@ export function DemandDetailPage() {
       {myBuy ? (
         <section className="detail-section demand-my-request">
           <div>
-            <span>내 구매수요</span>
+            <span>내 요청</span>
             <strong>최대 {formatWon(myBuy.budget)}</strong>
           </div>
           <Button to={`/demand/item/${myBuy.id}`} fullWidth variant="secondary">
-            내 구매수요 관리
+            내 요청 관리
           </Button>
         </section>
       ) : (
         <p className="detail-foot">
-          같은 제품을 찾고 있나요? <Link to={`/buy/new?q=${encodeURIComponent(product.name)}`}>나도 구매수요 등록</Link>
+          같은 제품을 찾고 있나요? <Link to={`/create?type=BUY&q=${encodeURIComponent(product.name)}`}>나도 요청하기</Link>
         </p>
       )}
     </div>
