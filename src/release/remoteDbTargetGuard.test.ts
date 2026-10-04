@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import { assertRemoteMigrationAllowed } from "./remoteDbTargetGuard";
 import {
   PRODUCTION_REMOTE_CONFIRM,
-  PRODUCTION_SUPABASE_PROJECT_REFS,
   STAGING_REMOTE_CONFIRM,
+  STAGING_SUPABASE_PROJECT_REF,
   extractSupabaseProjectRef,
 } from "./environmentSeparation";
 
-const stagingRef = "stgstgprojectref001";
+const stagingRef = STAGING_SUPABASE_PROJECT_REF;
 
 describe("extractSupabaseProjectRef", () => {
   it("reads db host and API host refs", () => {
@@ -43,17 +43,17 @@ describe("assertRemoteMigrationAllowed", () => {
     expect(
       assertRemoteMigrationAllowed({
         DAN_ENV: "production",
-        DAN_SUPABASE_PROJECT_REF: PRODUCTION_SUPABASE_PROJECT_REFS[0],
+        DAN_SUPABASE_PROJECT_REF: "futureprodref001",
       }).code,
     ).toBe(2);
   });
 
-  it("refuses staging that points at a production ref", () => {
+  it("refuses any staging ref other than the designated project", () => {
     expect(
       assertRemoteMigrationAllowed({
         DAN_ENV: "staging",
         DAN_REMOTE_CONFIRM: STAGING_REMOTE_CONFIRM,
-        DAN_STAGING_SUPABASE_PROJECT_REF: PRODUCTION_SUPABASE_PROJECT_REFS[0],
+        DAN_STAGING_SUPABASE_PROJECT_REF: "otherstagingref001",
       }).code,
     ).toBe(1);
   });
@@ -68,18 +68,16 @@ describe("assertRemoteMigrationAllowed", () => {
     expect(allowed.projectRef).toBe(stagingRef);
   });
 
-  it("allows production only when the ref is explicit and confirmed", () => {
-    expect(
-      assertRemoteMigrationAllowed({
-        DAN_ENV: "production",
-        DAN_REMOTE_CONFIRM: PRODUCTION_REMOTE_CONFIRM,
-      }).code,
-    ).toBe(2);
-    const allowed = assertRemoteMigrationAllowed({
+  it("keeps production remote applies disabled until a production DB exists", () => {
+    const blocked = assertRemoteMigrationAllowed({
       DAN_ENV: "production",
       DAN_REMOTE_CONFIRM: PRODUCTION_REMOTE_CONFIRM,
-      DAN_SUPABASE_PROJECT_REF: PRODUCTION_SUPABASE_PROJECT_REFS[0],
+      DAN_SUPABASE_PROJECT_REF: "futureprodref001",
     });
+    expect(blocked.ok).toBe(false);
+    expect(blocked.code).toBe(1);
+    expect(blocked.message).toMatch(/not configured/i);
+  });
     expect(allowed.ok).toBe(true);
     expect(allowed.projectRef).toBe(PRODUCTION_SUPABASE_PROJECT_REFS[0]);
   });
