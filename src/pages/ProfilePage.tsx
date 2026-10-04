@@ -67,7 +67,7 @@ export function ProfilePage() {
   useDeepHeader({
     title: profile?.displayName ?? ko.profileTitle,
     rightKey: `${isSelf}-${menuOpen}`,
-    right: !isSelf ? (
+    right: currentUser && !isSelf ? (
       <OverflowMenu
         open={menuOpen}
         onOpenChange={onMenuOpenChange}
@@ -87,6 +87,7 @@ export function ProfilePage() {
   });
 
   useEffect(() => {
+    if (!currentUser) return;
     let alive = true;
     void (async () => {
       setLoading(true);
@@ -103,7 +104,7 @@ export function ProfilePage() {
     return () => {
       alive = false;
     };
-  }, [getPublicProfile, userId]);
+  }, [currentUser, getPublicProfile, userId]);
 
   const tradeHistoryRows = useMemo(() => {
     if (!isSelf) return [];
@@ -136,6 +137,16 @@ export function ProfilePage() {
         };
       });
   }, [getDemand, getProduct, historyTab, isSelf, myMatches]);
+
+  if (!currentUser) {
+    return (
+      <EmptyState
+        title="로그인이 필요해요"
+        body="프로필의 신뢰 정보와 거래 이력을 확인하려면 로그인해 주세요."
+        action={<Button to="/login">로그인</Button>}
+      />
+    );
+  }
 
   if (loading) {
     return (

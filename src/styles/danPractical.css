@@ -330,12 +330,17 @@ textarea.dan-input,
 .selected-product-card,
 .demand-create-review,
 .live-demand-banner,
-.quick-offer-signal,
 .quick-offer-note {
   border: 1px solid var(--dan-border) !important;
   border-radius: 14px !important;
   background: #fff !important;
   box-shadow: none !important;
+}
+
+.quick-offer-signal {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
 }
 
 /* Own demand detail: hero first, offers second */
