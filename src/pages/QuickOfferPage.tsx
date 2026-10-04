@@ -145,7 +145,7 @@ export function QuickOfferPage() {
         setError("판매 제안을 보내지 못했어요.");
         return;
       }
-      navigate("/my?tab=selling");
+      navigate("/my");
     } finally {
       setBusy(false);
     }
@@ -212,22 +212,6 @@ export function QuickOfferPage() {
           </ChipGroup>
         </div>
 
-        {showUsageCount ? (
-          <Field
-            label="대략적인 컷수"
-            hint="관심이 연결되면 정확한 정보만 추가하면 돼요."
-          >
-            <TextInput
-              inputMode="numeric"
-              value={formatDigitsGrouped(usageCount)}
-              onChange={(event) =>
-                setUsageCount(digitsOnly(event.target.value))
-              }
-              placeholder="예: 2,400"
-            />
-          </Field>
-        ) : null}
-
         <div>
           <p className="field-inline-label">가능한 거래 방식</p>
           <ChipGroup>
@@ -243,28 +227,37 @@ export function QuickOfferPage() {
           </ChipGroup>
         </div>
 
-        <Field label="상태 한 줄">
-          <TextInput
-            value={conditionNote}
-            onChange={(event) => setConditionNote(event.target.value)}
-            placeholder="예: 상태 좋음 · 상단 미세스크래치"
-          />
-        </Field>
-
-        <details className="quick-offer-photo" open={Boolean(quickPhotoUrl)}>
+        <details className="quick-offer-extras" open={Boolean(quickPhotoUrl || usageCount || conditionNote)}>
           <summary>
             <span>
-              <strong>사진 추가</strong>
-              <small>선택 · 없어도 제안 가능</small>
+              <strong>추가 정보</strong>
+              <small>선택 · 사진이나 사용 정보를 더할 수 있어요</small>
             </span>
             <span aria-hidden>⌄</span>
           </summary>
-          <div className="quick-offer-photo__body">
+          <div className="quick-offer-extras__body section-stack">
+            {showUsageCount ? (
+              <Field label="대략적인 컷수">
+                <TextInput
+                  inputMode="numeric"
+                  value={formatDigitsGrouped(usageCount)}
+                  onChange={(event) => setUsageCount(digitsOnly(event.target.value))}
+                  placeholder="예: 2,400"
+                />
+              </Field>
+            ) : null}
+            <Field label="상태 메모">
+              <TextInput
+                value={conditionNote}
+                onChange={(event) => setConditionNote(event.target.value)}
+                placeholder="예: 상태 좋음 · 상단 미세스크래치"
+              />
+            </Field>
             <label className="evidence-upload evidence-upload--quick">
               {quickPhotoUrl ? (
                 <img src={quickPhotoUrl} alt="현재 물품" />
               ) : (
-                <span>사진이 있으면 제안을 더 쉽게 확인할 수 있어요.</span>
+                <span>사진 추가 · 없어도 제안할 수 있어요</span>
               )}
               <input
                 type="file"
@@ -275,13 +268,6 @@ export function QuickOfferPage() {
             {photoError ? <p className="form-error">{photoError}</p> : null}
           </div>
         </details>
-
-        <div className="quick-offer-note">
-          <strong>가격과 상태만 입력하면 돼요</strong>
-          <p>
-            관심이 연결된 뒤에만 상세 증거를 제출해요.
-          </p>
-        </div>
 
         {error ? <p className="form-error">{error}</p> : null}
         <Button
