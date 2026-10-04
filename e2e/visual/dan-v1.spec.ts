@@ -304,10 +304,10 @@ test("DAN App V3 core request and transaction journey renders", async ({ page },
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "11-profile.png"), fullPage: true });
 
-  await page.goto("/demand/prod-fuji-x100vi/offer");
+  await page.goto("/demand/prod-fuji-x100vi/offer?target=visual-demand-x100vi");
   await settle(page);
   await expect(page.getByRole("button", { name: "제안 보내기" })).toBeVisible();
-  await expect(page.getByText("현재 최고 구매 희망가")).toBeVisible();
+  await expect(page.getByText("선택한 구매수요 · 최대 희망가")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "12-offer-create.png"), fullPage: true });
 });
