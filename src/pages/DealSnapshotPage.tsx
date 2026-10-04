@@ -150,7 +150,7 @@ export function DealSnapshotPage() {
   if (!evidence) {
     return (
       <EmptyState
-        title="판매자 증거가 아직 없어요"
+        title="상품 정보가 아직 없어요"
         body={isBuyer ? "판매자가 상품 정보를 등록하면 거래 조건을 확인할 수 있어요." : "먼저 물품 상태와 상품 정보를 등록해 주세요."}
         action={
           isBuyer ? (
