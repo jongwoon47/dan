@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { AggregatedDemandCard } from "@/components/AggregatedDemandCard";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -9,6 +10,9 @@ import {
 } from "@/data/supabase/api";
 import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
+import { effectiveDemandStatus } from "@/domain/demandLifecycle";
+import { formatFulfillmentSummary } from "@/domain/fulfillment";
+import { formatWon } from "@/lib/format";
 import {
   filterAndSortLiveDemand,
   liveDemandCategoryCounts,
@@ -16,7 +20,7 @@ import {
   type LiveDemandRow,
   type LiveDemandSort,
 } from "@/domain/liveDemandDiscovery";
-import { CATEGORY_LABEL } from "@/domain/types";
+import { CATEGORY_LABEL, DEMAND_TYPE_LABEL, type DemandType } from "@/domain/types";
 import "./pages.css";
 import "@/components/feedCards.css";
 
@@ -39,8 +43,9 @@ function toFeedRow(row: RemoteLiveDemandRow): LiveDemandRow {
 }
 
 export function DemandFeedPage() {
-  const { demandFeed } = useDan();
+  const { demandFeed, state } = useDan();
   const [query, setQuery] = useState("");
+  const [requestType, setRequestType] = useState<"all" | DemandType>("all");
   const [category, setCategory] = useState<LiveDemandCategory>("all");
   const [sort, setSort] = useState<LiveDemandSort>("popular");
   const [page, setPage] = useState(0);
@@ -64,6 +69,26 @@ export function DemandFeedPage() {
       }),
     [category, demandFeed, query, sort],
   );
+
+  const directRequests = useMemo(
+    () =>
+      state.demands
+        .filter((demand) => {
+          if (demand.type === "BUY") return false;
+          if (effectiveDemandStatus(demand) !== "ACTIVE") return false;
+          if (requestType !== "all" && demand.type !== requestType) return false;
+          const q = query.trim().toLocaleLowerCase("ko");
+          if (!q) return true;
+          return (
+            demand.title.toLocaleLowerCase("ko").includes(q) ||
+            (demand.description ?? "").toLocaleLowerCase("ko").includes(q)
+          );
+        })
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    [query, requestType, state.demands],
+  );
+
+  const showBuyRequests = requestType === "all" || requestType === "BUY";
 
   useEffect(() => {
     if (!productionDiscovery) {
@@ -122,8 +147,14 @@ export function DemandFeedPage() {
   const hasMore =
     productionDiscovery && remoteReady && filtered.length < remoteTotal;
   const demandHref = query.trim()
-    ? `/buy/new?q=${encodeURIComponent(query.trim())}`
-    : "/buy/new";
+    ? `/create?type=BUY&q=${encodeURIComponent(query.trim())}`
+    : "/create?type=BUY";
+  const createHref =
+    requestType === "all"
+      ? "/create"
+      : requestType === "BUY"
+        ? demandHref
+        : `/create?type=${requestType}`;
 
   function resetRemoteDiscovery() {
     setRemoteRows([]);
@@ -152,15 +183,31 @@ export function DemandFeedPage() {
   return (
     <div className="page-stack discovery-page">
       <header className="page-header discovery-header">
-        <span className="eyebrow">Live Demand</span>
-        <h1 className="page-title">사람들이 지금 찾는 제품</h1>
+        <span className="eyebrow">탐색</span>
+        <h1 className="page-title">지금 올라온 요청을 찾아보세요</h1>
         <p className="section-desc">
-          카메라뿐 아니라 어떤 제품이든 찾을 수 있어요. 원하는 제품이 없으면
-          바로 새 구매수요를 만들 수 있습니다.
+          사람들이 찾는 물건을 둘러보고 바로 제안할 수 있어요.
         </p>
       </header>
 
-      <section className="discovery-panel" aria-label="Live Demand 탐색">
+      <section className="discovery-panel" aria-label="요청 탐색">
+        <div className="request-type-filter" aria-label="요청 유형">
+          {(["all", "BUY", "BORROW", "TASK", "SERVICE"] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              className={requestType === value ? "is-active" : ""}
+              onClick={() => {
+                setRequestType(value);
+                setPage(0);
+                resetRemoteDiscovery();
+              }}
+            >
+              {value === "all" ? "전체" : DEMAND_TYPE_LABEL[value]}
+            </button>
+          ))}
+        </div>
+
         <div className="discovery-search">
           <span className="discovery-search__icon" aria-hidden>
             <svg viewBox="0 0 24 24" fill="none">
@@ -171,8 +218,8 @@ export function DemandFeedPage() {
           <TextInput
             value={query}
             onChange={(e) => updateQuery(e.target.value)}
-            placeholder="제품, 브랜드, 카테고리 검색"
-            aria-label="Live Demand 검색"
+            placeholder="제품이나 브랜드 검색"
+            aria-label="요청 검색"
             autoComplete="off"
           />
           {query ? (
@@ -187,7 +234,7 @@ export function DemandFeedPage() {
           ) : null}
         </div>
 
-        <div className="discovery-filter-scroll" aria-label="제품 카테고리">
+        {showBuyRequests ? <div className="discovery-filter-scroll" aria-label="제품 카테고리">
           <button
             type="button"
             className={category === "all" ? "discovery-chip is-active" : "discovery-chip"}
@@ -205,42 +252,69 @@ export function DemandFeedPage() {
               {CATEGORY_LABEL[itemCategory]} <span>{count}</span>
             </button>
           ))}
-        </div>
+        </div> : null}
 
         <div className="discovery-toolbar">
           <p className="discovery-summary" aria-live="polite">
-            <strong>{totalProducts}</strong>개 제품
-            {filtered.length > 0 ? (
-              <> · 현재 <strong>{activeSeekers}</strong>명 구매수요</>
-            ) : null}
+            {showBuyRequests ? (
+              <>
+                <strong>{totalProducts}</strong>개 제품
+                {filtered.length > 0 ? (
+                  <> · 현재 <strong>{activeSeekers}</strong>명 찾는 중</>
+                ) : null}
+              </>
+            ) : (
+              <><strong>{directRequests.length}</strong>개 요청</>
+            )}
           </p>
-          <div className="discovery-sort" aria-label="정렬">
-            {SORT_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                className={sort === option.value ? "is-active" : ""}
-                aria-pressed={sort === option.value}
-                onClick={() => updateSort(option.value)}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+          {showBuyRequests ? (
+            <div className="discovery-sort" aria-label="정렬">
+              {SORT_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={sort === option.value ? "is-active" : ""}
+                  aria-pressed={sort === option.value}
+                  onClick={() => updateSort(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
       </section>
 
-      {filtered.length === 0 && !remoteLoading ? (
+      {directRequests.length > 0 ? (
+        <section className="mixed-request-section">
+          <div className="mixed-request-list">
+            {directRequests.map((demand) => (
+              <Link key={demand.id} to={`/demand/item/${demand.id}`} className="mixed-request-row">
+                <div>
+                  <span>{DEMAND_TYPE_LABEL[demand.type]}</span>
+                  <strong>{demand.title}</strong>
+                  <small>{formatFulfillmentSummary(demand.fulfillmentOptions)}</small>
+                </div>
+                <b>{formatWon(demand.budget)}</b>
+                <i aria-hidden>›</i>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {showBuyRequests ? (
+        filtered.length === 0 && !remoteLoading ? (
         <EmptyState
           title={
             query.trim()
-              ? `‘${query.trim()}’의 Live Demand가 아직 없어요`
-              : "조건에 맞는 Live Demand가 없어요"
+              ? `‘${query.trim()}’의 요청이 아직 없어요`
+              : "조건에 맞는 요청이 없어요"
           }
-          body="찾는 사람이 먼저 수요를 남기면, 그 제품을 가진 판매자가 제안할 수 있어요."
+          body="찾는 사람이 요청을 남기면, 그 물건을 가진 사람이 제안할 수 있어요."
           action={
             <Button to={demandHref}>
-              {query.trim() ? "이 제품 구매수요 만들기" : "구매수요 등록"}
+              {query.trim() ? "이 제품 요청하기" : "구매 요청하기"}
             </Button>
           }
         />
@@ -260,7 +334,7 @@ export function DemandFeedPage() {
           </div>
           {remoteLoading ? (
             <p className="discovery-loading" role="status">
-              Live Demand 불러오는 중…
+              요청 불러오는 중…
             </p>
           ) : null}
           {hasMore ? (
@@ -273,15 +347,22 @@ export function DemandFeedPage() {
             </Button>
           ) : null}
         </>
-      )}
+      )
+      ) : directRequests.length === 0 ? (
+        <EmptyState
+          title="조건에 맞는 요청이 없어요"
+          body="새 요청을 만들면 필요한 사람과 가능한 사람이 연결될 수 있어요."
+          action={<Button to={createHref}>요청 만들기</Button>}
+        />
+      ) : null}
 
       <section className="discovery-create-banner">
         <div>
-          <span>찾는 제품이 없나요?</span>
-          <strong>목록에 없어도 제품명을 직접 입력해 첫 수요를 만들 수 있어요.</strong>
+          <span>찾는 요청이 없나요?</span>
+          <strong>원하는 제품을 직접 입력해 새 요청을 만들 수 있어요.</strong>
         </div>
-        <Button to={demandHref} variant="secondary">
-          직접 등록
+        <Button to={createHref} variant="secondary">
+          요청 만들기
         </Button>
       </section>
     </div>

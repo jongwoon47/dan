@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { TransactionStageBar } from "@/components/TransactionStageBar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
@@ -10,7 +11,7 @@ import "./pages.css";
 
 const DISPUTE_OPTIONS: Array<{ value: DealDisputeReason; label: string }> = [
   { value: "WRONG_ITEM", label: "다른 물건이에요" },
-  { value: "SNAPSHOT_MISMATCH", label: "Deal Snapshot과 달라요" },
+  { value: "SNAPSHOT_MISMATCH", label: "확정한 거래 조건과 달라요" },
   { value: "MAJOR_UNDISCLOSED_DEFECT", label: "고지되지 않은 큰 하자가 있어요" },
   { value: "ITEM_NOT_RECEIVED", label: "물건을 받지 못했어요" },
   { value: "OTHER", label: "기타" },
@@ -82,12 +83,6 @@ export function HandoffPage() {
       ? Boolean(match.sellerCompletedAt)
       : Boolean(match.buyerCompletedAt)
     : false;
-  const shippingOnly = Boolean(
-    demand &&
-      demand.fulfillmentOptions.length > 0 &&
-      demand.fulfillmentOptions.every((option) => option.mode === "SHIPPING"),
-  );
-  const handoffLabel = shippingOnly ? "배송 · 수령 확인" : "직거래 · 인계 확인";
 
   const facts = useMemo(() => {
     if (!snapshot) return [];
@@ -127,7 +122,7 @@ export function HandoffPage() {
     return (
       <EmptyState
         title="먼저 거래 조건을 확정해 주세요"
-        body="양쪽이 같은 Deal Snapshot을 확인해야 물품 인계 단계로 넘어갈 수 있어요."
+        body="양쪽이 같은 거래 조건을 확인해야 인계 단계로 넘어갈 수 있어요."
         action={<Button to={`/deal/${match.id}/snapshot`}>거래 조건 확인</Button>}
       />
     );
@@ -175,31 +170,11 @@ export function HandoffPage() {
 
   return (
     <div className="page-stack page-narrow handoff-page">
+      <TransactionStageBar stage={4} />
       <section className="handoff-hero">
-        <span className="eyebrow">Safe Handoff</span>
+        <span className="eyebrow">인계 확인</span>
         <h1 className="page-title">{product.name}</h1>
         <p>확정한 조건을 기준으로 결제하고, 물품을 인계받을 때 실제 상태를 다시 확인해요.</p>
-      </section>
-
-      <section className="trade-progress-card" aria-label="거래 진행 단계">
-        <div className="trade-progress-row is-done">
-          <span className="trade-progress-icon">✓</span>
-          <div><strong>거래조건 확정</strong><small>Deal Snapshot 잠금 완료</small></div>
-        </div>
-        <div className={match.paymentStatus === "PAID" ? "trade-progress-row is-done" : "trade-progress-row is-current"}>
-          <span className="trade-progress-icon">{match.paymentStatus === "PAID" ? "✓" : "2"}</span>
-          <div>
-            <strong>구매자 안전결제</strong>
-            <small>{match.paymentStatus === "PAID" ? "결제 완료" : "결제 대기 중"}</small>
-          </div>
-        </div>
-        <div className={match.status === "COMPLETED" ? "trade-progress-row is-done" : match.paymentStatus === "PAID" ? "trade-progress-row is-current" : "trade-progress-row"}>
-          <span className="trade-progress-icon">{match.status === "COMPLETED" ? "✓" : "3"}</span>
-          <div>
-            <strong>{handoffLabel}</strong>
-            <small>{match.status === "COMPLETED" ? "거래 완료" : match.paymentStatus === "PAID" ? "채팅에서 인계 방법을 조율하세요" : "결제 완료 후 진행"}</small>
-          </div>
-        </div>
       </section>
 
       <section className="deal-snapshot-card">
@@ -222,10 +197,10 @@ export function HandoffPage() {
           <span className="safe-payment-placeholder__icon">✓</span>
           <div>
             <strong>거래가 완료됐어요</strong>
-            <p>양쪽의 확인이 끝났습니다. 거래 결과는 Trust History에 사실 기록으로 남아요.</p>
+            <p>양쪽의 확인이 끝났습니다. 거래 결과는 거래 이력에 기록돼요.</p>
           </div>
-          <Button to={`/profile/${currentUser.id}`} variant="secondary" fullWidth>
-            내 Trust History 보기
+          <Button to="/my?tab=completed" variant="secondary" fullWidth>
+            내 거래 이력 보기
           </Button>
         </section>
       ) : (
@@ -260,7 +235,7 @@ export function HandoffPage() {
           </section>
 
           <details className="dispute-panel">
-            <summary>Deal Snapshot과 다르거나 문제가 있나요?</summary>
+            <summary>확정한 조건과 다르거나 문제가 있나요?</summary>
             <div className="section-stack">
               <div className="dispute-reason-grid">
                 {DISPUTE_OPTIONS.map((option) => (

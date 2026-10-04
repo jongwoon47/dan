@@ -59,7 +59,7 @@ export function SellIntentPage() {
       return;
     }
     if (file.size > 700_000) {
-      setPhotoError("V1에서는 700KB 이하 사진을 사용해 주세요.");
+      setPhotoError("700KB 이하 사진을 사용해 주세요.");
       return;
     }
     try {
@@ -96,7 +96,7 @@ export function SellIntentPage() {
       <section className="deal-product-card">
         <ProductVisual product={product} size="sm" />
         <div>
-          <p className="eyebrow">Quick Offer</p>
+          <p className="eyebrow">판매 제안</p>
           <h1 className="page-title">{product.name}</h1>
           {seekerCount > 0 ? (
             <p className="quick-offer-signal">
@@ -127,7 +127,7 @@ export function SellIntentPage() {
         </Field>
 
         {product.category === "camera" ? (
-          <Field label="대략적인 컷수" hint="정확한 증거는 구매자가 관심을 보인 뒤 제출합니다.">
+          <Field label="대략적인 컷수" hint="정확하지 않아도 괜찮아요. 거래 전 다시 확인할 수 있어요.">
             <TextInput
               inputMode="numeric"
               value={formatDigitsGrouped(usageCount)}
@@ -160,7 +160,7 @@ export function SellIntentPage() {
 
         <div className="quick-offer-note">
           <strong>지금은 가볍게 제안하세요</strong>
-          <p>구매자가 관심을 보인 뒤에만 시리얼·보증·구성품·상세 상태 증거를 요청합니다.</p>
+          <p>구매자가 제안을 선택하면 채팅에서 세부 정보를 확인할 수 있어요.</p>
         </div>
 
         <Button fullWidth size="lg" onClick={() => void submit()} disabled={busy || typed <= 0}>

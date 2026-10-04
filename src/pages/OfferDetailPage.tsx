@@ -52,8 +52,8 @@ export function OfferDetailPage() {
     return (
       <EmptyState
         title="제안을 찾을 수 없어요"
-        body="받은 제안 목록에서 다시 확인해 주세요."
-        action={<Button to="/my?tab=offers" variant="secondary">받은 제안</Button>}
+        body="내 거래 목록에서 다시 확인해 주세요."
+        action={<Button to="/my" variant="secondary">받은 제안</Button>}
       />
     );
   }
@@ -138,19 +138,19 @@ export function OfferDetailPage() {
 
       {match.status === "POTENTIAL" ? (
         <Button fullWidth size="lg" disabled={busy} onClick={() => void interest()}>
-          {busy ? "처리 중…" : "관심 있어요"}
+          {busy ? "처리 중…" : "이 제안 선택하기"}
         </Button>
       ) : match.status === "BUYER_INTERESTED" ? (
         <section className="offer-next-state">
-          <strong>판매자에게 관심을 보냈어요</strong>
-          <p>판매자가 수락하면 채팅할 수 있어요. 상세 증거는 거래를 이어갈 때 확인해요.</p>
-          <Button to="/my?tab=offers" variant="secondary" fullWidth>받은 제안으로 돌아가기</Button>
+          <strong>제안을 선택했어요</strong>
+          <p>판매자가 연결하면 채팅에서 거래 조건을 맞출 수 있어요.</p>
+          <Button to="/my" variant="secondary" fullWidth>내 거래로</Button>
         </section>
       ) : match.status === "CONNECTED" ? (
         <section className="offer-next-state">
           <strong>판매자와 연결됐어요</strong>
           <p>
-            먼저 채팅으로 거래 의사를 확인하세요. 상세 증거가 올라오면 최종 조건을 확인할 수 있어요.
+            먼저 채팅으로 거래 의사를 확인하세요. 상품 정보가 올라오면 최종 조건을 확인할 수 있어요.
           </p>
           <Button to={"/match/" + match.id} fullWidth size="lg">
             채팅 시작하기
@@ -159,7 +159,7 @@ export function OfferDetailPage() {
           match.dealStage === "DEAL_REVIEW" ||
           match.dealStage === "DEAL_LOCKED" ? (
             <Button to={"/deal/" + match.id + "/evidence"} fullWidth variant="secondary">
-              판매자 증거 확인
+              상품 정보 확인
             </Button>
           ) : null}
         </section>
@@ -168,7 +168,7 @@ export function OfferDetailPage() {
           완료된 거래 보기
         </Button>
       ) : (
-        <Button to="/my?tab=offers" fullWidth variant="secondary">받은 제안</Button>
+        <Button to="/my" fullWidth variant="secondary">받은 제안</Button>
       )}
     </div>
   );

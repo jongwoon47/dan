@@ -5,14 +5,17 @@ import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDan } from "@/domain/danContext";
-import { CATEGORY_LABEL, type ProductCategory } from "@/domain/types";
+import { CATEGORY_LABEL, DEMAND_TYPE_LABEL, type ProductCategory } from "@/domain/types";
+import { effectiveDemandStatus } from "@/domain/demandLifecycle";
+import { formatFulfillmentSummary } from "@/domain/fulfillment";
+import { formatWon } from "@/lib/format";
 import "./pages.css";
 import "@/components/feedCards.css";
 
 type HomeCategory = "all" | ProductCategory;
 
 export function HomePage() {
-  const { demandFeed } = useDan();
+  const { demandFeed, state } = useDan();
   const navigate = useNavigate();
   const [category, setCategory] = useState<HomeCategory>("all");
   const [intentQuery, setIntentQuery] = useState("");
@@ -93,13 +96,22 @@ export function HomePage() {
     )
     .slice(0, 4);
 
+  const otherRequests = useMemo(
+    () =>
+      state.demands
+        .filter((demand) => demand.type !== "BUY" && effectiveDemandStatus(demand) === "ACTIVE")
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        .slice(0, 5),
+    [state.demands],
+  );
+
   return (
     <div className="page-stack home-page home-page--v1">
       <section className="home-demand-header">
         <div className="home-demand-heading">
-          <span className="home-demand-kicker">실시간 수요</span>
-          <h1 aria-label="찾는 물건이 있나요?">찾는 물건이<br />있나요?</h1>
-          <p>원하는 물건을 올려두면, 가진 사람이 판매를 제안해요.</p>
+          <span className="home-demand-kicker">DAN</span>
+          <h1>무엇이 필요하세요?</h1>
+          <p>사고, 빌리고, 부탁하고, 필요한 서비스를 요청해보세요.</p>
         </div>
 
         <div className="home-hero-products" aria-hidden>
@@ -116,7 +128,7 @@ export function HomePage() {
           onSubmit={(event) => {
             event.preventDefault();
             const query = intentQuery.trim();
-            navigate(query ? `/buy/new?q=${encodeURIComponent(query)}` : "/buy/new");
+            navigate(query ? `/create?type=BUY&q=${encodeURIComponent(query)}` : "/create?type=BUY");
           }}
         >
           <span className="home-intent-composer__icon" aria-hidden>
@@ -130,16 +142,23 @@ export function HomePage() {
             <input
               value={intentQuery}
               onChange={(event) => setIntentQuery(event.target.value)}
-              placeholder="어떤 제품을 찾고 있나요?"
+              placeholder="사고 싶은 물건을 검색해보세요"
               autoComplete="off"
               aria-label="찾는 제품"
             />
-            <small>목록에 없어도 바로 등록할 수 있어요</small>
+            <small>찾는 물건이 없다면 바로 요청할 수 있어요</small>
           </label>
-          <button type="submit" className="home-intent-composer__submit" aria-label="구매수요 만들기">
+          <button type="submit" className="home-intent-composer__submit" aria-label="구매 요청 만들기">
             <span aria-hidden>›</span>
           </button>
         </form>
+
+        <div className="home-request-shortcuts" aria-label="요청 유형">
+          <Link to="/create?type=BUY"><span>구매</span><small>사고 싶어요</small></Link>
+          <Link to="/create?type=BORROW"><span>빌리기</span><small>잠깐 필요해요</small></Link>
+          <Link to="/create?type=TASK"><span>심부름</span><small>대신 부탁해요</small></Link>
+          <Link to="/create?type=SERVICE"><span>서비스</span><small>도움이 필요해요</small></Link>
+        </div>
 
         <div className="home-demand-filters" aria-label="제품 카테고리">
           <button
@@ -172,9 +191,9 @@ export function HomePage() {
         </div>
         {visibleProducts.length === 0 ? (
           <EmptyState
-            title="아직 이 카테고리의 구매수요가 없어요"
-            body="찾는 제품을 직접 입력해 첫 구매수요를 남길 수 있어요."
-            action={<Button to="/buy/new">구매수요 등록</Button>}
+            title="아직 이 카테고리의 구매 요청이 없어요"
+            body="찾는 제품을 직접 입력해 첫 요청을 남길 수 있어요."
+            action={<Button to="/create?type=BUY">구매 요청</Button>}
           />
         ) : (
           <div className="live-demand-list">
@@ -192,8 +211,8 @@ export function HomePage() {
         {visibleProducts.length > 0 ? (
           <div className="home-live-footer">
             <div>
-              <strong>더 많은 수요를 둘러볼까요?</strong>
-              <span>전체 수요에서 검색하고 카테고리별로 둘러볼 수 있어요.</span>
+              <strong>더 많은 요청을 둘러볼까요?</strong>
+              <span>탐색에서 지금 올라온 구매 요청을 더 볼 수 있어요.</span>
             </div>
             <Button to="/feed" variant="secondary">
               전체 탐색
@@ -202,13 +221,37 @@ export function HomePage() {
         ) : null}
       </section>
 
+      {otherRequests.length > 0 ? (
+        <section className="home-other-requests">
+          <div className="home-live-heading">
+            <div>
+              <span>새 요청</span>
+              <h2>지금 도움을 찾고 있어요</h2>
+            </div>
+          </div>
+          <div className="home-request-list">
+            {otherRequests.map((demand) => (
+              <Link key={demand.id} to={`/demand/item/${demand.id}`} className="home-request-row">
+                <div>
+                  <span>{DEMAND_TYPE_LABEL[demand.type]}</span>
+                  <strong>{demand.title}</strong>
+                  <small>{formatFulfillmentSummary(demand.fulfillmentOptions)}</small>
+                </div>
+                <b>{formatWon(demand.budget)}</b>
+                <i aria-hidden>›</i>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section className="seller-entry-banner">
         <div>
-          <span>가지고 있는 물건이 보이나요?</span>
-          <strong>판매글을 새로 만들지 않고 원하는 사람에게 바로 제안할 수 있어요.</strong>
+          <span>내가 도와줄 수 있는 요청이 있나요?</span>
+          <strong>요청을 보고 바로 제안을 보내 대화를 시작할 수 있어요.</strong>
         </div>
         <Button to="/feed" variant="secondary">
-          전체 실시간 수요 보기
+          요청 탐색하기
         </Button>
       </section>
     </div>
