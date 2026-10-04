@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { ProductVisual } from "@/components/ProductVisual";
+import { TradeFlowHeader } from "@/components/TradeFlowHeader";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
@@ -62,15 +62,12 @@ export function TradeCompletePage() {
         <p>양쪽의 인계 확인이 끝났고 거래 결과가 거래 이력에 기록됐어요.</p>
       </section>
 
-      <section className="trade-complete-product">
-        <ProductVisual product={product} size="sm" />
-        <div>
-          <strong>{product.name}</strong>
-          <span>
-            {snapshot ? formatWon(snapshot.agreedPrice) : "거래 완료"}
-          </span>
-        </div>
-      </section>
+      <TradeFlowHeader
+        product={product}
+        price={snapshot?.agreedPrice}
+        step="complete"
+        eyebrow="거래 완료"
+      />
 
       <section className="deal-snapshot-card trade-receipt">
         <div className="snapshot-section">
