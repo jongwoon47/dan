@@ -76,7 +76,7 @@ export function DealEvidencePage() {
   const [photoError, setPhotoError] = useState("");
   const [submitError, setSubmitError] = useState("");
 
-  useDeepHeader({ title: isSeller ? "판매자 증거 제출" : "판매자 증거" });
+  useDeepHeader({ title: isSeller ? "상품 정보 등록" : "상품 정보 확인" });
 
   useEffect(() => {
     if (!isSeller) {
@@ -159,7 +159,7 @@ export function DealEvidencePage() {
     return (
       <EmptyState
         title="먼저 구매자와 연결해 주세요"
-        body="관심이 확인됐다면 먼저 연결해 대화하세요. 실제 거래를 계속할 때 이 단계에서 증거를 제출합니다."
+        body="관심이 확인됐다면 먼저 연결해 대화하세요. 실제 거래를 계속할 때 이 단계에서 상품 정보를 등록합니다."
         action={<Button to="/my?tab=selling">판매 제안으로 돌아가기</Button>}
       />
     );
@@ -365,7 +365,7 @@ export function DealEvidencePage() {
 
           <div className="evidence-form-divider">
             <span>3</span>
-            <div><strong>구성품 · 상태 · 추가 정보</strong><small>Deal Snapshot에 그대로 기록될 내용이에요.</small></div>
+            <div><strong>구성품 · 상태 · 추가 정보</strong><small>거래 조건 확인 화면에 그대로 표시될 내용이에요.</small></div>
           </div>
 
           <div>
@@ -399,7 +399,7 @@ export function DealEvidencePage() {
 
           {submitError ? <p className="form-error">{submitError}</p> : null}
           <Button fullWidth size="lg" disabled={!canSubmit || busy} onClick={() => void submit()}>
-            {busy ? "저장 중…" : "증거 제출하기"}
+            {busy ? "저장 중…" : "상품 정보 등록하기"}
           </Button>
         </section>
       ) : null}
