@@ -23,7 +23,6 @@ import {
 } from "@/lib/createDraft";
 import { fromDatetimeLocalValue, isBorrowRangeValid, isDatetimeLocalNotPast } from "@/lib/datetime";
 import {
-  budgetLabelForType,
   digitsOnly,
   formatDigitsGrouped,
   formatPriceThought,
