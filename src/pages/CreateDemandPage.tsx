@@ -39,6 +39,12 @@ import "./pages.css";
 import "@/components/feedCards.css";
 
 const TYPES: DemandType[] = ["BUY", "BORROW", "TASK", "SERVICE"];
+const TYPE_HELP: Record<DemandType, string> = {
+  BUY: "사고 싶은 물건이 있어요",
+  BORROW: "잠깐 빌리고 싶어요",
+  TASK: "대신 해줬으면 하는 일이 있어요",
+  SERVICE: "전문가의 도움이 필요해요",
+};
 const CONDITIONS: ConditionPreference[] = ["sealed", "like_new", "lightly_used", "any"];
 
 type TaskMode = "onsite" | "pickup" | "route" | "remote";
@@ -394,9 +400,9 @@ export function CreateDemandPage() {
   const canCore = useMemo(() => {
     if (!type || !Number.isFinite(price) || price <= 0) return false;
     if (type === "BUY") return Boolean(productQuery.trim());
-    if (type === "BORROW") return Boolean(title.trim() || itemName.trim());
+    if (type === "BORROW") return Boolean(itemName.trim());
     if (type === "SERVICE") return Boolean(title.trim());
-    return Boolean(title.trim() || detail.trim());
+    return Boolean(detail.trim());
   }, [type, price, productQuery, title, itemName, detail]);
 
   const canSubmit = useMemo(() => {
@@ -469,8 +475,8 @@ export function CreateDemandPage() {
       if (type === "BORROW") {
         const created = await createDemand({
           type: "BORROW",
-          title: title.trim() || itemName.trim(),
-          itemName: itemName.trim() || title.trim(),
+          title: itemName.trim(),
+          itemName: itemName.trim(),
           budget: price,
           fulfillmentOptions,
           description: detail,
@@ -488,8 +494,8 @@ export function CreateDemandPage() {
       if (type === "TASK") {
         const created = await createDemand({
           type: "TASK",
-          title: title.trim() || detail.trim(),
-          taskDescription: detail.trim() || title.trim(),
+          title: detail.trim().slice(0, 80),
+          taskDescription: detail.trim(),
           budget: price,
           fulfillmentOptions,
           dueAt: fromDatetimeLocalValue(dueAt),
@@ -546,17 +552,18 @@ export function CreateDemandPage() {
           </h2>
         </div>
 
-        <div className="type-segment" role="radiogroup" aria-label="글 유형">
+        <div className="request-type-grid" role="radiogroup" aria-label="요청 유형">
           {TYPES.map((t) => (
             <button
               key={t}
               type="button"
               role="radio"
               aria-checked={type === t}
-              className={type === t ? "type-segment__btn is-selected" : "type-segment__btn"}
+              className={type === t ? "request-type-card is-selected" : "request-type-card"}
               onClick={() => selectType(t)}
             >
-              {DEMAND_TYPE_LABEL[t]}
+              <strong>{DEMAND_TYPE_LABEL[t]}</strong>
+              <span>{TYPE_HELP[t]}</span>
             </button>
           ))}
         </div>
@@ -572,16 +579,6 @@ export function CreateDemandPage() {
 
             {phase === 1 ? (
               <>
-                {type !== "BUY" && type !== "SERVICE" ? (
-                  <Field label={ko.titleLabel}>
-                    <TextInput
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder={ko.composerPlaceholder}
-                    />
-                  </Field>
-                ) : null}
-
                 {type === "BUY" ? (
                   <>
                     <div
@@ -662,37 +659,46 @@ export function CreateDemandPage() {
 
                 {type === "BORROW" ? (
                   <>
-                    <Field label={ko.itemName}>
+                    <Field label="빌릴 물건">
                       <TextInput
                         value={itemName}
                         onChange={(e) => setItemName(e.target.value)}
-                        placeholder="예: 캠핑 텐트"
+                        placeholder="예: 4인용 캠핑 텐트"
                       />
                     </Field>
                     <MoneyInput
-                      label={budgetLabelForType(type)}
-                      hint={ko.borrowBudgetHint}
+                      label="전체 예산"
+                      hint="빌리는 기간 전체에서 사용할 최대 금액이에요."
                       value={budget}
                       onChange={setBudget}
                       placeholder="예: 30,000"
                       kind="borrow"
                     />
+                    <Field label="추가 조건" hint="선택">
+                      <textarea
+                        className="dan-input dan-textarea"
+                        value={detail}
+                        onChange={(e) => setDetail(e.target.value)}
+                        placeholder="크기, 상태처럼 원하는 조건이 있다면 적어주세요."
+                        rows={3}
+                      />
+                    </Field>
                   </>
                 ) : null}
 
                 {type === "TASK" ? (
                   <>
-                    <Field label={ko.descLabel}>
+                    <Field label="부탁할 일">
                       <textarea
-                        className="dan-input dan-textarea"
+                        className="dan-input dan-textarea request-task-input"
                         value={detail}
                         onChange={(e) => setDetail(e.target.value)}
-                        placeholder="예: 평택역에서 짐 옮겨주세요"
-                        rows={3}
+                        placeholder="예: 평택역에서 캐리어 두 개를 차까지 옮겨주세요"
+                        rows={4}
                       />
                     </Field>
                     <MoneyInput
-                      label={budgetLabelForType(type)}
+                      label="사례금"
                       value={budget}
                       onChange={setBudget}
                       placeholder="예: 20,000"
