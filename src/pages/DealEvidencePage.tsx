@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Field, TextInput } from "@/components/ui/Input";
-import { ProductVisual } from "@/components/ProductVisual";
+import { TradeFlowHeader } from "@/components/TradeFlowHeader";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
 import type { DealEvidence, DealEvidenceChallenge, Product } from "@/domain/types";
@@ -236,14 +236,12 @@ export function DealEvidencePage() {
 
   return (
     <div className="page-stack page-narrow deal-page">
-      <section className="deal-product-card">
-        <ProductVisual product={product} size="sm" />
-        <div>
-          <p className="eyebrow">상품 정보</p>
-          <h1 className="page-title">{product.name}</h1>
-          <strong className="deal-price">{formatWon(sell.minimumPrice)}</strong>
-        </div>
-      </section>
+      <TradeFlowHeader
+        product={product}
+        price={sell.minimumPrice}
+        step="info"
+        eyebrow="상품 정보 확인"
+      />
 
       <section className="trust-explainer">
         <strong>판매자가 제출한 정보예요</strong>
