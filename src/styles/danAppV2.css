@@ -1,0 +1,492 @@
+/* DAN App V2 — app-first visual layer */
+
+:root {
+  --v2-bg: #ffffff;
+  --v2-surface: #ffffff;
+  --v2-surface-subtle: #f7f7f9;
+  --v2-ink: #17171b;
+  --v2-muted: #777984;
+  --v2-line: #ececf0;
+  --v2-line-strong: #dcdce3;
+  --v2-purple: #644cf0;
+  --v2-purple-soft: #f2efff;
+  --v2-green: #11845b;
+}
+
+body { background: var(--v2-bg) !important; }
+.app-main { background: var(--v2-bg); }
+
+/* Navigation */
+.bottom-nav--v1 {
+  height: 72px !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  box-shadow: 0 -1px 0 rgba(20,20,25,.06) !important;
+}
+.bottom-nav--v1 a {
+  gap: 4px !important;
+  font-size: 11px !important;
+}
+.bottom-nav__create-circle {
+  width: 42px !important;
+  height: 42px !important;
+  margin-top: -16px !important;
+  box-shadow: none !important;
+}
+.top-nav__links a { font-weight: 650 !important; }
+
+/* Shared content rhythm */
+.page-stack { gap: 22px !important; }
+.section-stack { gap: 18px !important; }
+.page-title { letter-spacing: -.04em !important; }
+.section-desc { color: var(--v2-muted) !important; }
+.eyebrow {
+  color: var(--v2-muted) !important;
+  letter-spacing: 0 !important;
+  font-weight: 700 !important;
+}
+
+/* Create */
+.create-page { max-width: 760px !important; }
+.create-page__body { gap: 20px !important; }
+.create-page__prompt { gap: 4px !important; }
+.create-page__kicker {
+  color: var(--v2-purple) !important;
+  font-size: 12px !important;
+}
+.create-page__prompt .section-title {
+  font-size: 26px !important;
+  letter-spacing: -.045em;
+}
+.request-type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.request-type-card {
+  display: grid;
+  grid-template-columns: 42px 1fr 18px;
+  align-items: center;
+  gap: 12px;
+  min-height: 92px;
+  padding: 16px;
+  border: 1px solid var(--v2-line);
+  border-radius: 16px;
+  background: #fff;
+  text-align: left;
+  color: var(--v2-ink);
+}
+.request-type-card:hover {
+  border-color: #cfc9ff;
+  background: #fcfbff;
+}
+.request-type-card__icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: var(--v2-surface-subtle);
+  font-size: 21px;
+}
+.request-type-card__copy { display: grid; gap: 3px; }
+.request-type-card__copy strong {
+  font-size: 16px;
+  font-weight: 800;
+}
+.request-type-card__copy small {
+  color: var(--v2-muted);
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+.request-type-card__chevron {
+  justify-self: end;
+  color: #aaaab3;
+  font-size: 22px;
+}
+.type-segment--compact {
+  width: fit-content;
+  max-width: 100%;
+  background: transparent !important;
+  gap: 6px !important;
+  padding: 0 !important;
+  overflow-x: auto;
+}
+.type-segment--compact .type-segment__btn {
+  min-height: 34px !important;
+  padding: 6px 11px !important;
+  border: 1px solid var(--v2-line) !important;
+  border-radius: 999px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  white-space: nowrap;
+}
+.type-segment--compact .type-segment__btn.is-selected {
+  border-color: transparent !important;
+  background: var(--v2-purple-soft) !important;
+  color: #4f39d7 !important;
+}
+.create-steps {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 !important;
+  padding: 0 !important;
+  border-bottom: 1px solid var(--v2-line) !important;
+}
+.create-steps span {
+  padding: 0 0 11px;
+  color: #9a9ba4;
+  font-size: 13px;
+  font-weight: 700;
+}
+.create-steps::after { width: 50% !important; }
+.create-steps:has(span:nth-child(2).is-active)::after {
+  transform: translateX(100%);
+}
+.dan-field { gap: 8px !important; }
+.dan-field__label,
+.field-inline-label {
+  color: #3e3f46 !important;
+  font-size: 13px !important;
+}
+.dan-input,
+.composer-sheet input,
+.composer-sheet textarea {
+  min-height: 52px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--v2-line-strong) !important;
+  border-radius: 0 !important;
+  padding: 12px 2px !important;
+  background: transparent !important;
+}
+textarea.dan-input,
+.composer-sheet textarea {
+  min-height: 92px !important;
+  padding-top: 10px !important;
+}
+.dan-input:focus,
+.composer-sheet input:focus,
+.composer-sheet textarea:focus {
+  outline: none !important;
+  border-bottom-color: var(--v2-purple) !important;
+}
+.dan-chip {
+  min-height: 36px !important;
+  border: 1px solid var(--v2-line) !important;
+  background: #fff !important;
+}
+.dan-chip--selected {
+  background: var(--v2-purple-soft) !important;
+  border-color: transparent !important;
+  color: #4f39d7 !important;
+}
+.create-page__footer {
+  border-top: 0 !important;
+}
+.create-page__footer .dan-btn--primary {
+  background: var(--v2-purple) !important;
+}
+
+/* Home / discovery */
+.home-demand-header {
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 18px 0 6px !important;
+  background: #fff !important;
+}
+.home-demand-heading h1 { font-size: 38px !important; }
+.home-demand-heading p { max-width: 560px; }
+.home-hero-products { opacity: .72 !important; }
+.home-intent-composer {
+  border: 1px solid var(--v2-line-strong) !important;
+  border-radius: 14px !important;
+  box-shadow: none !important;
+}
+.home-live-footer,
+.seller-entry-banner,
+.discovery-create-banner {
+  border: 0 !important;
+  border-top: 1px solid var(--v2-line) !important;
+  border-radius: 0 !important;
+  padding: 18px 0 !important;
+}
+.discovery-header { gap: 5px !important; }
+.discovery-search {
+  border: 1px solid var(--v2-line-strong) !important;
+  border-radius: 14px !important;
+}
+
+/* Lists, cards, offers */
+.live-demand-list,
+.my-demand-card-list,
+.seller-offer-list,
+.chat-list,
+.profile-trade-list {
+  border-top: 1px solid var(--v2-line) !important;
+}
+.my-demand-card,
+.seller-offer-row,
+.chat-list__row,
+.profile-trade-row,
+.buyer-demand-row {
+  padding: 14px 0 !important;
+  border-bottom: 1px solid var(--v2-line) !important;
+}
+.my-dan__header--v1 { padding-bottom: 2px !important; }
+.my-dan__header .page-title { font-size: 28px !important; }
+.my-demand-tabs {
+  gap: 26px !important;
+  border-bottom: 1px solid var(--v2-line) !important;
+}
+.my-demand-panel > .dan-btn--lg {
+  width: auto !important;
+  padding-inline: 18px !important;
+}
+
+/* Detail pages */
+.detail-facts--panel,
+.offer-detail-facts {
+  border-color: var(--v2-line) !important;
+}
+.demand-item__responses {
+  border-top: 8px solid var(--v2-surface-subtle) !important;
+}
+.offer-detail-page,
+.deal-page,
+.safe-payment-page,
+.handoff-page,
+.trade-complete-page,
+.profile-page {
+  max-width: 700px !important;
+}
+.offer-detail-price,
+.deal-price {
+  color: var(--v2-ink) !important;
+}
+.offer-next-state {
+  border: 0 !important;
+  border-top: 1px solid var(--v2-line) !important;
+  border-radius: 0 !important;
+  padding: 18px 0 !important;
+}
+.offer-seller-card__facts {
+  border-top: 1px solid var(--v2-line);
+  border-bottom: 1px solid var(--v2-line);
+  padding-block: 14px;
+}
+
+/* Chat as transaction hub */
+.chat-page { max-width: 760px !important; }
+.chat-page__header {
+  padding: 10px 0 13px !important;
+  border-bottom: 1px solid var(--v2-line);
+}
+.chat-deal-progress {
+  display: flex !important;
+  align-items: center;
+  gap: 4px !important;
+  padding: 10px 0 !important;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--v2-line) !important;
+}
+.chat-deal-progress span {
+  min-width: auto !important;
+  gap: 5px !important;
+  font-size: 11px !important;
+}
+.chat-deal-progress i {
+  width: 22px !important;
+  height: 22px !important;
+  font-size: 10px !important;
+}
+.trade-status {
+  padding: 12px 0 !important;
+  border-bottom: 1px solid var(--v2-line) !important;
+}
+.chat-bubble { box-shadow: none !important; }
+.chat-thread { min-height: 280px; }
+
+/* Transaction stages */
+.deal-snapshot-card,
+.trade-progress-card,
+.final-confirm-card,
+.trade-complete-card,
+.payment-breakdown,
+.payment-provider-gate,
+.payment-safety-note,
+.deal-evidence-summary,
+.verification-gate {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.deal-snapshot-card,
+.payment-breakdown {
+  border-top: 1px solid var(--v2-line) !important;
+  border-bottom: 1px solid var(--v2-line) !important;
+}
+.snapshot-section {
+  min-height: 50px;
+  padding: 12px 0 !important;
+  border-color: var(--v2-line) !important;
+}
+.snapshot-lock-notice,
+.payment-safety-note,
+.quick-offer-note {
+  background: var(--v2-surface-subtle) !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  padding: 14px !important;
+}
+.deal-confirm-state {
+  gap: 8px !important;
+}
+.confirm-state {
+  border: 1px solid var(--v2-line) !important;
+  background: #fff !important;
+  border-radius: 10px !important;
+}
+.confirm-state.is-done {
+  border-color: #caeadc !important;
+  background: #f2fbf7 !important;
+}
+.trade-progress-card { padding: 0 !important; }
+.trade-progress-row {
+  border-bottom: 1px solid var(--v2-line) !important;
+}
+.payment-method {
+  border: 0 !important;
+  border-bottom: 1px solid var(--v2-line) !important;
+  border-radius: 0 !important;
+  padding: 14px 0 !important;
+}
+.payment-provider-gate {
+  padding: 18px 0 !important;
+  border-top: 1px solid var(--v2-line) !important;
+  border-bottom: 1px solid var(--v2-line) !important;
+}
+.payment-provider-gate__badge {
+  color: var(--v2-muted) !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/* Profile */
+.trust-card__identity { gap: 14px !important; }
+.trust-card__stats,
+.trust-summary-strip {
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+.trust-summary-strip {
+  border-top: 1px solid var(--v2-line);
+  border-bottom: 1px solid var(--v2-line);
+  padding-block: 14px;
+}
+.trust-history__note { color: var(--v2-muted) !important; }
+.trust-card__recent { display: none !important; }
+.trust-card__actions {
+  border-top: 1px solid var(--v2-line);
+  padding-top: 18px;
+}
+
+/* Completion */
+.trade-complete-hero {
+  padding-top: 12px !important;
+}
+.trade-complete-hero h1 {
+  font-size: 26px;
+  letter-spacing: -.04em;
+}
+.trade-complete-check {
+  width: 52px !important;
+  height: 52px !important;
+  font-size: 24px !important;
+}
+.trade-receipt {
+  background: #fff !important;
+}
+
+@media (max-width: 767px) {
+  .app-main {
+    padding: 16px 16px calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .app-shell--deep .app-main {
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .home-demand-header {
+    margin: 0 !important;
+    padding: 8px 0 4px !important;
+    border-bottom: 0 !important;
+  }
+  .home-demand-heading h1 { font-size: 30px !important; }
+  .home-intent-composer { margin-top: 14px !important; }
+
+  .request-type-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .request-type-card {
+    min-height: 76px;
+    padding: 13px 14px;
+  }
+  .request-type-card__icon {
+    width: 38px;
+    height: 38px;
+    font-size: 19px;
+  }
+  .create-page__prompt .section-title { font-size: 24px !important; }
+  .create-page__footer {
+    margin-inline: -16px !important;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom,0px)) !important;
+    background: rgba(255,255,255,.98) !important;
+    border-top: 1px solid var(--v2-line) !important;
+  }
+
+  .my-dan__header--v1 {
+    align-items: center !important;
+  }
+  .my-dan__name { font-size: 13px; }
+
+  .offer-detail-page,
+  .deal-page,
+  .safe-payment-page,
+  .handoff-page,
+  .trade-complete-page,
+  .profile-page { max-width: none !important; }
+
+  .deal-snapshot-card,
+  .payment-breakdown {
+    margin-inline: 0 !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-main { max-width: 1180px !important; }
+
+  .create-page {
+    max-width: 760px !important;
+    margin-inline: auto;
+  }
+
+  .home-page,
+  .discovery-page {
+    max-width: 1120px !important;
+  }
+
+  .detail-page,
+  .demand-item {
+    max-width: 860px !important;
+  }
+
+  .offer-detail-page,
+  .deal-page,
+  .safe-payment-page,
+  .handoff-page,
+  .trade-complete-page,
+  .profile-page,
+  .chat-page {
+    max-width: 760px !important;
+    margin-inline: auto;
+  }
+}
