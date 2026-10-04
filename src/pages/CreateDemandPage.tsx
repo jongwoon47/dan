@@ -14,7 +14,7 @@ import type {
   ConditionPreference,
   DemandType,
 } from "@/domain/types";
-import { CONDITION_LABEL, DEMAND_TYPE_LABEL } from "@/domain/types";
+import { CONDITION_LABEL } from "@/domain/types";
 import {
   clearCreateDraft,
   loadCreateDraft,
