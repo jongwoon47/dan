@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PRODUCTION_SUPABASE_PROJECT_REFS } from "@/release/environmentSeparation";
+import { STAGING_SUPABASE_PROJECT_REF } from "@/release/environmentSeparation";
 import { resolveDataMode } from "./mode";
 
 describe("resolveDataMode", () => {
@@ -12,7 +12,7 @@ describe("resolveDataMode", () => {
     expect(
       resolveDataMode({
         runtime: "staging",
-        url: "https://stgstgprojectref001.supabase.co",
+        url: `https://${STAGING_SUPABASE_PROJECT_REF}.supabase.co`,
         anonKey: "sb_publishable_test",
       }),
     ).toBe("supabase");
@@ -36,40 +36,31 @@ describe("resolveDataMode", () => {
     ).toThrow(/cannot run in demo mode/i);
   });
 
-  it("refuses the known production Supabase project in staging", () => {
-    const prodRef = PRODUCTION_SUPABASE_PROJECT_REFS[0];
+  it("refuses any non-designated Supabase project in staging", () => {
     expect(() =>
       resolveDataMode({
         runtime: "staging",
-        url: `https://${prodRef}.supabase.co`,
+        url: "https://otherstagingref001.supabase.co",
         anonKey: "sb_publishable_test",
       }),
-    ).toThrow(/production Supabase/i);
+    ).toThrow(/designated staging/i);
   });
 
-  it("requires the configured production Supabase project in production", () => {
-    const prodRef = PRODUCTION_SUPABASE_PROJECT_REFS[0];
-    expect(
-      resolveDataMode({
-        runtime: "production",
-        url: `https://${prodRef}.supabase.co`,
-        anonKey: "sb_publishable_test",
-      }),
-    ).toBe("supabase");
+  it("keeps production disabled until a separate production DB is configured", () => {
     expect(() =>
       resolveDataMode({
         runtime: "production",
-        url: "https://stgstgprojectref001.supabase.co",
+        url: "https://futureprodref001.supabase.co",
         anonKey: "sb_publishable_test",
       }),
-    ).toThrow(/configured production Supabase/i);
+    ).toThrow(/not configured/i);
   });
 
   it("refuses secret/service-role frontend keys", () => {
     expect(() =>
       resolveDataMode({
-        runtime: "production",
-        url: `https://${PRODUCTION_SUPABASE_PROJECT_REFS[0]}.supabase.co`,
+        runtime: "staging",
+        url: `https://${STAGING_SUPABASE_PROJECT_REF}.supabase.co`,
         anonKey: "sb_secret_never_ship_this",
       }),
     ).toThrow(/secret\/service-role/i);
