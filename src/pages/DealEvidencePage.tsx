@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { TransactionStageBar } from "@/components/TransactionStageBar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Field, TextInput } from "@/components/ui/Input";
 import { ProductVisual } from "@/components/ProductVisual";
@@ -236,6 +237,7 @@ export function DealEvidencePage() {
 
   return (
     <div className="page-stack page-narrow deal-page">
+      <TransactionStageBar stage={1} />
       <section className="deal-product-card">
         <ProductVisual product={product} size="sm" />
         <div>
