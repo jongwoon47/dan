@@ -151,12 +151,12 @@ export function DealSnapshotPage() {
     return (
       <EmptyState
         title="판매자 증거가 아직 없어요"
-        body={isBuyer ? "판매자가 상태 정보를 제출하면 거래 조건을 확인할 수 있어요." : "먼저 물품 상태와 증거를 제출해 주세요."}
+        body={isBuyer ? "판매자가 상품 정보를 등록하면 거래 조건을 확인할 수 있어요." : "먼저 물품 상태와 상품 정보를 등록해 주세요."}
         action={
           isBuyer ? (
             <Button to="/my" variant="secondary">거래 목록</Button>
           ) : (
-            <Button to={`/deal/${match.id}/evidence`}>증거 제출</Button>
+            <Button to={`/deal/${match.id}/evidence`}>상품 정보 등록</Button>
           )
         }
       />
@@ -209,7 +209,7 @@ export function DealSnapshotPage() {
         <details className="snapshot-details">
           <summary>
             <span>
-              <strong>판매자 제출 상세</strong>
+              <strong>상품 상세 정보</strong>
               <small>보증·구성품·수리 이력</small>
             </span>
             <span className="snapshot-details__chevron" aria-hidden>⌄</span>
@@ -327,7 +327,7 @@ export function DealSnapshotPage() {
             </div>
           </section>
           <Button to={`/deal/${match.id}/payment`} fullWidth size="lg">
-            안전결제로 이동
+            결제하기
           </Button>
         </>
       ) : (
