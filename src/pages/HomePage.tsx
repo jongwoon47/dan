@@ -77,11 +77,11 @@ export function HomePage() {
 
         <form
           className="home-intent-composer"
-          aria-label="찾는 물건 빠른 입력"
+          aria-label="요청 검색"
           onSubmit={(event) => {
             event.preventDefault();
             const query = intentQuery.trim();
-            navigate(query ? `/create?type=BUY&q=${encodeURIComponent(query)}` : "/create");
+            navigate(query ? `/feed?q=${encodeURIComponent(query)}` : "/feed");
           }}
         >
           <span className="home-intent-composer__icon" aria-hidden>
@@ -91,17 +91,17 @@ export function HomePage() {
             </svg>
           </span>
           <label className="home-intent-composer__copy">
-            <span className="sr-only">찾는 제품</span>
+            <span className="sr-only">요청 검색</span>
             <input
               value={intentQuery}
               onChange={(event) => setIntentQuery(event.target.value)}
               placeholder="무엇을 찾고 있나요?"
               autoComplete="off"
-              aria-label="찾는 제품"
+              aria-label="요청 검색"
             />
-            <small>찾는 물건을 바로 요청할 수 있어요</small>
+            <small>구매 · 빌리기 · 심부름 · 서비스를 함께 찾아보세요</small>
           </label>
-          <button type="submit" className="home-intent-composer__submit" aria-label="요청 만들기">
+          <button type="submit" className="home-intent-composer__submit" aria-label="요청 검색">
             <span aria-hidden>›</span>
           </button>
         </form>
