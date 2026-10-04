@@ -221,7 +221,16 @@ export function DemandEditPage() {
 
   async function onSave(e: FormEvent) {
     e.preventDefault();
-    if (!title.trim() || price <= 0) {
+    const nextTitle =
+      current.type === "BUY"
+        ? current.title
+        : current.type === "BORROW"
+          ? itemName.trim()
+          : current.type === "TASK"
+            ? description.trim()
+            : title.trim();
+
+    if (!nextTitle || price <= 0) {
       setError(ko.genericError);
       return;
     }
@@ -289,17 +298,17 @@ export function DemandEditPage() {
 
     const result = await updateDemand({
       demandId: current.id,
-      title: title.trim(),
+      title: nextTitle,
       description: description.trim(),
       budget: price,
       fulfillmentOptions: stripGeoFromFulfillmentOptions(fulfillmentOptions),
       expiresAt,
       maxPrice: current.type === "BUY" ? price : undefined,
       itemName:
-        current.type === "BORROW" ? itemName.trim() || title.trim() : undefined,
+        current.type === "BORROW" ? itemName.trim() : undefined,
       taskDescription:
         current.type === "TASK"
-          ? description.trim() || current.details.taskDescription
+          ? description.trim()
           : undefined,
       serviceDescription:
         current.type === "SERVICE"
@@ -333,13 +342,15 @@ export function DemandEditPage() {
   return (
     <div className="page-stack page-narrow">
       <form className="section-stack create-page__body" onSubmit={(e) => void onSave(e)}>
-        <Field label={ko.titleLabel}>
-          <TextInput
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
-        </Field>
+        {current.type === "SERVICE" ? (
+          <Field label={ko.serviceTaskLabel}>
+            <TextInput
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </Field>
+        ) : null}
 
         {current.type === "BORROW" ? (
           <Field label={ko.itemName}>

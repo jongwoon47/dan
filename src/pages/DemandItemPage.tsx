@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { MatchList } from "@/components/MatchCard";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
@@ -86,6 +87,19 @@ export function DemandItemPage() {
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [state.responses, demandId],
   );
+
+  const buyOfferMatches = useMemo(
+    () =>
+      state.matches.filter(
+        (match) =>
+          match.demandId === demandId &&
+          Boolean(match.sellIntentId) &&
+          match.status !== "DECLINED" &&
+          match.status !== "CLOSED",
+      ),
+    [state.matches, demandId],
+  );
+  const buyOfferCount = buyOfferMatches.length;
 
   const isOwner = currentUser?.id === demand?.userId;
   const viewStatus = demand ? effectiveDemandStatus(demand) : "CLOSED";
@@ -263,17 +277,16 @@ export function DemandItemPage() {
       </dl>
 
       {isOwner && demandOpen ? (
-        <div className="action-row action-row--split">
+        <div className="action-row demand-owner-actions">
           <Button
-            fullWidth
             variant="secondary"
             to={`/demand/item/${demand.id}/edit`}
           >
             {ko.editDemand}
           </Button>
           <Button
-            fullWidth
-            variant="secondary"
+            variant="ghost"
+            className="demand-close-action"
             onClick={() => setCloseOpen(true)}
             disabled={busy}
           >
@@ -323,7 +336,7 @@ export function DemandItemPage() {
 
       {!isOwner && demandOpen && demand.type === "BUY" ? (
         <div className="section-stack">
-          <p className="section-desc">{ko.haveItBody}</p>
+          <p className="section-desc">이 요청에 맞는 물건이 있다면 가격과 조건을 제안할 수 있어요.</p>
           <Button to={`/demand/${demand.details.productId}`} fullWidth size="lg">
             {ko.haveIt}
           </Button>
@@ -455,14 +468,27 @@ export function DemandItemPage() {
 
       {isOwner ? (
         <div className="section-stack demand-item__responses">
-          <h2 className="section-title">{ko.ownerResponsesLead}</h2>
           {demand.type === "BUY" ? (
-            <p className="section-desc">
-              <Button to={`/demand/${demand.details.productId}`} variant="secondary">
-                {ko.viewDemand}
-              </Button>
-            </p>
-          ) : ownerResponses.length === 0 ? (
+            <>
+              <div className="demand-offer-summary">
+                <div>
+                  <span className="demand-offer-summary__label">받은 제안</span>
+                  <strong>{buyOfferCount}</strong>
+                </div>
+              </div>
+              {buyOfferCount === 0 ? (
+                <p className="section-desc">제안이 도착하면 여기에서 바로 비교할 수 있어요.</p>
+              ) : (
+                <>
+                  <p className="section-desc">가격과 조건을 비교하고 거래할 사람을 선택하세요.</p>
+                  <MatchList matches={buyOfferMatches} emptyWhenZero={false} />
+                </>
+              )}
+            </>
+          ) : (
+            <h2 className="section-title">{ko.ownerResponsesLead}</h2>
+          )}
+          {demand.type === "BUY" ? null : ownerResponses.length === 0 ? (
             <div className="demand-item__empty">
               <p className="section-desc">{ko.ownerResponsesEmpty}</p>
             </div>

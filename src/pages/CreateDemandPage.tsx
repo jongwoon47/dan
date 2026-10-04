@@ -93,13 +93,16 @@ export function CreateDemandPage() {
   const [params] = useSearchParams();
   const draft = loadCreateDraft();
   const paramType = parseType(params.get("type"));
+  const initialQuery = params.get("q")?.trim() ?? "";
 
   const [type, setType] = useState<DemandType | null>(
     paramType ?? draft?.type ?? null,
   );
   const [title, setTitle] = useState(draft?.title ?? "");
   const [productId, setProductId] = useState(draft?.productId ?? "");
-  const [productQuery, setProductQuery] = useState(draft?.productQuery ?? "");
+  const [productQuery, setProductQuery] = useState(
+    draft?.productQuery ?? (paramType === "BUY" ? initialQuery : ""),
+  );
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [maxPrice, setMaxPrice] = useState(
     draft?.maxPrice && draft.maxPrice !== "1000000" ? draft.maxPrice : "",
@@ -202,6 +205,19 @@ export function CreateDemandPage() {
     setServicePlaceNote("");
     setServiceGeoPlace(null);
     setGeoError(null);
+  }
+
+  function phase1Title(demandType: DemandType) {
+    switch (demandType) {
+      case "BUY":
+        return "어떤 물건을 찾고 있나요?";
+      case "BORROW":
+        return "어떤 물건을 빌리고 싶나요?";
+      case "TASK":
+        return "어떤 일을 부탁하고 싶나요?";
+      case "SERVICE":
+        return "어떤 도움이 필요하세요?";
+    }
   }
 
   function phase2Title(demandType: DemandType) {
@@ -381,9 +397,9 @@ export function CreateDemandPage() {
   const canCore = useMemo(() => {
     if (!type || !Number.isFinite(price) || price <= 0) return false;
     if (type === "BUY") return Boolean(productQuery.trim());
-    if (type === "BORROW") return Boolean(title.trim() || itemName.trim());
+    if (type === "BORROW") return Boolean(itemName.trim());
     if (type === "SERVICE") return Boolean(title.trim());
-    return Boolean(title.trim() || detail.trim());
+    return Boolean(detail.trim());
   }, [type, price, productQuery, title, itemName, detail]);
 
   const canSubmit = useMemo(() => {
@@ -456,8 +472,8 @@ export function CreateDemandPage() {
       if (type === "BORROW") {
         const created = await createDemand({
           type: "BORROW",
-          title: title.trim() || itemName.trim(),
-          itemName: itemName.trim() || title.trim(),
+          title: itemName.trim(),
+          itemName: itemName.trim(),
           budget: price,
           fulfillmentOptions,
           description: detail,
@@ -475,8 +491,8 @@ export function CreateDemandPage() {
       if (type === "TASK") {
         const created = await createDemand({
           type: "TASK",
-          title: title.trim() || detail.trim(),
-          taskDescription: detail.trim() || title.trim(),
+          title: detail.trim(),
+          taskDescription: detail.trim(),
           budget: price,
           fulfillmentOptions,
           dueAt: fromDatetimeLocalValue(dueAt),
@@ -520,32 +536,63 @@ export function CreateDemandPage() {
   return (
     <div className="page-stack page-narrow create-page">
       <section className="create-page__body section-stack">
-        <h2 className="section-title">
-          {phase === 1
-            ? ko.whatNeeded
-            : type
-              ? phase2Title(type)
-              : ko.phase2Task}
-        </h2>
-
-        <div className="type-segment" role="radiogroup" aria-label="글 유형">
-          {TYPES.map((t) => (
-            <button
-              key={t}
-              type="button"
-              role="radio"
-              aria-checked={type === t}
-              className={type === t ? "type-segment__btn is-selected" : "type-segment__btn"}
-              onClick={() => selectType(t)}
-            >
-              {DEMAND_TYPE_LABEL[t]}
-            </button>
-          ))}
+        <div className="create-page__prompt">
+          <p className="create-page__kicker">
+            {type ? `${phase} / 2` : "요청 유형"}
+          </p>
+          <h2 className="section-title">
+            {!type
+              ? ko.whatNeeded
+              : phase === 1
+                ? phase1Title(type)
+                : phase2Title(type)}
+          </h2>
         </div>
 
         {!type ? (
-          <p className="section-desc">{ko.pickDemandType}</p>
+          <div className="request-type-grid" role="radiogroup" aria-label="요청 유형">
+            {TYPES.map((t) => {
+              const meta = {
+                BUY: ["구매", "사고 싶은 물건이 있어요", "🛍️"],
+                BORROW: ["빌리기", "잠깐 빌리고 싶어요", "📦"],
+                TASK: ["심부름", "대신 해줬으면 하는 일이 있어요", "🧭"],
+                SERVICE: ["서비스", "전문가의 도움이 필요해요", "🛠️"],
+              }[t];
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  role="radio"
+                  aria-checked={false}
+                  className="request-type-card"
+                  onClick={() => selectType(t)}
+                >
+                  <span className="request-type-card__icon" aria-hidden>{meta[2]}</span>
+                  <span className="request-type-card__copy">
+                    <strong>{meta[0]}</strong>
+                    <small>{meta[1]}</small>
+                  </span>
+                  <span className="request-type-card__chevron" aria-hidden>›</span>
+                </button>
+              );
+            })}
+          </div>
         ) : (
+          <>
+            <div className="type-segment type-segment--compact" role="radiogroup" aria-label="요청 유형">
+              {TYPES.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  role="radio"
+                  aria-checked={type === t}
+                  className={type === t ? "type-segment__btn is-selected" : "type-segment__btn"}
+                  onClick={() => selectType(t)}
+                >
+                  {DEMAND_TYPE_LABEL[t]}
+                </button>
+              ))}
+            </div>
           <>
             <div className="create-steps" aria-label="작성 단계">
               <span className={phase === 1 ? "is-active" : ""}>1. {ko.stepWhat}</span>
@@ -554,16 +601,6 @@ export function CreateDemandPage() {
 
             {phase === 1 ? (
               <>
-                {type !== "BUY" && type !== "SERVICE" ? (
-                  <Field label={ko.titleLabel}>
-                    <TextInput
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder={ko.composerPlaceholder}
-                    />
-                  </Field>
-                ) : null}
-
                 {type === "BUY" ? (
                   <>
                     <div
@@ -963,6 +1000,7 @@ export function CreateDemandPage() {
                 ) : null}
               </>
             ) : null}
+          </>
           </>
         )}
       </section>

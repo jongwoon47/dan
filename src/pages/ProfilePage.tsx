@@ -31,6 +31,8 @@ export function ProfilePage() {
     busy,
     logout,
     myMatches,
+    getProduct,
+    getDemand,
   } = useDan();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,6 +46,7 @@ export function ProfilePage() {
     "spam" | "fraud" | "abuse" | "other"
   >("spam");
   const [toast, setToast] = useState<string | null>(null);
+  const [historyTab, setHistoryTab] = useState<"completed" | "progress" | "cancelled">("completed");
   const isSelf = currentUser?.id === userId;
 
   const connectedMatch = useMemo(
@@ -64,7 +67,7 @@ export function ProfilePage() {
   useDeepHeader({
     title: profile?.displayName ?? ko.profileTitle,
     rightKey: `${isSelf}-${menuOpen}`,
-    right: !isSelf ? (
+    right: currentUser && !isSelf ? (
       <OverflowMenu
         open={menuOpen}
         onOpenChange={onMenuOpenChange}
@@ -84,6 +87,7 @@ export function ProfilePage() {
   });
 
   useEffect(() => {
+    if (!currentUser) return;
     let alive = true;
     void (async () => {
       setLoading(true);
@@ -100,7 +104,49 @@ export function ProfilePage() {
     return () => {
       alive = false;
     };
-  }, [getPublicProfile, userId]);
+  }, [currentUser, getPublicProfile, userId]);
+
+  const tradeHistoryRows = useMemo(() => {
+    if (!isSelf) return [];
+    return myMatches
+      .filter((match) => {
+        if (historyTab === "completed") return match.status === "COMPLETED";
+        if (historyTab === "progress") {
+          return match.status === "CONNECTED" || match.status === "BUYER_INTERESTED" || match.status === "SELLER_ACCEPTED";
+        }
+        return match.status === "CLOSED" || match.status === "DECLINED";
+      })
+      .map((match) => {
+        const product = match.productId ? getProduct(match.productId) : undefined;
+        const demand = getDemand(match.demandId);
+        return {
+          id: match.id,
+          title: product?.name ?? demand?.title ?? "거래",
+          href:
+            match.status === "COMPLETED"
+              ? `/deal/${match.id}/complete`
+              : match.status === "CONNECTED"
+                ? `/deal/${match.id}/handoff`
+                : `/match/${match.id}`,
+          meta:
+            match.status === "COMPLETED"
+              ? "거래 완료"
+              : match.status === "CLOSED" || match.status === "DECLINED"
+                ? "거래 취소"
+                : "거래 진행 중",
+        };
+      });
+  }, [getDemand, getProduct, historyTab, isSelf, myMatches]);
+
+  if (!currentUser) {
+    return (
+      <EmptyState
+        title="로그인이 필요해요"
+        body="프로필의 신뢰 정보와 거래 이력을 확인하려면 로그인해 주세요."
+        action={<Button to="/login">로그인</Button>}
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -144,6 +190,8 @@ export function ProfilePage() {
   const bioTrim = profile.bio.trim();
   const showStats =
     profile.completedDemandCount > 0 || profile.responseConnectionCount > 0;
+  const faultCancellationCount =
+    profile.sellerFaultCancellationCount + profile.buyerFaultCancellationCount;
   const activityBits: string[] = [];
   if (profile.completedDemandCount > 0) {
     activityBits.push(
@@ -241,23 +289,64 @@ export function ProfilePage() {
               </div>
             ) : null}
 
-            {profile.recentActivity.length > 0 ? (
-              <div className="trust-card__recent">
-                <p className="trust-card__stats-label">{ko.profileRecent}</p>
-                <ul className="trust-card__recent-list">
-                  {profile.recentActivity.map((row) => (
-                    <li key={row.id}>
-                      {row.href ? (
-                        <Link to={row.href} className="text-link">
-                          {row.label}
-                        </Link>
-                      ) : (
-                        <span>{row.label}</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
+            <section className="trust-history trust-history--blueprint">
+              <div className="trust-history__head">
+                <strong>거래 신뢰</strong>
+                {profile.identityVerified ? (
+                  <span className="trust-verified-badge">본인인증 완료</span>
+                ) : null}
               </div>
+
+              <div className="trust-summary-strip trust-summary-strip--v2">
+                <div>
+                  <strong>{profile.completedDemandCount}</strong>
+                  <span>완료 거래</span>
+                </div>
+                <div>
+                  <strong>{faultCancellationCount}</strong>
+                  <span>문제 취소</span>
+                </div>
+                <div>
+                  <strong>{profile.unresolvedDisputeCount}</strong>
+                  <span>미해결 분쟁</span>
+                </div>
+              </div>
+
+              {profile.confirmedMismatchCount > 0 ? (
+                <p className="trust-history__warning">
+                  확정 조건 불일치 기록 {profile.confirmedMismatchCount}건
+                </p>
+              ) : null}
+
+              <p className="trust-history__note">
+                DAN에서 확인된 거래 기록만 표시해요.
+              </p>
+            </section>
+
+            {isSelf ? (
+              <section className="profile-trade-history">
+                <div className="profile-trade-history__head">
+                  <strong>내 거래 내역</strong>
+                  <span>확정된 기록만 표시</span>
+                </div>
+                <div className="profile-trade-tabs" role="tablist" aria-label="거래 내역">
+                  <button type="button" className={historyTab === "completed" ? "is-active" : ""} onClick={() => setHistoryTab("completed")}>완료</button>
+                  <button type="button" className={historyTab === "progress" ? "is-active" : ""} onClick={() => setHistoryTab("progress")}>진행중</button>
+                  <button type="button" className={historyTab === "cancelled" ? "is-active" : ""} onClick={() => setHistoryTab("cancelled")}>취소</button>
+                </div>
+                {tradeHistoryRows.length > 0 ? (
+                  <div className="profile-trade-list">
+                    {tradeHistoryRows.map((row) => (
+                      <Link key={row.id} to={row.href} className="profile-trade-row">
+                        <div><strong>{row.title}</strong><span>{row.meta}</span></div>
+                        <span aria-hidden>›</span>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="profile-trade-empty">표시할 거래가 아직 없어요.</p>
+                )}
+              </section>
             ) : null}
 
             {toast ? <p className="section-desc">{toast}</p> : null}

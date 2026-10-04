@@ -8,9 +8,10 @@ type Props = {
   subtitle?: string;
   right?: ReactNode;
   fallbackTo?: string;
+  onBack?: () => void;
 };
 
-export function DeepHeader({ title, subtitle, right, fallbackTo = "/" }: Props) {
+export function DeepHeader({ title, subtitle, right, fallbackTo = "/", onBack }: Props) {
   const navigate = useNavigate();
 
   return (
@@ -19,7 +20,13 @@ export function DeepHeader({ title, subtitle, right, fallbackTo = "/" }: Props) 
         type="button"
         className="deep-header__back"
         aria-label="뒤로가기"
-        onClick={() => navigateBack(navigate, fallbackTo)}
+        onClick={() => {
+          if (onBack) {
+            onBack();
+            return;
+          }
+          navigateBack(navigate, fallbackTo);
+        }}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
           <path

@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -45,11 +46,15 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const mutationInFlightRef = useRef(false);
+  const refreshGenerationRef = useRef(0);
+  const lastRecoveryRefreshRef = useRef(0);
   const [activities, setActivities] = useState<
     import("@/domain/types").ActivityEvent[]
   >([]);
 
   const refresh = useCallback(async () => {
+    const generation = ++refreshGenerationRef.current;
     setLoadState((prev) => (prev === "ready" ? "ready" : "loading"));
     setError(null);
     try {
@@ -58,6 +63,8 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         api.listActiveDemands(),
         api.listBuyAggregates(),
       ]);
+      if (generation !== refreshGenerationRef.current) return;
+
       setProducts(productRows);
       setDemands(demandRows);
       setAggregates(aggRows);
@@ -73,14 +80,26 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
             api.listMyDemands(auth.user.id),
           ]);
 
+        const matchedSellIds = [
+          ...new Set(
+            myMatches
+              .map((match) => match.sellIntentId)
+              .filter((id): id is string => Boolean(id)),
+          ),
+        ];
+        const matchedSells = await api.listSellIntentsByIds(matchedSellIds);
+
         const ownershipIds = [
           ...new Set([
             ...sellRows.map((s) => s.ownershipId),
             ...mySells.map((s) => s.ownershipId),
+            ...matchedSells.map((s) => s.ownershipId),
             ...owns.map((o) => o.id),
           ]),
         ];
         const openOwns = await api.listOwnershipsByIds(ownershipIds);
+        if (generation !== refreshGenerationRef.current) return;
+
         const ownMap = new Map<string, Ownership>();
         for (const o of [...owns, ...openOwns]) ownMap.set(o.id, o);
 
@@ -88,6 +107,7 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         setSellIntents(() => {
           const map = new Map(sellRows.map((s) => [s.id, s]));
           for (const s of mySells) map.set(s.id, s);
+          for (const s of matchedSells) map.set(s.id, s);
           return [...map.values()];
         });
         setResponses(partyResponses);
@@ -103,18 +123,23 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         setResponses([]);
         setMatches([]);
       }
+      if (generation !== refreshGenerationRef.current) return;
       setLoadState("ready");
+
       if (auth.user) {
         try {
           const acts = await api.listActivityRemote();
-          setActivities(acts);
+          if (generation === refreshGenerationRef.current) {
+            setActivities(acts);
+          }
         } catch {
           /* activity is best-effort */
         }
-      } else {
+      } else if (generation === refreshGenerationRef.current) {
         setActivities([]);
       }
-    } catch (e) {
+    } catch {
+      if (generation !== refreshGenerationRef.current) return;
       setError(ko.loadFailed);
       setLoadState("error");
     }
@@ -125,6 +150,31 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
     void refresh();
   }, [auth.status, auth.user?.id, refresh]);
 
+  useEffect(() => {
+    if (auth.status === "loading") return;
+
+    const recover = () => {
+      if (typeof navigator !== "undefined" && !navigator.onLine) return;
+      const now = Date.now();
+      if (now - lastRecoveryRefreshRef.current < 1500) return;
+      lastRecoveryRefreshRef.current = now;
+      void refresh();
+    };
+
+    const onOnline = () => recover();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") recover();
+    };
+
+    window.addEventListener("online", onOnline);
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      window.removeEventListener("online", onOnline);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [auth.status, refresh]);
+
   const state: DanState = useMemo(
     () => ({
       currentUserId: auth.user?.id ?? null,
@@ -133,13 +183,18 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
       sellIntents,
       responses,
       matches,
+      dealEvidenceChallenges: [],
+      dealEvidence: [],
+      dealSnapshots: [],
+      dealDisputes: [],
     }),
     [auth.user?.id, demands, ownerships, sellIntents, responses, matches],
   );
 
   const run = useCallback(
     async <T,>(fn: () => Promise<T>): Promise<T | null> => {
-      if (busy) return null;
+      if (mutationInFlightRef.current) return null;
+      mutationInFlightRef.current = true;
       setBusy(true);
       setError(null);
       try {
@@ -151,10 +206,11 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         // Avoid stacking a global banner on the same mutation failure.
         return null;
       } finally {
+        mutationInFlightRef.current = false;
         setBusy(false);
       }
     },
-    [busy, refresh],
+    [refresh],
   );
 
   const value = useMemo<DanContextValue>(() => {
@@ -174,6 +230,24 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
       users: currentUser ? [currentUser] : [],
       currentUser,
       isLoggedIn: Boolean(currentUser),
+      getMyVerification: async () => {
+        if (!currentUser) {
+          return {
+            phoneVerified: false,
+            identityVerified: false,
+            payoutVerified: false,
+          };
+        }
+        try {
+          return await api.getMyVerificationRemote();
+        } catch {
+          return {
+            phoneVerified: false,
+            identityVerified: false,
+            payoutVerified: false,
+          };
+        }
+      },
       login: () => {
         assignLogin();
       },
@@ -187,12 +261,12 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         }
         return run(() => api.createDemandRemote(payload));
       },
-      ensureProduct: async (name) => {
+      ensureProduct: async (name, category = "other") => {
         if (!currentUser) {
           assignLogin();
           return null;
         }
-        return run(() => api.ensureProductRemote(name));
+        return run(() => api.ensureProductRemote(name, category));
       },
       createOwnership: async (payload) => {
         if (!currentUser) {
@@ -208,6 +282,66 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         }
         return run(() => api.upsertSellIntentRemote(payload));
       },
+      issueDealEvidenceChallenge: async (matchId) => {
+        if (!currentUser) {
+          assignLogin();
+          return null;
+        }
+        return run(() => api.issueDealEvidenceChallengeRemote(matchId));
+      },
+      getDealEvidence: async (matchId) => {
+        if (!currentUser) return null;
+        try {
+          return await api.getDealEvidenceRemote(matchId);
+        } catch {
+          return null;
+        }
+      },
+      upsertDealEvidence: async (payload) => {
+        if (!currentUser) {
+          assignLogin();
+          return null;
+        }
+        return run(() => api.upsertDealEvidenceRemote(payload));
+      },
+      getDealSnapshot: async (matchId) => {
+        if (!currentUser) return null;
+        try {
+          return await api.getDealSnapshotRemote(matchId);
+        } catch {
+          return null;
+        }
+      },
+      confirmDealSnapshot: async (payload) => {
+        if (!currentUser) {
+          assignLogin();
+          return null;
+        }
+        return run(() => api.confirmDealSnapshotRemote(payload));
+      },
+      listDealDisputes: async (matchId) => {
+        if (!currentUser) return [];
+        try {
+          return await api.listDealDisputesRemote(matchId);
+        } catch {
+          return [];
+        }
+      },
+      openDealDispute: async (payload) => {
+        if (!currentUser) {
+          assignLogin();
+          return null;
+        }
+        return run(() => api.openDealDisputeRemote(payload));
+      },
+      cancelDeal: async (payload) => {
+        if (!currentUser) {
+          assignLogin();
+          return null;
+        }
+        return run(() => api.cancelDealRemote(payload));
+      },
+      simulateSafePaymentDemo: async () => false,
       createResponse: async (payload) => {
         if (!currentUser) {
           assignLogin();
@@ -279,6 +413,15 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         } catch (e) {
           setError(ko.genericError);
           return [];
+        }
+      },
+      subscribeMessages: (matchId, onMessage, onStatus) => {
+        if (!currentUser) return () => undefined;
+        try {
+          return api.subscribeMessagesRemote(matchId, onMessage, onStatus);
+        } catch {
+          onStatus?.("CHANNEL_ERROR");
+          return () => undefined;
         }
       },
       sendMessage: async (matchId, body) => {

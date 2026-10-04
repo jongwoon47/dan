@@ -1,0 +1,299 @@
+import { useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { ProductVisual } from "@/components/ProductVisual";
+import { Button } from "@/components/ui/Button";
+import { Chip, ChipGroup, Field, TextInput } from "@/components/ui/Input";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { useDeepHeader } from "@/components/layout/ShellChrome";
+import { useDan } from "@/domain/danContext";
+import type { ItemCondition, Ownership, TradeMethod } from "@/domain/types";
+import { CONDITION_LABEL } from "@/domain/types";
+import {
+  digitsOnly,
+  formatDigitsGrouped,
+  formatWon,
+  parseMoneyInput,
+} from "@/lib/format";
+import "./pages.css";
+
+const CONDITIONS: ItemCondition[] = ["sealed", "like_new", "lightly_used"];
+const SELLER_TRADE_METHODS: TradeMethod[] = ["meetup", "shipping", "any"];
+const SELLER_TRADE_LABEL: Record<TradeMethod, string> = {
+  meetup: "직거래",
+  shipping: "택배",
+  any: "둘 다 가능",
+};
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error);
+    reader.onload = () =>
+      resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.readAsDataURL(file);
+  });
+}
+
+export function QuickOfferPage() {
+  const { productId = "" } = useParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const targetDemandId = searchParams.get("target")?.trim() || undefined;
+  const {
+    getProduct,
+    getDemand,
+    getAggregate,
+    myOwnerships,
+    createOwnership,
+    createSellIntent,
+    isLoggedIn,
+  } = useDan();
+
+  const product = getProduct(productId);
+  const aggregate = getAggregate(productId);
+  const targetDemand = targetDemandId ? getDemand(targetDemandId) : undefined;
+  const targetBuyDemand =
+    targetDemand?.type === "BUY" && targetDemand.details.productId === productId
+      ? targetDemand
+      : undefined;
+  const existingOwnership = myOwnerships.find(
+    (row) => row.productId === productId && row.status === "OWNED",
+  );
+
+  const [condition, setCondition] = useState<ItemCondition | null>(
+    existingOwnership?.condition ?? null,
+  );
+  const [price, setPrice] = useState(
+    targetBuyDemand?.details.maxPrice
+      ? String(targetBuyDemand.details.maxPrice)
+      : aggregate?.highestIntentPrice
+        ? String(aggregate.highestIntentPrice)
+        : "",
+  );
+  const [usageCount, setUsageCount] = useState("");
+  const [conditionNote, setConditionNote] = useState("");
+  const [tradeMethod, setTradeMethod] = useState<TradeMethod>("any");
+  const [quickPhotoUrl, setQuickPhotoUrl] = useState("");
+  const [photoError, setPhotoError] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useDeepHeader({ title: "판매 제안하기" });
+
+  if (!product) {
+    return (
+      <EmptyState
+        title="제품을 찾을 수 없어요"
+        action={<Button to="/" variant="secondary">홈으로</Button>}
+      />
+    );
+  }
+
+  const typedPrice = parseMoneyInput(price);
+  const showUsageCount = product.category === "camera";
+  const canSubmit = Boolean(condition && typedPrice > 0);
+
+  async function pickPhoto(file?: File) {
+    setPhotoError("");
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setPhotoError("이미지 파일만 올릴 수 있어요.");
+      return;
+    }
+    if (file.size > 700_000) {
+      setPhotoError("V1에서는 700KB 이하 사진을 사용해 주세요.");
+      return;
+    }
+    try {
+      setQuickPhotoUrl(await fileToDataUrl(file));
+    } catch {
+      setPhotoError("사진을 읽지 못했어요.");
+    }
+  }
+
+  async function submit() {
+    if (!canSubmit || !condition || busy) return;
+    if (!isLoggedIn) {
+      navigate(`/login?next=/demand/${productId}/offer`);
+      return;
+    }
+
+    setBusy(true);
+    setError("");
+    try {
+      let ownership: Ownership | undefined = existingOwnership;
+      if (!ownership) {
+        ownership =
+          (await createOwnership({ productId, condition })) ?? undefined;
+      }
+      if (!ownership) {
+        setError("물품 보유 정보를 만들지 못했어요.");
+        return;
+      }
+
+      const offer = await createSellIntent({
+        ownershipId: ownership.id,
+        minimumPrice: typedPrice,
+        approxUsageCount:
+          showUsageCount && usageCount ? Number(usageCount) : undefined,
+        conditionNote: conditionNote.trim() || undefined,
+        targetDemandId: targetBuyDemand?.id,
+        tradeMethod,
+        quickPhotoUrl: quickPhotoUrl || undefined,
+      });
+      if (!offer) {
+        setError("판매 제안을 보내지 못했어요.");
+        return;
+      }
+      navigate("/my?tab=selling");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="page-stack page-narrow quick-offer-page quick-offer-page--blueprint">
+      <section className="deal-product-card quick-offer-product-card">
+        <ProductVisual product={product} size="sm" />
+        <div>
+          <p className="eyebrow">제안하기</p>
+          <h1 className="page-title">{product.name}</h1>
+          {aggregate?.seekerCount ? (
+            <p className="quick-offer-signal">
+              지금 <strong>{aggregate.seekerCount}명</strong>이 찾고 있어요
+            </p>
+          ) : null}
+        </div>
+      </section>
+
+      {targetBuyDemand ? (
+        <section className="live-demand-banner">
+          <span>이 요청의 최대 희망가</span>
+          <strong>{formatWon(targetBuyDemand.details.maxPrice)}</strong>
+          <button type="button" onClick={() => setPrice(String(targetBuyDemand.details.maxPrice))}>
+            이 가격 사용
+          </button>
+        </section>
+      ) : aggregate?.highestIntentPrice ? (
+        <section className="live-demand-banner">
+          <span>현재 가장 높은 희망가</span>
+          <strong>{formatWon(aggregate.highestIntentPrice)}</strong>
+          <button
+            type="button"
+            onClick={() => setPrice(String(aggregate.highestIntentPrice))}
+          >
+            이 가격 사용
+          </button>
+        </section>
+      ) : null}
+
+      <section className="section-stack quick-offer-form">
+        <Field label="희망 판매가" hint="구매자는 가격을 가장 먼저 비교해요.">
+          <TextInput
+            inputMode="numeric"
+            value={formatDigitsGrouped(price)}
+            onChange={(event) => setPrice(digitsOnly(event.target.value))}
+            placeholder="예: 2,130,000"
+          />
+        </Field>
+
+        <div>
+          <p className="field-inline-label">내 물건 상태</p>
+          <ChipGroup>
+            {CONDITIONS.map((item) => (
+              <Chip
+                key={item}
+                selected={condition === item}
+                onClick={() => setCondition(item)}
+              >
+                {CONDITION_LABEL[item]}
+              </Chip>
+            ))}
+          </ChipGroup>
+        </div>
+
+        <div>
+          <p className="field-inline-label">가능한 거래 방식</p>
+          <ChipGroup>
+            {SELLER_TRADE_METHODS.map((item) => (
+              <Chip
+                key={item}
+                selected={tradeMethod === item}
+                onClick={() => setTradeMethod(item)}
+              >
+                {SELLER_TRADE_LABEL[item]}
+              </Chip>
+            ))}
+          </ChipGroup>
+        </div>
+
+        <details className="quick-offer-extras">
+          <summary>
+            <span>
+              <strong>추가 정보</strong>
+              <small>메모 · 사용량 · 사진은 선택</small>
+            </span>
+            <span aria-hidden>⌄</span>
+          </summary>
+          <div className="quick-offer-extras__body section-stack">
+            {showUsageCount ? (
+              <Field label="대략적인 컷수">
+                <TextInput
+                  inputMode="numeric"
+                  value={formatDigitsGrouped(usageCount)}
+                  onChange={(event) =>
+                    setUsageCount(digitsOnly(event.target.value))
+                  }
+                  placeholder="예: 2,400"
+                />
+              </Field>
+            ) : null}
+
+            <Field label="상태 메모">
+              <TextInput
+                value={conditionNote}
+                onChange={(event) => setConditionNote(event.target.value)}
+                placeholder="예: 상태 좋음 · 상단 미세스크래치"
+              />
+            </Field>
+
+            <details className="quick-offer-photo" open={Boolean(quickPhotoUrl)}>
+              <summary>
+                <span>
+                  <strong>사진 추가</strong>
+                  <small>선택 · 없어도 제안 가능</small>
+                </span>
+                <span aria-hidden>⌄</span>
+              </summary>
+              <div className="quick-offer-photo__body">
+                <label className="evidence-upload evidence-upload--quick">
+                  {quickPhotoUrl ? (
+                    <img src={quickPhotoUrl} alt="현재 물품" />
+                  ) : (
+                    <span>사진이 있으면 상대가 더 빠르게 판단할 수 있어요.</span>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => void pickPhoto(event.target.files?.[0])}
+                  />
+                </label>
+                {photoError ? <p className="form-error">{photoError}</p> : null}
+              </div>
+            </details>
+          </div>
+        </details>
+
+        {error ? <p className="form-error">{error}</p> : null}
+        <Button
+          fullWidth
+          size="lg"
+          disabled={!canSubmit || busy}
+          onClick={() => void submit()}
+        >
+          {busy ? "제안 중…" : "제안 보내기"}
+        </Button>
+      </section>
+    </div>
+  );
+}

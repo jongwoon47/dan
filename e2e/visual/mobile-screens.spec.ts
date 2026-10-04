@@ -75,7 +75,7 @@ test.describe("mobile visual QA", () => {
     await page.goto("/create?type=TASK");
     await settle(page);
     await page.getByRole("radio", { name: "심부름" }).click();
-    await page.getByLabel("요청 제목").fill("모바일 QA 심부름");
+    await page.getByLabel("자세히").fill("모바일 QA 심부름");
     await page.getByLabel("보상").fill("10000");
     await page.getByRole("button", { name: "다음" }).click();
     await settle(page);
