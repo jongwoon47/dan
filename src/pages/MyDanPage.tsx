@@ -89,7 +89,7 @@ export function MyDanPage() {
     return (
       <EmptyState
         title="로그인이 필요해요"
-        body="내 구매수요와 받은 제안을 확인하려면 로그인해 주세요."
+        body="내 요청과 거래를 확인하려면 로그인해 주세요."
         action={
           dataMode === "supabase" ? (
             <Button to="/login">로그인</Button>
@@ -110,7 +110,7 @@ export function MyDanPage() {
       <header className="my-dan__header my-dan__header--v1">
         <div>
           <p className="eyebrow">내 거래</p>
-          <h1 className="page-title">내 구매수요</h1>
+          <h1 className="page-title">내 거래</h1>
         </div>
         <Link to={"/profile/" + currentUser?.id} className="my-dan__name">
           프로필 보기 <span aria-hidden>›</span>
@@ -148,9 +148,9 @@ export function MyDanPage() {
         <section className="my-demand-panel">
           {openBuyDemands.length === 0 ? (
             <EmptyState
-              title="등록한 구매수요가 없어요"
-              body="원하는 물건과 조건을 먼저 남겨보세요."
-              action={<Button to="/buy/new">구매수요 등록</Button>}
+              title="아직 올린 요청이 없어요"
+              body="필요한 물건이나 일을 요청해보세요."
+              action={<Button to="/create">요청 만들기</Button>}
             />
           ) : (
             <div className="my-demand-card-list">
@@ -179,8 +179,8 @@ export function MyDanPage() {
             </div>
           )}
 
-          <Button to="/buy/new" fullWidth size="lg">
-            새 구매수요 등록
+          <Button to="/create" fullWidth size="lg">
+            새 요청요 등록
           </Button>
         </section>
       ) : null}
@@ -190,7 +190,7 @@ export function MyDanPage() {
           <div className="my-demand-section-head">
             <div>
               <h2>받은 제안</h2>
-              <p>가격과 기본 상태를 비교한 뒤 제안 상세에서 관심을 표시하세요.</p>
+              <p>가격과 기본 상태를 비교한 뒤 제안 상세에서 거래할 제안을 선택하세요.</p>
             </div>
             {demandFilter ? (
               <button type="button" className="my-demand-filter-clear" onClick={() => setSearchParams({ tab: "offers" })}>
@@ -217,7 +217,7 @@ export function MyDanPage() {
               <div className="my-demand-section-head">
                 <div>
                   <h2>구매자 반응</h2>
-                  <p>구매자가 관심을 보이면 먼저 연결해 대화하고, 거래를 계속할 때 증거와 조건을 확정하세요.</p>
+                  <p>구매자가 관심을 보이면 먼저 연결해 대화하고, 거래를 계속할 때 상품 정보와 거래 조건을 확인하세요.</p>
                 </div>
               </div>
               <MatchList matches={sellerMatches} emptyWhenZero={false} />
@@ -260,8 +260,8 @@ export function MyDanPage() {
           ) : (
             <EmptyState
               title="보낸 판매 제안이 없어요"
-              body="실시간 수요에서 가지고 있는 물건을 찾아 Quick Offer를 보내세요."
-              action={<Button to="/">구매수요 보기</Button>}
+              body="탐색에서 내가 도와줄 수 있는 요청을 찾아 제안해보세요."
+              action={<Button to="/feed">요청 탐색</Button>}
             />
           )}
         </section>
