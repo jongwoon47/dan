@@ -176,7 +176,7 @@ export function HandoffPage() {
   return (
     <div className="page-stack page-narrow handoff-page">
       <section className="handoff-hero">
-        <span className="eyebrow">Safe Handoff</span>
+        <span className="eyebrow">인계 확인</span>
         <h1 className="page-title">{product.name}</h1>
         <p>확정한 조건을 기준으로 결제하고, 물품을 인계받을 때 실제 상태를 다시 확인해요.</p>
       </section>
@@ -184,7 +184,7 @@ export function HandoffPage() {
       <section className="trade-progress-card" aria-label="거래 진행 단계">
         <div className="trade-progress-row is-done">
           <span className="trade-progress-icon">✓</span>
-          <div><strong>거래조건 확정</strong><small>Deal Snapshot 잠금 완료</small></div>
+          <div><strong>거래조건 확정</strong><small>거래 조건 확인 완료</small></div>
         </div>
         <div className={match.paymentStatus === "PAID" ? "trade-progress-row is-done" : "trade-progress-row is-current"}>
           <span className="trade-progress-icon">{match.paymentStatus === "PAID" ? "✓" : "2"}</span>
@@ -222,10 +222,10 @@ export function HandoffPage() {
           <span className="safe-payment-placeholder__icon">✓</span>
           <div>
             <strong>거래가 완료됐어요</strong>
-            <p>양쪽의 확인이 끝났습니다. 거래 결과는 Trust History에 사실 기록으로 남아요.</p>
+            <p>양쪽의 확인이 끝났습니다. 거래 결과는 거래 이력에 완료 기록으로 남아요.</p>
           </div>
           <Button to={`/profile/${currentUser.id}`} variant="secondary" fullWidth>
-            내 Trust History 보기
+            내 거래 이력 보기
           </Button>
         </section>
       ) : (
@@ -260,7 +260,7 @@ export function HandoffPage() {
           </section>
 
           <details className="dispute-panel">
-            <summary>Deal Snapshot과 다르거나 문제가 있나요?</summary>
+            <summary>확정한 거래 조건과 다르거나 문제가 있나요?</summary>
             <div className="section-stack">
               <div className="dispute-reason-grid">
                 {DISPUTE_OPTIONS.map((option) => (
