@@ -50,7 +50,7 @@ describe("legacy remote apply scripts are default-deny", () => {
     });
     expect(production.status).not.toBe(0);
     expect(`${production.stderr}${production.stdout}`).toMatch(
-      /apply-production-only/,
+      /production Supabase project is not configured/i,
     );
   });
 
