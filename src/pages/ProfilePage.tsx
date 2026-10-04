@@ -190,6 +190,8 @@ export function ProfilePage() {
   const bioTrim = profile.bio.trim();
   const showStats =
     profile.completedDemandCount > 0 || profile.responseConnectionCount > 0;
+  const faultCancellationCount =
+    profile.sellerFaultCancellationCount + profile.buyerFaultCancellationCount;
   const activityBits: string[] = [];
   if (profile.completedDemandCount > 0) {
     activityBits.push(
@@ -287,32 +289,39 @@ export function ProfilePage() {
               </div>
             ) : null}
 
-            <div className="trust-history trust-history--blueprint">
+            <section className="trust-history trust-history--blueprint">
               <div className="trust-history__head">
-                <strong>거래 신뢰 기록</strong>
-                <div className="trust-history__badges">
-                  {profile.identityVerified ? (
-                    <span className="trust-verified-badge">본인인증 완료</span>
-                  ) : null}
-                  <span>사실 기반 거래 기록</span>
+                <strong>거래 신뢰</strong>
+                {profile.identityVerified ? (
+                  <span className="trust-verified-badge">본인인증 완료</span>
+                ) : null}
+              </div>
+
+              <div className="trust-summary-strip trust-summary-strip--v2">
+                <div>
+                  <strong>{profile.completedDemandCount}</strong>
+                  <span>완료 거래</span>
+                </div>
+                <div>
+                  <strong>{faultCancellationCount}</strong>
+                  <span>문제 취소</span>
+                </div>
+                <div>
+                  <strong>{profile.unresolvedDisputeCount}</strong>
+                  <span>미해결 분쟁</span>
                 </div>
               </div>
 
-              <div className="trust-summary-strip">
-                <div><strong>{profile.completedDemandCount}</strong><span>거래 완료</span></div>
-                <div><strong>{profile.sellerFaultCancellationCount}</strong><span>판매자 귀책 취소</span></div>
-                <div><strong>{profile.buyerFaultCancellationCount}</strong><span>구매자 귀책 취소</span></div>
-              </div>
-
-              <div className="trust-fact-list">
-                <div><span>확정 상태 불일치</span><strong>{profile.confirmedMismatchCount}</strong></div>
-                <div><span>미해결 분쟁</span><strong>{profile.unresolvedDisputeCount}</strong></div>
-              </div>
+              {profile.confirmedMismatchCount > 0 ? (
+                <p className="trust-history__warning">
+                  확정 조건 불일치 기록 {profile.confirmedMismatchCount}건
+                </p>
+              ) : null}
 
               <p className="trust-history__note">
-                운영으로 확정된 기록만 표시해요.
+                DAN에서 확인된 거래 기록만 표시해요.
               </p>
-            </div>
+            </section>
 
             {isSelf ? (
               <section className="profile-trade-history">
@@ -338,25 +347,6 @@ export function ProfilePage() {
                   <p className="profile-trade-empty">표시할 거래가 아직 없어요.</p>
                 )}
               </section>
-            ) : null}
-
-            {profile.recentActivity.length > 0 ? (
-              <div className="trust-card__recent">
-                <p className="trust-card__stats-label">{ko.profileRecent}</p>
-                <ul className="trust-card__recent-list">
-                  {profile.recentActivity.map((row) => (
-                    <li key={row.id}>
-                      {row.href ? (
-                        <Link to={row.href} className="text-link">
-                          {row.label}
-                        </Link>
-                      ) : (
-                        <span>{row.label}</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
             ) : null}
 
             {toast ? <p className="section-desc">{toast}</p> : null}
