@@ -1354,3 +1354,11 @@ textarea.dan-input,
   font-size: 12px;
   font-weight: 760;
 }
+
+
+.my-active-stack { display:grid; gap:28px; }
+.my-active-section { display:grid; gap:10px; }
+.my-active-section + .my-active-section {
+  padding-top:22px;
+  border-top:7px solid var(--v2-subtle);
+}
