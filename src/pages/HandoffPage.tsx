@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { TransactionStageBar } from "@/components/TransactionStageBar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
@@ -175,6 +176,7 @@ export function HandoffPage() {
 
   return (
     <div className="page-stack page-narrow handoff-page">
+      <TransactionStageBar stage={4} />
       <section className="handoff-hero">
         <span className="eyebrow">인계 확인</span>
         <h1 className="page-title">{product.name}</h1>
