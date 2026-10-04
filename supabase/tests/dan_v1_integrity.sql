@@ -1,6 +1,6 @@
 begin;
 
-select plan(80);
+select plan(85);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -609,6 +609,32 @@ select ok(
     where oid = 'public.messages'::regclass
   ),
   'messages use full replica identity for read-receipt updates'
+);
+
+
+select ok(
+  not has_function_privilege('anon', 'public.ops_set_user_verification(uuid,boolean,boolean,boolean,text,text,text)', 'EXECUTE'),
+  'anonymous clients cannot set verification state'
+);
+
+select ok(
+  not has_function_privilege('anon', 'public.settlement_mark_paid(uuid,text)', 'EXECUTE'),
+  'anonymous clients cannot settle payment'
+);
+
+select ok(
+  not has_function_privilege('anon', 'public.upsert_quick_offer(uuid,numeric,uuid,text,integer,text,text)', 'EXECUTE'),
+  'anonymous clients cannot create Quick Offers'
+);
+
+select ok(
+  has_function_privilege('authenticated', 'public.upsert_quick_offer(uuid,numeric,uuid,text,integer,text,text)', 'EXECUTE'),
+  'authenticated sellers can create Quick Offers'
+);
+
+select ok(
+  has_function_privilege('anon', 'public.marketplace_product_allowed(text)', 'EXECUTE'),
+  'public discovery keeps marketplace policy helper access'
 );
 
 select * from finish();
