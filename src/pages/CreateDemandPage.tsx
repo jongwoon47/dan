@@ -555,28 +555,47 @@ export function CreateDemandPage() {
           </h2>
         </div>
 
-        <div className="request-type-grid" role="radiogroup" aria-label="요청 유형">
-          {TYPES.map((t) => (
-            <button
-              key={t}
-              type="button"
-              role="radio"
-              aria-checked={type === t}
-              className={type === t ? "request-type-card is-selected" : "request-type-card"}
-              onClick={() => selectType(t)}
-            >
-              <span className="request-type-card__icon" aria-hidden>{TYPE_META[t].icon}</span>
-              <span className="request-type-card__copy">
-                <strong>{TYPE_META[t].label}</strong>
-                <small>{TYPE_META[t].desc}</small>
-              </span>
-            </button>
-          ))}
-        </div>
-
         {!type ? (
-          <p className="section-desc">{ko.pickDemandType}</p>
+          <>
+            <div className="request-type-grid" role="radiogroup" aria-label="요청 유형">
+              {TYPES.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  role="radio"
+                  aria-checked={type === t}
+                  className="request-type-card"
+                  onClick={() => selectType(t)}
+                >
+                  <span className="request-type-card__icon" aria-hidden>{TYPE_META[t].icon}</span>
+                  <span className="request-type-card__copy">
+                    <strong>{TYPE_META[t].label}</strong>
+                    <small>{TYPE_META[t].desc}</small>
+                  </span>
+                </button>
+              ))}
+            </div>
+            <p className="section-desc">{ko.pickDemandType}</p>
+          </>
         ) : (
+          <>
+            <button
+              type="button"
+              className="request-type-current"
+              aria-label="요청 유형 변경"
+              onClick={() => {
+                setType(null);
+                setPhase(1);
+                setFormError(null);
+              }}
+            >
+              <span className="request-type-current__icon" aria-hidden>{TYPE_META[type].icon}</span>
+              <span>
+                <strong>{TYPE_META[type].label}</strong>
+                <small>요청 유형 변경</small>
+              </span>
+              <span className="request-type-current__chevron" aria-hidden>›</span>
+            </button>
           <>
             <div className="create-progress" aria-label="작성 단계">
               <div className="create-progress__track"><span style={{ width: phase === 1 ? "50%" : "100%" }} /></div>
