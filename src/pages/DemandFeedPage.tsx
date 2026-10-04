@@ -9,6 +9,9 @@ import {
 } from "@/data/supabase/api";
 import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
+import { effectiveDemandStatus } from "@/domain/demandLifecycle";
+import { formatFulfillmentSummary } from "@/domain/fulfillment";
+import { formatWon } from "@/lib/format";
 import {
   filterAndSortLiveDemand,
   liveDemandCategoryCounts,
@@ -16,7 +19,7 @@ import {
   type LiveDemandRow,
   type LiveDemandSort,
 } from "@/domain/liveDemandDiscovery";
-import { CATEGORY_LABEL } from "@/domain/types";
+import { CATEGORY_LABEL, DEMAND_TYPE_LABEL, type DemandType } from "@/domain/types";
 import "./pages.css";
 import "@/components/feedCards.css";
 
@@ -39,8 +42,9 @@ function toFeedRow(row: RemoteLiveDemandRow): LiveDemandRow {
 }
 
 export function DemandFeedPage() {
-  const { demandFeed } = useDan();
+  const { demandFeed, state } = useDan();
   const [query, setQuery] = useState("");
+  const [requestType, setRequestType] = useState<"all" | DemandType>("all");
   const [category, setCategory] = useState<LiveDemandCategory>("all");
   const [sort, setSort] = useState<LiveDemandSort>("popular");
   const [page, setPage] = useState(0);
@@ -64,6 +68,26 @@ export function DemandFeedPage() {
       }),
     [category, demandFeed, query, sort],
   );
+
+  const directRequests = useMemo(
+    () =>
+      state.demands
+        .filter((demand) => {
+          if (demand.type === "BUY") return false;
+          if (effectiveDemandStatus(demand) !== "ACTIVE") return false;
+          if (requestType !== "all" && demand.type !== requestType) return false;
+          const q = query.trim().toLocaleLowerCase("ko");
+          if (!q) return true;
+          return (
+            demand.title.toLocaleLowerCase("ko").includes(q) ||
+            (demand.description ?? "").toLocaleLowerCase("ko").includes(q)
+          );
+        })
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    [query, requestType, state.demands],
+  );
+
+  const showBuyRequests = requestType === "all" || requestType === "BUY";
 
   useEffect(() => {
     if (!productionDiscovery) {
@@ -159,7 +183,24 @@ export function DemandFeedPage() {
         </p>
       </header>
 
-      <section className="discovery-panel" aria-label="구매 요청 탐색">
+      <section className="discovery-panel" aria-label="요청 탐색">
+        <div className="request-type-filter" aria-label="요청 유형">
+          {(["all", "BUY", "BORROW", "TASK", "SERVICE"] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              className={requestType === value ? "is-active" : ""}
+              onClick={() => {
+                setRequestType(value);
+                setPage(0);
+                resetRemoteDiscovery();
+              }}
+            >
+              {value === "all" ? "전체" : DEMAND_TYPE_LABEL[value]}
+            </button>
+          ))}
+        </div>
+
         <div className="discovery-search">
           <span className="discovery-search__icon" aria-hidden>
             <svg viewBox="0 0 24 24" fill="none">
@@ -186,7 +227,7 @@ export function DemandFeedPage() {
           ) : null}
         </div>
 
-        <div className="discovery-filter-scroll" aria-label="제품 카테고리">
+        {showBuyRequests ? <div className="discovery-filter-scroll" aria-label="제품 카테고리">
           <button
             type="button"
             className={category === "all" ? "discovery-chip is-active" : "discovery-chip"}
@@ -204,7 +245,7 @@ export function DemandFeedPage() {
               {CATEGORY_LABEL[itemCategory]} <span>{count}</span>
             </button>
           ))}
-        </div>
+        </div> : null}
 
         <div className="discovery-toolbar">
           <p className="discovery-summary" aria-live="polite">
@@ -229,7 +270,25 @@ export function DemandFeedPage() {
         </div>
       </section>
 
-      {filtered.length === 0 && !remoteLoading ? (
+      {directRequests.length > 0 ? (
+        <section className="mixed-request-section">
+          <div className="mixed-request-list">
+            {directRequests.map((demand) => (
+              <a key={demand.id} href={`/demand/item/${demand.id}`} className="mixed-request-row">
+                <div>
+                  <span>{DEMAND_TYPE_LABEL[demand.type]}</span>
+                  <strong>{demand.title}</strong>
+                  <small>{formatFulfillmentSummary(demand.fulfillmentOptions)}</small>
+                </div>
+                <b>{formatWon(demand.budget)}</b>
+                <i aria-hidden>›</i>
+              </a>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {showBuyRequests ? (      {filtered.length === 0 && !remoteLoading ? (
         <EmptyState
           title={
             query.trim()
@@ -273,6 +332,14 @@ export function DemandFeedPage() {
           ) : null}
         </>
       )}
+
+      ) : directRequests.length === 0 ? (
+        <EmptyState
+          title="조건에 맞는 요청이 없어요"
+          body="새 요청을 만들면 필요한 사람과 가능한 사람이 연결될 수 있어요."
+          action={<Button to={requestType === "all" ? "/create" : `/create?type=${requestType}`}>요청 만들기</Button>}
+        />
+      ) : null}
 
       <section className="discovery-create-banner">
         <div>
