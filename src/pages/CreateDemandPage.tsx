@@ -99,13 +99,14 @@ export function CreateDemandPage() {
   const [params] = useSearchParams();
   const draft = loadCreateDraft();
   const paramType = parseType(params.get("type"));
+  const paramQuery = params.get("q")?.trim() ?? "";
 
   const [type, setType] = useState<DemandType | null>(
     paramType ?? draft?.type ?? null,
   );
   const [title, setTitle] = useState(draft?.title ?? "");
   const [productId, setProductId] = useState(draft?.productId ?? "");
-  const [productQuery, setProductQuery] = useState(draft?.productQuery ?? "");
+  const [productQuery, setProductQuery] = useState(paramQuery || draft?.productQuery || "");
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [maxPrice, setMaxPrice] = useState(
     draft?.maxPrice && draft.maxPrice !== "1000000" ? draft.maxPrice : "",
@@ -162,7 +163,8 @@ export function CreateDemandPage() {
 
   useEffect(() => {
     if (paramType) setType(paramType);
-  }, [paramType]);
+    if (paramQuery) setProductQuery(paramQuery);
+  }, [paramQuery, paramType]);
 
   function hasWritableContent() {
     return Boolean(
