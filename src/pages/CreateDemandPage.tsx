@@ -833,12 +833,6 @@ export function CreateDemandPage() {
                         onChange={setBorrowEnd}
                       />
                     </Field>
-                    <Field label={ko.descLabel}>
-                      <TextInput
-                        value={detail}
-                        onChange={(e) => setDetail(e.target.value)}
-                      />
-                    </Field>
                   </>
                 ) : null}
 
