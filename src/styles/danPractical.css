@@ -848,3 +848,73 @@ textarea.dan-input,
   .my-demand-tabs { margin-inline: -14px; padding-inline: 14px !important; }
   .type-segment__btn { padding-inline: 2px !important; }
 }
+
+
+/* Structural refinements added after the global pass */
+.create-page__prompt {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 2px;
+}
+.create-page__kicker {
+  margin: 0;
+  color: var(--dan-accent-text);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .01em;
+}
+.create-page__prompt .section-title {
+  font-size: clamp(21px, 3.2vw, 26px);
+  line-height: 1.25;
+}
+
+.demand-owner-actions {
+  align-items: center;
+  gap: 4px !important;
+}
+.demand-owner-actions .dan-btn {
+  min-height: 40px !important;
+  padding: 8px 13px !important;
+}
+.demand-close-action {
+  color: var(--dan-ink-muted) !important;
+}
+.demand-close-action:hover {
+  color: var(--dan-danger) !important;
+}
+
+.demand-offer-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.demand-offer-summary > div {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.demand-offer-summary__label {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -.035em;
+}
+.demand-offer-summary strong {
+  font-size: 20px;
+  font-weight: 850;
+  color: var(--dan-accent-text);
+}
+.demand-offer-summary .dan-btn {
+  min-height: 40px !important;
+  padding-inline: 14px !important;
+}
+
+@media (max-width: 767px) {
+  .create-page__prompt .section-title {
+    font-size: 22px;
+  }
+  .demand-offer-summary__label,
+  .demand-offer-summary strong {
+    font-size: 19px;
+  }
+}
