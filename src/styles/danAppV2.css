@@ -1362,3 +1362,15 @@ textarea.dan-input,
   padding-top:22px;
   border-top:7px solid var(--v2-subtle);
 }
+
+
+.edit-request-heading {
+  display: grid;
+  gap: 4px;
+  padding-bottom: 4px;
+}
+.edit-request-heading > span {
+  color: var(--v2-purple);
+  font-size: 12px;
+  font-weight: 800;
+}
