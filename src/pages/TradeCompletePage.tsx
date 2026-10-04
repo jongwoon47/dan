@@ -59,7 +59,7 @@ export function TradeCompletePage() {
       <section className="trade-complete-hero">
         <span className="trade-complete-check" aria-hidden>✓</span>
         <h1>거래가 완료됐어요</h1>
-        <p>양쪽의 인계 확인이 끝났고 거래 결과가 거래 이력에 기록됐어요.</p>
+        <p>거래가 안전하게 마무리됐어요. 내 거래에서 언제든 다시 확인할 수 있어요.</p>
       </section>
 
       <section className="trade-complete-product">
@@ -102,10 +102,10 @@ export function TradeCompletePage() {
       </section>
 
       <Button to={"/profile/" + peerId} fullWidth variant="secondary">
-        상대 거래 이력 보기
+        상대 프로필
       </Button>
-      <Button to={"/profile/" + currentUser.id} fullWidth>
-        내 거래 이력 보기
+      <Button to="/my?tab=completed" fullWidth>
+        거래 내역 보기
       </Button>
       <Button to="/" fullWidth variant="ghost">
         홈으로
