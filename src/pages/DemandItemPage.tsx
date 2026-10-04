@@ -334,7 +334,7 @@ export function DemandItemPage() {
 
       {!isOwner && demandOpen && demand.type === "BUY" ? (
         <div className="section-stack">
-          <p className="section-desc">{ko.haveItBody}</p>
+          <p className="section-desc">이 요청에 맞는 물건이 있다면 가격과 조건을 제안할 수 있어요.</p>
           <Button to={`/demand/${demand.details.productId}`} fullWidth size="lg">
             {ko.haveIt}
           </Button>
@@ -481,9 +481,9 @@ export function DemandItemPage() {
                 </Button>
               </div>
               {buyOfferCount === 0 ? (
-                <p className="section-desc">판매 제안이 도착하면 여기에서 바로 확인할 수 있어요.</p>
+                <p className="section-desc">제안이 도착하면 여기에서 바로 비교할 수 있어요.</p>
               ) : (
-                <p className="section-desc">가격과 상태를 비교한 뒤 관심 있는 제안을 선택하세요.</p>
+                <p className="section-desc">가격과 조건을 비교하고 거래할 제안을 선택하세요.</p>
               )}
             </>
           ) : (
