@@ -288,7 +288,8 @@ export function DemandFeedPage() {
         </section>
       ) : null}
 
-      {showBuyRequests ? (      {filtered.length === 0 && !remoteLoading ? (
+      {showBuyRequests ? (
+        filtered.length === 0 && !remoteLoading ? (
         <EmptyState
           title={
             query.trim()
@@ -331,8 +332,7 @@ export function DemandFeedPage() {
             </Button>
           ) : null}
         </>
-      )}
-
+      )
       ) : directRequests.length === 0 ? (
         <EmptyState
           title="조건에 맞는 요청이 없어요"
