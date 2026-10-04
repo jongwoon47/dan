@@ -3,11 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Field, TextInput } from "@/components/ui/Input";
-import { ProductVisual } from "@/components/ProductVisual";
+import { TradeFlowHeader } from "@/components/TradeFlowHeader";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
 import type { DealEvidence, DealEvidenceChallenge, Product } from "@/domain/types";
-import { formatWon } from "@/lib/format";
 import "./pages.css";
 
 function componentOptionsFor(product: Product): string[] {
@@ -76,7 +75,7 @@ export function DealEvidencePage() {
   const [photoError, setPhotoError] = useState("");
   const [submitError, setSubmitError] = useState("");
 
-  useDeepHeader({ title: isSeller ? "판매자 증거 제출" : "판매자 증거" });
+  useDeepHeader({ title: isSeller ? "상품 정보 등록" : "상품 정보 확인" });
 
   useEffect(() => {
     if (!isSeller) {
@@ -159,7 +158,7 @@ export function DealEvidencePage() {
     return (
       <EmptyState
         title="먼저 구매자와 연결해 주세요"
-        body="관심이 확인됐다면 먼저 연결해 대화하세요. 실제 거래를 계속할 때 이 단계에서 증거를 제출합니다."
+        body="관심이 확인됐다면 먼저 연결해 대화하세요. 실제 거래를 계속할 때 이 단계에서 상품 정보를 등록합니다."
         action={<Button to="/my?tab=selling">판매 제안으로 돌아가기</Button>}
       />
     );
@@ -228,7 +227,7 @@ export function DealEvidencePage() {
       evidenceMeta: { source: "seller_submitted", productCategory: activeProduct.category },
     });
     if (!row) {
-      setSubmitError("증거를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      setSubmitError("상품 정보를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
       return;
     }
     navigate(`/deal/${activeMatch.id}/snapshot`);
@@ -236,18 +235,16 @@ export function DealEvidencePage() {
 
   return (
     <div className="page-stack page-narrow deal-page">
-      <section className="deal-product-card">
-        <ProductVisual product={product} size="sm" />
-        <div>
-          <p className="eyebrow">Quick Offer</p>
-          <h1 className="page-title">{product.name}</h1>
-          <strong className="deal-price">{formatWon(sell.minimumPrice)}</strong>
-        </div>
-      </section>
+      <TradeFlowHeader
+        product={product}
+        price={sell.minimumPrice}
+        step="info"
+        eyebrow="상품 정보 확인"
+      />
 
       <section className="trust-explainer">
         <strong>판매자가 제출한 정보예요</strong>
-        <p>DAN이 제품 상태나 정품 여부를 보증하지 않습니다. 거래 당시 무엇을 주장했고 어떤 증거를 냈는지 기록합니다.</p>
+        <p>판매자가 입력한 상품 정보예요. 실제 물품과 같은지 거래 전에 직접 확인하세요.</p>
       </section>
 
       {!isSeller && existing ? (
@@ -263,8 +260,8 @@ export function DealEvidencePage() {
         <section className="verification-gate">
           <strong>실거래 전 판매자 검증이 필요해요</strong>
           <p>
-            Quick Offer는 검증 없이도 보낼 수 있지만 Deal로 들어가려면
-            휴대폰·본인·정산계좌 검증이 모두 완료되어야 합니다.
+            제안은 먼저 보낼 수 있지만 실제 거래를 진행하려면
+            휴대폰·본인·정산계좌 확인이 모두 완료되어야 해요.
           </p>
         </section>
       ) : null}
@@ -365,7 +362,7 @@ export function DealEvidencePage() {
 
           <div className="evidence-form-divider">
             <span>3</span>
-            <div><strong>구성품 · 상태 · 추가 정보</strong><small>Deal Snapshot에 그대로 기록될 내용이에요.</small></div>
+            <div><strong>구성품 · 상태 · 추가 정보</strong><small>거래 조건 확인 화면에 그대로 표시될 내용이에요.</small></div>
           </div>
 
           <div>
@@ -399,7 +396,7 @@ export function DealEvidencePage() {
 
           {submitError ? <p className="form-error">{submitError}</p> : null}
           <Button fullWidth size="lg" disabled={!canSubmit || busy} onClick={() => void submit()}>
-            {busy ? "저장 중…" : "증거 제출하기"}
+            {busy ? "저장 중…" : "상품 정보 등록하기"}
           </Button>
         </section>
       ) : null}

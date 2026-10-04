@@ -120,7 +120,7 @@ export function MatchCard({ match }: { match: Match }) {
             </div>
 
             <Link to={`/profile/${match.sellerId}`} className="received-offer-card__trust">
-              판매자 Trust History 보기
+              판매자 거래 이력 보기
             </Link>
           </div>
         </div>
@@ -176,12 +176,12 @@ export function MatchCard({ match }: { match: Match }) {
               {match.status === "COMPLETED"
                 ? ko.tradeDoneTitle
                 : match.dealStage === "EVIDENCE_READY" || match.dealStage === "DEAL_REVIEW" || match.dealStage === "DEAL_LOCKED"
-                  ? "판매자 증거가 준비됐어요. 대화하면서 거래 조건을 확인하세요."
-                  : "연결됐어요. 먼저 대화하고, 거래를 진행할 때 판매자 증거를 제출하세요."}
+                  ? "상품 정보가 준비됐어요. 대화하면서 거래 조건을 확인하세요."
+                  : "연결됐어요. 먼저 대화하고, 거래를 진행할 때 상품 정보를 등록하세요."}
             </p>
             <Button to={`/match/${match.id}`} fullWidth>{ko.openChat}</Button>
             {match.status === "CONNECTED" && isSeller && match.dealStage !== "EVIDENCE_READY" && match.dealStage !== "DEAL_REVIEW" && match.dealStage !== "DEAL_LOCKED" ? (
-              <Button to={`/deal/${match.id}/evidence`} fullWidth variant="secondary">판매자 증거 제출</Button>
+              <Button to={`/deal/${match.id}/evidence`} fullWidth variant="secondary">상품 정보 등록</Button>
             ) : null}
             {match.status === "CONNECTED" && (match.dealStage === "EVIDENCE_READY" || match.dealStage === "DEAL_REVIEW" || match.dealStage === "DEAL_LOCKED") ? (
               <Button to={`/deal/${match.id}/snapshot`} fullWidth variant="secondary">거래 조건 확인</Button>

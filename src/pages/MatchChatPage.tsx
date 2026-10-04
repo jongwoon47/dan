@@ -370,7 +370,7 @@ export function MatchChatPage() {
         <div className="chat-deal-progress" aria-label="거래 진행 단계">
           <span className={buyEvidenceReady ? "is-done" : "is-current"}>
             <i aria-hidden>{buyEvidenceReady ? "✓" : "1"}</i>
-            <b>증거</b>
+            <b>상품</b>
           </span>
           <em aria-hidden />
           <span className={buySnapshotLocked ? "is-done" : buyEvidenceReady ? "is-current" : ""}>
@@ -438,13 +438,13 @@ export function MatchChatPage() {
           <>
             <p className="trade-status__state">연결됐어요 · 먼저 대화해 보세요</p>
             <p className="trade-status__hint">
-              거래를 계속 진행하기로 했다면 판매자가 촬영 코드와 상세 상태 증거를 제출합니다.
-              증거가 준비되기 전에는 거래 조건을 잠그거나 결제할 수 없어요.
+              거래를 계속 진행하기로 했다면 판매자가 현재 상품 정보와 상태를 등록해요.
+              상품 정보가 준비되기 전에는 거래 조건을 확정하거나 결제할 수 없어요.
             </p>
             <div className="trade-status__actions">
               {isSeller ? (
                 <Button to={`/deal/${match.id}/evidence`} fullWidth>
-                  판매자 증거 제출
+                  상품 정보 등록
                 </Button>
               ) : (
                 <Button to={`/offer/${match.id}`} fullWidth variant="secondary">
@@ -463,16 +463,16 @@ export function MatchChatPage() {
           </>
         ) : isBuyTrade && !buySnapshotLocked ? (
           <>
-            <p className="trade-status__state">판매자 증거가 준비됐어요</p>
+            <p className="trade-status__state">상품 정보가 준비됐어요</p>
             <p className="trade-status__hint">
-              제출된 상태와 가격을 확인하고 양쪽이 같은 Deal Snapshot을 확정하세요.
+              제출된 상품 상태와 가격을 확인하고 양쪽이 같은 거래 조건을 확정하세요.
             </p>
             <div className="trade-status__actions">
               <Button to={`/deal/${match.id}/snapshot`} fullWidth>
                 거래 조건 확인
               </Button>
               <Button to={`/deal/${match.id}/evidence`} fullWidth variant="secondary">
-                판매자 증거 보기
+                상품 정보 보기
               </Button>
               <Button
                 fullWidth
@@ -488,7 +488,7 @@ export function MatchChatPage() {
           <>
             <p className="trade-status__state">안전결제 연결 전 단계예요</p>
             <p className="trade-status__hint">
-              Deal Snapshot은 확정됐습니다. PG 안전결제가 실제 연동되기 전에는 이 화면에서 실거래 완료 처리를 허용하지 않습니다.
+              거래 조건이 확정됐어요. 결제가 확인되기 전에는 인계 단계로 넘어가지 않아요.
             </p>
             <div className="trade-status__actions">
               <Button to={`/deal/${match.id}/payment`} fullWidth>
@@ -511,7 +511,7 @@ export function MatchChatPage() {
           <>
             <p className="trade-status__state">물품 인계 확인 단계예요</p>
             <p className="trade-status__hint">
-              거래 완료는 채팅이 아니라 잠긴 Deal Snapshot과 실제 물품을 다시 확인하는 화면에서 진행합니다.
+              실제 물품이 확정한 거래 조건과 같은지 확인한 뒤 인계를 완료하세요.
             </p>
             <div className="trade-status__actions">
               <Button to={`/deal/${match.id}/handoff`} fullWidth>

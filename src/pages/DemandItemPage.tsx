@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { MatchList } from "@/components/MatchCard";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
@@ -87,7 +88,7 @@ export function DemandItemPage() {
     [state.responses, demandId],
   );
 
-  const buyOfferCount = useMemo(
+  const buyOfferMatches = useMemo(
     () =>
       state.matches.filter(
         (match) =>
@@ -95,9 +96,10 @@ export function DemandItemPage() {
           Boolean(match.sellIntentId) &&
           match.status !== "DECLINED" &&
           match.status !== "CLOSED",
-      ).length,
+      ),
     [state.matches, demandId],
   );
+  const buyOfferCount = buyOfferMatches.length;
 
   const isOwner = currentUser?.id === demand?.userId;
   const viewStatus = demand ? effectiveDemandStatus(demand) : "CLOSED";
@@ -334,7 +336,7 @@ export function DemandItemPage() {
 
       {!isOwner && demandOpen && demand.type === "BUY" ? (
         <div className="section-stack">
-          <p className="section-desc">{ko.haveItBody}</p>
+          <p className="section-desc">이 요청에 맞는 물건이 있다면 가격과 조건을 제안할 수 있어요.</p>
           <Button to={`/demand/${demand.details.productId}`} fullWidth size="lg">
             {ko.haveIt}
           </Button>
@@ -473,17 +475,14 @@ export function DemandItemPage() {
                   <span className="demand-offer-summary__label">받은 제안</span>
                   <strong>{buyOfferCount}</strong>
                 </div>
-                <Button
-                  to={`/my?tab=offers&demand=${demand.id}`}
-                  variant="secondary"
-                >
-                  제안 보기
-                </Button>
               </div>
               {buyOfferCount === 0 ? (
-                <p className="section-desc">판매 제안이 도착하면 여기에서 바로 확인할 수 있어요.</p>
+                <p className="section-desc">제안이 도착하면 여기에서 바로 비교할 수 있어요.</p>
               ) : (
-                <p className="section-desc">가격과 상태를 비교한 뒤 관심 있는 제안을 선택하세요.</p>
+                <>
+                  <p className="section-desc">가격과 조건을 비교하고 거래할 사람을 선택하세요.</p>
+                  <MatchList matches={buyOfferMatches} emptyWhenZero={false} />
+                </>
               )}
             </>
           ) : (
