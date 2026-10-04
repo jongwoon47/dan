@@ -128,8 +128,8 @@ export function OfferDetailPage() {
         </div>
         <div className="offer-seller-card__facts">
           <div><strong>{sellerProfile?.completedDemandCount ?? 0}</strong><span>거래 완료</span></div>
-          <div><strong>{sellerProfile?.sellerFaultCancellationCount ?? 0}</strong><span>판매자 귀책 취소</span></div>
-          <div><strong>{sellerProfile?.unresolvedDisputeCount ?? 0}</strong><span>미해결 분쟁</span></div>
+          <div><strong>{sellerProfile?.sellerFaultCancellationCount ?? 0}</strong><span>취소</span></div>
+          <div><strong>{sellerProfile?.unresolvedDisputeCount ?? 0}</strong><span>분쟁</span></div>
         </div>
         <Button to={"/profile/" + match.sellerId} variant="ghost" fullWidth>
           거래 이력 보기
@@ -138,19 +138,19 @@ export function OfferDetailPage() {
 
       {match.status === "POTENTIAL" ? (
         <Button fullWidth size="lg" disabled={busy} onClick={() => void interest()}>
-          {busy ? "처리 중…" : "관심 있어요"}
+          {busy ? "처리 중…" : "이 제안 선택하기"}
         </Button>
       ) : match.status === "BUYER_INTERESTED" ? (
         <section className="offer-next-state">
-          <strong>판매자에게 관심을 보냈어요</strong>
-          <p>판매자가 수락하면 채팅할 수 있어요. 상세 증거는 거래를 이어갈 때 확인해요.</p>
+          <strong>제안을 선택했어요</strong>
+          <p>상대가 수락하면 채팅이 열려요. 거래를 이어갈 때 상품 정보를 확인합니다.</p>
           <Button to="/my?tab=offers" variant="secondary" fullWidth>받은 제안으로 돌아가기</Button>
         </section>
       ) : match.status === "CONNECTED" ? (
         <section className="offer-next-state">
           <strong>판매자와 연결됐어요</strong>
           <p>
-            먼저 채팅으로 거래 의사를 확인하세요. 상세 증거가 올라오면 최종 조건을 확인할 수 있어요.
+            먼저 채팅으로 거래 의사를 확인하세요. 상품 정보가 올라오면 거래 조건을 확인할 수 있어요.
           </p>
           <Button to={"/match/" + match.id} fullWidth size="lg">
             채팅 시작하기
@@ -159,7 +159,7 @@ export function OfferDetailPage() {
           match.dealStage === "DEAL_REVIEW" ||
           match.dealStage === "DEAL_LOCKED" ? (
             <Button to={"/deal/" + match.id + "/evidence"} fullWidth variant="secondary">
-              판매자 증거 확인
+              상품 정보 확인
             </Button>
           ) : null}
         </section>
