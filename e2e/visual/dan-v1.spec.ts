@@ -278,9 +278,8 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
   await installTradeFixture(page, "handoff");
   await page.goto("/deal/visual-match-x100vi/handoff");
   await settle(page);
-  await expect(page.getByText("거래조건 확정")).toBeVisible();
-  await expect(page.getByText("구매자 안전결제")).toBeVisible();
-  await expect(page.getByText("직거래 · 인계 확인")).toBeVisible();
+  await expect(page.locator(".trade-flow-header__steps").getByText("인계")).toBeVisible();
+  await expect(page.getByText("확정한 조건과 실제 물품이 같은지 확인한 뒤 인계를 완료하세요.")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "09-direct-handoff.png"), fullPage: true });
 
@@ -288,14 +287,14 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
   await page.goto("/deal/visual-match-x100vi/complete");
   await settle(page);
   await expect(page.getByRole("heading", { name: "거래가 완료됐어요" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "내 거래 이력 보기" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "거래 내역 보기" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "10-trade-complete.png"), fullPage: true });
 
   await page.goto("/profile/user-you");
   await settle(page);
-  await expect(page.getByText("거래 신뢰 기록")).toBeVisible();
-  await expect(page.getByText("사실 기반 거래 기록")).toBeVisible();
+  await expect(page.getByText("거래 신뢰")).toBeVisible();
+  await expect(page.getByText("완료 거래")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "11-trust-history.png"), fullPage: true });
 
@@ -352,19 +351,19 @@ test("open catalog accepts a product that is not pre-seeded", async ({ page }, t
   const outDir = path.join("qa-screenshots", "dan-v1", testInfo.project.name);
   mkdirSync(outDir, { recursive: true });
 
-  await page.goto("/buy/new");
+  await page.goto("/create?type=BUY");
   await settle(page);
 
   await page.getByLabel("찾는 제품").fill("Herman Miller Embody Chair");
-  await page.getByLabel("최대 구매 희망가").fill("1800000");
+  await page.getByLabel("희망 가격 (최대)").fill("1800000");
   await page.getByRole("button", { name: "다음" }).click();
   await expect(page.getByText("2. 어디서 · 언제")).toBeVisible();
   await page.getByRole("button", { name: /요청/ }).last().click();
   await settle(page);
 
-  await expect(page).toHaveURL(/\/my/);
+  await expect(page).toHaveURL(/\/demand\/item\//);
   await expect(page.getByText("Herman Miller Embody Chair")).toBeVisible();
-  await expect(page.getByText("최대 1,800,000원")).toBeVisible();
+  await expect(page.getByText("1,800,000원")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({
     path: path.join(outDir, "13-open-catalog-custom-demand.png"),
