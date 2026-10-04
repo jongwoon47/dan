@@ -102,10 +102,10 @@ export function TradeCompletePage() {
       </section>
 
       <Button to={"/profile/" + peerId} fullWidth variant="secondary">
-        상대 거래 이력 보기
+        상대 프로필 보기
       </Button>
       <Button to={"/profile/" + currentUser.id} fullWidth>
-        내 거래 이력 보기
+        거래 내역 보기
       </Button>
       <Button to="/" fullWidth variant="ghost">
         홈으로
