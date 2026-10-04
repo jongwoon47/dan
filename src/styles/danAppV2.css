@@ -631,3 +631,115 @@ textarea.dan-input,
     background: #fcfbff;
   }
 }
+
+
+/* Unified explore */
+.explore-type-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 0;
+  scrollbar-width: none;
+}
+.explore-type-tabs::-webkit-scrollbar { display: none; }
+.explore-type-tabs button {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 7px 13px;
+  border: 1px solid var(--v2-line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--v2-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+.explore-type-tabs button.is-active {
+  border-color: transparent;
+  background: var(--v2-purple-soft);
+  color: #4f39d7;
+}
+.explore-results {
+  display: grid;
+  gap: 28px;
+}
+.explore-request-section,
+.explore-buy-section {
+  display: grid;
+  gap: 10px;
+}
+.explore-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.explore-section-head h2 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: -.03em;
+}
+.explore-section-head span {
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+.explore-request-list {
+  border-top: 1px solid var(--v2-line);
+}
+.explore-request-row {
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) 18px;
+  align-items: center;
+  gap: 12px;
+  min-height: 82px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--v2-line);
+  color: var(--v2-ink);
+  text-decoration: none;
+}
+.explore-request-row__type {
+  align-self: start;
+  margin-top: 2px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--v2-surface-subtle);
+  color: var(--v2-muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+.explore-request-row__type--borrow { background: #f1f5ff; color: #5069aa; }
+.explore-request-row__type--task { background: #fff6e8; color: #9a6418; }
+.explore-request-row__type--service { background: #eef8f3; color: #337b5d; }
+.explore-request-row__body {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.explore-request-row__body strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+}
+.explore-request-row__body > span {
+  color: #51525a;
+  font-size: 13px;
+}
+.explore-request-row__body small {
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+.explore-request-row__chevron {
+  color: #aaaab3;
+  font-size: 20px;
+}
+@media (min-width: 1024px) {
+  .explore-results {
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+    align-items: start;
+    gap: 34px;
+  }
+  .explore-request-section:only-child,
+  .explore-buy-section:only-child {
+    grid-column: 1 / -1;
+  }
+}
