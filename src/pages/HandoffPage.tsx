@@ -183,27 +183,6 @@ export function HandoffPage() {
         <p>확정한 조건을 기준으로 결제하고, 물품을 인계받을 때 실제 상태를 다시 확인해요.</p>
       </section>
 
-      <section className="trade-progress-card" aria-label="거래 진행 단계">
-        <div className="trade-progress-row is-done">
-          <span className="trade-progress-icon">✓</span>
-          <div><strong>거래 조건</strong><small>양쪽 확인 완료</small></div>
-        </div>
-        <div className={match.paymentStatus === "PAID" ? "trade-progress-row is-done" : "trade-progress-row is-current"}>
-          <span className="trade-progress-icon">{match.paymentStatus === "PAID" ? "✓" : "2"}</span>
-          <div>
-            <strong>구매자 안전결제</strong>
-            <small>{match.paymentStatus === "PAID" ? "결제 완료" : "결제 대기 중"}</small>
-          </div>
-        </div>
-        <div className={match.status === "COMPLETED" ? "trade-progress-row is-done" : match.paymentStatus === "PAID" ? "trade-progress-row is-current" : "trade-progress-row"}>
-          <span className="trade-progress-icon">{match.status === "COMPLETED" ? "✓" : "3"}</span>
-          <div>
-            <strong>{handoffLabel}</strong>
-            <small>{match.status === "COMPLETED" ? "거래 완료" : match.paymentStatus === "PAID" ? "채팅에서 인계 방법을 조율하세요" : "결제 완료 후 진행"}</small>
-          </div>
-        </div>
-      </section>
-
       <section className="deal-snapshot-card">
         {facts.map(([label, value]) => (
           <div className="snapshot-section" key={label}>
@@ -224,10 +203,10 @@ export function HandoffPage() {
           <span className="safe-payment-placeholder__icon">✓</span>
           <div>
             <strong>거래가 완료됐어요</strong>
-            <p>양쪽의 확인이 끝났습니다. 거래 결과는 Trust History에 사실 기록으로 남아요.</p>
+            <p>양쪽의 확인이 끝났습니다. 거래 결과는 거래 이력에 기록돼요.</p>
           </div>
-          <Button to={`/profile/${currentUser.id}`} variant="secondary" fullWidth>
-            내 Trust History 보기
+          <Button to="/my?tab=completed" variant="secondary" fullWidth>
+            내 거래 이력 보기
           </Button>
         </section>
       ) : (
