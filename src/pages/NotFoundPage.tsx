@@ -11,7 +11,12 @@ export function NotFoundPage() {
       <EmptyState
         title="페이지를 찾을 수 없어요"
         body="주소가 잘못됐거나 더 이상 사용할 수 없는 화면이에요."
-        action={<Button to="/">홈으로</Button>}
+        action={
+          <div className="action-row">
+            <Button to="/">홈으로</Button>
+            <Button to="/feed" variant="secondary">탐색하기</Button>
+          </div>
+        }
       />
     </div>
   );
