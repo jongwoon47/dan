@@ -108,7 +108,7 @@ describe("store mutations / login race", () => {
     ).toBeUndefined();
   });
 
-  it("buyer interest materializes, then seller can connect", async () => {
+  it("buyer interest connects before evidence, then evidence unlocks deal review", async () => {
     const { result } = renderHook(() => useDan(), { wrapper });
 
     act(() => {
@@ -142,13 +142,185 @@ describe("store mutations / login race", () => {
     act(() => {
       result.current.login("user-jun");
     });
+
     await act(async () => {
       await result.current.connectAsSeller(interested!.id);
     });
-
     expect(
       result.current.state.matches.find((m) => m.id === interested!.id)?.status,
     ).toBe("CONNECTED");
+    expect(
+      result.current.state.matches.find((m) => m.id === interested!.id)?.dealStage,
+    ).toBe("EVIDENCE_PENDING");
+
+    let challengeCode = "";
+    await act(async () => {
+      const challenge = await result.current.issueDealEvidenceChallenge(interested!.id);
+      expect(challenge?.challengeCode).toHaveLength(6);
+      challengeCode = challenge!.challengeCode;
+    });
+
+    await act(async () => {
+      const evidence = await result.current.upsertDealEvidence({
+        matchId: interested!.id,
+        challengeCode,
+        possessionPhotoUrl: "data:image/png;base64,AA==",
+        serialLast4: "3812",
+        cosmeticNotes: "상태 좋음",
+        knownIssues: "없음",
+      });
+      expect(evidence).toBeTruthy();
+    });
+
+    expect(
+      result.current.state.matches.find((m) => m.id === interested!.id)?.dealStage,
+    ).toBe("EVIDENCE_READY");
+  });
+
+
+  it("locks a BUY Deal Snapshot only after seller evidence and both confirmations", async () => {
+    const { result } = renderHook(() => useDan(), { wrapper });
+
+    act(() => {
+      result.current.resetDemo();
+    });
+    act(() => {
+      result.current.login("user-you");
+    });
+    await act(async () => {
+      await result.current.createDemand({
+        type: "BUY",
+        title: "Sony A7 IV",
+        productId: "prod-sony-a7iv",
+        maxPrice: 2_500_000,
+        conditionPreference: "any",
+        fulfillmentOptions: [
+          { mode: "MEETUP", place: { publicLabel: "서울" } },
+        ],
+      });
+    });
+
+    const potential = result.current.myMatches.find(
+      (m) =>
+        m.status === "POTENTIAL" &&
+        m.buyerId === "user-you" &&
+        m.productId === "prod-sony-a7iv",
+    );
+    expect(potential).toBeTruthy();
+
+    await act(async () => {
+      await result.current.expressBuyerInterest(potential!.id);
+    });
+
+    const interested = result.current.state.matches.find(
+      (m) => m.buyerId === "user-you" && m.status === "BUYER_INTERESTED",
+    );
+    expect(interested).toBeTruthy();
+
+    act(() => {
+      result.current.login("user-jun");
+    });
+
+    let challengeCode = "";
+    await act(async () => {
+      const challenge = await result.current.issueDealEvidenceChallenge(interested!.id);
+      expect(challenge?.challengeCode).toHaveLength(6);
+      challengeCode = challenge!.challengeCode;
+    });
+
+    await act(async () => {
+      const evidence = await result.current.upsertDealEvidence({
+        matchId: interested!.id,
+        challengeCode,
+        possessionPhotoUrl: "data:image/png;base64,AA==",
+        serialLast4: "3812",
+        usageCount: 2417,
+        components: ["정품 배터리"],
+        cosmeticNotes: "상단 미세스크래치 1곳",
+        knownIssues: "없음",
+      });
+      expect(evidence?.matchId).toBe(interested!.id);
+      expect(evidence?.evidenceMeta.challengeCode).toBe(challengeCode);
+    });
+
+    await act(async () => {
+      await result.current.connectAsSeller(interested!.id);
+    });
+    expect(
+      result.current.state.matches.find((m) => m.id === interested!.id)?.status,
+    ).toBe("CONNECTED");
+
+    const payload = {
+      product: { id: "prod-sony-a7iv", name: "Sony A7 IV" },
+      evidence: {
+        serialLast4: "3812",
+        usageCount: 2417,
+        cosmeticNotes: "상단 미세스크래치 1곳",
+        knownIssues: "없음",
+      },
+      handoff: { method: "서울 · 직거래" },
+    };
+
+    await act(async () => {
+      const sellerSnapshot = await result.current.confirmDealSnapshot({
+        matchId: interested!.id,
+        agreedPrice: 2_200_000,
+        snapshot: payload,
+      });
+      expect(sellerSnapshot?.sellerConfirmedAt).toBeTruthy();
+      expect(sellerSnapshot?.lockedAt).toBeUndefined();
+    });
+
+    act(() => {
+      result.current.login("user-you");
+    });
+
+    await act(async () => {
+      const locked = await result.current.confirmDealSnapshot({
+        matchId: interested!.id,
+        agreedPrice: 2_200_000,
+        snapshot: payload,
+      });
+      expect(locked?.buyerConfirmedAt).toBeTruthy();
+      expect(locked?.sellerConfirmedAt).toBeTruthy();
+      expect(locked?.lockedAt).toBeTruthy();
+    });
+
+    expect(
+      result.current.state.matches.find((m) => m.id === interested!.id)?.dealStage,
+    ).toBe("PAYMENT_PENDING");
+    expect(
+      result.current.state.matches.find((m) => m.id === interested!.id)?.paymentDueAt,
+    ).toBeTruthy();
+
+    // Locked terms alone are not enough: BUY completion is payment-gated.
+    await act(async () => {
+      const blocked = await result.current.confirmMatchCompletion(interested!.id);
+      expect(blocked?.status).toBe("CONNECTED");
+      expect(blocked?.buyerCompletedAt).toBeUndefined();
+    });
+
+    await act(async () => {
+      expect(await result.current.simulateSafePaymentDemo(interested!.id)).toBe(true);
+    });
+    expect(
+      result.current.state.matches.find((m) => m.id === interested!.id)?.paymentStatus,
+    ).toBe("PAID");
+
+    await act(async () => {
+      const buyerChecked = await result.current.confirmMatchCompletion(interested!.id);
+      expect(buyerChecked?.buyerCompletedAt).toBeTruthy();
+      expect(buyerChecked?.status).toBe("CONNECTED");
+    });
+
+    act(() => {
+      result.current.login("user-jun");
+    });
+    await act(async () => {
+      const completed = await result.current.confirmMatchCompletion(interested!.id);
+      expect(completed?.status).toBe("COMPLETED");
+      expect(completed?.dealStage).toBe("COMPLETED");
+    });
   });
 
   it("accepting one TASK response connects once and declines the other", async () => {

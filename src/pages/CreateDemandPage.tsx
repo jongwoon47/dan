@@ -23,7 +23,6 @@ import {
 } from "@/lib/createDraft";
 import { fromDatetimeLocalValue, isBorrowRangeValid, isDatetimeLocalNotPast } from "@/lib/datetime";
 import {
-  budgetLabelForType,
   digitsOnly,
   formatDigitsGrouped,
   formatPriceThought,
@@ -39,6 +38,12 @@ import "./pages.css";
 import "@/components/feedCards.css";
 
 const TYPES: DemandType[] = ["BUY", "BORROW", "TASK", "SERVICE"];
+const TYPE_HELP: Record<DemandType, string> = {
+  BUY: "사고 싶은 물건이 있어요",
+  BORROW: "잠깐 빌리고 싶어요",
+  TASK: "대신 해줬으면 하는 일이 있어요",
+  SERVICE: "전문가의 도움이 필요해요",
+};
 const CONDITIONS: ConditionPreference[] = ["sealed", "like_new", "lightly_used", "any"];
 
 type TaskMode = "onsite" | "pickup" | "route" | "remote";
@@ -93,13 +98,14 @@ export function CreateDemandPage() {
   const [params] = useSearchParams();
   const draft = loadCreateDraft();
   const paramType = parseType(params.get("type"));
+  const paramQuery = params.get("q")?.trim() ?? "";
 
   const [type, setType] = useState<DemandType | null>(
     paramType ?? draft?.type ?? null,
   );
   const [title, setTitle] = useState(draft?.title ?? "");
   const [productId, setProductId] = useState(draft?.productId ?? "");
-  const [productQuery, setProductQuery] = useState(draft?.productQuery ?? "");
+  const [productQuery, setProductQuery] = useState(paramQuery || draft?.productQuery || "");
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [maxPrice, setMaxPrice] = useState(
     draft?.maxPrice && draft.maxPrice !== "1000000" ? draft.maxPrice : "",
@@ -156,7 +162,8 @@ export function CreateDemandPage() {
 
   useEffect(() => {
     if (paramType) setType(paramType);
-  }, [paramType]);
+    if (paramQuery) setProductQuery(paramQuery);
+  }, [paramQuery, paramType]);
 
   function hasWritableContent() {
     return Boolean(
@@ -202,6 +209,39 @@ export function CreateDemandPage() {
     setServicePlaceNote("");
     setServiceGeoPlace(null);
     setGeoError(null);
+  }
+
+  function clearTypeAndContent() {
+    if (hasWritableContent() && !window.confirm(ko.typeSwitchConfirm)) return;
+    setType(null);
+    setPhase(1);
+    setScheduleTouched(false);
+    setFormError(null);
+    setTitle("");
+    setDetail("");
+    setItemName("");
+    setProductQuery("");
+    setProductId("");
+    setSuggestOpen(false);
+    setMaxPrice("");
+    setBudget("");
+    setEstimatedDuration("");
+    setServicePlaceNote("");
+    setServiceGeoPlace(null);
+    setGeoError(null);
+  }
+
+  function phase1Title(demandType: DemandType) {
+    switch (demandType) {
+      case "BUY":
+        return "어떤 물건을 찾고 있나요?";
+      case "BORROW":
+        return "어떤 물건을 빌리고 싶나요?";
+      case "TASK":
+        return "어떤 일을 부탁하고 싶나요?";
+      case "SERVICE":
+        return "어떤 도움이 필요하세요?";
+    }
   }
 
   function phase2Title(demandType: DemandType) {
@@ -381,9 +421,9 @@ export function CreateDemandPage() {
   const canCore = useMemo(() => {
     if (!type || !Number.isFinite(price) || price <= 0) return false;
     if (type === "BUY") return Boolean(productQuery.trim());
-    if (type === "BORROW") return Boolean(title.trim() || itemName.trim());
+    if (type === "BORROW") return Boolean(itemName.trim());
     if (type === "SERVICE") return Boolean(title.trim());
-    return Boolean(title.trim() || detail.trim());
+    return Boolean(detail.trim());
   }, [type, price, productQuery, title, itemName, detail]);
 
   const canSubmit = useMemo(() => {
@@ -456,8 +496,8 @@ export function CreateDemandPage() {
       if (type === "BORROW") {
         const created = await createDemand({
           type: "BORROW",
-          title: title.trim() || itemName.trim(),
-          itemName: itemName.trim() || title.trim(),
+          title: itemName.trim(),
+          itemName: itemName.trim(),
           budget: price,
           fulfillmentOptions,
           description: detail,
@@ -475,8 +515,8 @@ export function CreateDemandPage() {
       if (type === "TASK") {
         const created = await createDemand({
           type: "TASK",
-          title: title.trim() || detail.trim(),
-          taskDescription: detail.trim() || title.trim(),
+          title: detail.trim().slice(0, 80),
+          taskDescription: detail.trim(),
           budget: price,
           fulfillmentOptions,
           dueAt: fromDatetimeLocalValue(dueAt),
@@ -520,33 +560,47 @@ export function CreateDemandPage() {
   return (
     <div className="page-stack page-narrow create-page">
       <section className="create-page__body section-stack">
-        <h2 className="section-title">
-          {phase === 1
-            ? ko.whatNeeded
-            : type
-              ? phase2Title(type)
-              : ko.phase2Task}
-        </h2>
-
-        <div className="type-segment" role="radiogroup" aria-label="글 유형">
-          {TYPES.map((t) => (
-            <button
-              key={t}
-              type="button"
-              role="radio"
-              aria-checked={type === t}
-              className={type === t ? "type-segment__btn is-selected" : "type-segment__btn"}
-              onClick={() => selectType(t)}
-            >
-              {DEMAND_TYPE_LABEL[t]}
-            </button>
-          ))}
+        <div className="create-page__prompt">
+          <p className="create-page__kicker">
+            {type ? `${phase} / 2` : "요청 유형"}
+          </p>
+          <h2 className="section-title">
+            {!type
+              ? ko.whatNeeded
+              : phase === 1
+                ? phase1Title(type)
+                : phase2Title(type)}
+          </h2>
         </div>
 
         {!type ? (
-          <p className="section-desc">{ko.pickDemandType}</p>
+          <>
+            <div className="request-type-grid" role="radiogroup" aria-label="요청 유형">
+              {TYPES.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  role="radio"
+                  aria-checked={false}
+                  className="request-type-card"
+                  onClick={() => selectType(t)}
+                >
+                  <strong>{DEMAND_TYPE_LABEL[t]}</strong>
+                  <span>{TYPE_HELP[t]}</span>
+                </button>
+              ))}
+            </div>
+            <p className="section-desc">{ko.pickDemandType}</p>
+          </>
         ) : (
           <>
+            <div className="create-type-current">
+              <div>
+                <span>요청 유형</span>
+                <strong>{DEMAND_TYPE_LABEL[type]}</strong>
+              </div>
+              <button type="button" onClick={clearTypeAndContent}>유형 변경</button>
+            </div>
             <div className="create-steps" aria-label="작성 단계">
               <span className={phase === 1 ? "is-active" : ""}>1. {ko.stepWhat}</span>
               <span className={phase === 2 ? "is-active" : ""}>2. {ko.stepWhereWhen}</span>
@@ -554,16 +608,6 @@ export function CreateDemandPage() {
 
             {phase === 1 ? (
               <>
-                {type !== "BUY" && type !== "SERVICE" ? (
-                  <Field label={ko.titleLabel}>
-                    <TextInput
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder={ko.composerPlaceholder}
-                    />
-                  </Field>
-                ) : null}
-
                 {type === "BUY" ? (
                   <>
                     <div
@@ -644,37 +688,46 @@ export function CreateDemandPage() {
 
                 {type === "BORROW" ? (
                   <>
-                    <Field label={ko.itemName}>
+                    <Field label="빌릴 물건">
                       <TextInput
                         value={itemName}
                         onChange={(e) => setItemName(e.target.value)}
-                        placeholder="예: 캠핑 텐트"
+                        placeholder="예: 4인용 캠핑 텐트"
                       />
                     </Field>
                     <MoneyInput
-                      label={budgetLabelForType(type)}
-                      hint={ko.borrowBudgetHint}
+                      label="전체 예산"
+                      hint="빌리는 기간 전체에서 사용할 최대 금액이에요."
                       value={budget}
                       onChange={setBudget}
                       placeholder="예: 30,000"
                       kind="borrow"
                     />
+                    <Field label="추가 조건" hint="선택">
+                      <textarea
+                        className="dan-input dan-textarea"
+                        value={detail}
+                        onChange={(e) => setDetail(e.target.value)}
+                        placeholder="크기, 상태처럼 원하는 조건이 있다면 적어주세요."
+                        rows={3}
+                      />
+                    </Field>
                   </>
                 ) : null}
 
                 {type === "TASK" ? (
                   <>
-                    <Field label={ko.descLabel}>
+                    <Field label="부탁할 일">
                       <textarea
-                        className="dan-input dan-textarea"
+                        className="dan-input dan-textarea request-task-input"
                         value={detail}
                         onChange={(e) => setDetail(e.target.value)}
-                        placeholder="예: 평택역에서 짐 옮겨주세요"
-                        rows={3}
+                        placeholder="예: 평택역에서 캐리어 두 개를 차까지 옮겨주세요"
+                        rows={4}
                       />
                     </Field>
                     <MoneyInput
-                      label={budgetLabelForType(type)}
+                      label="사례금"
                       value={budget}
                       onChange={setBudget}
                       placeholder="예: 20,000"
@@ -778,12 +831,6 @@ export function CreateDemandPage() {
                       <DatetimeLocalInput
                         value={borrowEnd}
                         onChange={setBorrowEnd}
-                      />
-                    </Field>
-                    <Field label={ko.descLabel}>
-                      <TextInput
-                        value={detail}
-                        onChange={(e) => setDetail(e.target.value)}
                       />
                     </Field>
                   </>

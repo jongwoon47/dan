@@ -221,7 +221,15 @@ export function DemandEditPage() {
 
   async function onSave(e: FormEvent) {
     e.preventDefault();
-    if (!title.trim() || price <= 0) {
+    const normalizedTitle =
+      current.type === "BUY"
+        ? current.title
+        : current.type === "BORROW"
+          ? itemName.trim()
+          : current.type === "TASK"
+            ? description.trim().slice(0, 80)
+            : title.trim();
+    if (!normalizedTitle || price <= 0) {
       setError(ko.genericError);
       return;
     }
@@ -289,18 +297,16 @@ export function DemandEditPage() {
 
     const result = await updateDemand({
       demandId: current.id,
-      title: title.trim(),
+      title: normalizedTitle,
       description: description.trim(),
       budget: price,
       fulfillmentOptions: stripGeoFromFulfillmentOptions(fulfillmentOptions),
       expiresAt,
       maxPrice: current.type === "BUY" ? price : undefined,
       itemName:
-        current.type === "BORROW" ? itemName.trim() || title.trim() : undefined,
+        current.type === "BORROW" ? itemName.trim() : undefined,
       taskDescription:
-        current.type === "TASK"
-          ? description.trim() || current.details.taskDescription
-          : undefined,
+        current.type === "TASK" ? description.trim() : undefined,
       serviceDescription:
         current.type === "SERVICE"
           ? description.trim() || current.details.serviceDescription
@@ -333,34 +339,65 @@ export function DemandEditPage() {
   return (
     <div className="page-stack page-narrow">
       <form className="section-stack create-page__body" onSubmit={(e) => void onSave(e)}>
-        <Field label={ko.titleLabel}>
-          <TextInput
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
-        </Field>
+        <div className="edit-request-heading">
+          <span>{current.type === "BUY" ? "구매" : current.type === "BORROW" ? "빌리기" : current.type === "TASK" ? "심부름" : "서비스"}</span>
+          <h1 className="page-title">요청 수정</h1>
+        </div>
 
         {current.type === "BORROW" ? (
-          <Field label={ko.itemName}>
-            <TextInput
-              value={itemName}
-              onChange={(e) => setItemName(e.target.value)}
+          <>
+            <Field label="빌릴 물건">
+              <TextInput
+                value={itemName}
+                onChange={(e) => setItemName(e.target.value)}
+                required
+              />
+            </Field>
+            <Field label="추가 조건" hint="선택">
+              <textarea
+                className="dan-input dan-textarea"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+              />
+            </Field>
+          </>
+        ) : null}
+
+        {current.type === "TASK" ? (
+          <Field label="부탁할 일">
+            <textarea
+              className="dan-input dan-textarea request-task-input"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={4}
+              required
             />
           </Field>
         ) : null}
 
-        {current.type === "TASK" || current.type === "SERVICE" ? (
-          <Field label={ko.descLabel}>
-            <textarea
-              className="dan-input dan-textarea"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-            />
-          </Field>
-        ) : (
-          <Field label={ko.descLabel}>
+        {current.type === "SERVICE" ? (
+          <>
+            <Field label="원하는 서비스">
+              <TextInput
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+              />
+            </Field>
+            <Field label="추가 조건" hint="선택">
+              <textarea
+                className="dan-input dan-textarea"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+              />
+            </Field>
+          </>
+        ) : null}
+
+        {current.type === "BUY" && description.trim() ? (
+          <Field label="추가 조건" hint="선택">
             <textarea
               className="dan-input dan-textarea"
               value={description}
@@ -368,7 +405,7 @@ export function DemandEditPage() {
               rows={2}
             />
           </Field>
-        )}
+        ) : null}
 
         <Field
           label={budgetLabelForType(current.type)}
