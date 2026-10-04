@@ -39,7 +39,7 @@ export function DemandDetailPage() {
   async function shareDemand() {
     if (!product) return;
     const shareData = {
-      title: `${product.name} · DAN Live Demand`,
+      title: `${product.name} · DAN 구매 요청`,
       text: `${aggregate?.seekerCount ?? 0}명이 지금 ${product.name}을 찾고 있어요.`,
       url: window.location.href,
     };
@@ -68,7 +68,7 @@ export function DemandDetailPage() {
         type="button"
         className="deep-header-share"
         onClick={() => void shareDemand()}
-        aria-label="Live Demand 공유"
+        aria-label="구매 요청 공유"
       >
         공유
       </button>
@@ -80,7 +80,7 @@ export function DemandDetailPage() {
       <EmptyState
         title={ko.missingDemand}
         body={ko.detailMissingBody}
-        action={<Button to="/" variant="secondary">Live Demand</Button>}
+        action={<Button to="/feed" variant="secondary">요청 탐색</Button>}
       />
     );
   }
@@ -151,7 +151,7 @@ export function DemandDetailPage() {
           </div>
         ) : (
           <p className="section-desc">
-            현재 개별 공개 구매수요가 없어요. 제품 전체 수요에는 아래에서 바로 판매 제안을 남길 수 있어요.
+            현재 공개된 구매 요청이 없어요. 이 제품을 찾는 사람이 생기면 바로 제안할 수 있어요.
           </p>
         )}
       </section>
