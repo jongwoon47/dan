@@ -94,7 +94,7 @@ export function SafePaymentPage() {
         <section className="payment-methods">
           <div className="payment-section-head">
             <h2>결제 수단</h2>
-            <span>결제 수단</span>
+            <span>안전결제</span>
           </div>
           <button type="button" className={method === "card" ? "payment-method is-selected" : "payment-method"} onClick={() => setMethod("card")}>
             <span>카드 결제</span><strong>{method === "card" ? "✓" : ""}</strong>
@@ -105,16 +105,11 @@ export function SafePaymentPage() {
         </section>
       ) : isBuyer ? (
         <section className="payment-provider-gate">
-          <span className="payment-provider-gate__badge">Production safety gate</span>
-          <h2>실제 결제사는 아직 연결하지 않았어요.</h2>
+          <span className="payment-provider-gate__badge">결제 준비 중</span>
+          <h2>안전결제를 준비하고 있어요.</h2>
           <p>
-            결제사 계약과 서버 webhook 검증이 완료되기 전에는 DAN이 결제 완료 상태를 만들지 않습니다.
+            실제 결제가 열리기 전까지는 금액이 청구되거나 거래가 결제 완료로 처리되지 않아요.
           </p>
-          <ul>
-            <li>클라이언트에서 임의로 PAID 상태 변경 불가</li>
-            <li>확정된 거래 조건 이후에만 결제할 수 있어요.</li>
-            <li>결제사 서버 확인 후에만 인계 단계 오픈</li>
-          </ul>
           <Button to={"/deal/" + match.id + "/snapshot"} variant="secondary" fullWidth>
             확정된 거래 조건 다시 보기
           </Button>
@@ -139,7 +134,7 @@ export function SafePaymentPage() {
             {busy ? "결제 확인 중…" : formatWon(snapshot.agreedPrice) + " 결제하기"}
           </Button>
           <p className="payment-production-note">
-            테스트 환경에서는 실제 결제 없이 결제 흐름을 확인할 수 있어요.
+            테스트 결제 · 실제 금액은 청구되지 않아요.
           </p>
         </>
       ) : !isBuyer ? (
