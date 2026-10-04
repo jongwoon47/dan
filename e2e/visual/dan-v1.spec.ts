@@ -213,7 +213,12 @@ test("DAN App V3 core request and transaction journey renders", async ({ page },
   for (const label of ["구매", "빌리기", "심부름", "서비스"]) {
     await expect(homeTypes.getByRole("link", { name: label, exact: true })).toBeVisible();
   }
-  await expect(page.getByRole("navigation", { name: "하단 메뉴" })).toBeVisible();
+  if (testInfo.project.name === "desktop") {
+    await expect(page.getByRole("navigation", { name: "주요 메뉴" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "하단 메뉴" })).toBeHidden();
+  } else {
+    await expect(page.getByRole("navigation", { name: "하단 메뉴" })).toBeVisible();
+  }
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "01-home.png"), fullPage: true });
 
@@ -270,7 +275,7 @@ test("DAN App V3 core request and transaction journey renders", async ({ page },
   await page.goto("/deal/visual-match-x100vi/payment");
   await settle(page);
   await expect(page.getByRole("heading", { name: "2,130,000원" })).toBeVisible();
-  await expect(page.getByText("결제 수단")).toBeVisible();
+  await expect(page.locator(".payment-section-head h2", { hasText: "결제 수단" })).toBeVisible();
   await expect(page.getByRole("button", { name: "2,130,000원 결제하기" })).toBeVisible();
   await expect(page.getByText("테스트 환경에서 결제 흐름을 확인하고 있어요.")).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
