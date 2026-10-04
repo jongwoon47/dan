@@ -88,7 +88,6 @@ export function HandoffPage() {
       demand.fulfillmentOptions.length > 0 &&
       demand.fulfillmentOptions.every((option) => option.mode === "SHIPPING"),
   );
-  const handoffLabel = shippingOnly ? "배송 · 수령 확인" : "직거래 · 인계 확인";
 
   const facts = useMemo(() => {
     if (!snapshot) return [];
