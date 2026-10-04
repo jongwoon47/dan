@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import { AuthProvider } from "@/auth/AuthProvider";
 import { AppShell } from "@/components/layout/AppShell";
@@ -8,7 +8,6 @@ import { DanProvider } from "@/domain/store";
 import { SupabaseDanProvider } from "@/domain/store.supabase";
 import { ActivityPage } from "@/pages/ActivityPage";
 import { ConversationsPage } from "@/pages/ConversationsPage";
-import { BuyDemandCreatePage } from "@/pages/BuyDemandCreatePage";
 import { CreateDemandPage } from "@/pages/CreateDemandPage";
 import { DemandDetailPage } from "@/pages/DemandDetailPage";
 import { DemandEditPage } from "@/pages/DemandEditPage";
@@ -31,6 +30,16 @@ import { SellIntentPage } from "@/pages/SellIntentPage";
 import { TradeCompletePage } from "@/pages/TradeCompletePage";
 import "@/styles/danPremium.css";
 
+function LegacyBuyCreateRedirect() {
+  const { search } = useLocation();
+  const current = new URLSearchParams(search);
+  const next = new URLSearchParams();
+  next.set("type", "BUY");
+  const query = current.get("q");
+  if (query) next.set("q", query);
+  return <Navigate to={`/create?${next.toString()}`} replace />;
+}
+
 function DataProvider({ children }: { children: ReactNode }) {
   if (getDataMode() === "supabase") {
     return <SupabaseDanProvider>{children}</SupabaseDanProvider>;
@@ -51,7 +60,7 @@ export default function App() {
               <Route index element={<HomePage />} />
               <Route path="feed" element={<DemandFeedPage />} />
               <Route path="create" element={<CreateDemandPage />} />
-              <Route path="buy/new" element={<BuyDemandCreatePage />} />
+              <Route path="buy/new" element={<LegacyBuyCreateRedirect />} />
               <Route path="chats" element={<ConversationsPage />} />
               <Route path="activity" element={<ActivityPage />} />
               <Route path="profile/:userId" element={<ProfilePage />} />
