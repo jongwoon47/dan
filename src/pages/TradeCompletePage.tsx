@@ -39,7 +39,7 @@ export function TradeCompletePage() {
   }, [currentUser, getDealSnapshot, getPublicProfile, match, matchId]);
 
   if (!match || !product || !currentUser) {
-    return <EmptyState title="거래 정보를 찾을 수 없어요" action={<Button to="/my">내 구매수요</Button>} />;
+    return <EmptyState title="거래 정보를 찾을 수 없어요" action={<Button to="/my">내 거래</Button>} />;
   }
 
   if (match.status !== "COMPLETED") {
@@ -58,8 +58,8 @@ export function TradeCompletePage() {
     <div className="page-stack page-narrow trade-complete-page">
       <section className="trade-complete-hero">
         <span className="trade-complete-check" aria-hidden>✓</span>
-        <h1>거래가 완료됐어요!</h1>
-        <p>양쪽의 인계 확인이 끝났고 거래 결과가 Trust History에 기록됐어요.</p>
+        <h1>거래가 완료됐어요</h1>
+        <p>양쪽의 인계 확인이 끝났고 거래 결과가 거래 이력에 기록됐어요.</p>
       </section>
 
       <section className="trade-complete-product">
@@ -102,7 +102,7 @@ export function TradeCompletePage() {
       </section>
 
       <Button to={"/profile/" + peerId} fullWidth variant="secondary">
-        상대 Trust History 보기
+        상대 거래 이력 보기
       </Button>
       <Button to={"/profile/" + currentUser.id} fullWidth>
         내 거래 이력 보기

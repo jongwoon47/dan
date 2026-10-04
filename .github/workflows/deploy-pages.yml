@@ -1,63 +1,20 @@
 name: Deploy GitHub Pages
 
+# PRODUCTION DEPLOY IS INTENTIONALLY DISABLED.
+# Do not re-enable main push deployment until a separate production
+# Supabase project is provisioned and the production guard is updated.
+
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
 
 jobs:
-  build:
+  blocked:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - name: Assert production frontend config
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      - name: Refuse until production database exists
         run: |
-          set -euo pipefail
-          test -n "${VITE_SUPABASE_URL:-}" || { echo "REFUSED: VITE_SUPABASE_URL is missing"; exit 1; }
-          test -n "${VITE_SUPABASE_ANON_KEY:-}" || { echo "REFUSED: VITE_SUPABASE_ANON_KEY is missing"; exit 1; }
-          case "${VITE_SUPABASE_URL}" in
-            *wmznpuhqmmqunwtewntt.supabase.co*) ;;
-            *) echo "REFUSED: production build must target the configured production Supabase project"; exit 1 ;;
-          esac
-          case "${VITE_SUPABASE_ANON_KEY}" in
-            *service_role*|*sb_secret*) echo "REFUSED: browser build cannot use a secret/service-role key"; exit 1 ;;
-          esac
-      - name: Build
-        env:
-          VITE_BASE: /dan/
-          VITE_DAN_ENV: production
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-        run: npm run build
-      - name: SPA fallback for GitHub Pages
-        run: cp dist/index.html dist/404.html
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          echo "REFUSED: production Supabase project is not configured."
+          exit 1

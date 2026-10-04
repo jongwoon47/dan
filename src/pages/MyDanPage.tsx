@@ -109,7 +109,7 @@ export function MyDanPage() {
     <div className="page-stack my-dan my-dan--blueprint">
       <header className="my-dan__header my-dan__header--v1">
         <div>
-          <p className="eyebrow">My Demand</p>
+          <p className="eyebrow">내 거래</p>
           <h1 className="page-title">내 구매수요</h1>
         </div>
         <Link to={"/profile/" + currentUser?.id} className="my-dan__name">
@@ -203,8 +203,8 @@ export function MyDanPage() {
           ) : (
             <EmptyState
               title="아직 받은 제안이 없어요"
-              body="구매수요를 본 판매자가 Quick Offer를 보내면 여기에 표시돼요."
-              action={<Button to="/" variant="secondary">Live Demand 보기</Button>}
+              body="구매수요를 본 판매자가 판매 제안을 보내면 여기에 표시돼요."
+              action={<Button to="/" variant="secondary">실시간 수요 보기</Button>}
             />
           )}
         </section>
@@ -226,7 +226,7 @@ export function MyDanPage() {
 
           <div className="my-demand-section-head">
             <div>
-              <h2>보낸 Quick Offer</h2>
+              <h2>보낸 판매 제안</h2>
               <p>내가 보낸 판매 제안의 현재 상태예요.</p>
             </div>
           </div>
@@ -260,7 +260,7 @@ export function MyDanPage() {
           ) : (
             <EmptyState
               title="보낸 판매 제안이 없어요"
-              body="Live Demand에서 가지고 있는 물건을 찾아 Quick Offer를 보내세요."
+              body="실시간 수요에서 가지고 있는 물건을 찾아 Quick Offer를 보내세요."
               action={<Button to="/">구매수요 보기</Button>}
             />
           )}

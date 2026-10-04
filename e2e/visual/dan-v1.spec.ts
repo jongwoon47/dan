@@ -67,7 +67,9 @@ function tradeFixture(stage: Stage) {
     minimumPrice: 2_130_000,
     targetDemandId: demand.id,
     tradeMethod: "meetup",
-    quickPhotoUrl: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='68'%3E%3Crect width='96' height='68' fill='%23e7e7ef'/%3E%3Ccircle cx='48' cy='34' r='18' fill='%236b7280'/%3E%3C/svg%3E",
+    // 판매 제안 photos are optional. Keep the visual fixture photo-less so QA
+    // exercises the real compact no-photo product treatment instead of a fake placeholder.
+    quickPhotoUrl: undefined,
     approxUsageCount: 2_400,
     conditionNote: "상태 좋음 · 상단 미세스크래치",
     status: stage === "received" ? "OPEN" : "MATCHED",
@@ -206,7 +208,7 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
 
   await page.goto("/");
   await settle(page);
-  await expect(page.getByRole("heading", { name: "지금 사고 있는 사람들" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "찾는 물건이 있나요?" })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "찾는 제품" })).toBeVisible();
   await expect(page.getByRole("button", { name: "구매수요 만들기" })).toBeVisible();
   await expect(page.getByText("iPhone 15 Pro")).toBeVisible();
@@ -216,7 +218,7 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
 
   await page.goto("/buy/new");
   await settle(page);
-  await expect(page.getByRole("heading", { name: "사고 싶은 물건을 알려주세요." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "어떤 물건을 찾고 있나요?" })).toBeVisible();
   await expect(page.getByText("찾는 제품")).toBeVisible();
   await expect(page.getByText("필수 조건")).toBeVisible();
   await expect(page.getByText("선호 조건")).toBeVisible();
@@ -235,17 +237,17 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
   await settle(page);
   await expect(page.getByRole("heading", { name: "받은 제안" })).toBeVisible();
   await expect(page.getByRole("link", { name: "제안 상세 보기" })).toBeVisible();
-  await expect(page.getByAltText("Fujifilm X100VI 판매자가 올린 현재 물품")).toBeVisible();
+  await expect(page.locator(".received-offer-card .product-visual").first()).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "04-received-offers.png"), fullPage: true });
 
   const potentialId = "potential::visual-demand-x100vi::visual-sell-x100vi";
   await page.goto("/offer/" + potentialId);
   await settle(page);
-  await expect(page.getByText("Quick Offer", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "관심있어요" })).toBeVisible();
-  await expect(page.getByText("Trust History 자세히 보기")).toBeVisible();
-  await expect(page.getByAltText("Fujifilm X100VI 판매자가 올린 현재 물품")).toBeVisible();
+  await expect(page.getByText("판매 제안", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "관심 있어요" })).toBeVisible();
+  await expect(page.getByText("거래 이력 보기")).toBeVisible();
+  await expect(page.locator(".offer-detail-product--catalog .product-visual")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "05-offer-detail.png"), fullPage: true });
 
@@ -259,8 +261,8 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
 
   await page.goto("/deal/visual-match-x100vi/snapshot");
   await settle(page);
-  await expect(page.getByText("Deal Snapshot", { exact: true })).toBeVisible();
-  await expect(page.getByText("위 조건으로 거래를 진행합니다.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "거래 조건을 확인해 주세요" })).toBeVisible();
+  await expect(page.getByText("확인하면 이 조건으로 거래가 확정돼요.")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "07-deal-snapshot.png"), fullPage: true });
 
@@ -285,21 +287,21 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
   await installTradeFixture(page, "complete");
   await page.goto("/deal/visual-match-x100vi/complete");
   await settle(page);
-  await expect(page.getByRole("heading", { name: "거래가 완료됐어요!" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "거래가 완료됐어요" })).toBeVisible();
   await expect(page.getByRole("link", { name: "내 거래 이력 보기" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "10-trade-complete.png"), fullPage: true });
 
   await page.goto("/profile/user-you");
   await settle(page);
-  await expect(page.getByText("Trust History")).toBeVisible();
+  await expect(page.getByText("거래 신뢰 기록")).toBeVisible();
   await expect(page.getByText("사실 기반 거래 기록")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "11-trust-history.png"), fullPage: true });
 
   await page.goto("/demand/prod-fuji-x100vi/offer");
   await settle(page);
-  await expect(page.getByText("Quick Offer", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "판매 제안하기" })).toBeVisible();
   await expect(page.getByRole("button", { name: "제안 보내기" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "12-seller-quick-offer.png"), fullPage: true });
@@ -357,7 +359,7 @@ test("open catalog accepts a product that is not pre-seeded", async ({ page }, t
   await page.getByLabel("제품 카테고리").selectOption("furniture");
   await page.getByLabel("최대 구매 희망가").fill("1800000");
   await page.getByRole("button", { name: "다음 · 조건 확인" }).click();
-  await expect(page.getByRole("heading", { name: "이 조건으로 구매자를 기다릴게요." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "이 조건으로 구매수요를 올릴게요." })).toBeVisible();
   await page.getByRole("button", { name: "이 조건으로 구매수요 등록" }).click();
   await settle(page);
 
