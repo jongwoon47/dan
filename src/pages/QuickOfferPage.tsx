@@ -188,6 +188,15 @@ export function QuickOfferPage() {
       ) : null}
 
       <section className="section-stack quick-offer-form">
+        <Field label="희망 판매가" hint="구매자는 가격을 가장 먼저 비교해요.">
+          <TextInput
+            inputMode="numeric"
+            value={formatDigitsGrouped(price)}
+            onChange={(event) => setPrice(digitsOnly(event.target.value))}
+            placeholder="예: 2,130,000"
+          />
+        </Field>
+
         <div>
           <p className="field-inline-label">내 물건 상태</p>
           <ChipGroup>
@@ -202,15 +211,6 @@ export function QuickOfferPage() {
             ))}
           </ChipGroup>
         </div>
-
-        <Field label="희망 판매가" hint="가격과 상태를 먼저 보여줘요.">
-          <TextInput
-            inputMode="numeric"
-            value={formatDigitsGrouped(price)}
-            onChange={(event) => setPrice(digitsOnly(event.target.value))}
-            placeholder="예: 2,130,000"
-          />
-        </Field>
 
         {showUsageCount ? (
           <Field

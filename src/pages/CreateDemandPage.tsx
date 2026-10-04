@@ -204,6 +204,19 @@ export function CreateDemandPage() {
     setGeoError(null);
   }
 
+  function phase1Title(demandType: DemandType) {
+    switch (demandType) {
+      case "BUY":
+        return "어떤 물건을 찾고 있나요?";
+      case "BORROW":
+        return "어떤 물건을 빌리고 싶나요?";
+      case "TASK":
+        return "어떤 일을 부탁하고 싶나요?";
+      case "SERVICE":
+        return "어떤 도움이 필요하세요?";
+    }
+  }
+
   function phase2Title(demandType: DemandType) {
     switch (demandType) {
       case "BUY":
@@ -520,13 +533,18 @@ export function CreateDemandPage() {
   return (
     <div className="page-stack page-narrow create-page">
       <section className="create-page__body section-stack">
-        <h2 className="section-title">
-          {phase === 1
-            ? ko.whatNeeded
-            : type
-              ? phase2Title(type)
-              : ko.phase2Task}
-        </h2>
+        <div className="create-page__prompt">
+          <p className="create-page__kicker">
+            {type ? `${phase} / 2` : "요청 유형"}
+          </p>
+          <h2 className="section-title">
+            {!type
+              ? ko.whatNeeded
+              : phase === 1
+                ? phase1Title(type)
+                : phase2Title(type)}
+          </h2>
+        </div>
 
         <div className="type-segment" role="radiogroup" aria-label="글 유형">
           {TYPES.map((t) => (
