@@ -25,7 +25,7 @@ Workers, Edge Functions, 결제사, analytics 업체는 없다.
 | Cloudflare Pages 프로젝트 | `dan` | `dan-v1-staging-jongwoon` |
 | Pages URL | `https://dan.pages.dev` | `https://dan-v1-staging-jongwoon.pages.dev` |
 | GitHub Pages | `main` → `/dan/` | 사용하지 않음 |
-| Supabase | 기존 공개 프로젝트. 레거시 스크립트 ref `wmznpuhqmmqunwtewntt` | 새로 만든 프로젝트만 |
+| Supabase | 별도 production DB는 아직 없음 | 복구한 `dan` 프로젝트 ref `wmznpuhqmmqunwtewntt` |
 | GitHub secrets | `VITE_SUPABASE_*`, `CLOUDFLARE_*` | `STAGING_*` 만 |
 | GitHub Environment | 없음 (repo secrets) | `staging` |
 | Workflow | Deploy Cloudflare Pages, Deploy GitHub Pages | Deploy Cloudflare Staging |
@@ -80,7 +80,7 @@ production으로 보이는 값이 있으면 배포/seed를 진행하지 말고 �
 로컬 검증은 기존 CI와 같다: `supabase start` → `supabase db reset` → `supabase test db`.
 원격 staging 적용은 새 프로젝트에서만.
 
-1. [ ] Supabase 대시보드에서 **새** 프로젝트 생성. 이름은 `dan-v1-staging` 권장. 기존 공개 프로젝트를 쓰지 않음
+1. [x] 복구한 `dan` 프로젝트(`wmznpuhqmmqunwtewntt`)를 staging으로 지정. 별도 production DB는 출시 직전에 생성
 2. [ ] Project URL과 anon/publishable key를 확인. service_role은 대시보드에만 두고 저장소/프론트/GitHub frontend secret에 넣지 않음
 3. [ ] Database password / DB URL은 `STAGING_SUPABASE_DB_URL`용. 알려진 production ref가 포함되면 중단
 4. [ ] Auth → Email provider ON
@@ -88,7 +88,7 @@ production으로 보이는 값이 있으면 배포/seed를 진행하지 말고 �
 6. [ ] Auth → URL configuration
     - Site URL: `https://dan-v1-staging-jongwoon.pages.dev`
     - Redirect URLs: `https://dan-v1-staging-jongwoon.pages.dev/**`, `http://localhost:5173/**`
-7. [ ] Migrations `0001_initial.sql` … `0042_connect_before_evidence.sql`을 **순서대로** 적용
+7. [x] Migrations `0001_initial.sql` … `0045_security_definer_execute_boundary.sql`을 **순서대로** 적용
     - CLI: 새 프로젝트에만 `supabase link` 후 `supabase db push`
     - 또는 Dashboard SQL Editor에 파일 순서대로 붙여넣기
     - `scripts/apply-migrations-remote.mjs` / `scripts/apply-0016.mjs`는 default-deny다. staging이면 `DAN_ENV=staging`, `DAN_REMOTE_CONFIRM=apply-staging-only`, `DAN_STAGING_SUPABASE_PROJECT_REF`가 필요하다. 값이 없으면 실행하지 말고 SQL Editor를 쓴다.

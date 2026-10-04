@@ -2,6 +2,7 @@ import {
   STAGING_CLOUDFLARE_PROJECT,
   STAGING_DEPLOY_CONFIRM,
   STAGING_PROJECT_REF_ENV,
+  STAGING_SUPABASE_PROJECT_REF,
   containsProductionSupabaseRef,
   extractSupabaseProjectRef,
   isForbiddenProductionTarget,
@@ -92,6 +93,13 @@ export function assertStagingDeployAllowed(
       ok: false,
       code: 1,
       message: "REFUSED: the expected staging Supabase ref is a production ref.",
+    };
+  }
+  if (expectedRef !== STAGING_SUPABASE_PROJECT_REF) {
+    return {
+      ok: false,
+      code: 1,
+      message: "REFUSED: unexpected staging Supabase project ref.",
     };
   }
 

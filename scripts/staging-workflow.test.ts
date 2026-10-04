@@ -3,35 +3,29 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
-  PRODUCTION_CLOUDFLARE_PROJECT,
-  PRODUCTION_SUPABASE_PROJECT_REFS,
   STAGING_CLOUDFLARE_PROJECT,
+  STAGING_SUPABASE_PROJECT_REF,
 } from "../src/release/environmentSeparation.ts";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 describe("Cloudflare workflow isolation", () => {
-  it("keeps the existing production workflow on project dan", () => {
-    const yml = readFileSync(
+  it("keeps production deploys disabled until a separate production DB exists", () => {
+    const cloudflare = readFileSync(
       path.join(root, ".github/workflows/deploy-cloudflare.yml"),
       "utf8",
     );
-    expect(yml).toContain(`--project-name=${PRODUCTION_CLOUDFLARE_PROJECT} `);
-    expect(yml).not.toContain(`--project-name=${STAGING_CLOUDFLARE_PROJECT}`);
-    expect(yml).toContain("VITE_DAN_ENV: production");
-    expect(yml).toContain("Assert production frontend config");
-    expect(yml).toContain(PRODUCTION_SUPABASE_PROJECT_REFS[0]);
-  });
+    expect(cloudflare).toContain("production Supabase project is not configured");
+    expect(cloudflare).not.toContain(STAGING_SUPABASE_PROJECT_REF);
+    expect(cloudflare).not.toContain(`--project-name=${STAGING_CLOUDFLARE_PROJECT}`);
 
-  it("keeps GitHub Pages pinned to the production runtime and Supabase project", () => {
-    const yml = readFileSync(
+    const pages = readFileSync(
       path.join(root, ".github/workflows/deploy-pages.yml"),
       "utf8",
     );
-    expect(yml).toContain("VITE_DAN_ENV: production");
-    expect(yml).toContain(PRODUCTION_SUPABASE_PROJECT_REFS[0]);
-    expect(yml).not.toContain("${{ secrets.STAGING_VITE_SUPABASE_URL }}");
-    expect(yml).not.toContain("${{ secrets.STAGING_VITE_SUPABASE_ANON_KEY }}");
+    expect(pages).toContain("production Supabase project is not configured");
+    expect(pages).not.toMatch(/branches:\s*\[\s*main\s*\]/);
+    expect(pages).not.toContain(STAGING_SUPABASE_PROJECT_REF);
   });
 
   it("deploys staging only to the isolated Cloudflare project with staging secrets", () => {

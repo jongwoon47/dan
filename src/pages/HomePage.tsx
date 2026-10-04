@@ -97,13 +97,9 @@ export function HomePage() {
     <div className="page-stack home-page home-page--v1">
       <section className="home-demand-header">
         <div className="home-demand-heading">
-          <span className="home-demand-kicker">Live Demand</span>
-          <h1 aria-label="지금 사고 있는 사람들">지금 사고 있는<br />사람들</h1>
-          <p>
-            찾는 사람이 먼저 올려두면,
-            <br />
-            그 물건을 가진 사람이 판매를 제안해요.
-          </p>
+          <span className="home-demand-kicker">실시간 수요</span>
+          <h1 aria-label="찾는 물건이 있나요?">찾는 물건이<br />있나요?</h1>
+          <p>원하는 물건을 올려두면, 가진 사람이 판매를 제안해요.</p>
         </div>
 
         <div className="home-hero-products" aria-hidden>
@@ -138,7 +134,7 @@ export function HomePage() {
               autoComplete="off"
               aria-label="찾는 제품"
             />
-            <small>없어도 괜찮아요 · 바로 새 구매수요를 만들 수 있어요</small>
+            <small>목록에 없어도 바로 등록할 수 있어요</small>
           </label>
           <button type="submit" className="home-intent-composer__submit" aria-label="구매수요 만들기">
             <span aria-hidden>›</span>
@@ -169,8 +165,8 @@ export function HomePage() {
       <section className="home-live-section">
         <div className="home-live-heading">
           <div>
-            <span>Live Demand</span>
-            <h2>지금 가장 많이 찾는 제품</h2>
+            <span>실시간 수요</span>
+            <h2>지금 많이 찾는 물건</h2>
           </div>
           <Link to="/feed">더보기 <span aria-hidden>›</span></Link>
         </div>
@@ -196,8 +192,8 @@ export function HomePage() {
         {visibleProducts.length > 0 ? (
           <div className="home-live-footer">
             <div>
-              <strong>더 많은 제품을 찾고 있나요?</strong>
-              <span>전체 Live Demand에서 검색·카테고리·급상승 순으로 탐색할 수 있어요.</span>
+              <strong>더 많은 수요를 둘러볼까요?</strong>
+              <span>전체 수요에서 검색하고 카테고리별로 둘러볼 수 있어요.</span>
             </div>
             <Button to="/feed" variant="secondary">
               전체 탐색
@@ -208,11 +204,11 @@ export function HomePage() {
 
       <section className="seller-entry-banner">
         <div>
-          <span>이 중 가지고 있는 물건이 있나요?</span>
-          <strong>판매글을 먼저 만들 필요 없이, 실제 구매수요에 바로 제안할 수 있어요.</strong>
+          <span>가지고 있는 물건이 보이나요?</span>
+          <strong>판매글을 새로 만들지 않고 원하는 사람에게 바로 제안할 수 있어요.</strong>
         </div>
         <Button to="/feed" variant="secondary">
-          전체 Live Demand 보기
+          전체 실시간 수요 보기
         </Button>
       </section>
     </div>

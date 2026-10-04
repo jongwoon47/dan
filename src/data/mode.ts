@@ -1,4 +1,9 @@
-import { containsProductionSupabaseRef } from "@/release/environmentSeparation";
+import {
+  PRODUCTION_SUPABASE_PROJECT_REFS,
+  STAGING_SUPABASE_PROJECT_REF,
+  containsProductionSupabaseRef,
+  extractSupabaseProjectRef,
+} from "@/release/environmentSeparation";
 
 export type DataMode = "supabase" | "demo";
 
@@ -49,11 +54,19 @@ export function resolveDataMode(input: DataModeInput): DataMode {
     if (/service_role|sb_secret/i.test(anonKey)) {
       throw new Error("Browser Supabase configuration cannot use a secret/service-role key.");
     }
-    if (runtime === "staging" && containsProductionSupabaseRef(url)) {
-      throw new Error("Staging cannot use the production Supabase project.");
+    if (runtime === "staging") {
+      const ref = extractSupabaseProjectRef(url);
+      if (ref !== STAGING_SUPABASE_PROJECT_REF) {
+        throw new Error("Staging must use the designated staging Supabase project.");
+      }
     }
-    if (runtime === "production" && !containsProductionSupabaseRef(url)) {
-      throw new Error("Production must use the configured production Supabase project.");
+    if (runtime === "production") {
+      if (PRODUCTION_SUPABASE_PROJECT_REFS.length === 0) {
+        throw new Error("Production Supabase project is not configured.");
+      }
+      if (!containsProductionSupabaseRef(url)) {
+        throw new Error("Production must use the configured production Supabase project.");
+      }
     }
     return "supabase";
   }

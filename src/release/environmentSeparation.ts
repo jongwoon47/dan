@@ -1,8 +1,9 @@
 /**
  * Production vs staging identifiers. No secret values live here.
  *
- * Staging must never point at the public Cloudflare project `dan`,
- * `dan.pages.dev`, or the known production Supabase project ref.
+ * Staging must never point at the public Cloudflare project `dan`
+ * or `dan.pages.dev`. The currently restored DAN Supabase project is
+ * explicitly designated as staging until a separate production DB is created.
  */
 
 export const STAGING_CLOUDFLARE_PROJECT = "dan-v1-staging-jongwoon";
@@ -13,6 +14,7 @@ export const STAGING_REMOTE_CONFIRM = "apply-staging-only";
 export const PRODUCTION_REMOTE_CONFIRM = "apply-production-only";
 export const STAGING_GITHUB_ENVIRONMENT = "staging";
 export const STAGING_PROJECT_REF_ENV = "DAN_STAGING_SUPABASE_PROJECT_REF";
+export const STAGING_SUPABASE_PROJECT_REF = "wmznpuhqmmqunwtewntt";
 
 export const PRODUCTION_CLOUDFLARE_PROJECT = "dan";
 export const PRODUCTION_PAGES_HOSTS = ["dan.pages.dev"] as const;
@@ -21,9 +23,7 @@ export const PRODUCTION_PAGES_HOSTS = ["dan.pages.dev"] as const;
  * Deny-list only. Never use these as a script default or implicit target.
  * Legacy apply scripts used to hardcode the first ref as the execution URL.
  */
-export const PRODUCTION_SUPABASE_PROJECT_REFS = [
-  "wmznpuhqmmqunwtewntt",
-] as const;
+export const PRODUCTION_SUPABASE_PROJECT_REFS = [] as readonly string[];
 
 /** GitHub secret names for staging. Values are never committed. */
 export const STAGING_GITHUB_SECRET_NAMES = [

@@ -114,7 +114,7 @@ export function DealSnapshotPage() {
     return (
       <EmptyState
         title="거래 정보를 찾을 수 없어요"
-        action={<Button to="/my" variant="secondary">My DAN</Button>}
+        action={<Button to="/my" variant="secondary">내 거래</Button>}
       />
     );
   }
@@ -169,24 +169,8 @@ export function DealSnapshotPage() {
         <div className="deal-product-card__main">
           <ProductVisual product={product} size="sm" />
           <div>
-            <p className="eyebrow">Deal Snapshot</p>
             <h1 className="page-title">{product.name}</h1>
             <strong className="deal-price">{formatWon(sell.minimumPrice)}</strong>
-          </div>
-          <span className="deal-product-card__heart" aria-hidden>♡</span>
-        </div>
-        <div className="deal-product-card__stats">
-          <div>
-            <strong>{evidence.usageCount != null ? evidence.usageCount.toLocaleString("ko-KR") : "—"}</strong>
-            <span>{product.category === "camera" ? "컷수" : "사용량"}</span>
-          </div>
-          <div>
-            <strong>{evidence.cosmeticNotes || "미제출"}</strong>
-            <span>외관 상태</span>
-          </div>
-          <div>
-            <strong>{evidence.knownIssues || "없음"}</strong>
-            <span>기능 이상</span>
           </div>
         </div>
       </section>
@@ -194,8 +178,7 @@ export function DealSnapshotPage() {
       <section className="deal-snapshot-card deal-snapshot-card--focused">
         <div className="snapshot-card-heading">
           <div>
-            <span className="eyebrow">핵심 거래 조건</span>
-            <h2>확인해야 할 내용만 먼저 보여드려요.</h2>
+            <h2>거래 조건을 확인해 주세요</h2>
           </div>
           <strong>{formatWon(sell.minimumPrice)}</strong>
         </div>
@@ -227,7 +210,7 @@ export function DealSnapshotPage() {
           <summary>
             <span>
               <strong>판매자 제출 상세</strong>
-              <small>구매·보증·식별번호·구성품·수리 이력</small>
+              <small>보증·구성품·수리 이력</small>
             </span>
             <span className="snapshot-details__chevron" aria-hidden>⌄</span>
           </summary>
@@ -268,8 +251,7 @@ export function DealSnapshotPage() {
         <section className="deal-snapshot-card snapshot-appointment">
           <div className="snapshot-card-heading">
             <div>
-              <span className="eyebrow">직거래 약속</span>
-              <h2>만날 장소와 시간을 거래 조건에 함께 고정해요.</h2>
+              <h2>직거래 약속</h2>
             </div>
           </div>
           {snapshot?.lockedAt ? (
@@ -297,7 +279,7 @@ export function DealSnapshotPage() {
             <div className="section-stack">
               <Field
                 label="만남 장소"
-                hint="연결 전에는 공개되지 않고, 이 거래의 두 참여자만 확인하는 조건이에요."
+                hint="이 거래 참여자만 볼 수 있어요."
               >
                 <TextInput
                   value={handoffPlace}
@@ -320,8 +302,8 @@ export function DealSnapshotPage() {
       ) : null}
 
       <section className="snapshot-lock-notice">
-        <strong>위 조건으로 거래를 진행합니다.</strong>
-        <p>양쪽이 확인하면 Deal Snapshot이 잠기고 이후에는 수정할 수 없어요. 실제 물건과 다른 내용이 있다면 확인 전에 판매자와 다시 조율하세요.</p>
+        <strong>확인하면 이 조건으로 거래가 확정돼요.</strong>
+        <p>양쪽 확인 후에는 수정할 수 없어요. 다르면 먼저 채팅에서 조율하세요.</p>
       </section>
 
       <section className="deal-confirm-state">
@@ -340,8 +322,7 @@ export function DealSnapshotPage() {
             <div>
               <strong>거래 조건이 확정됐어요</strong>
               <p>
-                이제 안전결제 상태를 확인한 뒤 현장에서 같은 Deal Snapshot을
-                다시 대조합니다.
+                안전결제 후 현장에서 같은 거래 조건을 다시 확인하세요.
               </p>
             </div>
           </section>
@@ -361,7 +342,7 @@ export function DealSnapshotPage() {
             disabled={busy || !payload || !appointmentReady || myConfirmed}
             onClick={() => void confirm()}
           >
-            {myConfirmed ? "상대 확인 대기 중" : "이 거래조건을 확인했습니다"}
+            {myConfirmed ? "상대 확인 대기 중" : "이 거래 조건을 확인했어요"}
           </Button>
         </>
       )}

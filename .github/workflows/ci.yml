@@ -31,9 +31,21 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
       - run: supabase start
       - run: supabase db reset
       - run: supabase test db
+      - name: Run local two-user trade E2E
+        run: |
+          eval "$(supabase status -o env)"
+          VITE_SUPABASE_URL="$API_URL" \
+          VITE_SUPABASE_ANON_KEY="$ANON_KEY" \
+          SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+          npm run test:e2e:local
       - if: always()
         run: supabase stop --no-backup
 

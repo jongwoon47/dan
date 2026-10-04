@@ -1,3 +1,4 @@
+import { STAGING_SUPABASE_PROJECT_REF } from "../src/release/environmentSeparation.ts";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -38,7 +39,7 @@ describe("legacy remote apply scripts are default-deny", () => {
   it("refuses staging without confirm and production without confirm", () => {
     const staging = runApply("apply-migrations-remote.mjs", {
       DAN_ENV: "staging",
-      DAN_STAGING_SUPABASE_PROJECT_REF: "stgstgprojectref001",
+      DAN_STAGING_SUPABASE_PROJECT_REF: STAGING_SUPABASE_PROJECT_REF,
     });
     expect(staging.status).not.toBe(0);
     expect(`${staging.stderr}${staging.stdout}`).toMatch(/apply-staging-only/);
@@ -49,17 +50,27 @@ describe("legacy remote apply scripts are default-deny", () => {
     });
     expect(production.status).not.toBe(0);
     expect(`${production.stderr}${production.stdout}`).toMatch(
-      /apply-production-only/,
+      /production Supabase project is not configured/i,
     );
   });
 
-  it("refuses a staging target that uses the production project ref", () => {
+  it("refuses an unexpected staging ref before any remote token access", () => {
     const result = runApply("apply-migrations-remote.mjs", {
       DAN_ENV: "staging",
       DAN_REMOTE_CONFIRM: "apply-staging-only",
-      DAN_STAGING_SUPABASE_PROJECT_REF: "wmznpuhqmmqunwtewntt",
+      DAN_STAGING_SUPABASE_PROJECT_REF: "otherstagingref001",
     });
     expect(result.status).not.toBe(0);
-    expect(`${result.stderr}${result.stdout}`).toMatch(/production/);
+    expect(`${result.stderr}${result.stdout}`).toMatch(/unexpected staging/i);
+  });
+
+  it("refuses production applies before token access while production is unconfigured", () => {
+    const result = runApply("apply-migrations-remote.mjs", {
+      DAN_ENV: "production",
+      DAN_REMOTE_CONFIRM: "apply-production-only",
+      DAN_SUPABASE_PROJECT_REF: "futureprodref001",
+    });
+    expect(result.status).not.toBe(0);
+    expect(`${result.stderr}${result.stdout}`).toMatch(/not configured/i);
   });
 });

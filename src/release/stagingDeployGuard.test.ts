@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { assertStagingDeployAllowed } from "./stagingDeployGuard";
 import {
-  PRODUCTION_SUPABASE_PROJECT_REFS,
   STAGING_CLOUDFLARE_PROJECT,
   STAGING_DEPLOY_CONFIRM,
+  STAGING_SUPABASE_PROJECT_REF,
 } from "./environmentSeparation";
 
-const stagingRef = "stgstgprojectref001";
+const stagingRef = STAGING_SUPABASE_PROJECT_REF;
 const staging = {
   DAN_ENV: "staging",
   STAGING_DEPLOY_CONFIRM,
@@ -63,7 +63,7 @@ describe("assertStagingDeployAllowed", () => {
     ).toBe(2);
   });
 
-  it("refuses a mismatched or production Supabase project ref", () => {
+  it("refuses a mismatched Supabase project ref", () => {
     expect(
       assertStagingDeployAllowed({
         ...staging,
@@ -71,20 +71,6 @@ describe("assertStagingDeployAllowed", () => {
       }).code,
     ).toBe(1);
 
-    const prodRef = PRODUCTION_SUPABASE_PROJECT_REFS[0];
-    expect(
-      assertStagingDeployAllowed({
-        ...staging,
-        DAN_STAGING_SUPABASE_PROJECT_REF: prodRef,
-      }).code,
-    ).toBe(1);
-    expect(
-      assertStagingDeployAllowed({
-        ...staging,
-        STAGING_VITE_SUPABASE_URL: `https://${prodRef}.supabase.co`,
-        DAN_STAGING_SUPABASE_PROJECT_REF: prodRef,
-      }).code,
-    ).toBe(1);
   });
 
   it("refuses production pages targets and service-role-like frontend values", () => {
