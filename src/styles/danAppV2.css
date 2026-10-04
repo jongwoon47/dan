@@ -1323,3 +1323,34 @@ textarea.dan-input,
 .transaction-stage.is-done > i {
   background: #bfe5d6;
 }
+
+
+.create-type-current {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 13px;
+  border-radius: 12px;
+  background: var(--v2-subtle);
+}
+.create-type-current > div {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.create-type-current span {
+  color: var(--v2-ink-3);
+  font-size: 12px;
+}
+.create-type-current strong {
+  color: var(--v2-ink);
+  font-size: 14px;
+}
+.create-type-current button {
+  border: 0;
+  background: transparent;
+  color: var(--v2-purple);
+  font-size: 12px;
+  font-weight: 760;
+}
