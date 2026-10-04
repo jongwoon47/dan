@@ -1,73 +1,215 @@
-import { Link } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { AggregatedDemandCard } from "@/components/AggregatedDemandCard";
-import { IndividualDemandCard } from "@/components/IndividualDemandCard";
+import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
-import type { DemandType } from "@/domain/types";
-import { DEMAND_TYPE_LABEL } from "@/domain/types";
+import { CATEGORY_LABEL, type ProductCategory } from "@/domain/types";
 import "./pages.css";
 import "@/components/feedCards.css";
 
-const TYPES: DemandType[] = ["BUY", "BORROW", "TASK", "SERVICE"];
+type HomeCategory = "all" | ProductCategory;
 
 export function HomePage() {
   const { demandFeed } = useDan();
-  const featured = demandFeed.slice(0, 6);
+  const navigate = useNavigate();
+  const [category, setCategory] = useState<HomeCategory>("all");
+  const [intentQuery, setIntentQuery] = useState("");
+
+  const liveProducts = useMemo(
+    () =>
+      demandFeed
+        .filter(
+          (item) =>
+            item.kind === "aggregated" &&
+            item.aggregate.seekerCount > 0,
+        )
+        .sort((a, b) => {
+          if (a.kind !== "aggregated" || b.kind !== "aggregated") return 0;
+          return (
+            b.aggregate.seekerCount - a.aggregate.seekerCount ||
+            b.aggregate.recent7dDelta - a.aggregate.recent7dDelta ||
+            b.aggregate.highestIntentPrice - a.aggregate.highestIntentPrice
+          );
+        }),
+    [demandFeed],
+  );
+
+  const heroProducts = useMemo(() => {
+    const products = [];
+    const seen = new Set<string>();
+    const candidates = [
+      liveProducts.find(
+        (item) => item.kind === "aggregated" && item.product.category === "camera",
+      ),
+      liveProducts.find(
+        (item) =>
+          item.kind === "aggregated" &&
+          item.product.name.toLocaleLowerCase("en").includes("macbook"),
+      ) ??
+        liveProducts.find(
+          (item) => item.kind === "aggregated" && item.product.category === "computer",
+        ) ??
+        liveProducts.find(
+          (item) => item.kind === "aggregated" && item.product.category === "electronics",
+        ),
+      liveProducts.find(
+        (item) => item.kind === "aggregated" && item.product.category === "furniture",
+      ),
+    ];
+
+    for (const item of candidates) {
+      if (!item || item.kind !== "aggregated" || seen.has(item.product.id)) continue;
+      seen.add(item.product.id);
+      products.push(item.product);
+    }
+    return products;
+  }, [liveProducts]);
+
+  const categoryRows = useMemo(() => {
+    const counts = new Map<ProductCategory, number>();
+    for (const item of liveProducts) {
+      if (item.kind !== "aggregated") continue;
+      counts.set(
+        item.product.category,
+        (counts.get(item.product.category) ?? 0) + item.aggregate.seekerCount,
+      );
+    }
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  }, [liveProducts]);
+
+  const totalDemand = liveProducts.reduce(
+    (sum, item) =>
+      sum + (item.kind === "aggregated" ? item.aggregate.seekerCount : 0),
+    0,
+  );
+
+  const visibleProducts = liveProducts
+    .filter(
+      (item) =>
+        category === "all" ||
+        (item.kind === "aggregated" && item.product.category === category),
+    )
+    .slice(0, 4);
 
   return (
-    <div className="page-stack home-page">
-      <section className="composer">
-        <h1 className="composer__title">{ko.composerTitle}</h1>
-        <p className="composer__hint">{ko.composerHint}</p>
-        <Button to="/create" fullWidth size="lg">
-          {ko.homeCta}
-        </Button>
-        <p className="composer__quick-label">{ko.homeQuickHint}</p>
-        <div className="type-row" aria-label="빠른 유형 선택">
-          {TYPES.map((type) => (
-            <Link key={type} to={`/create?type=${type}`} className="type-chip type-chip--quiet">
-              {DEMAND_TYPE_LABEL[type]}
-            </Link>
+    <div className="page-stack home-page home-page--v1">
+      <section className="home-demand-header">
+        <div className="home-demand-heading">
+          <span className="home-demand-kicker">실시간 수요</span>
+          <h1 aria-label="찾는 물건이 있나요?">찾는 물건이<br />있나요?</h1>
+          <p>원하는 물건을 올려두면, 가진 사람이 판매를 제안해요.</p>
+        </div>
+
+        <div className="home-hero-products" aria-hidden>
+          {heroProducts.map((product, index) => (
+            <span key={product.id} className={`home-hero-product home-hero-product--${index + 1}`}>
+              <ProductVisual product={product} size="md" />
+            </span>
+          ))}
+        </div>
+
+        <form
+          className="home-intent-composer"
+          aria-label="찾는 제품 빠른 입력"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const query = intentQuery.trim();
+            navigate(query ? `/buy/new?q=${encodeURIComponent(query)}` : "/buy/new");
+          }}
+        >
+          <span className="home-intent-composer__icon" aria-hidden>
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="10.5" cy="10.5" r="5.75" stroke="currentColor" strokeWidth="1.8" />
+              <path d="m15 15 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </span>
+          <label className="home-intent-composer__copy">
+            <span className="sr-only">찾는 제품</span>
+            <input
+              value={intentQuery}
+              onChange={(event) => setIntentQuery(event.target.value)}
+              placeholder="어떤 제품을 찾고 있나요?"
+              autoComplete="off"
+              aria-label="찾는 제품"
+            />
+            <small>목록에 없어도 바로 등록할 수 있어요</small>
+          </label>
+          <button type="submit" className="home-intent-composer__submit" aria-label="구매수요 만들기">
+            <span aria-hidden>›</span>
+          </button>
+        </form>
+
+        <div className="home-demand-filters" aria-label="제품 카테고리">
+          <button
+            type="button"
+            className={category === "all" ? "demand-filter is-active" : "demand-filter"}
+            onClick={() => setCategory("all")}
+          >
+            전체 {totalDemand}
+          </button>
+          {categoryRows.map(([itemCategory, count]) => (
+            <button
+              key={itemCategory}
+              type="button"
+              className={category === itemCategory ? "demand-filter is-active" : "demand-filter"}
+              onClick={() => setCategory(itemCategory)}
+            >
+              {CATEGORY_LABEL[itemCategory]} {count}
+            </button>
           ))}
         </div>
       </section>
 
-      <section className="section-stack">
-        <div className="section-head">
-          <h2 className="section-title">{ko.feedNowTitle}</h2>
+      <section className="home-live-section">
+        <div className="home-live-heading">
+          <div>
+            <span>실시간 수요</span>
+            <h2>지금 많이 찾는 물건</h2>
+          </div>
+          <Link to="/feed">더보기 <span aria-hidden>›</span></Link>
         </div>
-        {featured.length === 0 ? (
+        {visibleProducts.length === 0 ? (
           <EmptyState
-            title={ko.emptyHomeTitle}
-            body={ko.emptyHomeBody}
-            action={
-              <Button to="/create" variant="secondary">
-                {ko.ctaCreate}
-              </Button>
-            }
+            title="아직 이 카테고리의 구매수요가 없어요"
+            body="찾는 제품을 직접 입력해 첫 구매수요를 남길 수 있어요."
+            action={<Button to="/buy/new">구매수요 등록</Button>}
           />
         ) : (
-          <>
-            <div className="feed-list">
-              {featured.map((item) =>
-                item.kind === "aggregated" ? (
-                  <AggregatedDemandCard
-                    key={item.id}
-                    product={item.product}
-                    aggregate={item.aggregate}
-                  />
-                ) : (
-                  <IndividualDemandCard key={item.id} demand={item.demand} />
-                ),
-              )}
-            </div>
-            <Link to="/feed" className="text-link">
-              {ko.viewAllDemand}
-            </Link>
-          </>
+          <div className="live-demand-list">
+            {visibleProducts.map((item) =>
+              item.kind === "aggregated" ? (
+                <AggregatedDemandCard
+                  key={item.id}
+                  product={item.product}
+                  aggregate={item.aggregate}
+                />
+              ) : null,
+            )}
+          </div>
         )}
+        {visibleProducts.length > 0 ? (
+          <div className="home-live-footer">
+            <div>
+              <strong>더 많은 수요를 둘러볼까요?</strong>
+              <span>전체 수요에서 검색하고 카테고리별로 둘러볼 수 있어요.</span>
+            </div>
+            <Button to="/feed" variant="secondary">
+              전체 탐색
+            </Button>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="seller-entry-banner">
+        <div>
+          <span>가지고 있는 물건이 보이나요?</span>
+          <strong>판매글을 새로 만들지 않고 원하는 사람에게 바로 제안할 수 있어요.</strong>
+        </div>
+        <Button to="/feed" variant="secondary">
+          전체 실시간 수요 보기
+        </Button>
       </section>
     </div>
   );

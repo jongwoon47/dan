@@ -1,8 +1,25 @@
+/**
+ * Remote SQL apply for 0016. Default-deny.
+ * Requires DAN_ENV plus a matching confirm and an explicit project ref.
+ * Never defaults to a production Supabase project ref. See docs/STAGING.md.
+ */
 import { readFileSync, writeFileSync, unlinkSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
+import { assertRemoteMigrationAllowed } from "../src/release/remoteDbTargetGuard.ts";
 
-const REF = "wmznpuhqmmqunwtewntt";
+const decision = assertRemoteMigrationAllowed(process.env);
+if (!decision.ok) {
+  console.error(decision.message);
+  process.exit(decision.code);
+}
+
+const REF = decision.projectRef ?? "";
+if (!REF) {
+  console.error("REFUSED: missing resolved project ref.");
+  process.exit(1);
+}
+
 const URL = `https://api.supabase.com/v1/projects/${REF}/database/query`;
 
 function getAccessToken() {

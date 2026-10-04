@@ -5,10 +5,27 @@ export type DemandType = "BUY" | "BORROW" | "TASK" | "SERVICE";
 
 export type ProductCategory =
   | "electronics"
+  | "computer"
+  | "gaming"
+  | "audio"
   | "camera"
   | "lens"
+  | "home_appliance"
   | "furniture"
+  | "fashion"
+  | "shoes"
+  | "watches_accessories"
+  | "sports"
+  | "outdoor"
   | "camping"
+  | "hobby_collectible"
+  | "baby_kids"
+  | "books_media"
+  | "musical_instrument"
+  | "beauty"
+  | "pet"
+  | "tools"
+  | "auto"
   | "other";
 
 export type DemandCategory =
@@ -23,6 +40,49 @@ export type TradeMethod = "meetup" | "shipping" | "any";
 export type DemandStatus = "ACTIVE" | "MATCHED" | "CLOSED" | "EXPIRED";
 export type OwnershipStatus = "OWNED" | "RELEASED";
 export type SellIntentStatus = "OPEN" | "PAUSED" | "MATCHED" | "CLOSED";
+
+export type DealStage =
+  | "MATCHING"
+  | "BUYER_INTERESTED"
+  | "EVIDENCE_PENDING"
+  | "EVIDENCE_READY"
+  | "DEAL_REVIEW"
+  | "DEAL_LOCKED"
+  | "PAYMENT_PENDING"
+  | "PAID"
+  | "HANDOFF_READY"
+  | "COMPLETED"
+  | "DISPUTE"
+  | "CANCELLED"
+  | "REFUNDED";
+
+export type PaymentStatus = "NOT_STARTED" | "PENDING" | "PAID" | "REFUNDED";
+
+export type CancelReason =
+  | "BUYER_CHANGED_MIND"
+  | "SELLER_CHANGED_MIND"
+  | "SELLER_CHANGED_TERMS"
+  | "BUYER_NO_PAYMENT"
+  | "ITEM_UNAVAILABLE"
+  | "MUTUAL_CANCEL"
+  | "SYSTEM_CANCEL"
+  | "RISK_CANCEL";
+
+export type DealDisputeReason =
+  | "ITEM_NOT_RECEIVED"
+  | "WRONG_ITEM"
+  | "SNAPSHOT_MISMATCH"
+  | "MAJOR_UNDISCLOSED_DEFECT"
+  | "OTHER";
+
+export type DealDisputeStatus =
+  | "OPEN"
+  | "REVIEWING"
+  | "RESOLVED_BUYER"
+  | "RESOLVED_SELLER"
+  | "CLOSED";
+
+export type FaultParty = "BUYER" | "SELLER" | "NONE";
 export type ResponseStatus = "OPEN" | "ACCEPTED" | "WITHDRAWN" | "DECLINED";
 export type MatchStatus =
   | "POTENTIAL"
@@ -32,6 +92,13 @@ export type MatchStatus =
   | "DECLINED"
   | "CLOSED"
   | "COMPLETED";
+
+export interface UserVerificationStatus {
+  phoneVerified: boolean;
+  identityVerified: boolean;
+  payoutVerified: boolean;
+  sellerType?: "INDIVIDUAL" | "BUSINESS";
+}
 
 export interface User {
   id: string;
@@ -130,8 +197,77 @@ export interface SellIntent {
   userId: string;
   productId: string;
   minimumPrice: number;
+  /** Optional demand this quick offer was opened from. */
+  targetDemandId?: string;
+  /** Seller-supported fulfillment for this offer. */
+  tradeMethod?: TradeMethod;
+  /** Optional count when a product has a meaningful numeric usage metric (e.g. camera shutter count). */
+  approxUsageCount?: number;
+  /** Seller's short, non-verified condition statement. */
+  conditionNote?: string;
+  /** Optional seller-submitted current-photo URL. */
+  quickPhotoUrl?: string;
   status: SellIntentStatus;
   createdAt: string;
+}
+
+export interface DealEvidenceChallenge {
+  id: string;
+  matchId: string;
+  sellerId: string;
+  challengeCode: string;
+  expiresAt: string;
+  consumedAt?: string;
+  createdAt: string;
+}
+
+export interface DealEvidence {
+  id: string;
+  matchId: string;
+  sellerId: string;
+  possessionPhotoUrl?: string;
+  serialLast4?: string;
+  usageCount?: number;
+  purchaseDate?: string;
+  warrantyUntil?: string;
+  components: string[];
+  cosmeticNotes: string;
+  knownIssues: string;
+  repairHistory: string;
+  waterDamageStatement: string;
+  evidenceMeta: Record<string, unknown>;
+  submittedAt: string;
+  updatedAt: string;
+}
+
+export interface DealSnapshot {
+  id: string;
+  matchId: string;
+  demandId: string;
+  productId?: string;
+  buyerId: string;
+  sellerId: string;
+  agreedPrice: number;
+  snapshot: Record<string, unknown>;
+  buyerConfirmedAt?: string;
+  sellerConfirmedAt?: string;
+  lockedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+
+export interface DealDispute {
+  id: string;
+  matchId: string;
+  openedBy: string;
+  reason: DealDisputeReason;
+  detail: string;
+  status: DealDisputeStatus;
+  attributedFault?: FaultParty;
+  resolutionNote: string;
+  createdAt: string;
+  resolvedAt?: string;
 }
 
 export interface Response {
@@ -154,6 +290,12 @@ export interface Match {
   buyerId: string;
   sellerId: string;
   status: MatchStatus;
+  dealStage?: DealStage;
+  paymentStatus?: PaymentStatus;
+  paymentDueAt?: string;
+  cancelReason?: CancelReason;
+  cancelledBy?: string;
+  cancelFaultParty?: FaultParty;
   createdAt: string;
   buyerCompletedAt?: string;
   sellerCompletedAt?: string;
@@ -209,6 +351,13 @@ export interface PublicProfile {
   completedDemandCount: number;
   /** CONNECTED/COMPLETED matches where this user was the responder/seller. */
   responseConnectionCount: number;
+  /** Facts only; fault fields are populated only after explicit ops attribution. */
+  buyerFaultCancellationCount: number;
+  sellerFaultCancellationCount: number;
+  unresolvedDisputeCount: number;
+  confirmedMismatchCount: number;
+  /** Privacy-safe fact from trusted verification provider. */
+  identityVerified: boolean;
   /** Only real auth providers — never invent verification. */
   authLabel?: string | null;
   recentActivity: PublicProfileActivity[];
@@ -255,12 +404,55 @@ export const DEMAND_TYPE_LABEL: Record<DemandType, string> = {
   SERVICE: ko.typeService,
 };
 
+export const PRODUCT_CATEGORY_OPTIONS: ProductCategory[] = [
+  "electronics",
+  "computer",
+  "gaming",
+  "audio",
+  "camera",
+  "lens",
+  "home_appliance",
+  "furniture",
+  "fashion",
+  "shoes",
+  "watches_accessories",
+  "sports",
+  "outdoor",
+  "camping",
+  "hobby_collectible",
+  "baby_kids",
+  "books_media",
+  "musical_instrument",
+  "beauty",
+  "pet",
+  "tools",
+  "auto",
+  "other",
+];
+
 export const CATEGORY_LABEL: Record<DemandCategory, string> = {
+  electronics: ko.electronics,
+  computer: "컴퓨터 · 노트북",
+  gaming: "게임",
+  audio: "오디오",
   camera: ko.camera,
   lens: ko.lens,
-  electronics: ko.electronics,
+  home_appliance: "생활가전",
   furniture: ko.furniture,
+  fashion: "패션",
+  shoes: "신발",
+  watches_accessories: "시계 · 액세서리",
+  sports: "스포츠",
+  outdoor: "아웃도어",
   camping: ko.camping,
+  hobby_collectible: "취미 · 수집",
+  baby_kids: "유아 · 아동",
+  books_media: "도서 · 미디어",
+  musical_instrument: "악기",
+  beauty: "뷰티",
+  pet: "반려동물",
+  tools: "공구",
+  auto: "자동차용품",
   other: ko.other,
   errand: ko.errand,
   service: ko.serviceCat,
