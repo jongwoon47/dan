@@ -76,7 +76,7 @@ export function DealEvidencePage() {
   const [photoError, setPhotoError] = useState("");
   const [submitError, setSubmitError] = useState("");
 
-  useDeepHeader({ title: isSeller ? "판매자 증거 제출" : "판매자 증거" });
+  useDeepHeader({ title: isSeller ? "상품 정보 등록" : "상품 정보 확인" });
 
   useEffect(() => {
     if (!isSeller) {
@@ -239,15 +239,15 @@ export function DealEvidencePage() {
       <section className="deal-product-card">
         <ProductVisual product={product} size="sm" />
         <div>
-          <p className="eyebrow">Quick Offer</p>
+          <p className="eyebrow">상품 정보</p>
           <h1 className="page-title">{product.name}</h1>
           <strong className="deal-price">{formatWon(sell.minimumPrice)}</strong>
         </div>
       </section>
 
       <section className="trust-explainer">
-        <strong>판매자가 제출한 정보예요</strong>
-        <p>DAN이 제품 상태나 정품 여부를 보증하지 않습니다. 거래 당시 무엇을 주장했고 어떤 증거를 냈는지 기록합니다.</p>
+        <strong>판매자가 등록한 상품 정보예요</strong>
+        <p>판매자가 직접 등록한 정보예요. 실제 물건과 같은지 거래 전에 확인하세요.</p>
       </section>
 
       {!isSeller && existing ? (
@@ -261,9 +261,9 @@ export function DealEvidencePage() {
 
       {isSeller && sellerVerificationLoaded && !sellerVerifiedForDeal ? (
         <section className="verification-gate">
-          <strong>실거래 전 판매자 검증이 필요해요</strong>
+          <strong>거래 전에 상품 정보를 확인해 주세요</strong>
           <p>
-            Quick Offer는 검증 없이도 보낼 수 있지만 Deal로 들어가려면
+            제안은 간단히 보낼 수 있지만 거래를 계속하려면
             휴대폰·본인·정산계좌 검증이 모두 완료되어야 합니다.
           </p>
         </section>
@@ -365,7 +365,7 @@ export function DealEvidencePage() {
 
           <div className="evidence-form-divider">
             <span>3</span>
-            <div><strong>구성품 · 상태 · 추가 정보</strong><small>Deal Snapshot에 그대로 기록될 내용이에요.</small></div>
+            <div><strong>구성품 · 상태 · 추가 정보</strong><small>거래 조건 확인에 함께 표시돼요.</small></div>
           </div>
 
           <div>
@@ -399,7 +399,7 @@ export function DealEvidencePage() {
 
           {submitError ? <p className="form-error">{submitError}</p> : null}
           <Button fullWidth size="lg" disabled={!canSubmit || busy} onClick={() => void submit()}>
-            {busy ? "저장 중…" : "증거 제출하기"}
+            {busy ? "저장 중…" : "상품 정보 저장"}
           </Button>
         </section>
       ) : null}
