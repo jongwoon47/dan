@@ -1,109 +1,22 @@
-import { useMemo, useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { useMemo } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { MatchList } from "@/components/MatchCard";
+import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { ko } from "@/copy/ko";
 import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
-import {
-  effectiveDemandStatus,
-  formatExpiredOn,
-  isDemandOpen,
-} from "@/domain/demandLifecycle";
-import type { Demand } from "@/domain/types";
+import { effectiveDemandStatus } from "@/domain/demandLifecycle";
+import { formatFulfillmentSummary } from "@/domain/fulfillment";
+import { isBuyDemand, type BuyDemand } from "@/domain/types";
+import { formatWon } from "@/lib/format";
 import "./pages.css";
 
-const EXPIRING_SOON_MS = 3 * 86400000;
+type MyTab = "demands" | "offers" | "selling";
 
-function responseStatusMeta(status: string) {
-  if (status === "OPEN") return ko.statusWaiting;
-  if (status === "ACCEPTED") return ko.statusConnected;
-  if (status === "DECLINED") return ko.statusDeclined;
-  if (status === "WITHDRAWN") return ko.statusWithdrawn;
-  return status;
-}
-
-function demandHref(d: { id: string }) {
-  return `/demand/item/${d.id}`;
-}
-
-function daysLeftLabel(demand: Demand, nowMs = Date.now()): string | null {
-  const end = new Date(demand.expiresAt).getTime();
-  if (!Number.isFinite(end)) return null;
-  const days = Math.ceil((end - nowMs) / 86400000);
-  if (days < 0) return null;
-  if (days === 0) return ko.expiresToday;
-  return ko.daysLeft.replace("{n}", String(days));
-}
-
-function requestMeta(
-  demand: Demand,
-  responseCount: number,
-  nowMs = Date.now(),
-): string {
-  const status = effectiveDemandStatus(demand, nowMs);
-  if (status === "MATCHED") {
-    return responseCount > 0
-      ? `${ko.responseCountLabel.replace("{n}", String(responseCount))} · ${ko.statusMatched}`
-      : ko.statusMatched;
-  }
-  if (status === "ACTIVE") {
-    const left = daysLeftLabel(demand, nowMs);
-    if (responseCount > 0) {
-      return `${ko.responseCountLabel.replace("{n}", String(responseCount))} · ${ko.myRequestsActive}`;
-    }
-    return left ? `${ko.seekingOnly} · ${left}` : ko.seekingOnly;
-  }
-  if (status === "EXPIRED") return ko.statusExpired;
-  return ko.statusClosed;
-}
-
-function RowLink({
-  to,
-  title,
-  meta,
-  trailing,
-}: {
-  to: string;
-  title: string;
-  meta?: string;
-  trailing?: ReactNode;
-}) {
-  return (
-    <Link to={to} className="app-row">
-      <span className="app-row__body">
-        <strong>{title}</strong>
-        {meta ? <span className="app-row__meta">{meta}</span> : null}
-      </span>
-      {trailing ? <span className="app-row__trail">{trailing}</span> : null}
-      <span className="app-row__chevron" aria-hidden>
-        ›
-      </span>
-    </Link>
-  );
-}
-
-function MyBlock({
-  title,
-  children,
-  id,
-  action,
-}: {
-  title: string;
-  children: ReactNode;
-  id?: string;
-  action?: ReactNode;
-}) {
-  return (
-    <section className="my-block" id={id}>
-      <div className="my-block__head">
-        <h2 className="my-block__title">{title}</h2>
-        {action}
-      </div>
-      {children}
-    </section>
-  );
+function normalizeTab(value: string | null): MyTab {
+  if (value === "offers" || value === "selling") return value;
+  return "demands";
 }
 
 export function MyDanPage() {
@@ -112,315 +25,246 @@ export function MyDanPage() {
     login,
     currentUser,
     myDemands,
-    myResponses,
+    mySellIntents,
     myMatches,
-    activities,
-    getDemand,
-    state,
-    resetDemo,
-    extendBuyDemand,
-    busy,
+    getProduct,
   } = useDan();
   const dataMode = getDataMode();
-  const [archivedOpen, setArchivedOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = normalizeTab(searchParams.get("tab"));
+  const demandFilter = searchParams.get("demand");
 
-  const responseCountByDemand = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const r of state.responses) {
-      if (r.status === "WITHDRAWN") continue;
-      map.set(r.demandId, (map.get(r.demandId) ?? 0) + 1);
-    }
-    return map;
-  }, [state.responses]);
-
-  const nowItems = useMemo(() => {
-    const items: { key: string; text: string; sub?: string; to: string }[] = [];
-    const unread = activities.filter((a) => !a.readAt);
-    const seenTo = new Set<string>();
-    const nowMs = Date.now();
-
-    function push(item: { key: string; text: string; sub?: string; to: string }) {
-      if (seenTo.has(item.to)) return;
-      seenTo.add(item.to);
-      items.push(item);
-    }
-
-    for (const ev of unread) {
-      // Chat lives in 대화 — skip outbound-style message noise from My DAN.
-      if (ev.kind === "NEW_MESSAGE") continue;
-      if (ev.kind === "DEMAND_CLOSED") continue;
-
-      const demand = ev.demandId ? getDemand(ev.demandId) : undefined;
-      const actionable =
-        ev.kind === "NEW_RESPONSE" ||
-        ev.kind === "MATCH_CONNECTED" ||
-        ev.kind === "MATCH_COMPLETED" ||
-        ev.kind === "MATCH_TRADE_CLOSED" ||
-        ev.kind === "RESPONSE_ACCEPTED" ||
-        ev.kind === "BUYER_INTEREST" ||
-        ev.kind === "RESPONSE_DECLINED";
-      if (!actionable) continue;
-
-      const to =
-        ev.matchId &&
-        (ev.kind === "MATCH_CONNECTED" ||
-          ev.kind === "MATCH_COMPLETED" ||
-          ev.kind === "MATCH_TRADE_CLOSED" ||
-          ev.kind === "RESPONSE_ACCEPTED")
-          ? `/match/${ev.matchId}`
-          : ev.kind === "BUYER_INTEREST" && demand?.type === "BUY"
-            ? `/demand/${demand.details.productId}`
-            : ev.demandId
-              ? `/demand/item/${ev.demandId}`
-              : "/activity";
-
-      const text =
-        ev.kind === "NEW_RESPONSE"
-          ? ko.activityNewResponse
-          : ev.kind === "MATCH_CONNECTED"
-            ? ko.activityPeerConnected
-            : ev.kind === "MATCH_COMPLETED"
-              ? ko.activityMatchCompleted
-              : ev.kind === "MATCH_TRADE_CLOSED"
-                ? ko.activityMatchTradeClosed
-                : ev.kind === "RESPONSE_ACCEPTED"
-                  ? ko.activityAccepted
-                  : ev.kind === "BUYER_INTEREST"
-                    ? ko.activityInterest
-                    : ev.kind === "RESPONSE_DECLINED"
-                      ? ko.activityDeclined
-                      : ko.attentionTitle;
-
-      push({
-        key: ev.id,
-        text,
-        sub: demand?.title,
-        to,
-      });
-    }
-
-    for (const d of myDemands) {
-      if (!isDemandOpen(d)) continue;
-      const end = new Date(d.expiresAt).getTime();
-      if (!Number.isFinite(end)) continue;
-      if (end - nowMs > EXPIRING_SOON_MS || end <= nowMs) continue;
-      push({
-        key: `expiring-${d.id}`,
-        text: ko.activityExpiringSoon,
-        sub: d.title,
-        to: demandHref(d),
-      });
-    }
-
-    return items.slice(0, 5);
-  }, [activities, getDemand, myDemands]);
-
-  const openDemands = myDemands.filter((d) => {
-    const s = effectiveDemandStatus(d);
-    return s === "ACTIVE" || s === "MATCHED";
-  });
-  const archivedDemands = myDemands.filter((d) => {
-    const s = effectiveDemandStatus(d);
-    return s === "EXPIRED" || s === "CLOSED";
-  });
-
-  const pendingMatches = useMemo(
+  const openBuyDemands = useMemo(
     () =>
-      myMatches.filter(
-        (m) =>
-          m.status !== "CONNECTED" &&
-          m.status !== "COMPLETED" &&
-          m.status !== "CLOSED" &&
-          m.status !== "DECLINED",
-      ),
-    [myMatches],
+      myDemands.filter((demand): demand is BuyDemand => {
+        if (!isBuyDemand(demand)) return false;
+        const status = effectiveDemandStatus(demand);
+        return status === "ACTIVE" || status === "MATCHED";
+      }),
+    [myDemands],
   );
 
-  const responseRows = useMemo(() => {
-    return [...myResponses]
-      .filter((r) => r.status !== "WITHDRAWN")
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }, [myResponses]);
+  const receivedOffers = useMemo(
+    () =>
+      myMatches.filter(
+        (match) =>
+          match.buyerId === currentUser?.id &&
+          Boolean(match.sellIntentId) &&
+          match.status !== "DECLINED" &&
+          match.status !== "CLOSED",
+      ),
+    [currentUser?.id, myMatches],
+  );
 
-  const connectedMatchByDemand = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const m of myMatches) {
-      if (
-        m.status !== "CONNECTED" &&
-        m.status !== "COMPLETED" &&
-        m.status !== "CLOSED"
-      ) {
-        continue;
-      }
-      map.set(m.demandId, m.id);
+  const visibleReceivedOffers = useMemo(
+    () =>
+      demandFilter
+        ? receivedOffers.filter((match) => match.demandId === demandFilter)
+        : receivedOffers,
+    [demandFilter, receivedOffers],
+  );
+
+  const sellerMatches = useMemo(
+    () =>
+      myMatches.filter(
+        (match) =>
+          match.sellerId === currentUser?.id &&
+          Boolean(match.sellIntentId) &&
+          match.status !== "POTENTIAL" &&
+          match.status !== "DECLINED" &&
+          match.status !== "CLOSED",
+      ),
+    [currentUser?.id, myMatches],
+  );
+
+  const offerCountByDemand = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const match of receivedOffers) {
+      map.set(match.demandId, (map.get(match.demandId) ?? 0) + 1);
     }
     return map;
-  }, [myMatches]);
+  }, [receivedOffers]);
 
   if (!isLoggedIn) {
     return (
       <EmptyState
-        title={ko.needLogin}
-        body={ko.needLoginBody}
+        title="로그인이 필요해요"
+        body="내 구매수요와 받은 제안을 확인하려면 로그인해 주세요."
         action={
           dataMode === "supabase" ? (
-            <Button to="/login">{ko.login}</Button>
+            <Button to="/login">로그인</Button>
           ) : (
-            <Button onClick={() => login()}>{ko.login}</Button>
+            <Button onClick={() => login()}>로그인</Button>
           )
         }
       />
     );
   }
 
+  function changeTab(next: MyTab) {
+    setSearchParams(next === "demands" ? {} : { tab: next });
+  }
+
   return (
-    <div className="page-stack my-dan">
-      <header className="my-dan__header">
-        <h1 className="page-title">{ko.myDan}</h1>
-        <Link to={`/profile/${currentUser?.id}`} className="my-dan__name">
-          {currentUser?.name}
+    <div className="page-stack my-dan my-dan--blueprint">
+      <header className="my-dan__header my-dan__header--v1">
+        <div>
+          <p className="eyebrow">내 거래</p>
+          <h1 className="page-title">내 구매수요</h1>
+        </div>
+        <Link to={"/profile/" + currentUser?.id} className="my-dan__name">
+          프로필 보기 <span aria-hidden>›</span>
         </Link>
       </header>
 
-      {nowItems.length > 0 ? (
-        <MyBlock title={ko.attentionTitle}>
-          <div className="app-row-list">
-            {nowItems.map((item) => (
-              <RowLink
-                key={item.key}
-                to={item.to}
-                title={item.text}
-                meta={item.sub}
-              />
-            ))}
-          </div>
-        </MyBlock>
-      ) : null}
-
-      {pendingMatches.length > 0 ? (
-        <MyBlock title={ko.pendingMatches}>
-          <MatchList matches={pendingMatches} emptyWhenZero={false} />
-        </MyBlock>
-      ) : null}
-
-      <MyBlock title={ko.myRequests}>
-        {openDemands.length === 0 ? (
-          <div className="my-block__empty">
-            <p>{ko.emptyMyRequests}</p>
-            <Button to="/create" size="sm">
-              {ko.navCreate}
-            </Button>
-          </div>
-        ) : (
-          <div className="app-row-list">
-            {openDemands.map((d) => (
-              <RowLink
-                key={d.id}
-                to={demandHref(d)}
-                title={d.title}
-                meta={requestMeta(d, responseCountByDemand.get(d.id) ?? 0)}
-              />
-            ))}
-          </div>
-        )}
-      </MyBlock>
-
-      <MyBlock title={ko.myResponses}>
-        {responseRows.length === 0 ? (
-          <p className="my-block__hint">{ko.emptyMyResponses}</p>
-        ) : (
-          <div className="app-row-list">
-            {responseRows.map((r) => {
-              const demand = getDemand(r.demandId);
-              const matchId = connectedMatchByDemand.get(r.demandId);
-              const to =
-                r.status === "ACCEPTED" && matchId
-                  ? `/match/${matchId}`
-                  : `/demand/item/${r.demandId}`;
-              return (
-                <RowLink
-                  key={r.id}
-                  to={to}
-                  title={demand?.title || r.message || ko.respondCta}
-                  meta={responseStatusMeta(r.status)}
-                />
-              );
-            })}
-          </div>
-        )}
-      </MyBlock>
-
-      <div className="my-secondary">
+      <nav className="my-demand-tabs" aria-label="내 거래 메뉴">
         <button
           type="button"
-          className="my-secondary__row"
-          aria-expanded={archivedOpen}
-          onClick={() => setArchivedOpen((v) => !v)}
+          className={tab === "demands" ? "is-active" : ""}
+          onClick={() => changeTab("demands")}
         >
-          <span>{ko.archivedRequests}</span>
-          <span aria-hidden>{archivedOpen ? "∧" : "›"}</span>
+          구매수요
+          <span>{openBuyDemands.length}</span>
         </button>
-        {archivedOpen ? (
-          <div className="my-secondary__panel">
-            {archivedDemands.length === 0 ? (
-              <p className="my-block__hint">{ko.emptyArchived}</p>
-            ) : (
-              <div className="expired-list">
-                {archivedDemands.map((d) => {
-                  const onDate = formatExpiredOn(d);
-                  const isBuy = d.type === "BUY";
-                  const expired = effectiveDemandStatus(d) === "EXPIRED";
+        <button
+          type="button"
+          className={tab === "offers" ? "is-active" : ""}
+          onClick={() => changeTab("offers")}
+        >
+          받은 제안
+          <span>{receivedOffers.length}</span>
+        </button>
+        <button
+          type="button"
+          className={tab === "selling" ? "is-active" : ""}
+          onClick={() => changeTab("selling")}
+        >
+          판매 제안
+          <span>{mySellIntents.length}</span>
+        </button>
+      </nav>
+
+      {tab === "demands" ? (
+        <section className="my-demand-panel">
+          {openBuyDemands.length === 0 ? (
+            <EmptyState
+              title="등록한 구매수요가 없어요"
+              body="원하는 물건과 조건을 먼저 남겨보세요."
+              action={<Button to="/buy/new">구매수요 등록</Button>}
+            />
+          ) : (
+            <div className="my-demand-card-list">
+              {openBuyDemands.map((demand) => {
+                const product = getProduct(demand.details.productId);
+                if (!product) return null;
+                const offerCount = offerCountByDemand.get(demand.id) ?? 0;
+                return (
+                  <Link key={demand.id} to={"/demand/item/" + demand.id} className="my-demand-card">
+                    <ProductVisual product={product} size="sm" />
+                    <div className="my-demand-card__body">
+                      <div className="my-demand-card__head">
+                        <strong>{product.name}</strong>
+                        <span>{effectiveDemandStatus(demand) === "MATCHED" ? "거래 진행" : "구매중"}</span>
+                      </div>
+                      <p>최대 {formatWon(demand.details.maxPrice)}</p>
+                      <small>{formatFulfillmentSummary(demand.fulfillmentOptions)}</small>
+                    </div>
+                    <div className="my-demand-card__offer">
+                      <strong>{offerCount}</strong>
+                      <span>제안</span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+
+          <Button to="/buy/new" fullWidth size="lg">
+            새 구매수요 등록
+          </Button>
+        </section>
+      ) : null}
+
+      {tab === "offers" ? (
+        <section className="my-demand-panel">
+          <div className="my-demand-section-head">
+            <div>
+              <h2>받은 제안</h2>
+              <p>가격과 기본 상태를 비교한 뒤 제안 상세에서 관심을 표시하세요.</p>
+            </div>
+            {demandFilter ? (
+              <button type="button" className="my-demand-filter-clear" onClick={() => setSearchParams({ tab: "offers" })}>
+                전체 보기
+              </button>
+            ) : null}
+          </div>
+          {visibleReceivedOffers.length > 0 ? (
+            <MatchList matches={visibleReceivedOffers} emptyWhenZero={false} />
+          ) : (
+            <EmptyState
+              title="아직 받은 제안이 없어요"
+              body="구매수요를 본 판매자가 판매 제안을 보내면 여기에 표시돼요."
+              action={<Button to="/" variant="secondary">실시간 수요 보기</Button>}
+            />
+          )}
+        </section>
+      ) : null}
+
+      {tab === "selling" ? (
+        <section className="my-demand-panel">
+          {sellerMatches.length > 0 ? (
+            <>
+              <div className="my-demand-section-head">
+                <div>
+                  <h2>구매자 반응</h2>
+                  <p>구매자가 관심을 보이면 먼저 연결해 대화하고, 거래를 계속할 때 증거와 조건을 확정하세요.</p>
+                </div>
+              </div>
+              <MatchList matches={sellerMatches} emptyWhenZero={false} />
+            </>
+          ) : null}
+
+          <div className="my-demand-section-head">
+            <div>
+              <h2>보낸 판매 제안</h2>
+              <p>내가 보낸 판매 제안의 현재 상태예요.</p>
+            </div>
+          </div>
+
+          {mySellIntents.length > 0 ? (
+            <div className="seller-offer-list">
+              {[...mySellIntents]
+                .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+                .map((offer) => {
+                  const product = getProduct(offer.productId);
+                  const status =
+                    offer.status === "OPEN"
+                      ? "구매자 검토 대기"
+                      : offer.status === "MATCHED"
+                        ? "거래 진행 중"
+                        : offer.status === "PAUSED"
+                          ? "일시정지"
+                          : "종료";
                   return (
-                    <article key={d.id} className="expired-card">
-                      <Link to={demandHref(d)} className="expired-card__title">
-                        {d.title}
-                      </Link>
-                      <p className="expired-card__meta">
-                        {expired
-                          ? isBuy
-                            ? `${ko.expiredOnPrefix}${onDate ? ` · ${onDate}` : ""}`
-                            : ko.expiredTimedBody
-                          : ko.statusClosed}
-                      </p>
-                      {expired && isBuy ? (
-                        <>
-                          <p className="expired-card__ask">{ko.expiredBuyAsk}</p>
-                          <div className="expired-card__actions">
-                            <Button
-                              size="sm"
-                              disabled={busy}
-                              onClick={() => void extendBuyDemand(d.id)}
-                            >
-                              {ko.extend30d}
-                            </Button>
-                          </div>
-                        </>
-                      ) : null}
-                      {expired && !isBuy ? (
-                        <div className="expired-card__actions">
-                          <Button size="sm" to={`/create?type=${d.type}`}>
-                            {ko.recreateSimilar}
-                          </Button>
-                        </div>
-                      ) : null}
-                    </article>
+                    <Link key={offer.id} to={"/demand/" + offer.productId} className="seller-offer-row">
+                      <ProductVisual product={product!} size="sm" />
+                      <div>
+                        <strong>{product?.name ?? "판매 제안"}</strong>
+                        <span>{formatWon(offer.minimumPrice)} · {status}</span>
+                      </div>
+                      <span aria-hidden>›</span>
+                    </Link>
                   );
                 })}
-              </div>
-            )}
-          </div>
-        ) : null}
-
-        <Link to={`/profile/${currentUser?.id}`} className="my-secondary__row">
-          <span>{ko.profileTitle}</span>
-          <span aria-hidden>›</span>
-        </Link>
-      </div>
-
-      {dataMode === "demo" ? (
-        <Button variant="ghost" onClick={resetDemo}>
-          {ko.resetDemo}
-        </Button>
+            </div>
+          ) : (
+            <EmptyState
+              title="보낸 판매 제안이 없어요"
+              body="실시간 수요에서 가지고 있는 물건을 찾아 Quick Offer를 보내세요."
+              action={<Button to="/">구매수요 보기</Button>}
+            />
+          )}
+        </section>
       ) : null}
     </div>
   );

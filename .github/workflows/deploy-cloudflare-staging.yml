@@ -1,0 +1,78 @@
+name: Deploy Cloudflare Staging
+
+# Staging only. Never deploys the public Cloudflare project `dan`
+# and never reads production GitHub secrets (VITE_SUPABASE_*, CLOUDFLARE_*).
+# Do not enable push/main triggers. Do not run this workflow until a human
+# creates the dan-v1-staging-jongwoon Pages project and staging GitHub secrets.
+# Never use occupied dan-staging.pages.dev.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type deploy-staging-only to confirm this is not production
+        required: true
+        type: string
+
+concurrency:
+  group: cloudflare-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-staging:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://dan-v1-staging-jongwoon.pages.dev
+    env:
+      DAN_ENV: staging
+      STAGING_CLOUDFLARE_PROJECT: dan-v1-staging-jongwoon
+      STAGING_DEPLOY_CONFIRM: ${{ inputs.confirm }}
+      STAGING_VITE_SUPABASE_URL: ${{ secrets.STAGING_VITE_SUPABASE_URL }}
+      STAGING_VITE_SUPABASE_ANON_KEY: ${{ secrets.STAGING_VITE_SUPABASE_ANON_KEY }}
+      DAN_STAGING_SUPABASE_PROJECT_REF: ${{ secrets.DAN_STAGING_SUPABASE_PROJECT_REF }}
+    steps:
+      - name: Refuse production branch and project
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            echo "REFUSED: staging deploy cannot run from main"
+            exit 1
+          fi
+          if [ "${{ inputs.confirm }}" != "deploy-staging-only" ]; then
+            echo "REFUSED: type deploy-staging-only"
+            exit 1
+          fi
+          if [ "${STAGING_CLOUDFLARE_PROJECT}" != "dan-v1-staging-jongwoon" ]; then
+            echo "REFUSED: Cloudflare project must be dan-v1-staging-jongwoon"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Assert staging env is not production
+        run: npm run assert:staging-deploy
+
+      - name: Build staging bundle
+        env:
+          VITE_BASE: /
+          VITE_DAN_ENV: staging
+          VITE_SUPABASE_URL: ${{ secrets.STAGING_VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.STAGING_VITE_SUPABASE_ANON_KEY }}
+        run: npm run build
+
+      - name: Publish to Cloudflare Pages project dan-v1-staging-jongwoon
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.STAGING_CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.STAGING_CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=dan-v1-staging-jongwoon --commit-dirty=true

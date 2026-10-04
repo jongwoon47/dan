@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
-import { TextInput } from "@/components/ui/Input";
+import { Field, TextInput } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { ko } from "@/copy/ko";
+import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
 import {
   digitsOnly,
@@ -13,35 +14,59 @@ import {
 } from "@/lib/format";
 import "./pages.css";
 
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error);
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.readAsDataURL(file);
+  });
+}
+
 export function SellIntentPage() {
   const { ownershipId = "" } = useParams();
   const navigate = useNavigate();
-  const {
-    myOwnerships,
-    getProduct,
-    getAggregate,
-    createSellIntent,
-    myMatches,
-  } = useDan();
+  const { myOwnerships, getProduct, getAggregate, createSellIntent } = useDan();
   const ownership = myOwnerships.find((o) => o.id === ownershipId);
   const product = ownership ? getProduct(ownership.productId) : undefined;
   const aggregate = ownership ? getAggregate(ownership.productId) : null;
-  const productIdForNav = ownership?.productId;
-  const suggested =
-    aggregate && aggregate.highestIntentPrice > 0
-      ? aggregate.highestIntentPrice
-      : 0;
+  const suggested = aggregate?.highestIntentPrice ?? 0;
+
   const [price, setPrice] = useState(suggested ? String(suggested) : "");
+  const [usageCount, setUsageCount] = useState("");
+  const [conditionNote, setConditionNote] = useState("");
+  const [quickPhotoUrl, setQuickPhotoUrl] = useState("");
+  const [photoError, setPhotoError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  if (!ownership || !product || !productIdForNav) {
+  useDeepHeader({ title: "빠른 판매 제안" });
+
+  if (!ownership || !product) {
     return (
       <EmptyState
-        title={ko.missingOwn}
-        body={ko.missingOwnBody}
-        action={<Button to="/feed" variant="secondary">{ko.navFeed}</Button>}
+        title="등록된 물건이 없어요"
+        body="먼저 내 물건을 등록해 주세요."
+        action={<Button to="/feed" variant="secondary">구매수요 보기</Button>}
       />
     );
+  }
+
+  async function pickPhoto(file?: File) {
+    setPhotoError("");
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setPhotoError("이미지 파일만 올릴 수 있어요.");
+      return;
+    }
+    if (file.size > 700_000) {
+      setPhotoError("V1에서는 700KB 이하 사진을 사용해 주세요.");
+      return;
+    }
+    try {
+      setQuickPhotoUrl(await fileToDataUrl(file));
+    } catch {
+      setPhotoError("사진을 읽지 못했어요.");
+    }
   }
 
   async function submit() {
@@ -50,19 +75,14 @@ export function SellIntentPage() {
     if (!Number.isFinite(minimumPrice) || minimumPrice <= 0) return;
     setBusy(true);
     try {
-      const created = await createSellIntent({ ownershipId, minimumPrice });
-      if (created) {
-        const related = myMatches.find(
-          (m) =>
-            m.productId === productIdForNav &&
-            (m.status === "CONNECTED" || m.status === "BUYER_INTERESTED"),
-        );
-        if (related?.status === "CONNECTED") {
-          navigate(`/match/${related.id}`);
-        } else {
-          navigate("/chats");
-        }
-      }
+      const created = await createSellIntent({
+        ownershipId,
+        minimumPrice,
+        approxUsageCount: usageCount ? Number(usageCount) : undefined,
+        conditionNote: conditionNote.trim() || undefined,
+        quickPhotoUrl: quickPhotoUrl || undefined,
+      });
+      if (created) navigate("/my");
     } finally {
       setBusy(false);
     }
@@ -72,67 +92,79 @@ export function SellIntentPage() {
   const seekerCount = aggregate?.seekerCount ?? 0;
 
   return (
-    <div className="page-stack page-narrow">
-      <section className="section-stack sell-summary">
-        <h2 className="section-title">{product.name}</h2>
-        <p className="section-desc">{ko.sellNotListing}</p>
-        {suggested > 0 || seekerCount > 0 ? (
-          <div className="kpi-strip kpi-strip--compact">
-            {suggested > 0 ? (
-              <div className="kpi-strip__item">
-                <span>{ko.currentHighest}</span>
-                <strong>{formatWon(suggested)}</strong>
-              </div>
-            ) : null}
-            {seekerCount > 0 ? (
-              <div className="kpi-strip__item">
-                <span>{ko.seekersLabel}</span>
-                <strong>
-                  {seekerCount}
-                  {ko.myung}
-                </strong>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+    <div className="page-stack page-narrow quick-offer-page">
+      <section className="deal-product-card">
+        <ProductVisual product={product} size="sm" />
+        <div>
+          <p className="eyebrow">Quick Offer</p>
+          <h1 className="page-title">{product.name}</h1>
+          {seekerCount > 0 ? (
+            <p className="quick-offer-signal">
+              지금 <strong>{seekerCount}명</strong>이 찾고 있어요
+            </p>
+          ) : null}
+        </div>
+      </section>
 
-        {suggested > 0 ? (
-          <button
-            type="button"
-            className="text-link"
-            onClick={() => setPrice(String(suggested))}
-          >
-            {ko.suggestPrice}: {formatWon(suggested)}
+      {suggested > 0 ? (
+        <section className="live-demand-banner">
+          <span>현재 최고 구매희망가</span>
+          <strong>{formatWon(suggested)}</strong>
+          <button type="button" onClick={() => setPrice(String(suggested))}>
+            이 가격 사용
           </button>
-        ) : null}
+        </section>
+      ) : null}
 
-        <div className="sell-sentence">
-          <p>{ko.iWould}</p>
+      <section className="section-stack quick-offer-form">
+        <Field label="희망 판매가" hint="구매자가 먼저 가격을 확인합니다.">
           <TextInput
             inputMode="numeric"
             value={formatDigitsGrouped(price)}
             onChange={(e) => setPrice(digitsOnly(e.target.value))}
-            aria-label={ko.minPriceLabel}
-            placeholder={suggested > 0 ? formatDigitsGrouped(String(suggested)) : "예: 1,500,000"}
+            placeholder="예: 2,130,000"
           />
-          <p>{ko.sellSentenceEnd}</p>
-        </div>
+        </Field>
 
-        {typed > 0 && suggested > 0 ? (
-          <p className="section-desc">
-            {formatWon(typed)} {ko.fromSuffix}
-            {" · "}
-            {ko.highestHopeShort} {formatWon(suggested)}
-          </p>
+        {product.category === "camera" ? (
+          <Field label="대략적인 컷수" hint="정확한 증거는 구매자가 관심을 보인 뒤 제출합니다.">
+            <TextInput
+              inputMode="numeric"
+              value={formatDigitsGrouped(usageCount)}
+              onChange={(e) => setUsageCount(digitsOnly(e.target.value))}
+              placeholder="예: 2,400"
+            />
+          </Field>
         ) : null}
 
-        <Button
-          fullWidth
-          size="lg"
-          onClick={() => void submit()}
-          disabled={busy || typed <= 0}
-        >
-          {busy ? ko.saving : ko.sellCta}
+        <Field label="상태 한 줄">
+          <TextInput
+            value={conditionNote}
+            onChange={(e) => setConditionNote(e.target.value)}
+            placeholder="예: 상태 좋음 · 상단 미세스크래치"
+          />
+        </Field>
+
+        <div>
+          <p className="field-inline-label">현재 사진 1장 <span className="muted">선택</span></p>
+          <label className="evidence-upload evidence-upload--quick">
+            {quickPhotoUrl ? (
+              <img src={quickPhotoUrl} alt="현재 물품" />
+            ) : (
+              <span>사진을 추가하면 구매자가 더 빠르게 판단할 수 있어요</span>
+            )}
+            <input type="file" accept="image/*" onChange={(e) => void pickPhoto(e.target.files?.[0])} />
+          </label>
+          {photoError ? <p className="form-error">{photoError}</p> : null}
+        </div>
+
+        <div className="quick-offer-note">
+          <strong>지금은 가볍게 제안하세요</strong>
+          <p>구매자가 관심을 보인 뒤에만 시리얼·보증·구성품·상세 상태 증거를 요청합니다.</p>
+        </div>
+
+        <Button fullWidth size="lg" onClick={() => void submit()} disabled={busy || typed <= 0}>
+          {busy ? "제안 중…" : "제안 보내기"}
         </Button>
       </section>
     </div>

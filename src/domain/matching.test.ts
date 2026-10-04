@@ -23,7 +23,11 @@ import type { BuyDemand, Match, Ownership, Product, SellIntent } from "@/domain/
 
 const NOW = Date.parse("2026-09-13T12:00:00.000Z");
 
-const demand = (overrides: Partial<BuyDemand> & { details?: Partial<BuyDemand["details"]> } = {}): BuyDemand => {
+const demand = (
+  overrides: Omit<Partial<BuyDemand>, "details"> & {
+    details?: Partial<BuyDemand["details"]>;
+  } = {},
+): BuyDemand => {
   const { details: detailOverrides, ...rest } = overrides;
   return {
     id: "d1",
@@ -114,11 +118,44 @@ describe("matching compatibility", () => {
     ).toBe(false);
   });
 
+  it("rejects incompatible fulfillment method", () => {
+    expect(
+      canCreateMatch({
+        demand: demand({ details: { tradeMethod: "shipping" } }),
+        sellIntent: sell({ tradeMethod: "meetup" }),
+        ownershipCondition: "lightly_used",
+        nowMs: NOW,
+      }),
+    ).toBe(false);
+  });
+
+  it("allows either-side any fulfillment", () => {
+    expect(
+      canCreateMatch({
+        demand: demand({ details: { tradeMethod: "shipping" } }),
+        sellIntent: sell({ tradeMethod: "any" }),
+        ownershipCondition: "lightly_used",
+        nowMs: NOW,
+      }),
+    ).toBe(true);
+  });
+
+  it("rejects a targeted offer for a different demand", () => {
+    expect(
+      canCreateMatch({
+        demand: demand({ id: "d-other" }),
+        sellIntent: sell({ targetDemandId: "d-target" }),
+        ownershipCondition: "lightly_used",
+        nowMs: NOW,
+      }),
+    ).toBe(false);
+  });
+
   it("allows compatible live demand", () => {
     expect(
       canCreateMatch({
         demand: demand(),
-        sellIntent: sell(),
+        sellIntent: sell({ tradeMethod: "any" }),
         ownershipCondition: "lightly_used",
         nowMs: NOW,
       }),
@@ -211,6 +248,31 @@ describe("match lifecycle", () => {
     expect(dedupeConnectedMatches([b, a], "owner").map((m) => m.id)).toEqual([
       "m1",
     ]);
+  });
+
+  it("allows a fresh potential candidate after closed trade history", () => {
+    const own = ownership();
+    const candidates = listMatchCandidates({
+      demands: [demand()],
+      sellIntents: [sell()],
+      ownershipById: new Map([
+        [own.id, { condition: own.condition, status: own.status, userId: own.userId }],
+      ]),
+      nowMs: NOW,
+    });
+    const closed: Match = {
+      ...potential,
+      id: "closed-history",
+      status: "CLOSED",
+    };
+    const visible = mergeVisibleMatches({
+      persisted: [closed],
+      candidates,
+      userId: "buyer",
+      nowIso: new Date(NOW).toISOString(),
+    });
+    expect(visible.some((row) => row.status === "POTENTIAL")).toBe(true);
+    expect(visible.some((row) => row.id === "closed-history")).toBe(true);
   });
 
   it("keeps POTENTIAL derived and progressive matches persisted in merge", () => {
