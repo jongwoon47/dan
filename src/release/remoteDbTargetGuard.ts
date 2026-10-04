@@ -1,7 +1,9 @@
 import {
   PRODUCTION_REMOTE_CONFIRM,
+  PRODUCTION_SUPABASE_PROJECT_REFS,
   STAGING_PROJECT_REF_ENV,
   STAGING_REMOTE_CONFIRM,
+  STAGING_SUPABASE_PROJECT_REF,
   containsProductionSupabaseRef,
 } from "./environmentSeparation.ts";
 
@@ -61,6 +63,13 @@ export function assertRemoteMigrationAllowed(
         message: "REFUSED: staging cannot use a production Supabase project ref.",
       };
     }
+    if (stagingRef !== STAGING_SUPABASE_PROJECT_REF) {
+      return {
+        ok: false,
+        code: 1,
+        message: "REFUSED: unexpected staging Supabase project ref.",
+      };
+    }
     if (explicitRef && explicitRef !== stagingRef) {
       return {
         ok: false,
@@ -77,6 +86,13 @@ export function assertRemoteMigrationAllowed(
     };
   }
 
+  if (PRODUCTION_SUPABASE_PROJECT_REFS.length === 0) {
+    return {
+      ok: false,
+      code: 1,
+      message: "REFUSED: production Supabase project is not configured.",
+    };
+  }
   if (env.DAN_REMOTE_CONFIRM !== PRODUCTION_REMOTE_CONFIRM) {
     return {
       ok: false,
@@ -90,6 +106,14 @@ export function assertRemoteMigrationAllowed(
       code: 2,
       message:
         "NEEDS USER: DAN_SUPABASE_PROJECT_REF must be set explicitly. Production ref is not a default.",
+    };
+  }
+
+  if (!containsProductionSupabaseRef(explicitRef)) {
+    return {
+      ok: false,
+      code: 1,
+      message: "REFUSED: explicit production ref is not an approved production project.",
     };
   }
 
