@@ -10,6 +10,7 @@ import {
 } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { TransactionStageBar } from "@/components/TransactionStageBar";
 import { ProductVisual } from "@/components/ProductVisual";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -302,6 +303,16 @@ export function MatchChatPage() {
   const buySnapshotLocked = Boolean(dealSnapshot?.lockedAt);
   const buyPaid = match.paymentStatus === "PAID";
   const buyComplete = match.status === "COMPLETED";
+  const transactionStage: 1 | 2 | 3 | 4 | 5 =
+    buyComplete
+      ? 5
+      : buyPaid
+        ? 4
+        : buySnapshotLocked
+          ? 3
+          : buyEvidenceReady
+            ? 2
+            : 1;
 
   let lastDay = "";
 
@@ -366,29 +377,7 @@ export function MatchChatPage() {
         ) : null}
       </header>
 
-      {isBuyTrade ? (
-        <div className="chat-deal-progress" aria-label="거래 진행 단계">
-          <span className={buyEvidenceReady ? "is-done" : "is-current"}>
-            <i aria-hidden>{buyEvidenceReady ? "✓" : "1"}</i>
-            <b>정보</b>
-          </span>
-          <em aria-hidden />
-          <span className={buySnapshotLocked ? "is-done" : buyEvidenceReady ? "is-current" : ""}>
-            <i aria-hidden>{buySnapshotLocked ? "✓" : "2"}</i>
-            <b>조건</b>
-          </span>
-          <em aria-hidden />
-          <span className={buyPaid ? "is-done" : buySnapshotLocked ? "is-current" : ""}>
-            <i aria-hidden>{buyPaid ? "✓" : "3"}</i>
-            <b>결제</b>
-          </span>
-          <em aria-hidden />
-          <span className={buyComplete ? "is-done" : buyPaid ? "is-current" : ""}>
-            <i aria-hidden>{buyComplete ? "✓" : "4"}</i>
-            <b>인계</b>
-          </span>
-        </div>
-      ) : null}
+      {isBuyTrade ? <TransactionStageBar stage={transactionStage} /> : null}
 
       <section className="trade-status" aria-live="polite">
         {isBuyTrade && chatProduct ? (
