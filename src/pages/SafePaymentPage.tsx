@@ -131,9 +131,6 @@ export function SafePaymentPage() {
           <Button fullWidth size="lg" disabled={busy} onClick={() => void pay()}>
             {busy ? "결제 확인 중…" : formatWon(snapshot.agreedPrice) + " 결제하기"}
           </Button>
-          <p className="payment-production-note">
-            테스트 환경에서 결제 흐름을 확인하고 있어요.
-          </p>
         </>
       ) : !isBuyer ? (
         <Button to="/my" fullWidth variant="secondary">내 거래로</Button>
