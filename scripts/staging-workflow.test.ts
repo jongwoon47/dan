@@ -3,7 +3,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
-  PRODUCTION_CLOUDFLARE_PROJECT,
   STAGING_CLOUDFLARE_PROJECT,
   STAGING_SUPABASE_PROJECT_REF,
 } from "../src/release/environmentSeparation.ts";
