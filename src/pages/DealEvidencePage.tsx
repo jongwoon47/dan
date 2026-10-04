@@ -160,7 +160,7 @@ export function DealEvidencePage() {
       <EmptyState
         title="먼저 구매자와 연결해 주세요"
         body="제안이 선택됐다면 먼저 연결해 대화하세요. 실제 거래를 이어갈 때 상품 정보를 등록합니다."
-        action={<Button to="/my?tab=selling">판매 제안으로 돌아가기</Button>}
+        action={<Button to="/my">판매 제안으로 돌아가기</Button>}
       />
     );
   }
@@ -364,7 +364,7 @@ export function DealEvidencePage() {
 
           <div className="evidence-form-divider">
             <span>3</span>
-            <div><strong>구성품 · 상태 · 추가 정보</strong><small>Deal Snapshot에 그대로 기록될 내용이에요.</small></div>
+            <div><strong>구성품 · 상태 · 추가 정보</strong><small>거래 조건에 그대로 기록될 내용이에요.</small></div>
           </div>
 
           <div>
