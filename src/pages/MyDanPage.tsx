@@ -8,15 +8,26 @@ import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
 import { effectiveDemandStatus } from "@/domain/demandLifecycle";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
-import { isBuyDemand, type BuyDemand } from "@/domain/types";
+import { DEMAND_TYPE_LABEL, isBuyDemand, type Demand, type DemandType } from "@/domain/types";
 import { formatWon } from "@/lib/format";
 import "./pages.css";
 
 type MyTab = "demands" | "offers" | "selling";
 
+const TYPE_ICON: Record<DemandType, string> = {
+  BUY: "🛍️",
+  BORROW: "📦",
+  TASK: "🧭",
+  SERVICE: "🛠️",
+};
+
 function normalizeTab(value: string | null): MyTab {
   if (value === "offers" || value === "selling") return value;
   return "demands";
+}
+
+function demandPrice(demand: Demand) {
+  return isBuyDemand(demand) ? demand.details.maxPrice : demand.budget;
 }
 
 export function MyDanPage() {
@@ -34,13 +45,14 @@ export function MyDanPage() {
   const tab = normalizeTab(searchParams.get("tab"));
   const demandFilter = searchParams.get("demand");
 
-  const openBuyDemands = useMemo(
+  const activeDemands = useMemo(
     () =>
-      myDemands.filter((demand): demand is BuyDemand => {
-        if (!isBuyDemand(demand)) return false;
-        const status = effectiveDemandStatus(demand);
-        return status === "ACTIVE" || status === "MATCHED";
-      }),
+      myDemands
+        .filter((demand) => {
+          const status = effectiveDemandStatus(demand);
+          return status === "ACTIVE" || status === "MATCHED";
+        })
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [myDemands],
   );
 
@@ -77,13 +89,17 @@ export function MyDanPage() {
     [currentUser?.id, myMatches],
   );
 
-  const offerCountByDemand = useMemo(() => {
+  const proposalCountByDemand = useMemo(() => {
     const map = new Map<string, number>();
-    for (const match of receivedOffers) {
+    for (const match of myMatches) {
+      if (
+        match.status === "DECLINED" ||
+        match.status === "CLOSED"
+      ) continue;
       map.set(match.demandId, (map.get(match.demandId) ?? 0) + 1);
     }
     return map;
-  }, [receivedOffers]);
+  }, [myMatches]);
 
   if (!isLoggedIn) {
     return (
@@ -109,11 +125,11 @@ export function MyDanPage() {
     <div className="page-stack my-dan my-dan--blueprint">
       <header className="my-dan__header my-dan__header--v1">
         <div>
-          <p className="eyebrow">내 거래</p>
+          <p className="eyebrow">거래 관리</p>
           <h1 className="page-title">내 거래</h1>
         </div>
         <Link to={"/profile/" + currentUser?.id} className="my-dan__name">
-          프로필 보기 <span aria-hidden>›</span>
+          프로필 <span aria-hidden>›</span>
         </Link>
       </header>
 
@@ -123,54 +139,63 @@ export function MyDanPage() {
           className={tab === "demands" ? "is-active" : ""}
           onClick={() => changeTab("demands")}
         >
-          구매수요
-          <span>{openBuyDemands.length}</span>
+          내 요청 <span>{activeDemands.length}</span>
         </button>
         <button
           type="button"
           className={tab === "offers" ? "is-active" : ""}
           onClick={() => changeTab("offers")}
         >
-          받은 제안
-          <span>{receivedOffers.length}</span>
+          받은 제안 <span>{receivedOffers.length}</span>
         </button>
         <button
           type="button"
           className={tab === "selling" ? "is-active" : ""}
           onClick={() => changeTab("selling")}
         >
-          판매 제안
-          <span>{mySellIntents.length}</span>
+          보낸 제안 <span>{mySellIntents.length}</span>
         </button>
       </nav>
 
       {tab === "demands" ? (
         <section className="my-demand-panel">
-          {openBuyDemands.length === 0 ? (
+          {activeDemands.length === 0 ? (
             <EmptyState
               title="아직 올린 요청이 없어요"
-              body="필요한 물건이나 일을 요청해보세요."
+              body="구매, 빌리기, 심부름, 서비스 중 필요한 것을 요청해보세요."
               action={<Button to="/create">요청 만들기</Button>}
             />
           ) : (
             <div className="my-demand-card-list">
-              {openBuyDemands.map((demand) => {
-                const product = getProduct(demand.details.productId);
-                if (!product) return null;
-                const offerCount = offerCountByDemand.get(demand.id) ?? 0;
+              {activeDemands.map((demand) => {
+                const product = isBuyDemand(demand)
+                  ? getProduct(demand.details.productId)
+                  : undefined;
+                const count = proposalCountByDemand.get(demand.id) ?? 0;
+                const status = effectiveDemandStatus(demand);
                 return (
-                  <Link key={demand.id} to={"/demand/item/" + demand.id} className="my-demand-card">
-                    <ProductVisual product={product} size="sm" />
+                  <Link
+                    key={demand.id}
+                    to={"/demand/item/" + demand.id}
+                    className="my-demand-card"
+                  >
+                    {product ? (
+                      <ProductVisual product={product} size="sm" />
+                    ) : (
+                      <span className="my-demand-card__type-icon" aria-hidden>
+                        {TYPE_ICON[demand.type]}
+                      </span>
+                    )}
                     <div className="my-demand-card__body">
                       <div className="my-demand-card__head">
-                        <strong>{product.name}</strong>
-                        <span>{effectiveDemandStatus(demand) === "MATCHED" ? "거래 진행" : "구매중"}</span>
+                        <strong>{demand.title}</strong>
+                        <span>{status === "MATCHED" ? "거래 진행" : DEMAND_TYPE_LABEL[demand.type]}</span>
                       </div>
-                      <p>최대 {formatWon(demand.details.maxPrice)}</p>
+                      <p>{formatWon(demandPrice(demand))}</p>
                       <small>{formatFulfillmentSummary(demand.fulfillmentOptions)}</small>
                     </div>
                     <div className="my-demand-card__offer">
-                      <strong>{offerCount}</strong>
+                      <strong>{count}</strong>
                       <span>제안</span>
                     </div>
                   </Link>
@@ -179,9 +204,11 @@ export function MyDanPage() {
             </div>
           )}
 
-          <Button to="/create" fullWidth size="lg">
-            새 요청요 등록
-          </Button>
+          <div className="my-demand-create-row">
+            <Button to="/create" variant="secondary">
+              + 새 요청
+            </Button>
+          </div>
         </section>
       ) : null}
 
@@ -190,10 +217,14 @@ export function MyDanPage() {
           <div className="my-demand-section-head">
             <div>
               <h2>받은 제안</h2>
-              <p>가격과 기본 상태를 비교한 뒤 제안 상세에서 거래할 제안을 선택하세요.</p>
+              <p>가격, 조건, 거래 이력을 비교하고 거래할 사람을 선택하세요.</p>
             </div>
             {demandFilter ? (
-              <button type="button" className="my-demand-filter-clear" onClick={() => setSearchParams({ tab: "offers" })}>
+              <button
+                type="button"
+                className="my-demand-filter-clear"
+                onClick={() => setSearchParams({ tab: "offers" })}
+              >
                 전체 보기
               </button>
             ) : null}
@@ -203,8 +234,8 @@ export function MyDanPage() {
           ) : (
             <EmptyState
               title="아직 받은 제안이 없어요"
-              body="구매수요를 본 판매자가 판매 제안을 보내면 여기에 표시돼요."
-              action={<Button to="/" variant="secondary">실시간 수요 보기</Button>}
+              body="내 요청에 제안이 도착하면 여기에서 비교할 수 있어요."
+              action={<Button to="/feed" variant="secondary">요청 탐색</Button>}
             />
           )}
         </section>
@@ -216,8 +247,8 @@ export function MyDanPage() {
             <>
               <div className="my-demand-section-head">
                 <div>
-                  <h2>구매자 반응</h2>
-                  <p>구매자가 관심을 보이면 먼저 연결해 대화하고, 거래를 계속할 때 상품 정보와 거래 조건을 확인하세요.</p>
+                  <h2>진행 중인 제안</h2>
+                  <p>상대가 선택한 제안은 채팅에서 다음 거래 단계를 이어가세요.</p>
                 </div>
               </div>
               <MatchList matches={sellerMatches} emptyWhenZero={false} />
@@ -226,8 +257,8 @@ export function MyDanPage() {
 
           <div className="my-demand-section-head">
             <div>
-              <h2>보낸 판매 제안</h2>
-              <p>내가 보낸 판매 제안의 현재 상태예요.</p>
+              <h2>보낸 제안</h2>
+              <p>내가 보낸 제안의 현재 상태예요.</p>
             </div>
           </div>
 
@@ -239,15 +270,19 @@ export function MyDanPage() {
                   const product = getProduct(offer.productId);
                   const status =
                     offer.status === "OPEN"
-                      ? "구매자 검토 대기"
+                      ? "상대 확인 중"
                       : offer.status === "MATCHED"
                         ? "거래 진행 중"
                         : offer.status === "PAUSED"
                           ? "일시정지"
                           : "종료";
                   return (
-                    <Link key={offer.id} to={"/demand/" + offer.productId} className="seller-offer-row">
-                      <ProductVisual product={product!} size="sm" />
+                    <Link
+                      key={offer.id}
+                      to={"/demand/" + offer.productId}
+                      className="seller-offer-row"
+                    >
+                      {product ? <ProductVisual product={product} size="sm" /> : null}
                       <div>
                         <strong>{product?.name ?? "판매 제안"}</strong>
                         <span>{formatWon(offer.minimumPrice)} · {status}</span>
@@ -259,7 +294,7 @@ export function MyDanPage() {
             </div>
           ) : (
             <EmptyState
-              title="보낸 판매 제안이 없어요"
+              title="보낸 제안이 없어요"
               body="탐색에서 내가 도와줄 수 있는 요청을 찾아 제안해보세요."
               action={<Button to="/feed">요청 탐색</Button>}
             />
