@@ -53,7 +53,7 @@ export function OfferDetailPage() {
       <EmptyState
         title="제안을 찾을 수 없어요"
         body="받은 제안 목록에서 다시 확인해 주세요."
-        action={<Button to="/my?tab=offers" variant="secondary">받은 제안</Button>}
+        action={<Button to="/my" variant="secondary">받은 제안</Button>}
       />
     );
   }
@@ -144,7 +144,7 @@ export function OfferDetailPage() {
         <section className="offer-next-state">
           <strong>제안을 선택했어요</strong>
           <p>상대가 수락하면 채팅이 열려요. 거래를 이어갈 때 상품 정보를 확인합니다.</p>
-          <Button to="/my?tab=offers" variant="secondary" fullWidth>받은 제안으로 돌아가기</Button>
+          <Button to="/my" variant="secondary" fullWidth>받은 제안으로 돌아가기</Button>
         </section>
       ) : match.status === "CONNECTED" ? (
         <section className="offer-next-state">
@@ -168,7 +168,7 @@ export function OfferDetailPage() {
           완료된 거래 보기
         </Button>
       ) : (
-        <Button to="/my?tab=offers" fullWidth variant="secondary">받은 제안</Button>
+        <Button to="/my" fullWidth variant="secondary">받은 제안</Button>
       )}
     </div>
   );
