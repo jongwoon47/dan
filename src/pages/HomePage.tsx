@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useDan } from "@/domain/danContext";
 import { CATEGORY_LABEL, DEMAND_TYPE_LABEL, type ProductCategory } from "@/domain/types";
 import { effectiveDemandStatus } from "@/domain/demandLifecycle";
+import { formatFulfillmentSummary } from "@/domain/fulfillment";
 import { formatWon } from "@/lib/format";
 import "./pages.css";
 import "@/components/feedCards.css";
@@ -234,7 +235,7 @@ export function HomePage() {
                 <div>
                   <span>{DEMAND_TYPE_LABEL[demand.type]}</span>
                   <strong>{demand.title}</strong>
-                  <small>{demand.fulfillmentOptions?.[0]?.mode === "REMOTE" ? "온라인" : demand.fulfillmentOptions?.[0]?.place?.publicLabel || "위치 협의"}</small>
+                  <small>{formatFulfillmentSummary(demand.fulfillmentOptions)}</small>
                 </div>
                 <b>{formatWon(demand.budget)}</b>
                 <i aria-hidden>›</i>
