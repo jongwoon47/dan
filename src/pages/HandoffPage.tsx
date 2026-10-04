@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { TradeFlowHeader } from "@/components/TradeFlowHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
@@ -175,32 +176,16 @@ export function HandoffPage() {
 
   return (
     <div className="page-stack page-narrow handoff-page">
-      <section className="handoff-hero">
-        <span className="eyebrow">인계 확인</span>
-        <h1 className="page-title">{product.name}</h1>
-        <p>확정한 조건을 기준으로 결제하고, 물품을 인계받을 때 실제 상태를 다시 확인해요.</p>
-      </section>
+      <TradeFlowHeader
+        product={product}
+        price={snapshot.agreedPrice}
+        step={match.status === "COMPLETED" ? "complete" : "handoff"}
+        eyebrow="인계 확인"
+      />
 
-      <section className="trade-progress-card" aria-label="거래 진행 단계">
-        <div className="trade-progress-row is-done">
-          <span className="trade-progress-icon">✓</span>
-          <div><strong>거래조건 확정</strong><small>거래 조건 확인 완료</small></div>
-        </div>
-        <div className={match.paymentStatus === "PAID" ? "trade-progress-row is-done" : "trade-progress-row is-current"}>
-          <span className="trade-progress-icon">{match.paymentStatus === "PAID" ? "✓" : "2"}</span>
-          <div>
-            <strong>구매자 안전결제</strong>
-            <small>{match.paymentStatus === "PAID" ? "결제 완료" : "결제 대기 중"}</small>
-          </div>
-        </div>
-        <div className={match.status === "COMPLETED" ? "trade-progress-row is-done" : match.paymentStatus === "PAID" ? "trade-progress-row is-current" : "trade-progress-row"}>
-          <span className="trade-progress-icon">{match.status === "COMPLETED" ? "✓" : "3"}</span>
-          <div>
-            <strong>{handoffLabel}</strong>
-            <small>{match.status === "COMPLETED" ? "거래 완료" : match.paymentStatus === "PAID" ? "채팅에서 인계 방법을 조율하세요" : "결제 완료 후 진행"}</small>
-          </div>
-        </div>
-      </section>
+      <p className="trade-flow-lead">
+        확정한 조건과 실제 물품이 같은지 확인한 뒤 인계를 완료하세요.
+      </p>
 
       <section className="deal-snapshot-card">
         {facts.map(([label, value]) => (
