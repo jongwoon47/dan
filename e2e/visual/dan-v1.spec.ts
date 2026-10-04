@@ -307,7 +307,7 @@ test("DAN App V3 core request and transaction journey renders", async ({ page },
   await page.goto("/demand/prod-fuji-x100vi/offer");
   await settle(page);
   await expect(page.getByRole("button", { name: "제안 보내기" })).toBeVisible();
-  await expect(page.getByText(/현재 최고 구매희망가/)).toBeVisible();
+  await expect(page.getByText("현재 최고 구매 희망가")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "12-offer-create.png"), fullPage: true });
 });
