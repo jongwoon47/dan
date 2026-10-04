@@ -10,7 +10,7 @@ import "./pages.css";
 
 const DISPUTE_OPTIONS: Array<{ value: DealDisputeReason; label: string }> = [
   { value: "WRONG_ITEM", label: "다른 물건이에요" },
-  { value: "SNAPSHOT_MISMATCH", label: "Deal Snapshot과 달라요" },
+  { value: "SNAPSHOT_MISMATCH", label: "확정한 거래 조건과 달라요" },
   { value: "MAJOR_UNDISCLOSED_DEFECT", label: "고지되지 않은 큰 하자가 있어요" },
   { value: "ITEM_NOT_RECEIVED", label: "물건을 받지 못했어요" },
   { value: "OTHER", label: "기타" },
@@ -127,7 +127,7 @@ export function HandoffPage() {
     return (
       <EmptyState
         title="먼저 거래 조건을 확정해 주세요"
-        body="양쪽이 같은 Deal Snapshot을 확인해야 물품 인계 단계로 넘어갈 수 있어요."
+        body="양쪽이 같은 거래 조건을 확인해야 물품 인계 단계로 넘어갈 수 있어요."
         action={<Button to={`/deal/${match.id}/snapshot`}>거래 조건 확인</Button>}
       />
     );
