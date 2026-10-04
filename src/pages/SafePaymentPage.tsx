@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ProductVisual } from "@/components/ProductVisual";
+import { TradeFlowHeader } from "@/components/TradeFlowHeader";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
@@ -73,14 +73,12 @@ export function SafePaymentPage() {
 
   return (
     <div className="page-stack page-narrow safe-payment-page">
-      <section className="payment-product-card">
-        <ProductVisual product={product} size="sm" />
-        <div>
-          <span>결제 금액</span>
-          <h1>{formatWon(snapshot.agreedPrice)}</h1>
-          <p>{product.name}</p>
-        </div>
-      </section>
+      <TradeFlowHeader
+        product={product}
+        price={snapshot.agreedPrice}
+        step="payment"
+        eyebrow="안전결제"
+      />
 
       <section className="payment-breakdown">
         <div><span>상품 금액</span><strong>{formatWon(snapshot.agreedPrice)}</strong></div>
