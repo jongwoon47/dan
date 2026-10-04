@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AggregatedDemandCard } from "@/components/AggregatedDemandCard";
 import { IndividualDemandCard } from "@/components/IndividualDemandCard";
 import { Button } from "@/components/ui/Button";
@@ -71,7 +72,9 @@ function matchesIndividualQuery(item: Extract<FeedItem, { kind: "individual" }>,
 
 export function DemandFeedPage() {
   const { demandFeed } = useDan();
-  const [query, setQuery] = useState("");
+  const [params] = useSearchParams();
+  const urlQuery = params.get("q")?.trim() ?? "";
+  const [query, setQuery] = useState(urlQuery);
   const [requestType, setRequestType] = useState<RequestTypeFilter>("all");
   const [category, setCategory] = useState<LiveDemandCategory>("all");
   const [sort, setSort] = useState<LiveDemandSort>("popular");
@@ -82,6 +85,11 @@ export function DemandFeedPage() {
   const [remoteReady, setRemoteReady] = useState(false);
   const productionDiscovery = getDataMode() === "supabase";
   const includesBuy = requestType === "all" || requestType === "BUY";
+
+  useEffect(() => {
+    setQuery(urlQuery);
+    setPage(0);
+  }, [urlQuery]);
 
   const categoryRows = useMemo(
     () => liveDemandCategoryCounts(demandFeed),
