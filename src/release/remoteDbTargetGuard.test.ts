@@ -78,7 +78,4 @@ describe("assertRemoteMigrationAllowed", () => {
     expect(blocked.code).toBe(1);
     expect(blocked.message).toMatch(/not configured/i);
   });
-    expect(allowed.ok).toBe(true);
-    expect(allowed.projectRef).toBe(PRODUCTION_SUPABASE_PROJECT_REFS[0]);
-  });
 });
