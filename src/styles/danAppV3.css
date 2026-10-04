@@ -1242,3 +1242,29 @@ body {
     border-top: 1px solid var(--v3-line) !important;
   }
 }
+
+
+/* ---------- Request edit ---------- */
+
+.request-edit-form {
+  max-width: var(--v3-form);
+}
+
+.request-edit-primary {
+  min-height: 58px;
+  display: grid;
+  gap: 3px;
+  padding: 11px 0 14px;
+  border-bottom: 1px solid var(--v3-line);
+}
+
+.request-edit-primary span {
+  color: var(--v3-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.request-edit-primary strong {
+  font-size: 18px;
+  letter-spacing: -.02em;
+}
