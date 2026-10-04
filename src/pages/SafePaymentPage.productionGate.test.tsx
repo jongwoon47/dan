@@ -105,10 +105,10 @@ describe("SafePaymentPage production gate", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: "실제 결제사는 아직 연결하지 않았어요.",
+        name: "현재는 실제 결제를 받을 수 없어요.",
       }),
     ).toBeVisible();
-    expect(screen.getByText("클라이언트에서 임의로 PAID 상태 변경 불가")).toBeVisible();
+    expect(screen.getByText("결제 기능이 연결되기 전까지는 거래 조건 확인까지만 진행할 수 있어요.")).toBeVisible();
     expect(screen.queryByRole("button", { name: /결제하기/ })).toBeNull();
     await waitFor(() => {
       expect(localStorage.getItem(STORE_KEY)).not.toContain('"paymentStatus":"PAID"');
