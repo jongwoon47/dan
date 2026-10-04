@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { TransactionStageBar } from "@/components/TransactionStageBar";
 import { Field, TextInput } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProductVisual } from "@/components/ProductVisual";
@@ -165,6 +166,7 @@ export function DealSnapshotPage() {
 
   return (
     <div className="page-stack page-narrow deal-page">
+      <TransactionStageBar stage={2} />
       <section className="deal-product-card deal-product-card--snapshot">
         <div className="deal-product-card__main">
           <ProductVisual product={product} size="sm" />
