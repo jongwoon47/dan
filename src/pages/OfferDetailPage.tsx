@@ -58,6 +58,11 @@ export function OfferDetailPage() {
     );
   }
 
+  const completedTrades = sellerProfile?.completedDemandCount ?? 0;
+  const issueTrades =
+    (sellerProfile?.sellerFaultCancellationCount ?? 0) +
+    (sellerProfile?.unresolvedDisputeCount ?? 0);
+
   const usageValue =
     sell.approxUsageCount == null
       ? null
@@ -127,9 +132,11 @@ export function OfferDetailPage() {
           {sellerProfile?.identityVerified ? <span className="trust-verified-badge">본인인증 완료</span> : null}
         </div>
         <div className="offer-seller-card__facts">
-          <div><strong>{sellerProfile?.completedDemandCount ?? 0}</strong><span>거래 완료</span></div>
-          <div><strong>{sellerProfile?.sellerFaultCancellationCount ?? 0}</strong><span>취소</span></div>
-          <div><strong>{sellerProfile?.unresolvedDisputeCount ?? 0}</strong><span>분쟁</span></div>
+          <div><strong>{completedTrades}</strong><span>거래 완료</span></div>
+          <div>
+            <strong>{issueTrades === 0 ? "없음" : issueTrades}</strong>
+            <span>문제 거래</span>
+          </div>
         </div>
         <Button to={"/profile/" + match.sellerId} variant="ghost" fullWidth>
           거래 이력 보기
