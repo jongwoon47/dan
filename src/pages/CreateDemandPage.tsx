@@ -39,6 +39,13 @@ import "./pages.css";
 import "@/components/feedCards.css";
 
 const TYPES: DemandType[] = ["BUY", "BORROW", "TASK", "SERVICE"];
+
+const TYPE_META: Record<DemandType, { label: string; desc: string; icon: string }> = {
+  BUY: { label: "구매", desc: "사고 싶은 물건이 있어요", icon: "⌕" },
+  BORROW: { label: "빌리기", desc: "잠깐 빌리고 싶어요", icon: "↔" },
+  TASK: { label: "심부름", desc: "대신 해줄 일을 찾고 있어요", icon: "✓" },
+  SERVICE: { label: "서비스", desc: "전문가의 도움이 필요해요", icon: "✦" },
+};
 const CONDITIONS: ConditionPreference[] = ["sealed", "like_new", "lightly_used", "any"];
 
 type TaskMode = "onsite" | "pickup" | "route" | "remote";
@@ -93,13 +100,14 @@ export function CreateDemandPage() {
   const [params] = useSearchParams();
   const draft = loadCreateDraft();
   const paramType = parseType(params.get("type"));
+  const paramQuery = params.get("q")?.trim() ?? "";
 
   const [type, setType] = useState<DemandType | null>(
     paramType ?? draft?.type ?? null,
   );
   const [title, setTitle] = useState(draft?.title ?? "");
   const [productId, setProductId] = useState(draft?.productId ?? "");
-  const [productQuery, setProductQuery] = useState(draft?.productQuery ?? "");
+  const [productQuery, setProductQuery] = useState(paramQuery || draft?.productQuery || "");
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [maxPrice, setMaxPrice] = useState(
     draft?.maxPrice && draft.maxPrice !== "1000000" ? draft.maxPrice : "",
@@ -394,9 +402,9 @@ export function CreateDemandPage() {
   const canCore = useMemo(() => {
     if (!type || !Number.isFinite(price) || price <= 0) return false;
     if (type === "BUY") return Boolean(productQuery.trim());
-    if (type === "BORROW") return Boolean(title.trim() || itemName.trim());
+    if (type === "BORROW") return Boolean(itemName.trim());
     if (type === "SERVICE") return Boolean(title.trim());
-    return Boolean(title.trim() || detail.trim());
+    return Boolean(detail.trim());
   }, [type, price, productQuery, title, itemName, detail]);
 
   const canSubmit = useMemo(() => {
@@ -469,8 +477,8 @@ export function CreateDemandPage() {
       if (type === "BORROW") {
         const created = await createDemand({
           type: "BORROW",
-          title: title.trim() || itemName.trim(),
-          itemName: itemName.trim() || title.trim(),
+          title: itemName.trim(),
+          itemName: itemName.trim(),
           budget: price,
           fulfillmentOptions,
           description: detail,
@@ -486,10 +494,11 @@ export function CreateDemandPage() {
         return;
       }
       if (type === "TASK") {
+        const taskTitle = detail.trim().split("\n")[0].slice(0, 60);
         const created = await createDemand({
           type: "TASK",
-          title: title.trim() || detail.trim(),
-          taskDescription: detail.trim() || title.trim(),
+          title: taskTitle,
+          taskDescription: detail.trim(),
           budget: price,
           fulfillmentOptions,
           dueAt: fromDatetimeLocalValue(dueAt),
@@ -546,17 +555,21 @@ export function CreateDemandPage() {
           </h2>
         </div>
 
-        <div className="type-segment" role="radiogroup" aria-label="글 유형">
+        <div className="request-type-grid" role="radiogroup" aria-label="요청 유형">
           {TYPES.map((t) => (
             <button
               key={t}
               type="button"
               role="radio"
               aria-checked={type === t}
-              className={type === t ? "type-segment__btn is-selected" : "type-segment__btn"}
+              className={type === t ? "request-type-card is-selected" : "request-type-card"}
               onClick={() => selectType(t)}
             >
-              {DEMAND_TYPE_LABEL[t]}
+              <span className="request-type-card__icon" aria-hidden>{TYPE_META[t].icon}</span>
+              <span className="request-type-card__copy">
+                <strong>{TYPE_META[t].label}</strong>
+                <small>{TYPE_META[t].desc}</small>
+              </span>
             </button>
           ))}
         </div>
@@ -565,23 +578,16 @@ export function CreateDemandPage() {
           <p className="section-desc">{ko.pickDemandType}</p>
         ) : (
           <>
-            <div className="create-steps" aria-label="작성 단계">
-              <span className={phase === 1 ? "is-active" : ""}>1. {ko.stepWhat}</span>
-              <span className={phase === 2 ? "is-active" : ""}>2. {ko.stepWhereWhen}</span>
+            <div className="create-progress" aria-label="작성 단계">
+              <div className="create-progress__track"><span style={{ width: phase === 1 ? "50%" : "100%" }} /></div>
+              <div className="create-progress__labels">
+                <span className={phase === 1 ? "is-active" : ""}>무엇을</span>
+                <span className={phase === 2 ? "is-active" : ""}>어디서 · 언제</span>
+              </div>
             </div>
 
             {phase === 1 ? (
               <>
-                {type !== "BUY" && type !== "SERVICE" ? (
-                  <Field label={ko.titleLabel}>
-                    <TextInput
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder={ko.composerPlaceholder}
-                    />
-                  </Field>
-                ) : null}
-
                 {type === "BUY" ? (
                   <>
                     <div
