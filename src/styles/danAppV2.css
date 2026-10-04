@@ -490,3 +490,144 @@ textarea.dan-input,
     margin-inline: auto;
   }
 }
+
+
+/* Home request shortcuts */
+.home-request-types {
+  display: grid;
+  gap: 12px;
+}
+.home-request-types__head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+}
+.home-request-types__head h2 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -.035em;
+}
+.home-request-types__head span {
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+.home-request-types__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0,1fr));
+  gap: 10px;
+}
+.home-request-type {
+  display: grid;
+  gap: 5px;
+  min-height: 112px;
+  padding: 16px;
+  border: 1px solid var(--v2-line);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--v2-ink);
+  text-decoration: none;
+}
+.home-request-type > span {
+  font-size: 22px;
+}
+.home-request-type strong {
+  font-size: 15px;
+}
+.home-request-type small {
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+/* My trades */
+.my-demand-card__type-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--v2-surface-subtle);
+  font-size: 22px;
+}
+.my-demand-create-row {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 14px;
+}
+
+/* Proposal optional details */
+.quick-offer-extras {
+  border-top: 1px solid var(--v2-line);
+  border-bottom: 1px solid var(--v2-line);
+}
+.quick-offer-extras > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 54px;
+  cursor: pointer;
+  list-style: none;
+}
+.quick-offer-extras > summary::-webkit-details-marker { display: none; }
+.quick-offer-extras > summary > span:first-child {
+  display: grid;
+  gap: 2px;
+}
+.quick-offer-extras > summary strong {
+  font-size: 14px;
+}
+.quick-offer-extras > summary small {
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+.quick-offer-extras__body {
+  padding: 4px 0 16px;
+}
+
+/* Compact system/support pages */
+.activity-list,
+.chat-list {
+  border-top: 1px solid var(--v2-line);
+}
+.activity-list li {
+  border-bottom: 1px solid var(--v2-line);
+}
+.auth-screen {
+  max-width: 400px;
+  margin-inline: auto;
+}
+.auth-screen__headline {
+  font-size: 28px !important;
+  letter-spacing: -.045em !important;
+}
+.not-found-page {
+  min-height: 50vh;
+  place-content: center;
+  text-align: center;
+}
+
+@media (max-width: 767px) {
+  .home-request-types__head span {
+    display: none;
+  }
+  .home-request-types__grid {
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 8px;
+  }
+  .home-request-type {
+    min-height: 92px;
+    padding: 13px;
+  }
+  .my-demand-card__type-icon {
+    width: 46px;
+    height: 46px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .home-request-type:hover {
+    border-color: #cec7ff;
+    background: #fcfbff;
+  }
+}
