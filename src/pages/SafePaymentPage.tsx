@@ -37,7 +37,7 @@ export function SafePaymentPage() {
   }, [getDealSnapshot, matchId]);
 
   if (!match || !product) {
-    return <EmptyState title="거래 정보를 찾을 수 없어요" action={<Button to="/my">내 구매수요</Button>} />;
+    return <EmptyState title="거래 정보를 찾을 수 없어요" action={<Button to="/my">내 거래</Button>} />;
   }
 
   if (!snapshot?.lockedAt) {
@@ -92,8 +92,7 @@ export function SafePaymentPage() {
         <section className="payment-methods">
           <div className="payment-section-head">
             <h2>결제 수단</h2>
-            <span>결제 수단</span>
-          </div>
+            </div>
           <button type="button" className={method === "card" ? "payment-method is-selected" : "payment-method"} onClick={() => setMethod("card")}>
             <span>카드 결제</span><strong>{method === "card" ? "✓" : ""}</strong>
           </button>
