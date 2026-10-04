@@ -228,7 +228,7 @@ export function DealEvidencePage() {
       evidenceMeta: { source: "seller_submitted", productCategory: activeProduct.category },
     });
     if (!row) {
-      setSubmitError("증거를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      setSubmitError("상품 정보를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
       return;
     }
     navigate(`/deal/${activeMatch.id}/snapshot`);
@@ -239,7 +239,7 @@ export function DealEvidencePage() {
       <section className="deal-product-card">
         <ProductVisual product={product} size="sm" />
         <div>
-          <p className="eyebrow">Quick Offer</p>
+          <p className="eyebrow">상품 정보</p>
           <h1 className="page-title">{product.name}</h1>
           <strong className="deal-price">{formatWon(sell.minimumPrice)}</strong>
         </div>
@@ -247,7 +247,7 @@ export function DealEvidencePage() {
 
       <section className="trust-explainer">
         <strong>판매자가 제출한 정보예요</strong>
-        <p>DAN이 제품 상태나 정품 여부를 보증하지 않습니다. 거래 당시 무엇을 주장했고 어떤 증거를 냈는지 기록합니다.</p>
+        <p>판매자가 입력한 상품 정보예요. 실제 물품과 같은지 거래 전에 직접 확인하세요.</p>
       </section>
 
       {!isSeller && existing ? (
@@ -263,8 +263,8 @@ export function DealEvidencePage() {
         <section className="verification-gate">
           <strong>실거래 전 판매자 검증이 필요해요</strong>
           <p>
-            Quick Offer는 검증 없이도 보낼 수 있지만 Deal로 들어가려면
-            휴대폰·본인·정산계좌 검증이 모두 완료되어야 합니다.
+            제안은 먼저 보낼 수 있지만 실제 거래를 진행하려면
+            휴대폰·본인·정산계좌 확인이 모두 완료되어야 해요.
           </p>
         </section>
       ) : null}
