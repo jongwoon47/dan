@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
+import { TransactionStageBar } from "@/components/TransactionStageBar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
@@ -56,6 +57,7 @@ export function TradeCompletePage() {
 
   return (
     <div className="page-stack page-narrow trade-complete-page">
+      <TransactionStageBar stage={5} />
       <section className="trade-complete-hero">
         <span className="trade-complete-check" aria-hidden>✓</span>
         <h1>거래가 완료됐어요</h1>
