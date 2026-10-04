@@ -162,6 +162,27 @@ export function HomePage() {
         </div>
       </section>
 
+      <section className="home-request-types" aria-label="요청 바로 만들기">
+        <div className="home-request-types__head">
+          <h2>무엇이 필요하세요?</h2>
+          <span>바로 요청을 시작해보세요</span>
+        </div>
+        <div className="home-request-types__grid">
+          <Link to="/create?type=BUY" className="home-request-type">
+            <span aria-hidden>🛍️</span><strong>구매</strong><small>사고 싶은 물건</small>
+          </Link>
+          <Link to="/create?type=BORROW" className="home-request-type">
+            <span aria-hidden>📦</span><strong>빌리기</strong><small>잠깐 필요한 물건</small>
+          </Link>
+          <Link to="/create?type=TASK" className="home-request-type">
+            <span aria-hidden>🧭</span><strong>심부름</strong><small>대신 해줄 일</small>
+          </Link>
+          <Link to="/create?type=SERVICE" className="home-request-type">
+            <span aria-hidden>🛠️</span><strong>서비스</strong><small>전문가의 도움</small>
+          </Link>
+        </div>
+      </section>
+
       <section className="home-live-section">
         <div className="home-live-heading">
           <div>
