@@ -210,7 +210,7 @@ export function DemandFeedPage() {
           <p className="discovery-summary" aria-live="polite">
             <strong>{totalProducts}</strong>개 제품
             {filtered.length > 0 ? (
-              <> · 현재 <strong>{activeSeekers}</strong>명 구매수요</>
+              <> · 현재 <strong>{activeSeekers}</strong>명 찾는 중</>
             ) : null}
           </p>
           <div className="discovery-sort" aria-label="정렬">
@@ -259,7 +259,7 @@ export function DemandFeedPage() {
           </div>
           {remoteLoading ? (
             <p className="discovery-loading" role="status">
-              Live Demand 불러오는 중…
+              요청 불러오는 중…
             </p>
           ) : null}
           {hasMore ? (
