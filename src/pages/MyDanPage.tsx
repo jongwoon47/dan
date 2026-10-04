@@ -12,7 +12,7 @@ import { DEMAND_TYPE_LABEL, isBuyDemand, type Demand, type DemandType } from "@/
 import { formatWon } from "@/lib/format";
 import "./pages.css";
 
-type MyTab = "demands" | "offers" | "selling";
+type MyTab = "active" | "requests" | "done";
 
 const TYPE_ICON: Record<DemandType, string> = {
   BUY: "🛍️",
@@ -22,8 +22,9 @@ const TYPE_ICON: Record<DemandType, string> = {
 };
 
 function normalizeTab(value: string | null): MyTab {
-  if (value === "offers" || value === "selling") return value;
-  return "demands";
+  if (value === "requests") return "requests";
+  if (value === "done") return "done";
+  return "active";
 }
 
 function demandPrice(demand: Demand) {
@@ -43,7 +44,6 @@ export function MyDanPage() {
   const dataMode = getDataMode();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = normalizeTab(searchParams.get("tab"));
-  const demandFilter = searchParams.get("demand");
 
   const activeDemands = useMemo(
     () =>
@@ -56,46 +56,33 @@ export function MyDanPage() {
     [myDemands],
   );
 
-  const receivedOffers = useMemo(
+  const activeMatches = useMemo(
     () =>
       myMatches.filter(
         (match) =>
-          match.buyerId === currentUser?.id &&
-          Boolean(match.sellIntentId) &&
-          match.status !== "DECLINED" &&
-          match.status !== "CLOSED",
+          match.status === "CONNECTED" ||
+          match.status === "BUYER_INTERESTED",
       ),
-    [currentUser?.id, myMatches],
+    [myMatches],
   );
 
-  const visibleReceivedOffers = useMemo(
-    () =>
-      demandFilter
-        ? receivedOffers.filter((match) => match.demandId === demandFilter)
-        : receivedOffers,
-    [demandFilter, receivedOffers],
+  const completedMatches = useMemo(
+    () => myMatches.filter((match) => match.status === "COMPLETED"),
+    [myMatches],
   );
 
-  const sellerMatches = useMemo(
+  const pendingSellIntents = useMemo(
     () =>
-      myMatches.filter(
-        (match) =>
-          match.sellerId === currentUser?.id &&
-          Boolean(match.sellIntentId) &&
-          match.status !== "POTENTIAL" &&
-          match.status !== "DECLINED" &&
-          match.status !== "CLOSED",
-      ),
-    [currentUser?.id, myMatches],
+      mySellIntents
+        .filter((offer) => offer.status === "OPEN")
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    [mySellIntents],
   );
 
   const proposalCountByDemand = useMemo(() => {
     const map = new Map<string, number>();
     for (const match of myMatches) {
-      if (
-        match.status === "DECLINED" ||
-        match.status === "CLOSED"
-      ) continue;
+      if (match.status === "DECLINED" || match.status === "CLOSED") continue;
       map.set(match.demandId, (map.get(match.demandId) ?? 0) + 1);
     }
     return map;
@@ -118,8 +105,10 @@ export function MyDanPage() {
   }
 
   function changeTab(next: MyTab) {
-    setSearchParams(next === "demands" ? {} : { tab: next });
+    setSearchParams(next === "active" ? {} : { tab: next });
   }
+
+  const activeCount = activeMatches.length + pendingSellIntents.length;
 
   return (
     <div className="page-stack my-dan my-dan--blueprint">
@@ -136,28 +125,82 @@ export function MyDanPage() {
       <nav className="my-demand-tabs" aria-label="내 거래 메뉴">
         <button
           type="button"
-          className={tab === "demands" ? "is-active" : ""}
-          onClick={() => changeTab("demands")}
+          className={tab === "active" ? "is-active" : ""}
+          onClick={() => changeTab("active")}
+        >
+          진행 중 <span>{activeCount}</span>
+        </button>
+        <button
+          type="button"
+          className={tab === "requests" ? "is-active" : ""}
+          onClick={() => changeTab("requests")}
         >
           내 요청 <span>{activeDemands.length}</span>
         </button>
         <button
           type="button"
-          className={tab === "offers" ? "is-active" : ""}
-          onClick={() => changeTab("offers")}
+          className={tab === "done" ? "is-active" : ""}
+          onClick={() => changeTab("done")}
         >
-          받은 제안 <span>{receivedOffers.length}</span>
-        </button>
-        <button
-          type="button"
-          className={tab === "selling" ? "is-active" : ""}
-          onClick={() => changeTab("selling")}
-        >
-          보낸 제안 <span>{mySellIntents.length}</span>
+          완료 <span>{completedMatches.length}</span>
         </button>
       </nav>
 
-      {tab === "demands" ? (
+      {tab === "active" ? (
+        <section className="my-demand-panel">
+          {activeMatches.length > 0 ? (
+            <div className="my-active-trades">
+              <div className="my-demand-section-head">
+                <div>
+                  <h2>진행 중인 거래</h2>
+                  <p>다음 행동이 필요한 거래부터 확인하세요.</p>
+                </div>
+              </div>
+              <MatchList matches={activeMatches} emptyWhenZero={false} />
+            </div>
+          ) : null}
+
+          {pendingSellIntents.length > 0 ? (
+            <div className="my-pending-offers">
+              <div className="my-demand-section-head">
+                <div>
+                  <h2>상대 확인 중</h2>
+                  <p>내가 보낸 제안을 상대가 확인하고 있어요.</p>
+                </div>
+              </div>
+              <div className="seller-offer-list">
+                {pendingSellIntents.map((offer) => {
+                  const product = getProduct(offer.productId);
+                  return (
+                    <Link
+                      key={offer.id}
+                      to={"/demand/" + offer.productId}
+                      className="seller-offer-row"
+                    >
+                      {product ? <ProductVisual product={product} size="sm" /> : null}
+                      <div>
+                        <strong>{product?.name ?? "판매 제안"}</strong>
+                        <span>{formatWon(offer.minimumPrice)} · 상대 확인 중</span>
+                      </div>
+                      <span aria-hidden>›</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          {activeCount === 0 ? (
+            <EmptyState
+              title="진행 중인 거래가 없어요"
+              body="내 요청에 제안이 오거나, 내가 보낸 제안이 선택되면 여기에서 이어갈 수 있어요."
+              action={<Button to="/feed">요청 탐색</Button>}
+            />
+          ) : null}
+        </section>
+      ) : null}
+
+      {tab === "requests" ? (
         <section className="my-demand-panel">
           {activeDemands.length === 0 ? (
             <EmptyState
@@ -212,91 +255,15 @@ export function MyDanPage() {
         </section>
       ) : null}
 
-      {tab === "offers" ? (
+      {tab === "done" ? (
         <section className="my-demand-panel">
-          <div className="my-demand-section-head">
-            <div>
-              <h2>받은 제안</h2>
-              <p>가격, 조건, 거래 이력을 비교하고 거래할 사람을 선택하세요.</p>
-            </div>
-            {demandFilter ? (
-              <button
-                type="button"
-                className="my-demand-filter-clear"
-                onClick={() => setSearchParams({ tab: "offers" })}
-              >
-                전체 보기
-              </button>
-            ) : null}
-          </div>
-          {visibleReceivedOffers.length > 0 ? (
-            <MatchList matches={visibleReceivedOffers} emptyWhenZero={false} />
+          {completedMatches.length > 0 ? (
+            <MatchList matches={completedMatches} emptyWhenZero={false} />
           ) : (
             <EmptyState
-              title="아직 받은 제안이 없어요"
-              body="내 요청에 제안이 도착하면 여기에서 비교할 수 있어요."
+              title="완료된 거래가 없어요"
+              body="완료된 거래는 여기에 기록돼요."
               action={<Button to="/feed" variant="secondary">요청 탐색</Button>}
-            />
-          )}
-        </section>
-      ) : null}
-
-      {tab === "selling" ? (
-        <section className="my-demand-panel">
-          {sellerMatches.length > 0 ? (
-            <>
-              <div className="my-demand-section-head">
-                <div>
-                  <h2>진행 중인 제안</h2>
-                  <p>상대가 선택한 제안은 채팅에서 다음 거래 단계를 이어가세요.</p>
-                </div>
-              </div>
-              <MatchList matches={sellerMatches} emptyWhenZero={false} />
-            </>
-          ) : null}
-
-          <div className="my-demand-section-head">
-            <div>
-              <h2>보낸 제안</h2>
-              <p>내가 보낸 제안의 현재 상태예요.</p>
-            </div>
-          </div>
-
-          {mySellIntents.length > 0 ? (
-            <div className="seller-offer-list">
-              {[...mySellIntents]
-                .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-                .map((offer) => {
-                  const product = getProduct(offer.productId);
-                  const status =
-                    offer.status === "OPEN"
-                      ? "상대 확인 중"
-                      : offer.status === "MATCHED"
-                        ? "거래 진행 중"
-                        : offer.status === "PAUSED"
-                          ? "일시정지"
-                          : "종료";
-                  return (
-                    <Link
-                      key={offer.id}
-                      to={"/demand/" + offer.productId}
-                      className="seller-offer-row"
-                    >
-                      {product ? <ProductVisual product={product} size="sm" /> : null}
-                      <div>
-                        <strong>{product?.name ?? "판매 제안"}</strong>
-                        <span>{formatWon(offer.minimumPrice)} · {status}</span>
-                      </div>
-                      <span aria-hidden>›</span>
-                    </Link>
-                  );
-                })}
-            </div>
-          ) : (
-            <EmptyState
-              title="보낸 제안이 없어요"
-              body="탐색에서 내가 도와줄 수 있는 요청을 찾아 제안해보세요."
-              action={<Button to="/feed">요청 탐색</Button>}
             />
           )}
         </section>
