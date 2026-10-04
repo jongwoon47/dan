@@ -98,7 +98,7 @@ export function HomePage() {
       <section className="home-demand-header">
         <div className="home-demand-heading">
           <span className="home-demand-kicker">실시간 수요</span>
-          <h1 aria-label="찾는 물건이 있나요?">무엇이<br />필요하세요?</h1>
+          <h1>무엇이<br />필요하세요?</h1>
           <p>구매, 빌리기, 심부름, 서비스까지 필요한 걸 요청해보세요.</p>
         </div>
 
@@ -130,13 +130,13 @@ export function HomePage() {
             <input
               value={intentQuery}
               onChange={(event) => setIntentQuery(event.target.value)}
-              placeholder="무엇이 필요한가요?"
+              placeholder="찾는 물건이 있나요?"
               autoComplete="off"
               aria-label="찾는 제품"
             />
-            <small>물건부터 심부름까지 바로 요청할 수 있어요</small>
+            <small>사고 싶은 물건을 바로 요청해보세요</small>
           </label>
-          <button type="submit" className="home-intent-composer__submit" aria-label="구매수요 만들기">
+          <button type="submit" className="home-intent-composer__submit" aria-label="구매 요청 만들기">
             <span aria-hidden>›</span>
           </button>
         </form>
