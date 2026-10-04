@@ -44,7 +44,7 @@ export function SafePaymentPage() {
     return (
       <EmptyState
         title="먼저 거래 조건을 확정해 주세요"
-        body="양쪽이 Deal Snapshot을 확인한 뒤 결제할 수 있어요."
+        body="양쪽이 같은 거래 조건을 확인한 뒤 결제할 수 있어요."
         action={<Button to={"/deal/" + match.id + "/snapshot"}>거래 조건 확인</Button>}
       />
     );
@@ -92,7 +92,7 @@ export function SafePaymentPage() {
         <section className="payment-methods">
           <div className="payment-section-head">
             <h2>결제 수단</h2>
-            <span>Demo checkout</span>
+            <span>결제 수단</span>
           </div>
           <button type="button" className={method === "card" ? "payment-method is-selected" : "payment-method"} onClick={() => setMethod("card")}>
             <span>카드 결제</span><strong>{method === "card" ? "✓" : ""}</strong>
@@ -110,7 +110,7 @@ export function SafePaymentPage() {
           </p>
           <ul>
             <li>클라이언트에서 임의로 PAID 상태 변경 불가</li>
-            <li>잠긴 Deal Snapshot 이후에만 결제 진입</li>
+            <li>확정된 거래 조건 이후에만 결제할 수 있어요.</li>
             <li>결제사 서버 확인 후에만 인계 단계 오픈</li>
           </ul>
           <Button to={"/deal/" + match.id + "/snapshot"} variant="secondary" fullWidth>
@@ -137,11 +137,11 @@ export function SafePaymentPage() {
             {busy ? "결제 확인 중…" : formatWon(snapshot.agreedPrice) + " 결제하기"}
           </Button>
           <p className="payment-production-note">
-            Demo mode에서만 결제 상태를 시뮬레이션합니다. production에서는 이 동작이 노출되지 않습니다.
+            테스트 환경에서는 실제 결제 없이 결제 흐름을 확인할 수 있어요.
           </p>
         </>
       ) : !isBuyer ? (
-        <Button to="/my?tab=selling" fullWidth variant="secondary">내 판매 제안으로</Button>
+        <Button to="/my" fullWidth variant="secondary">내 거래로</Button>
       ) : null}
     </div>
   );
