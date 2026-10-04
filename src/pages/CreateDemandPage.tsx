@@ -211,6 +211,26 @@ export function CreateDemandPage() {
     setGeoError(null);
   }
 
+  function clearTypeAndContent() {
+    if (hasWritableContent() && !window.confirm(ko.typeSwitchConfirm)) return;
+    setType(null);
+    setPhase(1);
+    setScheduleTouched(false);
+    setFormError(null);
+    setTitle("");
+    setDetail("");
+    setItemName("");
+    setProductQuery("");
+    setProductId("");
+    setSuggestOpen(false);
+    setMaxPrice("");
+    setBudget("");
+    setEstimatedDuration("");
+    setServicePlaceNote("");
+    setServiceGeoPlace(null);
+    setGeoError(null);
+  }
+
   function phase1Title(demandType: DemandType) {
     switch (demandType) {
       case "BUY":
@@ -553,26 +573,34 @@ export function CreateDemandPage() {
           </h2>
         </div>
 
-        <div className="request-type-grid" role="radiogroup" aria-label="요청 유형">
-          {TYPES.map((t) => (
-            <button
-              key={t}
-              type="button"
-              role="radio"
-              aria-checked={type === t}
-              className={type === t ? "request-type-card is-selected" : "request-type-card"}
-              onClick={() => selectType(t)}
-            >
-              <strong>{DEMAND_TYPE_LABEL[t]}</strong>
-              <span>{TYPE_HELP[t]}</span>
-            </button>
-          ))}
-        </div>
-
         {!type ? (
-          <p className="section-desc">{ko.pickDemandType}</p>
+          <>
+            <div className="request-type-grid" role="radiogroup" aria-label="요청 유형">
+              {TYPES.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  role="radio"
+                  aria-checked={false}
+                  className="request-type-card"
+                  onClick={() => selectType(t)}
+                >
+                  <strong>{DEMAND_TYPE_LABEL[t]}</strong>
+                  <span>{TYPE_HELP[t]}</span>
+                </button>
+              ))}
+            </div>
+            <p className="section-desc">{ko.pickDemandType}</p>
+          </>
         ) : (
           <>
+            <div className="create-type-current">
+              <div>
+                <span>요청 유형</span>
+                <strong>{DEMAND_TYPE_LABEL[type]}</strong>
+              </div>
+              <button type="button" onClick={clearTypeAndContent}>유형 변경</button>
+            </div>
             <div className="create-steps" aria-label="작성 단계">
               <span className={phase === 1 ? "is-active" : ""}>1. {ko.stepWhat}</span>
               <span className={phase === 2 ? "is-active" : ""}>2. {ko.stepWhereWhen}</span>
