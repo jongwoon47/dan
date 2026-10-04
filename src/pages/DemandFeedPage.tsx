@@ -148,6 +148,12 @@ export function DemandFeedPage() {
   const demandHref = query.trim()
     ? `/create?type=BUY&q=${encodeURIComponent(query.trim())}`
     : "/create?type=BUY";
+  const createHref =
+    requestType === "all"
+      ? "/create"
+      : requestType === "BUY"
+        ? demandHref
+        : `/create?type=${requestType}`;
 
   function resetRemoteDiscovery() {
     setRemoteRows([]);
@@ -249,24 +255,32 @@ export function DemandFeedPage() {
 
         <div className="discovery-toolbar">
           <p className="discovery-summary" aria-live="polite">
-            <strong>{totalProducts}</strong>개 제품
-            {filtered.length > 0 ? (
-              <> · 현재 <strong>{activeSeekers}</strong>명 찾는 중</>
-            ) : null}
+            {showBuyRequests ? (
+              <>
+                <strong>{totalProducts}</strong>개 제품
+                {filtered.length > 0 ? (
+                  <> · 현재 <strong>{activeSeekers}</strong>명 찾는 중</>
+                ) : null}
+              </>
+            ) : (
+              <><strong>{directRequests.length}</strong>개 요청</>
+            )}
           </p>
-          <div className="discovery-sort" aria-label="정렬">
-            {SORT_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                className={sort === option.value ? "is-active" : ""}
-                aria-pressed={sort === option.value}
-                onClick={() => updateSort(option.value)}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+          {showBuyRequests ? (
+            <div className="discovery-sort" aria-label="정렬">
+              {SORT_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={sort === option.value ? "is-active" : ""}
+                  aria-pressed={sort === option.value}
+                  onClick={() => updateSort(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -337,7 +351,7 @@ export function DemandFeedPage() {
         <EmptyState
           title="조건에 맞는 요청이 없어요"
           body="새 요청을 만들면 필요한 사람과 가능한 사람이 연결될 수 있어요."
-          action={<Button to={requestType === "all" ? "/create" : `/create?type=${requestType}`}>요청 만들기</Button>}
+          action={<Button to={createHref}>요청 만들기</Button>}
         />
       ) : null}
 
@@ -346,7 +360,7 @@ export function DemandFeedPage() {
           <span>찾는 요청이 없나요?</span>
           <strong>원하는 제품을 직접 입력해 새 요청을 만들 수 있어요.</strong>
         </div>
-        <Button to={demandHref} variant="secondary">
+        <Button to={createHref} variant="secondary">
           요청 만들기
         </Button>
       </section>
