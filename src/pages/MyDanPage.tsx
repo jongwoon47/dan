@@ -26,11 +26,13 @@ export function MyDanPage() {
     currentUser,
     myDemands,
     myMatches,
+    mySellIntents,
     getProduct,
   } = useDan();
   const dataMode = getDataMode();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = normalizeTab(searchParams.get("tab"));
+  const demandFilter = searchParams.get("demand");
 
   const openRequests = useMemo(
     () =>
@@ -53,6 +55,33 @@ export function MyDanPage() {
           match.status !== "POTENTIAL",
       ),
     [myMatches],
+  );
+
+  const pendingOffers = useMemo(
+    () =>
+      myMatches.filter(
+        (match) =>
+          match.buyerId === currentUser?.id &&
+          match.status === "POTENTIAL" &&
+          Boolean(match.sellIntentId),
+      ),
+    [currentUser?.id, myMatches],
+  );
+
+  const visiblePendingOffers = useMemo(
+    () =>
+      demandFilter
+        ? pendingOffers.filter((match) => match.demandId === demandFilter)
+        : pendingOffers,
+    [demandFilter, pendingOffers],
+  );
+
+  const openSentOffers = useMemo(
+    () =>
+      [...mySellIntents]
+        .filter((offer) => offer.status === "OPEN" || offer.status === "MATCHED")
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    [mySellIntents],
   );
 
   const completedMatches = useMemo(
@@ -103,7 +132,7 @@ export function MyDanPage() {
           className={tab === "active" ? "is-active" : ""}
           onClick={() => changeTab("active")}
         >
-          진행 중 <span>{activeMatches.length}</span>
+          진행 중 <span>{activeMatches.length + pendingOffers.length + openSentOffers.length}</span>
         </button>
         <button
           type="button"
@@ -122,24 +151,81 @@ export function MyDanPage() {
       </nav>
 
       {tab === "active" ? (
-        <section className="my-demand-panel">
-          {activeMatches.length > 0 ? (
-            <>
+        <section className="my-demand-panel my-active-stack">
+          {visiblePendingOffers.length > 0 ? (
+            <div className="my-active-section">
               <div className="my-demand-section-head">
                 <div>
-                  <h2>지금 진행 중</h2>
-                  <p>다음 해야 할 행동이 있는 거래를 먼저 확인하세요.</p>
+                  <h2>받은 제안</h2>
+                  <p>가격과 조건을 비교하고 거래할 제안을 선택하세요.</p>
+                </div>
+                {demandFilter ? (
+                  <button
+                    type="button"
+                    className="my-demand-filter-clear"
+                    onClick={() => setSearchParams({})}
+                  >
+                    전체 보기
+                  </button>
+                ) : null}
+              </div>
+              <MatchList matches={visiblePendingOffers} emptyWhenZero={false} />
+            </div>
+          ) : null}
+
+          {activeMatches.length > 0 ? (
+            <div className="my-active-section">
+              <div className="my-demand-section-head">
+                <div>
+                  <h2>진행 중인 거래</h2>
+                  <p>지금 해야 할 다음 행동을 확인하세요.</p>
                 </div>
               </div>
               <MatchList matches={activeMatches} emptyWhenZero={false} />
-            </>
-          ) : (
+            </div>
+          ) : null}
+
+          {openSentOffers.length > 0 ? (
+            <div className="my-active-section">
+              <div className="my-demand-section-head">
+                <div>
+                  <h2>내가 보낸 제안</h2>
+                  <p>상대가 선택하면 채팅에서 거래를 이어갈 수 있어요.</p>
+                </div>
+              </div>
+              <div className="seller-offer-list">
+                {openSentOffers.map((offer) => {
+                  const product = getProduct(offer.productId);
+                  return (
+                    <Link
+                      key={offer.id}
+                      to={"/demand/" + offer.productId}
+                      className="seller-offer-row"
+                    >
+                      {product ? <ProductVisual product={product} size="sm" /> : null}
+                      <div>
+                        <strong>{product?.name ?? "판매 제안"}</strong>
+                        <span>
+                          {formatWon(offer.minimumPrice)} · {offer.status === "MATCHED" ? "거래 진행" : "상대 확인 대기"}
+                        </span>
+                      </div>
+                      <span aria-hidden>›</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          {visiblePendingOffers.length === 0 &&
+          activeMatches.length === 0 &&
+          openSentOffers.length === 0 ? (
             <EmptyState
               title="진행 중인 거래가 없어요"
               body="요청을 올리거나 탐색에서 내가 도울 수 있는 요청을 찾아보세요."
               action={<Button to="/feed" variant="secondary">요청 탐색</Button>}
             />
-          )}
+          ) : null}
         </section>
       ) : null}
 
