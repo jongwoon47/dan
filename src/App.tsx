@@ -30,6 +30,7 @@ import { SafePaymentPage } from "@/pages/SafePaymentPage";
 import { SellIntentPage } from "@/pages/SellIntentPage";
 import { TradeCompletePage } from "@/pages/TradeCompletePage";
 import "@/styles/danPremium.css";
+import "@/styles/danPractical.css";
 
 function DataProvider({ children }: { children: ReactNode }) {
   if (getDataMode() === "supabase") {
