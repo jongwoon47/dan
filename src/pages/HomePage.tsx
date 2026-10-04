@@ -193,9 +193,9 @@ export function HomePage() {
         </div>
         {visibleProducts.length === 0 ? (
           <EmptyState
-            title="아직 이 카테고리의 구매수요가 없어요"
-            body="찾는 제품을 직접 입력해 첫 구매수요를 남길 수 있어요."
-            action={<Button to="/create?type=BUY">구매수요 등록</Button>}
+            title="아직 이 카테고리의 구매 요청이 없어요"
+            body="찾는 제품을 직접 입력해 첫 구매 요청을 남길 수 있어요."
+            action={<Button to="/create?type=BUY">구매 요청 만들기</Button>}
           />
         ) : (
           <div className="live-demand-list">
