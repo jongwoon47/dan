@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
+import { TransactionStageBar } from "@/components/TransactionStageBar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { getDataMode } from "@/data/mode";
@@ -73,6 +74,7 @@ export function SafePaymentPage() {
 
   return (
     <div className="page-stack page-narrow safe-payment-page">
+      <TransactionStageBar stage={3} />
       <section className="payment-product-card">
         <ProductVisual product={product} size="sm" />
         <div>
