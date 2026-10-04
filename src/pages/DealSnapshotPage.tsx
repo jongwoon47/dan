@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { ProductVisual } from "@/components/ProductVisual";
+import { TradeFlowHeader } from "@/components/TradeFlowHeader";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
 import type { DealEvidence, DealSnapshot } from "@/domain/types";
@@ -165,15 +165,12 @@ export function DealSnapshotPage() {
 
   return (
     <div className="page-stack page-narrow deal-page">
-      <section className="deal-product-card deal-product-card--snapshot">
-        <div className="deal-product-card__main">
-          <ProductVisual product={product} size="sm" />
-          <div>
-            <h1 className="page-title">{product.name}</h1>
-            <strong className="deal-price">{formatWon(sell.minimumPrice)}</strong>
-          </div>
-        </div>
-      </section>
+      <TradeFlowHeader
+        product={product}
+        price={sell.minimumPrice}
+        step="terms"
+        eyebrow="거래 조건 확인"
+      />
 
       <section className="deal-snapshot-card deal-snapshot-card--focused">
         <div className="snapshot-card-heading">
