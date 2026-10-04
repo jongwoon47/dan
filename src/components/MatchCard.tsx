@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
-import { Badge, EmptyState } from "@/components/ui/EmptyState";
-import { Card } from "@/components/ui/Card";
-import { CategoryPill, ProductVisual } from "@/components/ProductVisual";
-import { ko } from "@/copy/ko";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ProductVisual } from "@/components/ProductVisual";
 import { useDan } from "@/domain/danContext";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
-import { CONDITION_LABEL, MATCH_STATUS_LABEL, type Match } from "@/domain/types";
+import { CONDITION_LABEL, type Match } from "@/domain/types";
 import { isBuyDemand } from "@/domain/types";
 import { formatWon } from "@/lib/format";
 import "./matchCard.css";
@@ -20,6 +18,26 @@ function formatOfferTime(iso: string): string {
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours}시간 전`;
   return `${Math.floor(hours / 24)}일 전`;
+}
+
+function matchStatusLabel(match: Match): string {
+  if (match.status === "COMPLETED") return "거래 완료";
+  if (match.status === "CONNECTED") {
+    if (match.dealStage === "PAYMENT_PENDING") return "결제 필요";
+    if (match.dealStage === "PAID" || match.dealStage === "HANDOFF_READY") return "인계 확인";
+    if (match.dealStage === "DEAL_LOCKED") return "거래 조건 확정";
+    if (match.dealStage === "EVIDENCE_READY" || match.dealStage === "DEAL_REVIEW") return "거래 조건 확인";
+    return "채팅 중";
+  }
+  if (match.status === "BUYER_INTERESTED") return "상대 수락 대기";
+  if (match.status === "SELLER_ACCEPTED") return "연결 준비";
+  return "새 제안";
+}
+
+function matchHref(match: Match): string {
+  if (match.status === "COMPLETED") return `/deal/${match.id}/complete`;
+  if (match.status === "CONNECTED") return `/match/${match.id}`;
+  return `/offer/${match.id}`;
 }
 
 export function MatchCard({ match }: { match: Match }) {
@@ -47,149 +65,99 @@ export function MatchCard({ match }: { match: Match }) {
 
   if (!demand || !currentUser) return null;
 
-  if (!sell || !ownership) {
-    const isBuyer = match.buyerId === currentUser.id;
+  const isBuyer = match.buyerId === currentUser.id;
+  const isSeller = match.sellerId === currentUser.id;
+  const status = matchStatusLabel(match);
+
+  if (!sell || !ownership || !product) {
     return (
-      <Card className="match-card">
-        <div className="match-card__head">
-          <div>
-            <Badge tone="accent">{MATCH_STATUS_LABEL[match.status]}</Badge>
-            <h3>{demand.title}</h3>
-            <p className="match-card__lead">{ko.matchLead}</p>
+      <article className="trade-row-card">
+        <Link to={match.status === "CONNECTED" || match.status === "COMPLETED" ? `/match/${match.id}` : `/demand/item/${demand.id}`} className="trade-row-card__link">
+          <span className="request-type-avatar" aria-hidden>{demand.title.slice(0, 1)}</span>
+          <div className="trade-row-card__body">
+            <div className="trade-row-card__head">
+              <strong>{demand.title}</strong>
+              <span>{status}</span>
+            </div>
+            <p>{formatWon(demand.budget)}</p>
+            <small>{formatFulfillmentSummary(demand.fulfillmentOptions)}</small>
           </div>
-        </div>
-        {match.status === "CONNECTED" || match.status === "COMPLETED" ? (
-          <div className="match-card__connected">
-            <p>{match.status === "COMPLETED" ? ko.tradeDoneTitle : ko.connectedMsg}</p>
-            <Button to={`/match/${match.id}`} fullWidth variant={match.status === "COMPLETED" ? "secondary" : "primary"}>
-              {ko.openChat}
-            </Button>
-          </div>
-        ) : null}
+          <span className="trade-row-card__chevron" aria-hidden>›</span>
+        </Link>
         {!isBuyer && match.status === "BUYER_INTERESTED" ? (
-          <Button fullWidth onClick={() => void onConnect()} disabled={busy}>
-            {busy ? "..." : ko.connect}
+          <Button size="sm" onClick={() => void onConnect()} disabled={busy}>
+            {busy ? "연결 중…" : "연결하기"}
           </Button>
         ) : null}
-      </Card>
+      </article>
     );
   }
 
-  if (!product) return null;
-
   const buyMax = isBuyDemand(demand) ? demand.details.maxPrice : demand.budget;
-  const isBuyer = match.buyerId === currentUser.id;
-  const isSeller = match.sellerId === currentUser.id;
   const offerTime = formatOfferTime(sell.createdAt);
+  const delta = buyMax - sell.minimumPrice;
 
   if (isBuyer) {
     return (
-      <article className="received-offer-card">
-        <div className="received-offer-card__main">
+      <article className="trade-row-card trade-row-card--offer">
+        <Link to={matchHref(match)} className="trade-row-card__link">
           {sell.quickPhotoUrl ? (
             <img
-              className="received-offer-card__photo"
+              className="trade-row-card__photo"
               src={sell.quickPhotoUrl}
               alt={`${product.name} 판매자가 올린 현재 물품`}
             />
           ) : (
             <ProductVisual product={product} size="sm" />
           )}
-          <div className="received-offer-card__body">
-            <div className="received-offer-card__head">
-              <div>
-                <h3>{product.name}</h3>
-                <p className="received-offer-card__price">{formatWon(sell.minimumPrice)}</p>
-              </div>
-              {offerTime ? <span>{offerTime}</span> : null}
+          <div className="trade-row-card__body">
+            <div className="trade-row-card__head">
+              <strong>{product.name}</strong>
+              <span>{status}</span>
             </div>
-
-            <p className="received-offer-card__summary">
-              {sell.approxUsageCount != null
-                ? product.category === "camera"
-                  ? `약 ${sell.approxUsageCount.toLocaleString("ko-KR")}컷`
-                  : sell.approxUsageCount.toLocaleString("ko-KR")
-                : CONDITION_LABEL[ownership.condition]}
+            <p className="trade-row-card__price">{formatWon(sell.minimumPrice)}</p>
+            <small>
+              {CONDITION_LABEL[ownership.condition]}
               {sell.conditionNote ? ` · ${sell.conditionNote}` : ""}
-            </p>
-
-            <div className="received-offer-card__tags">
-              <span>같은 제품</span>
-              <span>{sell.minimumPrice <= buyMax ? "희망가 이내" : "희망가 초과"}</span>
-              <span>구매자 희망 · {formatFulfillmentSummary(demand.fulfillmentOptions)}</span>
-            </div>
-
-            <Link to={`/profile/${match.sellerId}`} className="received-offer-card__trust">
-              판매자 Trust History 보기
-            </Link>
+            </small>
+            <small className={delta >= 0 ? "trade-row-card__delta is-good" : "trade-row-card__delta"}>
+              {delta >= 0
+                ? `내 최대가보다 ${formatWon(delta)} 낮아요`
+                : `내 최대가보다 ${formatWon(Math.abs(delta))} 높아요`}
+            </small>
           </div>
-        </div>
-
-        <div className="received-offer-card__actions">
-          <Button
-            to={"/offer/" + match.id}
-            fullWidth
-            variant={match.status === "POTENTIAL" ? "primary" : "secondary"}
-          >
-            {match.status === "POTENTIAL"
-              ? "제안 상세 보기"
-              : match.status === "BUYER_INTERESTED"
-                ? "제안 상태 확인"
-                : match.status === "CONNECTED"
-                  ? "거래 진행 보기"
-                  : "거래 기록 보기"}
-          </Button>
-        </div>
+          <div className="trade-row-card__trail">
+            {offerTime ? <time>{offerTime}</time> : null}
+            <span aria-hidden>›</span>
+          </div>
+        </Link>
       </article>
     );
   }
 
   return (
-    <Card className="match-card">
-      <div className="match-card__head">
+    <article className="trade-row-card">
+      <Link to={match.status === "CONNECTED" || match.status === "COMPLETED" ? matchHref(match) : `/demand/${product.id}`} className="trade-row-card__link">
         <ProductVisual product={product} size="sm" />
-        <div>
-          <div className="match-card__badges">
-            {product.category !== "other" ? <CategoryPill category={product.category} /> : null}
-            <Badge tone="accent">{MATCH_STATUS_LABEL[match.status]}</Badge>
+        <div className="trade-row-card__body">
+          <div className="trade-row-card__head">
+            <strong>{product.name}</strong>
+            <span>{status}</span>
           </div>
-          <h3>{product.name}</h3>
-          <p className="match-card__lead">구매자가 이 제안을 검토하고 있어요.</p>
+          <p className="trade-row-card__price">{formatWon(sell.minimumPrice)}</p>
+          <small>구매자 최대 {formatWon(buyMax)} · {formatFulfillmentSummary(demand.fulfillmentOptions)}</small>
         </div>
-      </div>
+        <span className="trade-row-card__chevron" aria-hidden>›</span>
+      </Link>
 
-      <div className="match-card__compare">
-        <div><span>{ko.buyUntil}</span><strong>{formatWon(buyMax)} {ko.untilSuffix}</strong></div>
-        <div className="match-card__compare-divider" aria-hidden>↔</div>
-        <div><span>{ko.sellFrom}</span><strong>{formatWon(sell.minimumPrice)} {ko.fromSuffix}</strong></div>
-      </div>
-
-      <div className="match-card__actions">
-        {isSeller && match.status === "BUYER_INTERESTED" ? (
-          <Button fullWidth onClick={() => void onConnect()} disabled={busy}>
-            {busy ? "연결 중…" : "구매자와 연결하고 대화하기"}
+      {isSeller && match.status === "BUYER_INTERESTED" ? (
+        <div className="trade-row-card__inline-action">
+          <Button size="sm" onClick={() => void onConnect()} disabled={busy}>
+            {busy ? "연결 중…" : "구매자와 연결하기"}
           </Button>
-        ) : null}
-        {match.status === "CONNECTED" || match.status === "COMPLETED" ? (
-          <div className="match-card__connected">
-            <p>
-              {match.status === "COMPLETED"
-                ? ko.tradeDoneTitle
-                : match.dealStage === "EVIDENCE_READY" || match.dealStage === "DEAL_REVIEW" || match.dealStage === "DEAL_LOCKED"
-                  ? "판매자 증거가 준비됐어요. 대화하면서 거래 조건을 확인하세요."
-                  : "연결됐어요. 먼저 대화하고, 거래를 진행할 때 판매자 증거를 제출하세요."}
-            </p>
-            <Button to={`/match/${match.id}`} fullWidth>{ko.openChat}</Button>
-            {match.status === "CONNECTED" && isSeller && match.dealStage !== "EVIDENCE_READY" && match.dealStage !== "DEAL_REVIEW" && match.dealStage !== "DEAL_LOCKED" ? (
-              <Button to={`/deal/${match.id}/evidence`} fullWidth variant="secondary">판매자 증거 제출</Button>
-            ) : null}
-            {match.status === "CONNECTED" && (match.dealStage === "EVIDENCE_READY" || match.dealStage === "DEAL_REVIEW" || match.dealStage === "DEAL_LOCKED") ? (
-              <Button to={`/deal/${match.id}/snapshot`} fullWidth variant="secondary">거래 조건 확인</Button>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-    </Card>
+        </div>
+      ) : null}
+    </article>
   );
 }
 
@@ -197,8 +165,12 @@ export function MatchList({ matches, emptyWhenZero = true }: { matches: Match[];
   if (matches.length === 0) {
     if (!emptyWhenZero) return null;
     return (
-      <EmptyState title={ko.noMatch} body={ko.noMatchBody} action={<Button to="/feed" variant="secondary">{ko.navFeed}</Button>} />
+      <EmptyState
+        title="아직 거래가 없어요"
+        body="요청을 올리거나 탐색에서 다른 사람의 요청에 제안해보세요."
+        action={<Button to="/feed" variant="secondary">탐색하기</Button>}
+      />
     );
   }
-  return <div className="section-stack">{matches.map((match) => <MatchCard key={match.id} match={match} />)}</div>;
+  return <div className="trade-row-list">{matches.map((match) => <MatchCard key={match.id} match={match} />)}</div>;
 }
