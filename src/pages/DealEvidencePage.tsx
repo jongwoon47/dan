@@ -7,7 +7,6 @@ import { TradeFlowHeader } from "@/components/TradeFlowHeader";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
 import type { DealEvidence, DealEvidenceChallenge, Product } from "@/domain/types";
-import { formatWon } from "@/lib/format";
 import "./pages.css";
 
 function componentOptionsFor(product: Product): string[] {
