@@ -10,7 +10,7 @@ import "./pages.css";
 
 const DISPUTE_OPTIONS: Array<{ value: DealDisputeReason; label: string }> = [
   { value: "WRONG_ITEM", label: "다른 물건이에요" },
-  { value: "SNAPSHOT_MISMATCH", label: "Deal Snapshot과 달라요" },
+  { value: "SNAPSHOT_MISMATCH", label: "확정한 거래 조건과 달라요" },
   { value: "MAJOR_UNDISCLOSED_DEFECT", label: "고지되지 않은 큰 하자가 있어요" },
   { value: "ITEM_NOT_RECEIVED", label: "물건을 받지 못했어요" },
   { value: "OTHER", label: "기타" },
@@ -127,7 +127,7 @@ export function HandoffPage() {
     return (
       <EmptyState
         title="먼저 거래 조건을 확정해 주세요"
-        body="양쪽이 같은 Deal Snapshot을 확인해야 물품 인계 단계로 넘어갈 수 있어요."
+        body="양쪽이 같은 거래 조건을 확인해야 인계 단계로 넘어갈 수 있어요."
         action={<Button to={`/deal/${match.id}/snapshot`}>거래 조건 확인</Button>}
       />
     );
@@ -176,7 +176,7 @@ export function HandoffPage() {
   return (
     <div className="page-stack page-narrow handoff-page">
       <section className="handoff-hero">
-        <span className="eyebrow">Safe Handoff</span>
+        <span className="eyebrow">인계 확인</span>
         <h1 className="page-title">{product.name}</h1>
         <p>확정한 조건을 기준으로 결제하고, 물품을 인계받을 때 실제 상태를 다시 확인해요.</p>
       </section>
@@ -184,7 +184,7 @@ export function HandoffPage() {
       <section className="trade-progress-card" aria-label="거래 진행 단계">
         <div className="trade-progress-row is-done">
           <span className="trade-progress-icon">✓</span>
-          <div><strong>거래조건 확정</strong><small>Deal Snapshot 잠금 완료</small></div>
+          <div><strong>거래 조건</strong><small>양쪽 확인 완료</small></div>
         </div>
         <div className={match.paymentStatus === "PAID" ? "trade-progress-row is-done" : "trade-progress-row is-current"}>
           <span className="trade-progress-icon">{match.paymentStatus === "PAID" ? "✓" : "2"}</span>
@@ -260,7 +260,7 @@ export function HandoffPage() {
           </section>
 
           <details className="dispute-panel">
-            <summary>Deal Snapshot과 다르거나 문제가 있나요?</summary>
+            <summary>확정한 조건과 다르거나 문제가 있나요?</summary>
             <div className="section-stack">
               <div className="dispute-reason-grid">
                 {DISPUTE_OPTIONS.map((option) => (
