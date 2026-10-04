@@ -209,8 +209,9 @@ test("DAN App V3 core request and transaction journey renders", async ({ page },
   await page.goto("/");
   await settle(page);
   await expect(page.getByRole("heading", { name: "무엇이 필요하세요?" })).toBeVisible();
+  const homeTypes = page.locator(".home-request-types");
   for (const label of ["구매", "빌리기", "심부름", "서비스"]) {
-    await expect(page.getByRole("link", { name: label })).toBeVisible();
+    await expect(homeTypes.getByRole("link", { name: label, exact: true })).toBeVisible();
   }
   await expect(page.getByRole("navigation", { name: "하단 메뉴" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
