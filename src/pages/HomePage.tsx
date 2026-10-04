@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AggregatedDemandCard } from "@/components/AggregatedDemandCard";
+import { IndividualDemandCard } from "@/components/IndividualDemandCard";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDan } from "@/domain/danContext";
@@ -59,6 +60,10 @@ export function HomePage() {
         category === "all" ||
         (item.kind === "aggregated" && item.product.category === category),
     )
+    .slice(0, 4);
+
+  const recentIndividualRequests = demandFeed
+    .filter((item) => item.kind === "individual")
     .slice(0, 4);
 
   return (
@@ -168,6 +173,25 @@ export function HomePage() {
           </div>
         ) : null}
       </section>
+
+      {recentIndividualRequests.length > 0 ? (
+        <section className="home-live-section home-individual-section">
+          <div className="home-live-heading">
+            <div>
+              <span>빌리기 · 심부름 · 서비스</span>
+              <h2>최근 올라온 요청</h2>
+            </div>
+            <Link to="/feed">전체 보기 <span aria-hidden>›</span></Link>
+          </div>
+          <div className="mixed-demand-list home-mixed-request-list">
+            {recentIndividualRequests.map((item) =>
+              item.kind === "individual" ? (
+                <IndividualDemandCard key={item.id} demand={item.demand} />
+              ) : null,
+            )}
+          </div>
+        </section>
+      ) : null}
 
       <section className="seller-entry-banner">
         <div>
