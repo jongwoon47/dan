@@ -596,7 +596,6 @@ export function CreateDemandPage() {
               </span>
               <span className="request-type-current__chevron" aria-hidden>›</span>
             </button>
-          <>
             <div className="create-progress" aria-label="작성 단계">
               <div className="create-progress__track"><span style={{ width: phase === 1 ? "50%" : "100%" }} /></div>
               <div className="create-progress__labels">
