@@ -145,7 +145,7 @@ export function QuickOfferPage() {
         setError("판매 제안을 보내지 못했어요.");
         return;
       }
-      navigate("/my?tab=selling");
+      navigate("/my");
     } finally {
       setBusy(false);
     }
