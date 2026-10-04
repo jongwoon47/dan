@@ -260,7 +260,7 @@ export function HandoffPage() {
           </section>
 
           <details className="dispute-panel">
-            <summary>Deal Snapshot과 다르거나 문제가 있나요?</summary>
+            <summary>거래 조건과 다르거나 문제가 있나요?</summary>
             <div className="section-stack">
               <div className="dispute-reason-grid">
                 {DISPUTE_OPTIONS.map((option) => (
