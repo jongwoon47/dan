@@ -1,6 +1,7 @@
 import {
   STAGING_PROJECT_REF_ENV,
   STAGING_SEED_CONFIRM,
+  STAGING_SUPABASE_PROJECT_REF,
   containsProductionSupabaseRef,
   extractSupabaseProjectRef,
   isForbiddenProductionTarget,
@@ -98,6 +99,13 @@ export function assertStagingSeedAllowed(
       ok: false,
       code: 1,
       message: "REFUSED: staging seed cannot use a production Supabase project ref.",
+    };
+  }
+  if (expected.toLowerCase() !== STAGING_SUPABASE_PROJECT_REF) {
+    return {
+      ok: false,
+      code: 1,
+      message: "REFUSED: unexpected staging Supabase project ref.",
     };
   }
 
