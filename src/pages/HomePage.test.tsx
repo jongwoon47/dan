@@ -10,7 +10,7 @@ describe("HomePage", () => {
     expect(screen.getByRole("heading",{ name:"무엇이 필요하세요?" })).toBeInTheDocument();
     expect(screen.getByText("iPhone 15 Pro")).toBeInTheDocument();
     expect(screen.getByRole("button",{ name:/전자기기/ })).toBeInTheDocument();
-    expect(screen.getByRole("link",{ name:/심부름/ })).toHaveAttribute("href","/create?type=TASK");
+    expect(screen.getByRole("link",{ name:"심부름대신 부탁해요" })).toHaveAttribute("href","/create?type=TASK");
     expect(screen.getByRole("link",{ name:/요청 탐색하기/ })).toHaveAttribute("href","/feed");
     expect(screen.getByText(/전체 \d+/)).toBeInTheDocument();
   });
