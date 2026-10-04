@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { AggregatedDemandCard } from "@/components/AggregatedDemandCard";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -288,7 +289,7 @@ export function DemandFeedPage() {
         <section className="mixed-request-section">
           <div className="mixed-request-list">
             {directRequests.map((demand) => (
-              <a key={demand.id} href={`/demand/item/${demand.id}`} className="mixed-request-row">
+              <Link key={demand.id} to={`/demand/item/${demand.id}`} className="mixed-request-row">
                 <div>
                   <span>{DEMAND_TYPE_LABEL[demand.type]}</span>
                   <strong>{demand.title}</strong>
@@ -296,7 +297,7 @@ export function DemandFeedPage() {
                 </div>
                 <b>{formatWon(demand.budget)}</b>
                 <i aria-hidden>›</i>
-              </a>
+              </Link>
             ))}
           </div>
         </section>
