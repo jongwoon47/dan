@@ -43,6 +43,7 @@ Supplier/helper: 홈·탐색 → 요청 상세 → 제안 보내기 → 채팅 �
 ### 1. 홈
 - compact DAN header + notification/avatar
 - search: 무엇이 필요하세요?
+- home search opens unified 탐색 across 구매 / 빌리기 / 심부름 / 서비스
 - current demand list immediately
 - no giant marketing hero
 - rows show title, amount, location/time, response/search count, chevron
@@ -57,6 +58,7 @@ Supplier/helper: 홈·탐색 → 요청 상세 → 제안 보내기 → 채팅 �
 ### 3. 요청 만들기 — entry
 Question: 무엇이 필요하세요?
 Four restrained options: 구매 / 빌리기 / 심부름 / 서비스.
+The 2×2 type cards appear only on the entry screen. After a type is selected, show one compact current-type control so the form remains focused.
 
 ### 4. 요청 만들기 — type-specific step 1
 No redundant title field.
@@ -120,7 +122,7 @@ Chat is the transaction hub.
 
 ### 14. 결제
 - amount / payment method / compact safety explanation
-- no Demo checkout customer copy
+- no Demo / staging / test-environment customer copy
 - primary CTA: 결제하기
 
 ### 15. 인계
