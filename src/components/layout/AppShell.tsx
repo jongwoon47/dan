@@ -61,7 +61,7 @@ function AppShellInner() {
               ) : null}
             </div>
             <nav className="top-nav__links" aria-label="주요 메뉴">
-              <NavLink to="/">{ko.navHome ?? "홈"}</NavLink><NavLink to="/feed">탐색</NavLink><NavLink to="/create">요청</NavLink><NavLink to="/chats">채팅</NavLink><NavLink to="/my">내 거래</NavLink>
+              <NavLink to="/">홈</NavLink><NavLink to="/feed">탐색</NavLink><NavLink to="/create">요청</NavLink><NavLink to="/chats">채팅</NavLink><NavLink to="/my">내 거래</NavLink>
             </nav>
             <div className="top-nav__auth top-nav__auth--desktop">
               {isLoggedIn && currentUser ? (
