@@ -40,12 +40,44 @@ import "@/components/feedCards.css";
 
 const TYPES: DemandType[] = ["BUY", "BORROW", "TASK", "SERVICE"];
 
-const TYPE_META: Record<DemandType, { label: string; desc: string; icon: string }> = {
-  BUY: { label: "구매", desc: "사고 싶은 물건이 있어요", icon: "⌕" },
-  BORROW: { label: "빌리기", desc: "잠깐 빌리고 싶어요", icon: "↔" },
-  TASK: { label: "심부름", desc: "대신 해줄 일을 찾고 있어요", icon: "✓" },
-  SERVICE: { label: "서비스", desc: "전문가의 도움이 필요해요", icon: "✦" },
+const TYPE_META: Record<DemandType, { label: string; desc: string }> = {
+  BUY: { label: "구매", desc: "사고 싶은 물건이 있어요" },
+  BORROW: { label: "빌리기", desc: "잠깐 빌리고 싶어요" },
+  TASK: { label: "심부름", desc: "대신 해줄 일을 찾고 있어요" },
+  SERVICE: { label: "서비스", desc: "전문가의 도움이 필요해요" },
 };
+
+function RequestTypeIcon({ type }: { type: DemandType }) {
+  if (type === "BUY") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M6.5 8.5h11l-1 10h-9l-1-10Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+        <path d="M9 9V7.5a3 3 0 0 1 6 0V9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (type === "BORROW") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M5 8h12.5M15 5.5 17.5 8 15 10.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M19 16H6.5M9 13.5 6.5 16 9 18.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (type === "TASK") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M7 5.5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-10a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="1.8" />
+        <path d="m8.5 12 2 2 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M14.8 6.2a4.2 4.2 0 0 0-5.4 5.4L5.2 15.8a1.8 1.8 0 1 0 2.6 2.6l4.2-4.2a4.2 4.2 0 0 0 5.4-5.4l-2.5 2.5-2.2-2.2 2.1-2.9Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 const CONDITIONS: ConditionPreference[] = ["sealed", "like_new", "lightly_used", "any"];
 
 type TaskMode = "onsite" | "pickup" | "route" | "remote";
@@ -567,7 +599,7 @@ export function CreateDemandPage() {
                   className="request-type-card"
                   onClick={() => selectType(t)}
                 >
-                  <span className="request-type-card__icon" aria-hidden>{TYPE_META[t].icon}</span>
+                  <span className="request-type-card__icon" aria-hidden><RequestTypeIcon type={t} /></span>
                   <span className="request-type-card__copy">
                     <strong>{TYPE_META[t].label}</strong>
                     <small>{TYPE_META[t].desc}</small>
