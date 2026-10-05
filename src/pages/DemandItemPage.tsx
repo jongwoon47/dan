@@ -474,10 +474,10 @@ export function DemandItemPage() {
                   <strong>{buyOfferCount}</strong>
                 </div>
                 <Button
-                  to={`/my?tab=offers&demand=${demand.id}`}
+                  to="/my"
                   variant="secondary"
                 >
-                  제안 보기
+                  내 거래에서 보기
                 </Button>
               </div>
               {buyOfferCount === 0 ? (
