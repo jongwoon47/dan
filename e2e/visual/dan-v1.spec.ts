@@ -227,6 +227,7 @@ test("DAN App V3 core request and transaction journey renders", async ({ page },
   for (const label of ["구매", "빌리기", "심부름", "서비스"]) {
     await expect(page.getByRole("radio", { name: new RegExp(label) })).toBeVisible();
   }
+  await expect(page.locator(".request-type-card__icon svg")).toHaveCount(4);
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "02-create-entry.png"), fullPage: true });
 
@@ -356,6 +357,8 @@ test("V3 BUY chat cancellation keeps the request lifecycle structured", async ({
   await settle(page);
 
   await expect(page.locator(".trade-status__state").getByText("거래가 종료됐어요")).toBeVisible();
+  await expect(page.locator(".chat-deal-progress")).toHaveCount(0);
+  await expect(page.getByText("종료된 거래 · 채팅은 읽기 전용이에요.")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({
     path: path.join(outDir, "14-chat-cancel.png"),
