@@ -366,7 +366,7 @@ export function MatchChatPage() {
         ) : null}
       </header>
 
-      {isBuyTrade ? (
+      {isBuyTrade && match.status !== "CLOSED" ? (
         <div className="chat-deal-progress" aria-label="거래 진행 단계">
           <span className={buyEvidenceReady ? "is-done" : "is-current"}>
             <i aria-hidden>{buyEvidenceReady ? "✓" : "1"}</i>
@@ -640,7 +640,7 @@ export function MatchChatPage() {
         <p className="chat-composer chat-composer--closed muted">
           {match.status === "COMPLETED"
             ? "거래가 완료되어 채팅이 읽기 전용이에요."
-            : ko.tradeClosedTitle}
+            : "종료된 거래 · 채팅은 읽기 전용이에요."}
         </p>
       )}
 
