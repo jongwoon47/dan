@@ -32,6 +32,7 @@ function initialOf(name: string) {
 }
 
 function chatStageLabel(match: Match): string {
+  if (match.status === "CLOSED") return "거래 종료";
   if (match.status === "COMPLETED") return "거래 완료";
   if (match.dealStage === "HANDOFF_READY" || match.paymentStatus === "PAID") return "인계 확인";
   if (match.dealStage === "PAYMENT_PENDING" || match.dealStage === "DEAL_LOCKED") return "결제";
