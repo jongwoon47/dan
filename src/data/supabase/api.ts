@@ -215,6 +215,17 @@ export async function listMyDemands(userId: string): Promise<Demand[]> {
   return ((data ?? []) as DbDemand[]).map(mapDemand);
 }
 
+/** Hydrate non-active demands referenced by the current user's matches. */
+export async function listDemandsByIds(ids: string[]): Promise<Demand[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await getSupabase()
+    .from("demands")
+    .select("*")
+    .in("id", ids);
+  if (error) throw error;
+  return ((data ?? []) as DbDemand[]).map(mapDemand);
+}
+
 export async function listOwnerships(userId: string): Promise<Ownership[]> {
   const { data, error } = await getSupabase()
     .from("ownerships")
