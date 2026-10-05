@@ -1360,6 +1360,12 @@ body {
   font-weight: 800;
 }
 
+.request-type-current__icon svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
 .request-type-current > span:nth-child(2) {
   display: grid;
   gap: 1px;
