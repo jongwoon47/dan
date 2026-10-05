@@ -132,7 +132,11 @@ export function ActivityPage() {
         </div>
       ) : null}
       {activities.length === 0 ? (
-        <EmptyState title={ko.activityEmpty} />
+        <EmptyState
+          title={ko.activityEmpty}
+          body="새 응답, 거래 진행, 메시지 알림이 이곳에 모여요."
+          action={<Button to="/feed" variant="secondary">요청 둘러보기</Button>}
+        />
       ) : (
         <ul className="activity-list">
           {activities.map((ev) => {
