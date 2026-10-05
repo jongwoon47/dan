@@ -62,7 +62,7 @@ jobs:
         if: always()
         with:
           name: dan-supabase-browser-smoke
-          path: qa-screenshots/supabase-smoke
+          path: qa-screenshots
           if-no-files-found: warn
       - if: always()
         run: command -v supabase >/dev/null 2>&1 && supabase stop --no-backup || true
