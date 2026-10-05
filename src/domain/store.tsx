@@ -559,16 +559,13 @@ function reducer(state: DanState, action: Action): DanState {
         nextMatch = {
           ...nextMatch,
           status: "COMPLETED",
-          dealStage:
-            demand?.type === "BUY"
-              ? ("COMPLETED" as const)
-              : nextMatch.dealStage,
+          dealStage: "COMPLETED" as const,
           completedAt: now,
         };
       }
 
-      const completedBuy =
-        nextMatch.status === "COMPLETED" && demand?.type === "BUY";
+      const completedTrade = nextMatch.status === "COMPLETED";
+      const completedBuy = completedTrade && demand?.type === "BUY";
       const matchedSell = completedBuy
         ? state.sellIntents.find((offer) => offer.id === current.sellIntentId)
         : undefined;
@@ -578,7 +575,7 @@ function reducer(state: DanState, action: Action): DanState {
         matches: state.matches.map((m) =>
           m.id === action.matchId ? nextMatch : m,
         ),
-        demands: completedBuy
+        demands: completedTrade
           ? state.demands.map((row) =>
               row.id === current.demandId
                 ? { ...row, status: "CLOSED" as const }
