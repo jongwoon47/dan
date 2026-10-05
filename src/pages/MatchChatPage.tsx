@@ -11,6 +11,7 @@ import {
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { ProductVisual } from "@/components/ProductVisual";
+import { TradeStageBar } from "@/components/TradeStageBar";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
@@ -302,6 +303,13 @@ export function MatchChatPage() {
   const buySnapshotLocked = Boolean(dealSnapshot?.lockedAt);
   const buyPaid = match.paymentStatus === "PAID";
   const buyComplete = match.status === "COMPLETED";
+  const tradeStage = buyComplete || buyPaid
+    ? "handoff"
+    : buySnapshotLocked
+      ? "payment"
+      : buyEvidenceReady
+        ? "terms"
+        : "info";
 
   let lastDay = "";
 
@@ -366,29 +374,7 @@ export function MatchChatPage() {
         ) : null}
       </header>
 
-      {isBuyTrade ? (
-        <div className="chat-deal-progress" aria-label="거래 진행 단계">
-          <span className={buyEvidenceReady ? "is-done" : "is-current"}>
-            <i aria-hidden>{buyEvidenceReady ? "✓" : "1"}</i>
-            <b>증거</b>
-          </span>
-          <em aria-hidden />
-          <span className={buySnapshotLocked ? "is-done" : buyEvidenceReady ? "is-current" : ""}>
-            <i aria-hidden>{buySnapshotLocked ? "✓" : "2"}</i>
-            <b>조건</b>
-          </span>
-          <em aria-hidden />
-          <span className={buyPaid ? "is-done" : buySnapshotLocked ? "is-current" : ""}>
-            <i aria-hidden>{buyPaid ? "✓" : "3"}</i>
-            <b>결제</b>
-          </span>
-          <em aria-hidden />
-          <span className={buyComplete ? "is-done" : buyPaid ? "is-current" : ""}>
-            <i aria-hidden>{buyComplete ? "✓" : "4"}</i>
-            <b>인계</b>
-          </span>
-        </div>
-      ) : null}
+      {isBuyTrade ? <TradeStageBar current={tradeStage} completed={buyComplete} /> : null}
 
       <section className="trade-status" aria-live="polite">
         {isBuyTrade && chatProduct ? (
@@ -444,11 +430,11 @@ export function MatchChatPage() {
             <div className="trade-status__actions">
               {isSeller ? (
                 <Button to={`/deal/${match.id}/evidence`} fullWidth>
-                  판매자 증거 제출
+                  상품 정보 등록
                 </Button>
               ) : (
                 <Button to={`/offer/${match.id}`} fullWidth variant="secondary">
-                  판매 제안 다시 보기
+                  제안 다시 보기
                 </Button>
               )}
               <Button
@@ -463,16 +449,16 @@ export function MatchChatPage() {
           </>
         ) : isBuyTrade && !buySnapshotLocked ? (
           <>
-            <p className="trade-status__state">판매자 증거가 준비됐어요</p>
+            <p className="trade-status__state">판매자가 상품 정보를 등록했어요</p>
             <p className="trade-status__hint">
-              제출된 상태와 가격을 확인하고 양쪽이 같은 Deal Snapshot을 확정하세요.
+              상품 상태와 가격을 확인하고 같은 거래 조건으로 진행할지 확인하세요.
             </p>
             <div className="trade-status__actions">
               <Button to={`/deal/${match.id}/snapshot`} fullWidth>
                 거래 조건 확인
               </Button>
               <Button to={`/deal/${match.id}/evidence`} fullWidth variant="secondary">
-                판매자 증거 보기
+                상품 정보 보기
               </Button>
               <Button
                 fullWidth
@@ -486,16 +472,16 @@ export function MatchChatPage() {
           </>
         ) : isBuyTrade && !buyPaid ? (
           <>
-            <p className="trade-status__state">안전결제 연결 전 단계예요</p>
+            <p className="trade-status__state">거래 조건이 확정됐어요</p>
             <p className="trade-status__hint">
-              Deal Snapshot은 확정됐습니다. PG 안전결제가 실제 연동되기 전에는 이 화면에서 실거래 완료 처리를 허용하지 않습니다.
+              확정한 조건을 다시 확인한 뒤 결제를 진행하세요.
             </p>
             <div className="trade-status__actions">
               <Button to={`/deal/${match.id}/payment`} fullWidth>
                 안전결제
               </Button>
               <Button to={`/deal/${match.id}/snapshot`} fullWidth variant="secondary">
-                확정된 거래 조건 보기
+                거래 조건 보기
               </Button>
               <Button
                 fullWidth

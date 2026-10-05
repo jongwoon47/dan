@@ -152,11 +152,11 @@ export function QuickOfferPage() {
   }
 
   return (
-    <div className="page-stack page-narrow quick-offer-page quick-offer-page--blueprint">
+    <div className="page-stack page-narrow quick-offer-page quick-offer-page--app">
       <section className="deal-product-card quick-offer-product-card">
         <ProductVisual product={product} size="sm" />
         <div>
-          <p className="eyebrow">판매 제안</p>
+          <p className="eyebrow">제안 보내기</p>
           <h1 className="page-title">{product.name}</h1>
           {aggregate?.seekerCount ? (
             <p className="quick-offer-signal">
@@ -188,7 +188,7 @@ export function QuickOfferPage() {
       ) : null}
 
       <section className="section-stack quick-offer-form">
-        <Field label="희망 판매가" hint="구매자는 가격을 가장 먼저 비교해요.">
+        <Field label="제안 가격" hint="요청자가 가장 먼저 비교하는 정보예요.">
           <TextInput
             inputMode="numeric"
             value={formatDigitsGrouped(price)}
@@ -198,7 +198,7 @@ export function QuickOfferPage() {
         </Field>
 
         <div>
-          <p className="field-inline-label">내 물건 상태</p>
+          <p className="field-inline-label">상태</p>
           <ChipGroup>
             {CONDITIONS.map((item) => (
               <Chip
@@ -229,7 +229,7 @@ export function QuickOfferPage() {
         ) : null}
 
         <div>
-          <p className="field-inline-label">가능한 거래 방식</p>
+          <p className="field-inline-label">거래 방식</p>
           <ChipGroup>
             {SELLER_TRADE_METHODS.map((item) => (
               <Chip
@@ -243,11 +243,11 @@ export function QuickOfferPage() {
           </ChipGroup>
         </div>
 
-        <Field label="상태 한 줄">
+        <Field label="상태 메모" hint="선택">
           <TextInput
             value={conditionNote}
             onChange={(event) => setConditionNote(event.target.value)}
-            placeholder="예: 상태 좋음 · 상단 미세스크래치"
+            placeholder="예: 상단에 작은 생활기스가 있어요"
           />
         </Field>
 
@@ -264,7 +264,7 @@ export function QuickOfferPage() {
               {quickPhotoUrl ? (
                 <img src={quickPhotoUrl} alt="현재 물품" />
               ) : (
-                <span>사진이 있으면 제안을 더 쉽게 확인할 수 있어요.</span>
+                <span>사진이 있으면 상대가 상태를 더 쉽게 확인할 수 있어요.</span>
               )}
               <input
                 type="file"
@@ -275,13 +275,6 @@ export function QuickOfferPage() {
             {photoError ? <p className="form-error">{photoError}</p> : null}
           </div>
         </details>
-
-        <div className="quick-offer-note">
-          <strong>가격과 상태만 입력하면 돼요</strong>
-          <p>
-            관심이 연결된 뒤에만 상세 증거를 제출해요.
-          </p>
-        </div>
 
         {error ? <p className="form-error">{error}</p> : null}
         <Button

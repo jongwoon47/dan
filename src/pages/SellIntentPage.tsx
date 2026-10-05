@@ -96,7 +96,7 @@ export function SellIntentPage() {
       <section className="deal-product-card">
         <ProductVisual product={product} size="sm" />
         <div>
-          <p className="eyebrow">Quick Offer</p>
+          <p className="eyebrow">제안 보내기</p>
           <h1 className="page-title">{product.name}</h1>
           {seekerCount > 0 ? (
             <p className="quick-offer-signal">
@@ -117,7 +117,7 @@ export function SellIntentPage() {
       ) : null}
 
       <section className="section-stack quick-offer-form">
-        <Field label="희망 판매가" hint="구매자가 먼저 가격을 확인합니다.">
+        <Field label="제안 가격" hint="상대가 가장 먼저 비교하는 정보예요.">
           <TextInput
             inputMode="numeric"
             value={formatDigitsGrouped(price)}
@@ -127,7 +127,7 @@ export function SellIntentPage() {
         </Field>
 
         {product.category === "camera" ? (
-          <Field label="대략적인 컷수" hint="정확한 증거는 구매자가 관심을 보인 뒤 제출합니다.">
+          <Field label="대략적인 컷수" hint="정확한 정보는 거래를 계속할 때 확인해요.">
             <TextInput
               inputMode="numeric"
               value={formatDigitsGrouped(usageCount)}
@@ -137,11 +137,11 @@ export function SellIntentPage() {
           </Field>
         ) : null}
 
-        <Field label="상태 한 줄">
+        <Field label="상태 메모" hint="선택">
           <TextInput
             value={conditionNote}
             onChange={(e) => setConditionNote(e.target.value)}
-            placeholder="예: 상태 좋음 · 상단 미세스크래치"
+            placeholder="예: 상단에 작은 생활기스가 있어요"
           />
         </Field>
 
@@ -156,11 +156,6 @@ export function SellIntentPage() {
             <input type="file" accept="image/*" onChange={(e) => void pickPhoto(e.target.files?.[0])} />
           </label>
           {photoError ? <p className="form-error">{photoError}</p> : null}
-        </div>
-
-        <div className="quick-offer-note">
-          <strong>지금은 가볍게 제안하세요</strong>
-          <p>구매자가 관심을 보인 뒤에만 시리얼·보증·구성품·상세 상태 증거를 요청합니다.</p>
         </div>
 
         <Button fullWidth size="lg" onClick={() => void submit()} disabled={busy || typed <= 0}>

@@ -188,19 +188,7 @@ export function ProfilePage() {
   const initial = (profile.displayName.trim().slice(0, 1) || "?").toUpperCase();
   const areaLine = profile.defaultArea.trim();
   const bioTrim = profile.bio.trim();
-  const showStats =
-    profile.completedDemandCount > 0 || profile.responseConnectionCount > 0;
-  const activityBits: string[] = [];
-  if (profile.completedDemandCount > 0) {
-    activityBits.push(
-      `${ko.profileCompleted} ${profile.completedDemandCount}`,
-    );
-  }
-  if (profile.responseConnectionCount > 0) {
-    activityBits.push(
-      `${ko.profileResponded} ${profile.responseConnectionCount}`,
-    );
-  }
+
 
   return (
     <div className="page-stack page-narrow profile-page">
@@ -278,47 +266,51 @@ export function ProfilePage() {
               {ko.profileJoined} {formatJoined(profile.createdAt)}
             </p>
 
-            {showStats ? (
-              <div className="trust-card__stats">
-                <p className="trust-card__stats-label">{ko.profileActivity}</p>
-                <p className="trust-card__stats-value">
-                  {activityBits.join(" · ")}
-                </p>
-              </div>
-            ) : null}
-
-            <div className="trust-history trust-history--blueprint">
+            <div className="trust-history trust-history--app">
               <div className="trust-history__head">
-                <strong>거래 신뢰 기록</strong>
+                <strong>거래 신뢰</strong>
                 <div className="trust-history__badges">
                   {profile.identityVerified ? (
                     <span className="trust-verified-badge">본인인증 완료</span>
                   ) : null}
-                  <span>사실 기반 거래 기록</span>
+                  <span>완료된 거래 기준</span>
                 </div>
               </div>
 
               <div className="trust-summary-strip">
-                <div><strong>{profile.completedDemandCount}</strong><span>거래 완료</span></div>
-                <div><strong>{profile.sellerFaultCancellationCount}</strong><span>판매자 귀책 취소</span></div>
-                <div><strong>{profile.buyerFaultCancellationCount}</strong><span>구매자 귀책 취소</span></div>
+                <div><strong>{profile.completedDemandCount}</strong><span>완료 거래</span></div>
+                <div><strong>{profile.connectionCount}</strong><span>연결</span></div>
+                {profile.identityVerified ? <div><strong>✓</strong><span>본인 인증</span></div> : null}
               </div>
 
-              <div className="trust-fact-list">
-                <div><span>확정 상태 불일치</span><strong>{profile.confirmedMismatchCount}</strong></div>
-                <div><span>미해결 분쟁</span><strong>{profile.unresolvedDisputeCount}</strong></div>
-              </div>
-
-              <p className="trust-history__note">
-                운영으로 확정된 기록만 표시해요.
-              </p>
+              {profile.sellerFaultCancellationCount > 0 ||
+              profile.buyerFaultCancellationCount > 0 ||
+              profile.confirmedMismatchCount > 0 ||
+              profile.unresolvedDisputeCount > 0 ? (
+                <div className="trust-fact-list">
+                  {profile.sellerFaultCancellationCount > 0 ? (
+                    <div><span>판매자 귀책 취소</span><strong>{profile.sellerFaultCancellationCount}</strong></div>
+                  ) : null}
+                  {profile.buyerFaultCancellationCount > 0 ? (
+                    <div><span>구매자 귀책 취소</span><strong>{profile.buyerFaultCancellationCount}</strong></div>
+                  ) : null}
+                  {profile.confirmedMismatchCount > 0 ? (
+                    <div><span>확정 조건 불일치</span><strong>{profile.confirmedMismatchCount}</strong></div>
+                  ) : null}
+                  {profile.unresolvedDisputeCount > 0 ? (
+                    <div><span>미해결 분쟁</span><strong>{profile.unresolvedDisputeCount}</strong></div>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="trust-history__clean">문제 기록 없이 거래하고 있어요.</p>
+              )}
             </div>
 
             {isSelf ? (
-              <section className="profile-trade-history">
+              <section className="profile-trade-history profile-trade-history--app">
                 <div className="profile-trade-history__head">
                   <strong>내 거래 내역</strong>
-                  <span>확정된 기록만 표시</span>
+                  <span>내 거래 기록</span>
                 </div>
                 <div className="profile-trade-tabs" role="tablist" aria-label="거래 내역">
                   <button type="button" className={historyTab === "completed" ? "is-active" : ""} onClick={() => setHistoryTab("completed")}>완료</button>
@@ -340,25 +332,6 @@ export function ProfilePage() {
               </section>
             ) : null}
 
-            {profile.recentActivity.length > 0 ? (
-              <div className="trust-card__recent">
-                <p className="trust-card__stats-label">{ko.profileRecent}</p>
-                <ul className="trust-card__recent-list">
-                  {profile.recentActivity.map((row) => (
-                    <li key={row.id}>
-                      {row.href ? (
-                        <Link to={row.href} className="text-link">
-                          {row.label}
-                        </Link>
-                      ) : (
-                        <span>{row.label}</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-
             {toast ? <p className="section-desc">{toast}</p> : null}
 
             {isSelf ? (
@@ -370,14 +343,9 @@ export function ProfilePage() {
                 >
                   {ko.profileEdit}
                 </Button>
-                <div className="action-row action-row--split">
-                  <Button fullWidth variant="ghost" to="/my">
-                    {ko.profileMyPosts}
-                  </Button>
-                  <Button fullWidth variant="ghost" to="/chats">
-                    {ko.navChats}
-                  </Button>
-                </div>
+                <Button fullWidth variant="ghost" to="/my">
+                  내 거래 보기
+                </Button>
                 <Button fullWidth variant="ghost" onClick={logout}>
                   {ko.logout}
                 </Button>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { TradeStageBar } from "@/components/TradeStageBar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
@@ -82,13 +83,6 @@ export function HandoffPage() {
       ? Boolean(match.sellerCompletedAt)
       : Boolean(match.buyerCompletedAt)
     : false;
-  const shippingOnly = Boolean(
-    demand &&
-      demand.fulfillmentOptions.length > 0 &&
-      demand.fulfillmentOptions.every((option) => option.mode === "SHIPPING"),
-  );
-  const handoffLabel = shippingOnly ? "배송 · 수령 확인" : "직거래 · 인계 확인";
-
   const facts = useMemo(() => {
     if (!snapshot) return [];
     const payload = snapshot.snapshot;
@@ -176,31 +170,12 @@ export function HandoffPage() {
   return (
     <div className="page-stack page-narrow handoff-page">
       <section className="handoff-hero">
-        <span className="eyebrow">Safe Handoff</span>
+        <span className="eyebrow">인계 확인</span>
         <h1 className="page-title">{product.name}</h1>
         <p>확정한 조건을 기준으로 결제하고, 물품을 인계받을 때 실제 상태를 다시 확인해요.</p>
       </section>
 
-      <section className="trade-progress-card" aria-label="거래 진행 단계">
-        <div className="trade-progress-row is-done">
-          <span className="trade-progress-icon">✓</span>
-          <div><strong>거래조건 확정</strong><small>Deal Snapshot 잠금 완료</small></div>
-        </div>
-        <div className={match.paymentStatus === "PAID" ? "trade-progress-row is-done" : "trade-progress-row is-current"}>
-          <span className="trade-progress-icon">{match.paymentStatus === "PAID" ? "✓" : "2"}</span>
-          <div>
-            <strong>구매자 안전결제</strong>
-            <small>{match.paymentStatus === "PAID" ? "결제 완료" : "결제 대기 중"}</small>
-          </div>
-        </div>
-        <div className={match.status === "COMPLETED" ? "trade-progress-row is-done" : match.paymentStatus === "PAID" ? "trade-progress-row is-current" : "trade-progress-row"}>
-          <span className="trade-progress-icon">{match.status === "COMPLETED" ? "✓" : "3"}</span>
-          <div>
-            <strong>{handoffLabel}</strong>
-            <small>{match.status === "COMPLETED" ? "거래 완료" : match.paymentStatus === "PAID" ? "채팅에서 인계 방법을 조율하세요" : "결제 완료 후 진행"}</small>
-          </div>
-        </div>
-      </section>
+      <TradeStageBar current="handoff" completed={match.status === "COMPLETED"} />
 
       <section className="deal-snapshot-card">
         {facts.map(([label, value]) => (
@@ -222,10 +197,10 @@ export function HandoffPage() {
           <span className="safe-payment-placeholder__icon">✓</span>
           <div>
             <strong>거래가 완료됐어요</strong>
-            <p>양쪽의 확인이 끝났습니다. 거래 결과는 Trust History에 사실 기록으로 남아요.</p>
+            <p>양쪽의 확인이 끝났습니다. 거래 결과가 거래 이력에 기록됐어요.</p>
           </div>
-          <Button to={`/profile/${currentUser.id}`} variant="secondary" fullWidth>
-            내 Trust History 보기
+          <Button to="/my?tab=completed" variant="secondary" fullWidth>
+            내 거래 보기
           </Button>
         </section>
       ) : (
@@ -260,7 +235,7 @@ export function HandoffPage() {
           </section>
 
           <details className="dispute-panel">
-            <summary>Deal Snapshot과 다르거나 문제가 있나요?</summary>
+            <summary>확정한 거래 조건과 다르거나 문제가 있나요?</summary>
             <div className="section-stack">
               <div className="dispute-reason-grid">
                 {DISPUTE_OPTIONS.map((option) => (
