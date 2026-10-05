@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import { AuthProvider } from "@/auth/AuthProvider";
 import { AppShell } from "@/components/layout/AppShell";
@@ -8,7 +8,6 @@ import { DanProvider } from "@/domain/store";
 import { SupabaseDanProvider } from "@/domain/store.supabase";
 import { ActivityPage } from "@/pages/ActivityPage";
 import { ConversationsPage } from "@/pages/ConversationsPage";
-import { BuyDemandCreatePage } from "@/pages/BuyDemandCreatePage";
 import { CreateDemandPage } from "@/pages/CreateDemandPage";
 import { DemandDetailPage } from "@/pages/DemandDetailPage";
 import { DemandEditPage } from "@/pages/DemandEditPage";
@@ -51,7 +50,7 @@ export default function App() {
               <Route index element={<HomePage />} />
               <Route path="feed" element={<DemandFeedPage />} />
               <Route path="create" element={<CreateDemandPage />} />
-              <Route path="buy/new" element={<BuyDemandCreatePage />} />
+              <Route path="buy/new" element={<Navigate to="/create?type=BUY" replace />} />
               <Route path="chats" element={<ConversationsPage />} />
               <Route path="activity" element={<ActivityPage />} />
               <Route path="profile/:userId" element={<ProfilePage />} />
