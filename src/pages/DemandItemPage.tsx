@@ -195,7 +195,7 @@ export function DemandItemPage() {
   }
 
   return (
-    <div className="page-stack page-narrow demand-item">
+    <div className={`page-stack page-narrow demand-item demand-item--app demand-item--${demand.type.toLowerCase()}`}>
       <header className="demand-item__header">
         <div className="demand-item__badges">
           <span className="demand-chip">{DEMAND_TYPE_LABEL[demand.type]}</span>
@@ -222,17 +222,22 @@ export function DemandItemPage() {
         ) : null}
       </header>
 
-      <dl className="detail-facts detail-facts--panel">
-        <div className="detail-facts__row detail-facts__row--reward">
-          <dt>
-            {demand.type === "BORROW"
-              ? ko.borrowBudgetTotal
-              : demand.type === "TASK" || demand.type === "SERVICE"
-                ? ko.reward
-                : ko.detailBudget}
-          </dt>
-          <dd>{formatWon(demand.budget)}</dd>
+      <section className="request-summary-app">
+        <div className="request-summary-app__amount">
+          <span>
+            {demand.type === "BUY"
+              ? "최대 가격"
+              : demand.type === "BORROW"
+                ? "전체 예산"
+                : demand.type === "TASK"
+                  ? "사례금"
+                  : "예산"}
+          </span>
+          <strong>{formatWon(demand.budget)}</strong>
         </div>
+      </section>
+
+      <dl className="detail-facts detail-facts--panel request-detail-list">
         <div className="detail-facts__row">
           <dt>
             {demand.type === "BUY"
@@ -275,7 +280,7 @@ export function DemandItemPage() {
       </dl>
 
       {isOwner && demandOpen ? (
-        <div className="action-row demand-owner-actions">
+        <div className="action-row demand-owner-actions demand-owner-actions--app">
           <Button
             variant="secondary"
             to={`/demand/item/${demand.id}/edit`}
