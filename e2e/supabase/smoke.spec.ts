@@ -1,6 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
+import { createClient } from "@supabase/supabase-js";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
+
+const supabaseUrl = process.env.VITE_SUPABASE_URL!;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 function datetimeLocal(hoursFromNow: number): string {
   const d = new Date(Date.now() + hoursFromNow * 60 * 60 * 1000);
@@ -19,13 +23,40 @@ function datetimeLocal(hoursFromNow: number): string {
 }
 
 async function signup(page: Page, tag: string) {
+  const email = `dan.browser.qa.${tag}@example.com`;
   await page.goto("/login");
   await page.getByRole("button", { name: "계정이 없나요? 회원가입" }).click();
   await page.getByLabel("이름").fill("Browser QA");
-  await page.getByLabel("이메일").fill(`dan.browser.qa.${tag}@example.com`);
+  await page.getByLabel("이메일").fill(email);
   await page.getByLabel("비밀번호").fill("DanBrowserQa-Pass1!");
   await page.getByRole("button", { name: "가입하기" }).click();
   await expect(page.getByRole("heading", { name: "무엇이 필요하세요?" })).toBeVisible();
+  return email;
+}
+
+async function verifyFreshBuyer(email: string) {
+  if (!serviceRoleKey) throw new Error("SUPABASE_SERVICE_ROLE_KEY is required for browser smoke setup");
+  const admin = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: users, error: listError } = await admin.auth.admin.listUsers({
+    page: 1,
+    perPage: 1000,
+  });
+  if (listError) throw listError;
+  const user = users.users.find((candidate) => candidate.email === email);
+  if (!user) throw new Error("fresh browser QA user not found");
+
+  const { error } = await admin.rpc("ops_set_user_verification", {
+    p_user_id: user.id,
+    p_phone_verified: true,
+    p_identity_verified: false,
+    p_payout_verified: false,
+    p_legal_name: "Browser QA",
+    p_payout_account_ref: null,
+    p_seller_type: null,
+  });
+  if (error) throw error;
 }
 
 async function submitBuy(page: Page, tag: string) {
@@ -85,7 +116,7 @@ test("fresh Supabase user sees real zero states and can create all four request 
   const outDir = path.join("qa-screenshots", "supabase-smoke");
   mkdirSync(outDir, { recursive: true });
 
-  await signup(page, tag);
+  const email = await signup(page, tag);
 
   await page.goto("/my");
   await expect(page.getByRole("heading", { name: "내 거래" })).toBeVisible();
@@ -102,6 +133,8 @@ test("fresh Supabase user sees real zero states and can create all four request 
   await expect(page.getByText("새로운 알림이 없어요.")).toBeVisible();
   await expect(page.getByText("새 응답, 거래 진행, 메시지 알림이 이곳에 모여요.")).toBeVisible();
   await page.screenshot({ path: path.join(outDir, "03-activity-zero.png"), fullPage: true });
+
+  await verifyFreshBuyer(email);
 
   const titles = [
     await submitBuy(page, tag),
