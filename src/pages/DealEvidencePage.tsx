@@ -239,7 +239,7 @@ export function DealEvidencePage() {
       <section className="deal-product-card">
         <ProductVisual product={product} size="sm" />
         <div>
-          <p className="eyebrow">Quick Offer</p>
+          <p className="eyebrow">상품 정보</p>
           <h1 className="page-title">{product.name}</h1>
           <strong className="deal-price">{formatWon(sell.minimumPrice)}</strong>
         </div>
@@ -263,7 +263,7 @@ export function DealEvidencePage() {
         <section className="verification-gate">
           <strong>실거래 전 판매자 검증이 필요해요</strong>
           <p>
-            Quick Offer는 검증 없이도 보낼 수 있지만 Deal로 들어가려면
+            판매 제안은 간단히 보낼 수 있지만 거래를 진행하려면
             휴대폰·본인·정산계좌 검증이 모두 완료되어야 합니다.
           </p>
         </section>
@@ -365,7 +365,7 @@ export function DealEvidencePage() {
 
           <div className="evidence-form-divider">
             <span>3</span>
-            <div><strong>구성품 · 상태 · 추가 정보</strong><small>Deal Snapshot에 그대로 기록될 내용이에요.</small></div>
+            <div><strong>구성품 · 상태 · 추가 정보</strong><small>거래 조건에 그대로 반영될 내용이에요.</small></div>
           </div>
 
           <div>
