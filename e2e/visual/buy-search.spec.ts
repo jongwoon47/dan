@@ -12,7 +12,6 @@ test.describe("BUY product search-first", () => {
     page,
   }, testInfo) => {
     await page.goto("/create?type=BUY");
-    await page.getByRole("radio", { name: "물건 구매" }).click();
 
     const input = page.getByLabel("찾는 제품");
     await input.click();
@@ -23,7 +22,10 @@ test.describe("BUY product search-first", () => {
     await input.fill("Sony");
     const list = page.getByRole("listbox");
     await expect(list).toBeVisible();
-    await expect(list.getByRole("option")).toHaveCount(2);
+    await expect(list.getByRole("option")).toHaveCount(3);
+    await expect(list.getByText("Sony A7 IV")).toBeVisible();
+    await expect(list.getByText("Sony RX100 VII")).toBeVisible();
+    await expect(list.getByText("Sony FE 24-70mm F2.8 GM II")).toBeVisible();
     await expect(list.getByText("AirPods Pro 2")).toHaveCount(0);
 
     // Dropdown must stack above sticky next CTA (not covered by it).

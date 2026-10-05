@@ -1,23 +1,20 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
-import { ko } from "@/copy/ko";
 import { DanProvider } from "@/domain/store";
 import { HomePage } from "@/pages/HomePage";
 
 describe("HomePage", () => {
-  it("renders composer-first home and mixed demand feed", () => {
-    render(
-      <DanProvider>
-        <MemoryRouter>
-          <HomePage />
-        </MemoryRouter>
-      </DanProvider>,
-    );
-
-    expect(screen.getByRole("heading", { name: ko.composerTitle })).toBeInTheDocument();
-    expect(screen.getAllByText(ko.typeBuy).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(ko.typeTask).length).toBeGreaterThan(0);
-    expect(screen.getByText(ko.feedNowTitle)).toBeInTheDocument();
+  it("renders the unified request-first DAN home", () => {
+    render(<DanProvider><MemoryRouter><HomePage /></MemoryRouter></DanProvider>);
+    expect(screen.getByRole("heading",{ name:"무엇이 필요하세요?" })).toBeInTheDocument();
+    expect(screen.getByText("iPhone 15 Pro")).toBeInTheDocument();
+    expect(screen.getByRole("button",{ name:/전자기기/ })).toBeInTheDocument();
+    expect(screen.getByRole("link",{ name:/구매/ })).toHaveAttribute("href","/create?type=BUY");
+    expect(screen.getByRole("link",{ name:/빌리기/ })).toHaveAttribute("href","/create?type=BORROW");
+    expect(screen.getByRole("link",{ name:/심부름/ })).toHaveAttribute("href","/create?type=TASK");
+    expect(screen.getByRole("link",{ name:/서비스/ })).toHaveAttribute("href","/create?type=SERVICE");
+    expect(screen.getByRole("link",{ name:/전체 실시간 수요 보기/ })).toHaveAttribute("href","/feed");
+    expect(screen.getByText(/전체 \d+/)).toBeInTheDocument();
   });
 });

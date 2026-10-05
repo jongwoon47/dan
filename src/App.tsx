@@ -13,13 +13,22 @@ import { DemandDetailPage } from "@/pages/DemandDetailPage";
 import { DemandEditPage } from "@/pages/DemandEditPage";
 import { DemandFeedPage } from "@/pages/DemandFeedPage";
 import { DemandItemPage } from "@/pages/DemandItemPage";
+import { DealEvidencePage } from "@/pages/DealEvidencePage";
+import { DealSnapshotPage } from "@/pages/DealSnapshotPage";
 import { HomePage } from "@/pages/HomePage";
+import { HandoffPage } from "@/pages/HandoffPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { MatchChatPage } from "@/pages/MatchChatPage";
 import { MyDanPage } from "@/pages/MyDanPage";
+import { NotFoundPage } from "@/pages/NotFoundPage";
+import { OfferDetailPage } from "@/pages/OfferDetailPage";
 import { OwnershipPage } from "@/pages/OwnershipPage";
 import { ProfilePage } from "@/pages/ProfilePage";
+import { QuickOfferPage } from "@/pages/QuickOfferPage";
+import { SafePaymentPage } from "@/pages/SafePaymentPage";
 import { SellIntentPage } from "@/pages/SellIntentPage";
+import { TradeCompletePage } from "@/pages/TradeCompletePage";
+import "@/styles/danPremium.css";
 
 function DataProvider({ children }: { children: ReactNode }) {
   if (getDataMode() === "supabase") {
@@ -41,20 +50,28 @@ export default function App() {
               <Route index element={<HomePage />} />
               <Route path="feed" element={<DemandFeedPage />} />
               <Route path="create" element={<CreateDemandPage />} />
+              <Route path="buy/new" element={<Navigate to="/create?type=BUY" replace />} />
               <Route path="chats" element={<ConversationsPage />} />
               <Route path="activity" element={<ActivityPage />} />
               <Route path="profile/:userId" element={<ProfilePage />} />
+              <Route path="offer/:matchId" element={<OfferDetailPage />} />
               <Route path="match/:matchId" element={<MatchChatPage />} />
+              <Route path="deal/:matchId/evidence" element={<DealEvidencePage />} />
+              <Route path="deal/:matchId/snapshot" element={<DealSnapshotPage />} />
+              <Route path="deal/:matchId/payment" element={<SafePaymentPage />} />
+              <Route path="deal/:matchId/handoff" element={<HandoffPage />} />
+              <Route path="deal/:matchId/complete" element={<TradeCompletePage />} />
               <Route path="demand/item/:demandId" element={<DemandItemPage />} />
               <Route path="demand/item/:demandId/edit" element={<DemandEditPage />} />
               <Route path="demand/:productId" element={<DemandDetailPage />} />
+              <Route path="demand/:productId/offer" element={<QuickOfferPage />} />
               <Route path="demand/:productId/own" element={<OwnershipPage />} />
               <Route
                 path="ownership/:ownershipId/sell-intent"
                 element={<SellIntentPage />}
               />
               <Route path="my" element={<MyDanPage />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>
         </BrowserRouter>
