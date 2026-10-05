@@ -224,7 +224,7 @@ export function DemandFeedPage() {
     <div className="page-stack discovery-page discovery-page--v3">
       <header className="page-header discovery-header">
         <span className="eyebrow">탐색</span>
-        <h1 className="page-title">지금 필요한 사람들</h1>
+        <h1 className="page-title">지금 올라온 요청</h1>
         <p className="section-desc">
           물건 구매부터 빌리기, 심부름, 서비스까지 올라온 요청을 둘러보세요.
         </p>
