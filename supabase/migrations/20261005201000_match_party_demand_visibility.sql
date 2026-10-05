@@ -5,6 +5,7 @@
 drop policy if exists demands_select_public_or_own on public.demands;
 create policy demands_select_public_or_own
 on public.demands for select
+to authenticated
 using (
   user_id = auth.uid()
   or (
