@@ -199,6 +199,7 @@ async function submitService(page: Page, tag: string) {
 }
 
 test("fresh Supabase user sees real zero states and can create all four request types", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   const tag = String(Date.now());
   const outDir = path.join("qa-screenshots", "supabase-smoke");
   mkdirSync(outDir, { recursive: true });
@@ -243,8 +244,14 @@ test("Supabase UI completes BORROW, TASK, and SERVICE with two real browser sess
   const outDir = path.join("qa-screenshots", "supabase-smoke");
   mkdirSync(outDir, { recursive: true });
 
-  const ownerContext = await browser.newContext({ baseURL: appBaseUrl });
-  const responderContext = await browser.newContext({ baseURL: appBaseUrl });
+  const mobileContext = {
+    baseURL: appBaseUrl,
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+  };
+  const ownerContext = await browser.newContext(mobileContext);
+  const responderContext = await browser.newContext(mobileContext);
   const ownerPage = await ownerContext.newPage();
   const responderPage = await responderContext.newPage();
 
