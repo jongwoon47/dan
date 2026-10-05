@@ -50,7 +50,7 @@ function AppShellInner() {
               <span className="brand__text"><span className="brand__mark">DAN</span><span className="brand__tag">{ko.brandTag}</span></span>
             </NavLink>
             <div className="top-nav__mobile-actions">
-              <NavLink to="/feed" className="top-nav__mobile-search" aria-label="구매수요 탐색"><IconSearch /></NavLink>
+              <NavLink to="/feed" className="top-nav__mobile-search" aria-label="요청 탐색"><IconSearch /></NavLink>
               {isLoggedIn ? (
                 <NavLink to="/activity" className="top-nav__mobile-bell" aria-label={unreadActivityCount > 0 ? `${ko.navActivity} ${unreadActivityCount}` : ko.navActivity}>
                   {({ isActive }) => <span className="top-nav__bell-wrap"><IconBell active={isActive} />{bellBadge ? <span className="nav-badge nav-badge--float">{bellBadge}</span> : null}</span>}
