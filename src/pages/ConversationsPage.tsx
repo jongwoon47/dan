@@ -38,7 +38,23 @@ type Preview = {
   demandTitle: string;
   lastMessage: string;
   lastAt: string | null;
+  stageLabel: string;
 };
+
+function chatStageLabel(match: Match): string {
+  if (match.status === "COMPLETED") return "거래 완료";
+  if (match.status === "CLOSED") return "거래 종료";
+  switch (match.dealStage) {
+    case "EVIDENCE_PENDING": return "상품 정보 대기";
+    case "EVIDENCE_READY":
+    case "DEAL_REVIEW": return "거래 조건 확인";
+    case "DEAL_LOCKED":
+    case "PAYMENT_PENDING": return "결제 대기";
+    case "PAID":
+    case "HANDOFF_READY": return "인계 확인";
+    default: return "대화 중";
+  }
+}
 
 export function ConversationsPage() {
   const {
@@ -90,6 +106,7 @@ export function ConversationsPage() {
             demandTitle: demand?.title?.trim() || ko.chatTitle,
             lastMessage: last?.body?.trim() || ko.chatsStartHint,
             lastAt: last?.createdAt ?? match.createdAt,
+            stageLabel: chatStageLabel(match),
           } satisfies Preview;
         }),
       );
@@ -169,7 +186,7 @@ export function ConversationsPage() {
                     </time>
                   ) : null}
                 </span>
-                <span className="chat-list__demand">{row.demandTitle}</span>
+                <span className="chat-list__demand">{row.demandTitle} · {row.stageLabel}</span>
                 <span className="chat-list__preview">{row.lastMessage}</span>
               </span>
             </Link>
