@@ -39,7 +39,7 @@ export function DemandDetailPage() {
   async function shareDemand() {
     if (!product) return;
     const shareData = {
-      title: `${product.name} · DAN Live Demand`,
+      title: `${product.name} · DAN 요청`,
       text: `${aggregate?.seekerCount ?? 0}명이 지금 ${product.name}을 찾고 있어요.`,
       url: window.location.href,
     };
@@ -68,7 +68,7 @@ export function DemandDetailPage() {
         type="button"
         className="deep-header-share"
         onClick={() => void shareDemand()}
-        aria-label="Live Demand 공유"
+        aria-label="요청 공유"
       >
         공유
       </button>
@@ -80,7 +80,7 @@ export function DemandDetailPage() {
       <EmptyState
         title={ko.missingDemand}
         body={ko.detailMissingBody}
-        action={<Button to="/" variant="secondary">Live Demand</Button>}
+        action={<Button to="/" variant="secondary">요청</Button>}
       />
     );
   }
@@ -90,7 +90,7 @@ export function DemandDetailPage() {
       <section className="demand-detail-hero">
         <ProductVisual product={product} size="lg" />
         <div className="demand-detail-copy">
-          <span className="eyebrow">Live Demand</span>
+          <span className="eyebrow">요청</span>
           <h1>{product.name}</h1>
           <p className="detail-hero__count">
             <strong>{aggregate.seekerCount}명</strong>이 지금 찾고 있어요
