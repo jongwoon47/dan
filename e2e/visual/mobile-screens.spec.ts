@@ -55,6 +55,20 @@ test.describe("DAN V3 responsive visual QA", () => {
       });
     }
 
+    for (const type of ["BUY", "BORROW", "TASK", "SERVICE"] as const) {
+      await page.goto(`/create?type=${type}`);
+      await settle(page);
+      try {
+        await assertNoHorizontalOverflow(page);
+      } catch (e) {
+        findings.push(`create-${type.toLowerCase()}: ${(e as Error).message}`);
+      }
+      await page.screenshot({
+        path: path.join(outDir, `create-${type.toLowerCase()}-phase1.png`),
+        fullPage: true,
+      });
+    }
+
     await page.goto("/feed");
     await settle(page);
     const firstCard = page.locator("a.feed-row, a.individual-demand-card").first();
