@@ -188,19 +188,7 @@ export function ProfilePage() {
   const initial = (profile.displayName.trim().slice(0, 1) || "?").toUpperCase();
   const areaLine = profile.defaultArea.trim();
   const bioTrim = profile.bio.trim();
-  const showStats =
-    profile.completedDemandCount > 0 || profile.responseConnectionCount > 0;
-  const activityBits: string[] = [];
-  if (profile.completedDemandCount > 0) {
-    activityBits.push(
-      `${ko.profileCompleted} ${profile.completedDemandCount}`,
-    );
-  }
-  if (profile.responseConnectionCount > 0) {
-    activityBits.push(
-      `${ko.profileResponded} ${profile.responseConnectionCount}`,
-    );
-  }
+
 
   return (
     <div className="page-stack page-narrow profile-page">
@@ -278,16 +266,7 @@ export function ProfilePage() {
               {ko.profileJoined} {formatJoined(profile.createdAt)}
             </p>
 
-            {showStats ? (
-              <div className="trust-card__stats">
-                <p className="trust-card__stats-label">{ko.profileActivity}</p>
-                <p className="trust-card__stats-value">
-                  {activityBits.join(" · ")}
-                </p>
-              </div>
-            ) : null}
-
-            <div className="trust-history trust-history--blueprint">
+            <div className="trust-history trust-history--app">
               <div className="trust-history__head">
                 <strong>거래 신뢰</strong>
                 <div className="trust-history__badges">
@@ -328,10 +307,10 @@ export function ProfilePage() {
             </div>
 
             {isSelf ? (
-              <section className="profile-trade-history">
+              <section className="profile-trade-history profile-trade-history--app">
                 <div className="profile-trade-history__head">
                   <strong>내 거래 내역</strong>
-                  <span>확정된 기록만 표시</span>
+                  <span>내 거래 기록</span>
                 </div>
                 <div className="profile-trade-tabs" role="tablist" aria-label="거래 내역">
                   <button type="button" className={historyTab === "completed" ? "is-active" : ""} onClick={() => setHistoryTab("completed")}>완료</button>
