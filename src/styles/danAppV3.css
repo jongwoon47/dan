@@ -75,6 +75,32 @@ body {
   box-shadow: 0 6px 16px rgba(99,71,245,.22) !important;
 }
 
+/* Mobile root-header actions are explicit controls, not incidental inline links. */
+.top-nav__mobile-actions {
+  margin-left: auto;
+  display: none;
+  align-items: center;
+  gap: 2px;
+}
+
+.top-nav__mobile-bell,
+.top-nav__mobile-search {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--v3-sub);
+  text-decoration: none;
+}
+
+.top-nav__mobile-bell:active,
+.top-nav__mobile-search:active {
+  background: var(--v3-soft);
+}
+
 /* ---------- Shared type ---------- */
 
 .page-title {
@@ -537,6 +563,21 @@ body {
   min-height: calc(100dvh - 72px);
 }
 
+/* Chat owns the viewport. Remove the deep-page padding/margin combination so
+   only the message thread scrolls and the composer stays stable. */
+.app-shell--deep .app-main:has(.chat-page) {
+  max-width: none !important;
+  padding: 0 !important;
+}
+
+.app-shell--deep .app-main:has(.chat-page) .chat-page {
+  width: min(100%, 900px);
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  max-height: 100dvh !important;
+  margin: 0 auto !important;
+}
+
 .chat-page__header {
   border-bottom: 1px solid var(--v3-line);
 }
@@ -744,6 +785,16 @@ body {
 @media (max-width: 767px) {
   .app-main {
     padding: 16px 16px calc(82px + env(safe-area-inset-bottom,0px)) !important;
+  }
+
+  .top-nav__mobile-actions {
+    display: flex;
+  }
+
+  .top-nav__mobile-bell,
+  .top-nav__mobile-search {
+    display: inline-flex !important;
+    margin-left: 0 !important;
   }
 
   .app-shell--deep .app-main {
