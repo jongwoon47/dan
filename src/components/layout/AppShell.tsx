@@ -84,7 +84,7 @@ function AppShellInner() {
       {mode === "root" ? (
         <nav className="bottom-nav bottom-nav--v1" aria-label="하단 메뉴">
           <NavLink to="/" end>{({ isActive }) => <><IconHome active={isActive} /><span>홈</span></>}</NavLink>
-          <NavLink to="/feed">{({ isActive }) => <><IconSearch /><span>탐색</span></>}</NavLink>
+          <NavLink to="/feed"><IconSearch /><span>탐색</span></NavLink>
           <NavLink to="/create" className="bottom-nav__create" aria-label="요청 등록"><span className="bottom-nav__create-circle"><IconPlus /></span><span>요청</span></NavLink>
           <NavLink to="/chats">{({ isActive }) => <><span className="bottom-nav__icon-wrap"><IconChat active={isActive} />{chatBadge ? <span className="nav-badge nav-badge--float">{chatBadge}</span> : null}</span><span>채팅</span></>}</NavLink>
           <NavLink to="/my">{({ isActive }) => <><span className="bottom-nav__icon-wrap"><IconDemand active={isActive} />{myBadge ? <span className="nav-badge nav-badge--float">{myBadge}</span> : null}</span><span>내 거래</span></>}</NavLink>
