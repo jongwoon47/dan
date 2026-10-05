@@ -83,12 +83,6 @@ export function HandoffPage() {
       ? Boolean(match.sellerCompletedAt)
       : Boolean(match.buyerCompletedAt)
     : false;
-  const shippingOnly = Boolean(
-    demand &&
-      demand.fulfillmentOptions.length > 0 &&
-      demand.fulfillmentOptions.every((option) => option.mode === "SHIPPING"),
-  );
-
   const facts = useMemo(() => {
     if (!snapshot) return [];
     const payload = snapshot.snapshot;
