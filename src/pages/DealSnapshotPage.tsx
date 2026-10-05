@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProductVisual } from "@/components/ProductVisual";
+import { TradeStageBar } from "@/components/TradeStageBar";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
 import type { DealEvidence, DealSnapshot } from "@/domain/types";
@@ -175,6 +176,8 @@ export function DealSnapshotPage() {
         </div>
       </section>
 
+      <TradeStageBar current="terms" />
+
       <section className="deal-snapshot-card deal-snapshot-card--focused">
         <div className="snapshot-card-heading">
           <div>
@@ -209,7 +212,7 @@ export function DealSnapshotPage() {
         <details className="snapshot-details">
           <summary>
             <span>
-              <strong>판매자 제출 상세</strong>
+              <strong>상품 상세</strong>
               <small>보증·구성품·수리 이력</small>
             </span>
             <span className="snapshot-details__chevron" aria-hidden>⌄</span>
@@ -327,7 +330,7 @@ export function DealSnapshotPage() {
             </div>
           </section>
           <Button to={`/deal/${match.id}/payment`} fullWidth size="lg">
-            안전결제로 이동
+            결제하기
           </Button>
         </>
       ) : (
