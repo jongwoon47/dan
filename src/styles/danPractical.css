@@ -1393,3 +1393,132 @@ textarea.dan-input,
     font-size: 24px;
   }
 }
+
+
+/* DAN App V3 — shared transaction shell */
+.app-trade-stage {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  padding: 13px 0 15px;
+  border-top: 1px solid var(--dan-border);
+  border-bottom: 1px solid var(--dan-border);
+}
+.app-trade-stage span {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  color: #aaaab3;
+}
+.app-trade-stage i {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f0f0f3;
+  color: #85858e;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 850;
+}
+.app-trade-stage b {
+  font-size: 11px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.app-trade-stage span.is-current {
+  color: var(--dan-ink);
+}
+.app-trade-stage span.is-current i {
+  background: var(--dan-accent);
+  color: #fff;
+}
+.app-trade-stage span.is-done {
+  color: var(--dan-success);
+}
+.app-trade-stage span.is-done i {
+  background: #e7f5ef;
+  color: var(--dan-success);
+}
+
+.quick-offer-page--app .quick-offer-product-card {
+  padding-bottom: 14px !important;
+}
+.quick-offer-page--app .quick-offer-form {
+  gap: 18px !important;
+}
+.quick-offer-page--app .quick-offer-photo {
+  margin-top: 0;
+}
+.quick-offer-page--app .dan-btn--lg {
+  margin-top: 4px;
+}
+
+.offer-detail-page .offer-seller-card__facts {
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)) !important;
+}
+.offer-detail-page .offer-next-state {
+  display: grid;
+  gap: 8px;
+}
+.offer-detail-page .offer-next-state p {
+  margin: 0;
+  color: var(--dan-ink-secondary);
+}
+
+.safe-payment-page .payment-provider-gate__badge {
+  color: var(--dan-accent-text) !important;
+  background: var(--dan-accent-soft) !important;
+}
+.safe-payment-page .payment-production-note {
+  color: var(--dan-ink-muted) !important;
+  font-size: 12px !important;
+}
+.safe-payment-page .payment-method {
+  min-height: 52px !important;
+}
+.safe-payment-page .payment-safety-note {
+  padding: 14px 0 !important;
+  border: 0 !important;
+  border-top: 1px solid var(--dan-border) !important;
+  border-bottom: 1px solid var(--dan-border) !important;
+  background: transparent !important;
+}
+
+.handoff-page .handoff-hero {
+  padding-bottom: 0 !important;
+}
+.handoff-page .handoff-hero .eyebrow {
+  color: var(--dan-accent-text) !important;
+}
+.handoff-page .deal-snapshot-card {
+  border: 0 !important;
+  border-top: 1px solid var(--dan-border) !important;
+  border-bottom: 1px solid var(--dan-border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+.handoff-page .final-confirm-card {
+  padding: 18px !important;
+}
+
+.trade-complete-page .trade-complete-hero {
+  padding-top: 12px !important;
+}
+.trade-complete-page .trade-receipt {
+  border: 0 !important;
+  border-top: 1px solid var(--dan-border) !important;
+  border-bottom: 1px solid var(--dan-border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+@media (max-width: 767px) {
+  .app-trade-stage {
+    margin-inline: -2px;
+  }
+  .app-trade-stage b {
+    font-size: 10.5px;
+  }
+}
