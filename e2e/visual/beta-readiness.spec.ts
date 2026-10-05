@@ -138,24 +138,24 @@ for (const width of [320, 390, 430]) {
     await page.setViewportSize({ width, height: 780 });
     await page.goto("/");
     await settle(page);
-    await expect(page.getByRole("button", { name: "구매수요 만들기" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "요청 만들기" })).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
-    await page.goto("/buy/new");
+    await page.goto("/create?type=BUY");
     await settle(page);
     await page.getByLabel("찾는 제품").fill(LONG_NAME);
-    await page.getByLabel("최대 구매 희망가").fill("128500000");
-    await expectControlInView(page, "다음 · 조건 확인");
+    await page.getByLabel("희망 가격 (최대)").fill("128500000");
+    await expectControlInView(page, "다음");
     await expectNoHorizontalOverflow(page);
   });
 }
 
 test("a short viewport still reaches the create CTA", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 420 });
-  await page.goto("/buy/new");
+  await page.goto("/create?type=BUY");
   await settle(page);
   await page.getByLabel("찾는 제품").focus();
-  await expectControlInView(page, "다음 · 조건 확인");
+  await expectControlInView(page, "다음");
   await expectNoHorizontalOverflow(page);
 });
 
@@ -189,47 +189,47 @@ test("empty activity, empty chat, long evidence, and a missing photo stay in fra
 });
 
 
-test("BUY catalog cards keep product media separate from copy", async ({ page }) => {
+test("BUY product suggestions stay in frame and selection carries forward", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 780 });
-  await page.goto("/buy/new");
+  await page.goto("/create?type=BUY");
   await settle(page);
 
   const input = page.getByLabel("찾는 제품");
   await input.fill("MacBook");
 
-  const suggestion = page.locator(".product-suggestion").first();
+  const suggestion = page.locator(".product-suggest__item").first();
   await expect(suggestion).toBeVisible();
-  const suggestionVisual = suggestion.locator(".product-visual--sm");
-  const suggestionCopy = suggestion.locator("span").nth(0);
-  const visualBox = await suggestionVisual.boundingBox();
-  const copyBox = await suggestionCopy.boundingBox();
-  expect(visualBox).not.toBeNull();
-  expect(copyBox).not.toBeNull();
-  expect(visualBox!.x + visualBox!.width + 6).toBeLessThanOrEqual(copyBox!.x);
-
   await suggestion.click();
-  const selected = page.locator(".selected-product-card");
-  await expect(selected).toBeVisible();
-  const selectedVisual = selected.locator(".product-visual--sm");
-  const selectedCopy = selected.locator(":scope > div:not(.product-visual)").first();
-  const selectedVisualBox = await selectedVisual.boundingBox();
-  const selectedCopyBox = await selectedCopy.boundingBox();
-  expect(selectedVisualBox).not.toBeNull();
-  expect(selectedCopyBox).not.toBeNull();
-  expect(selectedVisualBox!.x + selectedVisualBox!.width + 6).toBeLessThanOrEqual(selectedCopyBox!.x);
-
+  await expect(input).not.toHaveValue("");
   await expectNoHorizontalOverflow(page);
 });
 
 
-test("BUY review header back returns to condition entry", async ({ page }) => {
+test("BUY phase 2 back returns to request details", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 780 });
-  await page.goto("/buy/new");
+  await page.goto("/create?type=BUY");
   await settle(page);
 
   await page.getByLabel("찾는 제품").fill("MacBook Pro 14 M4");
-  await page.getByLabel("최대 구매 희망가").fill("2500000");
-  await page.getByRole("button", { name: "다음 · 조건 확인" }).click();
+  await page.getByLabel("희망 가격 (최대)").fill("2500000");
+  await page.getByRole("button", { name: "다음" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "어떻게 받을까요?" }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "이전" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "어떤 물건을 찾고 있나요?" }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/\/create\?type=BUY/);
+  await expectNoHorizontalOverflow(page);
+});
+
+  await page.getByLabel("찾는 제품").fill("MacBook Pro 14 M4");
+  await page.getByLabel("희망 가격 (최대)").fill("2500000");
+  await page.getByRole("button", { name: "다음" }).click();
 
   await expect(
     page.getByRole("heading", { name: "이 조건으로 구매수요를 올릴게요." }),

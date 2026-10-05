@@ -300,14 +300,15 @@ export function ProfilePage() {
 
               <div className="trust-summary-strip">
                 <div><strong>{profile.completedDemandCount}</strong><span>거래 완료</span></div>
-                <div><strong>{profile.sellerFaultCancellationCount}</strong><span>판매자 귀책 취소</span></div>
-                <div><strong>{profile.buyerFaultCancellationCount}</strong><span>구매자 귀책 취소</span></div>
+                <div><strong>{profile.sellerFaultCancellationCount + profile.buyerFaultCancellationCount}</strong><span>귀책 취소</span></div>
+                <div><strong>{profile.unresolvedDisputeCount}</strong><span>미해결 분쟁</span></div>
               </div>
 
-              <div className="trust-fact-list">
-                <div><span>확정 상태 불일치</span><strong>{profile.confirmedMismatchCount}</strong></div>
-                <div><span>미해결 분쟁</span><strong>{profile.unresolvedDisputeCount}</strong></div>
-              </div>
+              {profile.confirmedMismatchCount > 0 ? (
+                <div className="trust-fact-list">
+                  <div><span>확정 상태 불일치</span><strong>{profile.confirmedMismatchCount}</strong></div>
+                </div>
+              ) : null}
 
               <p className="trust-history__note">
                 운영으로 확정된 기록만 표시해요.
@@ -338,25 +339,6 @@ export function ProfilePage() {
                   <p className="profile-trade-empty">표시할 거래가 아직 없어요.</p>
                 )}
               </section>
-            ) : null}
-
-            {profile.recentActivity.length > 0 ? (
-              <div className="trust-card__recent">
-                <p className="trust-card__stats-label">{ko.profileRecent}</p>
-                <ul className="trust-card__recent-list">
-                  {profile.recentActivity.map((row) => (
-                    <li key={row.id}>
-                      {row.href ? (
-                        <Link to={row.href} className="text-link">
-                          {row.label}
-                        </Link>
-                      ) : (
-                        <span>{row.label}</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
             ) : null}
 
             {toast ? <p className="section-desc">{toast}</p> : null}

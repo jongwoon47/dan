@@ -12,7 +12,6 @@ test.describe("BUY product search-first", () => {
     page,
   }, testInfo) => {
     await page.goto("/create?type=BUY");
-    await page.getByRole("radio", { name: "물건 구매" }).click();
 
     const input = page.getByLabel("찾는 제품");
     await input.click();

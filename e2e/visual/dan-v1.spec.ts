@@ -208,28 +208,28 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
 
   await page.goto("/");
   await settle(page);
-  await expect(page.getByRole("heading", { name: "찾는 물건이 있나요?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "무엇이 필요하세요?" })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "찾는 제품" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "구매수요 만들기" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "요청 만들기" })).toBeVisible();
   await expect(page.getByText("iPhone 15 Pro")).toBeVisible();
   await expect(page.getByRole("button", { name: /가구/ })).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "01-home.png"), fullPage: true });
 
-  await page.goto("/buy/new");
+  await page.goto("/create?type=BUY");
   await settle(page);
   await expect(page.getByRole("heading", { name: "어떤 물건을 찾고 있나요?" })).toBeVisible();
   await expect(page.getByText("찾는 제품")).toBeVisible();
-  await expect(page.getByText("필수 조건")).toBeVisible();
-  await expect(page.getByText("선호 조건")).toBeVisible();
+  await expect(page.getByText("1 / 2")).toBeVisible();
+  await expect(page.getByRole("radio", { name: /구매/ })).toBeChecked();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "02-demand-create.png"), fullPage: true });
 
   await installTradeFixture(page, "received");
   await page.goto("/my");
   await settle(page);
-  await expect(page.getByRole("heading", { name: "내 구매수요" })).toBeVisible();
-  await expect(page.getByText("최대 2,150,000원")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "내 거래" })).toBeVisible();
+  await expect(page.getByText(/2,150,000원/)).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "03-my-demand.png"), fullPage: true });
 
@@ -245,7 +245,7 @@ test("DAN V1 frozen UX flow renders on mobile", async ({ page }, testInfo) => {
   await page.goto("/offer/" + potentialId);
   await settle(page);
   await expect(page.getByText("판매 제안", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "관심 있어요" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "이 판매자와 거래하기" })).toBeVisible();
   await expect(page.getByText("거래 이력 보기")).toBeVisible();
   await expect(page.locator(".offer-detail-product--catalog .product-visual")).toBeVisible();
   await expectNoHorizontalOverflow(page);
@@ -315,9 +315,9 @@ test("open-catalog discovery searches beyond camera SKUs and carries intent forw
   await page.goto("/feed");
   await settle(page);
 
-  await expect(page.getByRole("heading", { name: "사람들이 지금 찾는 제품" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "지금 필요한 사람들을 찾아보세요" })).toBeVisible();
   await expect(page.getByText("Herman Miller Aeron Chair")).toBeVisible();
-  await page.getByLabel("Live Demand 검색").fill("Aeron");
+  await page.getByLabel("요청 검색").fill("Aeron");
   await expect(page.getByText("Herman Miller Aeron Chair")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({
@@ -327,7 +327,7 @@ test("open-catalog discovery searches beyond camera SKUs and carries intent forw
 
   await page.getByText("Herman Miller Aeron Chair").click();
   await settle(page);
-  await expect(page.getByRole("button", { name: "Live Demand 공유" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "요청 공유" })).toBeVisible();
   await expect(page.getByText(/명이 지금 찾고 있어요/)).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({
@@ -337,12 +337,12 @@ test("open-catalog discovery searches beyond camera SKUs and carries intent forw
 
   await page.goto("/feed");
   await settle(page);
-  await page.getByLabel("Live Demand 검색").fill("Herman Miller Embody Chair");
-  await expect(page.getByText(/Embody Chair.*Live Demand가 아직 없어요/)).toBeVisible();
-  await page.getByRole("link", { name: "이 제품 구매수요 만들기" }).click();
+  await page.getByLabel("요청 검색").fill("Herman Miller Embody Chair");
+  await expect(page.getByText(/Embody Chair.*요청이 아직 없어요/)).toBeVisible();
+  await page.getByRole("link", { name: "이 제품 요청하기" }).click();
   await settle(page);
 
-  await expect(page).toHaveURL(/\/buy\/new\?q=/);
+  await expect(page).toHaveURL(/\/\/create\?type=BUY&q=//);
   await expect(page.getByLabel("찾는 제품")).toHaveValue("Herman Miller Embody Chair");
   await expectNoHorizontalOverflow(page);
 });
@@ -352,27 +352,25 @@ test("open catalog accepts a product that is not pre-seeded", async ({ page }, t
   const outDir = path.join("qa-screenshots", "dan-v1", testInfo.project.name);
   mkdirSync(outDir, { recursive: true });
 
-  await page.goto("/buy/new");
+  await page.goto("/create?type=BUY");
   await settle(page);
 
   await page.getByLabel("찾는 제품").fill("Herman Miller Embody Chair");
-  await page.getByLabel("제품 카테고리").selectOption("furniture");
-  await page.getByLabel("최대 구매 희망가").fill("1800000");
-  await page.getByRole("button", { name: "다음 · 조건 확인" }).click();
-  await expect(page.getByRole("heading", { name: "이 조건으로 구매수요를 올릴게요." })).toBeVisible();
-  await page.getByRole("button", { name: "이 조건으로 구매수요 등록" }).click();
+  await page.getByLabel("희망 가격 (최대)").fill("1800000");
+  await page.getByRole("button", { name: "다음" }).click();
+  await expect(page.getByRole("heading", { name: "어떻게 받을까요?" })).toBeVisible();
+  await page.getByRole("button", { name: "요청하기" }).click();
   await settle(page);
 
-  await expect(page).toHaveURL(/\/my/);
+  await expect(page).toHaveURL(/\/demand\/item\//);
   await expect(page.getByText("Herman Miller Embody Chair")).toBeVisible();
-  await expect(page.getByText("최대 1,800,000원")).toBeVisible();
+  await expect(page.getByText(/1,800,000원/)).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({
     path: path.join(outDir, "13-open-catalog-custom-demand.png"),
     fullPage: true,
   });
 });
-
 
 test("BUY chat cancellation uses structured deal cancellation", async ({ page }, testInfo) => {
   const outDir = path.join("qa-screenshots", "dan-v1", testInfo.project.name);

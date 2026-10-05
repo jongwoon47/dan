@@ -21,9 +21,6 @@ function IconPlus() {
 function IconChat({ active }: { active?: boolean }) {
   return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H11l-4.2 3.2c-.7.5-1.8 0-1.8-.9V6.5Z" stroke="currentColor" strokeWidth={active ? 2.1 : 1.8} strokeLinejoin="round" /></svg>;
 }
-function IconProfile({ active }: { active?: boolean }) {
-  return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden><circle cx="12" cy="8.5" r="3.25" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} /><path d="M5.5 19.5c1.4-3.2 3.7-4.8 6.5-4.8s5.1 1.6 6.5 4.8" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" /></svg>;
-}
 function IconSearch() {
   return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden><circle cx="10.5" cy="10.5" r="5.5" stroke="currentColor" strokeWidth="1.9" /><path d="m15 15 4 4" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" /></svg>;
 }
@@ -53,7 +50,7 @@ function AppShellInner() {
               <span className="brand__text"><span className="brand__mark">DAN</span><span className="brand__tag">{ko.brandTag}</span></span>
             </NavLink>
             <div className="top-nav__mobile-actions">
-              <NavLink to="/feed" className="top-nav__mobile-search" aria-label="구매수요 탐색"><IconSearch /></NavLink>
+              <NavLink to="/feed" className="top-nav__mobile-search" aria-label="요청 탐색"><IconSearch /></NavLink>
               {isLoggedIn ? (
                 <NavLink to="/activity" className="top-nav__mobile-bell" aria-label={unreadActivityCount > 0 ? `${ko.navActivity} ${unreadActivityCount}` : ko.navActivity}>
                   {({ isActive }) => <span className="top-nav__bell-wrap"><IconBell active={isActive} />{bellBadge ? <span className="nav-badge nav-badge--float">{bellBadge}</span> : null}</span>}
@@ -87,10 +84,10 @@ function AppShellInner() {
       {mode === "root" ? (
         <nav className="bottom-nav bottom-nav--v1" aria-label="하단 메뉴">
           <NavLink to="/" end>{({ isActive }) => <><IconHome active={isActive} /><span>홈</span></>}</NavLink>
-          <NavLink to="/my">{({ isActive }) => <><span className="bottom-nav__icon-wrap"><IconDemand active={isActive} />{myBadge ? <span className="nav-badge nav-badge--float">{myBadge}</span> : null}</span><span>내 거래</span></>}</NavLink>
+          <NavLink to="/feed"><IconSearch /><span>탐색</span></NavLink>
           <NavLink to="/create" className="bottom-nav__create" aria-label="요청 등록"><span className="bottom-nav__create-circle"><IconPlus /></span><span>요청</span></NavLink>
           <NavLink to="/chats">{({ isActive }) => <><span className="bottom-nav__icon-wrap"><IconChat active={isActive} />{chatBadge ? <span className="nav-badge nav-badge--float">{chatBadge}</span> : null}</span><span>채팅</span></>}</NavLink>
-          <NavLink to={currentUser ? `/profile/${currentUser.id}` : "/login"}>{({ isActive }) => <><IconProfile active={isActive} /><span>프로필</span></>}</NavLink>
+          <NavLink to="/my">{({ isActive }) => <><span className="bottom-nav__icon-wrap"><IconDemand active={isActive} />{myBadge ? <span className="nav-badge nav-badge--float">{myBadge}</span> : null}</span><span>내 거래</span></>}</NavLink>
         </nav>
       ) : null}
     </div>

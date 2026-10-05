@@ -138,7 +138,7 @@ export function OfferDetailPage() {
 
       {match.status === "POTENTIAL" ? (
         <Button fullWidth size="lg" disabled={busy} onClick={() => void interest()}>
-          {busy ? "처리 중…" : "관심 있어요"}
+          {busy ? "처리 중…" : "이 판매자와 거래하기"}
         </Button>
       ) : match.status === "BUYER_INTERESTED" ? (
         <section className="offer-next-state">
