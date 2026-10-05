@@ -332,7 +332,8 @@ export function DemandEditPage() {
 
   return (
     <div className="page-stack page-narrow demand-edit-page">
-      <div className="create-page__prompt"><p className="create-page__kicker">요청 수정</p><h1 className="section-title">필요한 내용만 바꿔주세요</h1></div>\n      <form className="section-stack create-page__body" onSubmit={(e) => void onSave(e)}>
+      <div className="create-page__prompt"><p className="create-page__kicker">요청 수정</p><h1 className="section-title">필요한 내용만 바꿔주세요</h1></div>
+      <form className="section-stack create-page__body" onSubmit={(e) => void onSave(e)}>
         <Field label="요청 제목">
           <TextInput
             value={title}
@@ -360,7 +361,7 @@ export function DemandEditPage() {
             />
           </Field>
         ) : (
-          <Field label={ko.descLabel}>
+          <Field label="추가 조건">
             <textarea
               className="dan-input dan-textarea"
               value={description}
