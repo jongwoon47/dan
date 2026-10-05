@@ -83,7 +83,11 @@ async function createOffer(client, productId, demandId, minimumPrice) {
 
 async function createResponseDemand(client, input) {
   const now = Date.now();
+  const { data: authData, error: authError } = await client.auth.getUser();
+  if (authError) throw authError;
+  assert(authData.user?.id, `${input.type} demand requires authenticated owner`);
   const base = {
+    user_id: authData.user.id,
     type: input.type,
     title: input.title,
     description: input.description ?? input.title,
