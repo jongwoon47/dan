@@ -28,13 +28,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
-        with:
-          version: latest
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.119.0
       - run: npm ci
       - run: supabase start
       - run: supabase db reset
@@ -47,7 +47,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
           npm run test:e2e:local
       - if: always()
-        run: supabase stop --no-backup
+        run: command -v supabase >/dev/null 2>&1 && supabase stop --no-backup || true
 
   visual:
     needs: [verify, supabase]
@@ -64,6 +64,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: dan-v1-mobile-screens
-          path: qa-screenshots/dan-v1
+          name: dan-v3-visual-qa
+          path: qa-screenshots
           if-no-files-found: warn
