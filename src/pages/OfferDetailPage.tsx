@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
+import { parsePotentialMatchId } from "@/domain/matchLifecycle";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
 import { CONDITION_LABEL, type PublicProfile } from "@/domain/types";
 import { formatWon } from "@/lib/format";
@@ -24,7 +25,11 @@ export function OfferDetailPage() {
   const [sellerProfile, setSellerProfile] = useState<PublicProfile | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const match = myMatches.find((row) => row.id === matchId);
+  const pair = parsePotentialMatchId(matchId);
+  const match = myMatches.find((row) => row.id === matchId) ??
+    (pair ? myMatches.find((row) =>
+      row.demandId === pair.demandId && row.sellIntentId === pair.sellIntentId,
+    ) : undefined);
   const demand = match ? getDemand(match.demandId) : undefined;
   const sell = match?.sellIntentId
     ? state.sellIntents.find((row) => row.id === match.sellIntentId)

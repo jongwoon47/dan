@@ -202,6 +202,39 @@ async function installTradeFixture(page: Page, stage: Stage) {
   );
 }
 
+test("long BUY offer titles and waiting status stay within narrow trade cards", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "390px", "edge widths use the canonical mobile project");
+  await page.goto("/");
+  await installTradeFixture(page, "connected");
+  await page.goto("/my");
+  const head = page.locator(".trade-row-card__head").first();
+  await expect(head).toBeVisible();
+  await head.evaluate((element) => {
+    element.querySelector("strong")!.textContent = "Herman Miller Aeron Chair Remastered Graphite Frame PostureFit SL";
+    element.querySelector("span")!.textContent = "상대 수락 대기";
+  });
+  for (const width of [320, 390, 430]) {
+    await page.setViewportSize({ width, height: 844 });
+    await expectNoHorizontalOverflow(page);
+    const box = await head.boundingBox();
+    expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+    await expect(head.getByText("상대 수락 대기")).toBeVisible();
+  }
+});
+
+test("selecting a BUY proposal preserves its detail after the match is persisted", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "390px", "one project exercises the match transition");
+  await page.goto("/");
+  await installTradeFixture(page, "received");
+  await page.goto("/my");
+  await page.locator('a[href^="/offer/"]').first().click();
+  await page.getByRole("button", { name: "이 제안 선택하기" }).click();
+  await expect(page.getByText("제안을 선택했어요")).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("제안을 선택했어요")).toBeVisible();
+  await expect(page.getByText("제안을 찾을 수 없어요")).toHaveCount(0);
+});
+
 test("DAN App V3 core request and transaction journey renders", async ({ page }, testInfo) => {
   const outDir = path.join("qa-screenshots", "dan-v3", testInfo.project.name);
   mkdirSync(outDir, { recursive: true });
