@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Field, TextInput } from "@/components/ui/Input";
 import { ProductVisual } from "@/components/ProductVisual";
+import { TradeStageBar } from "@/components/TradeStageBar";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
 import type { DealEvidence, DealEvidenceChallenge, Product } from "@/domain/types";
@@ -76,7 +77,7 @@ export function DealEvidencePage() {
   const [photoError, setPhotoError] = useState("");
   const [submitError, setSubmitError] = useState("");
 
-  useDeepHeader({ title: isSeller ? "판매자 증거 제출" : "판매자 증거" });
+  useDeepHeader({ title: isSeller ? "상품 정보 등록" : "상품 정보" });
 
   useEffect(() => {
     if (!isSeller) {
@@ -159,8 +160,8 @@ export function DealEvidencePage() {
     return (
       <EmptyState
         title="먼저 구매자와 연결해 주세요"
-        body="관심이 확인됐다면 먼저 연결해 대화하세요. 실제 거래를 계속할 때 이 단계에서 증거를 제출합니다."
-        action={<Button to="/my?tab=selling">판매 제안으로 돌아가기</Button>}
+        body="먼저 연결해 대화한 뒤, 거래를 계속하기로 했다면 상품 정보를 등록해 주세요."
+        action={<Button to="/my">내 거래로 돌아가기</Button>}
       />
     );
   }
@@ -239,15 +240,17 @@ export function DealEvidencePage() {
       <section className="deal-product-card">
         <ProductVisual product={product} size="sm" />
         <div>
-          <p className="eyebrow">Quick Offer</p>
+          <p className="eyebrow">상품 정보</p>
           <h1 className="page-title">{product.name}</h1>
           <strong className="deal-price">{formatWon(sell.minimumPrice)}</strong>
         </div>
       </section>
 
+      <TradeStageBar current="info" />
+
       <section className="trust-explainer">
-        <strong>판매자가 제출한 정보예요</strong>
-        <p>DAN이 제품 상태나 정품 여부를 보증하지 않습니다. 거래 당시 무엇을 주장했고 어떤 증거를 냈는지 기록합니다.</p>
+        <strong>판매자가 등록한 상품 정보예요</strong>
+        <p>DAN이 제품 상태나 정품 여부를 보증하지 않습니다. 거래 당시 판매자가 등록한 내용을 기록해 두고 양쪽이 같은 정보를 확인할 수 있게 합니다.</p>
       </section>
 
       {!isSeller && existing ? (
@@ -263,8 +266,8 @@ export function DealEvidencePage() {
         <section className="verification-gate">
           <strong>실거래 전 판매자 검증이 필요해요</strong>
           <p>
-            Quick Offer는 검증 없이도 보낼 수 있지만 Deal로 들어가려면
-            휴대폰·본인·정산계좌 검증이 모두 완료되어야 합니다.
+            제안은 먼저 보낼 수 있지만 실제 거래를 진행하려면
+            휴대폰·본인·정산계좌 확인이 필요해요.
           </p>
         </section>
       ) : null}
@@ -365,7 +368,7 @@ export function DealEvidencePage() {
 
           <div className="evidence-form-divider">
             <span>3</span>
-            <div><strong>구성품 · 상태 · 추가 정보</strong><small>Deal Snapshot에 그대로 기록될 내용이에요.</small></div>
+            <div><strong>구성품 · 상태 · 추가 정보</strong><small>거래 조건 확인 화면에 그대로 표시될 내용이에요.</small></div>
           </div>
 
           <div>
