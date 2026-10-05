@@ -1522,3 +1522,105 @@ textarea.dan-input,
     font-size: 10.5px;
   }
 }
+
+
+/* DAN App V3 — all-request discovery */
+.discovery-page--app {
+  gap: 22px !important;
+}
+.app-type-filter {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 0 4px;
+  scrollbar-width: none;
+}
+.app-type-filter::-webkit-scrollbar { display: none; }
+.app-type-filter button {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid var(--dan-border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--dan-ink-secondary);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 750;
+}
+.app-type-filter button.is-active {
+  border-color: transparent;
+  background: var(--dan-ink);
+  color: #fff;
+}
+.explore-section {
+  display: grid;
+  gap: 12px;
+}
+.explore-request-list {
+  border-top: 1px solid var(--dan-border);
+}
+.explore-request-row {
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 82px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--dan-border);
+  color: var(--dan-ink);
+  text-decoration: none;
+}
+.explore-request-row__type {
+  display: grid;
+  min-width: 52px;
+  height: 28px;
+  place-items: center;
+  padding: 0 8px;
+  border-radius: 8px;
+  background: var(--dan-accent-soft);
+  color: var(--dan-accent-text);
+  font-size: 11.5px;
+  font-weight: 800;
+}
+.explore-request-row__body {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+.explore-request-row__body > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.explore-request-row strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.explore-request-row b {
+  flex: 0 0 auto;
+  font-size: 13.5px;
+}
+.explore-request-row p,
+.explore-request-row small {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.explore-request-row p {
+  color: var(--dan-ink-secondary);
+  font-size: 12.5px;
+}
+.explore-request-row small {
+  color: var(--dan-ink-muted);
+  font-size: 11.5px;
+}
+.explore-request-row__arrow {
+  color: #b1b1ba;
+  font-size: 20px;
+}
