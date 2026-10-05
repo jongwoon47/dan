@@ -403,7 +403,7 @@ export const ko = {
   "expiredOnPrefix": "만료됨",
   "expiredTimedBody": "시간이 지나 마감됐어요.",
   "expiredBuyAsk": "아직 찾고 있나요?",
-  "extend30d": "30일 연장",
+  "extend30d": "7일 더 찾기",
   "recreateSimilar": "비슷한 요청 다시 만들기",
   "repostDemand": "다시 올리기",
   "statusOpen": "대기 중",

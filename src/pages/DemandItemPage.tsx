@@ -87,6 +87,18 @@ export function DemandItemPage() {
     [state.responses, demandId],
   );
 
+  const buyOfferCount = useMemo(
+    () =>
+      state.matches.filter(
+        (match) =>
+          match.demandId === demandId &&
+          Boolean(match.sellIntentId) &&
+          match.status !== "DECLINED" &&
+          match.status !== "CLOSED",
+      ).length,
+    [state.matches, demandId],
+  );
+
   const isOwner = currentUser?.id === demand?.userId;
   const viewStatus = demand ? effectiveDemandStatus(demand) : "CLOSED";
   const demandOpen = demand ? isDemandOpen(demand) : false;
@@ -183,7 +195,7 @@ export function DemandItemPage() {
   }
 
   return (
-    <div className="page-stack page-narrow demand-item">
+    <div className={`page-stack page-narrow demand-item demand-item--app demand-item--${demand.type.toLowerCase()}`}>
       <header className="demand-item__header">
         <div className="demand-item__badges">
           <span className="demand-chip">{DEMAND_TYPE_LABEL[demand.type]}</span>
@@ -210,17 +222,22 @@ export function DemandItemPage() {
         ) : null}
       </header>
 
-      <dl className="detail-facts detail-facts--panel">
-        <div className="detail-facts__row detail-facts__row--reward">
-          <dt>
-            {demand.type === "BORROW"
-              ? ko.borrowBudgetTotal
-              : demand.type === "TASK" || demand.type === "SERVICE"
-                ? ko.reward
-                : ko.detailBudget}
-          </dt>
-          <dd>{formatWon(demand.budget)}</dd>
+      <section className="request-summary-app">
+        <div className="request-summary-app__amount">
+          <span>
+            {demand.type === "BUY"
+              ? "최대 가격"
+              : demand.type === "BORROW"
+                ? "전체 예산"
+                : demand.type === "TASK"
+                  ? "사례금"
+                  : "예산"}
+          </span>
+          <strong>{formatWon(demand.budget)}</strong>
         </div>
+      </section>
+
+      <dl className="detail-facts detail-facts--panel request-detail-list">
         <div className="detail-facts__row">
           <dt>
             {demand.type === "BUY"
@@ -263,17 +280,16 @@ export function DemandItemPage() {
       </dl>
 
       {isOwner && demandOpen ? (
-        <div className="action-row action-row--split">
+        <div className="action-row demand-owner-actions demand-owner-actions--app">
           <Button
-            fullWidth
             variant="secondary"
             to={`/demand/item/${demand.id}/edit`}
           >
             {ko.editDemand}
           </Button>
           <Button
-            fullWidth
-            variant="secondary"
+            variant="ghost"
+            className="demand-close-action"
             onClick={() => setCloseOpen(true)}
             disabled={busy}
           >
@@ -455,14 +471,30 @@ export function DemandItemPage() {
 
       {isOwner ? (
         <div className="section-stack demand-item__responses">
-          <h2 className="section-title">{ko.ownerResponsesLead}</h2>
           {demand.type === "BUY" ? (
-            <p className="section-desc">
-              <Button to={`/demand/${demand.details.productId}`} variant="secondary">
-                {ko.viewDemand}
-              </Button>
-            </p>
-          ) : ownerResponses.length === 0 ? (
+            <>
+              <div className="demand-offer-summary">
+                <div>
+                  <span className="demand-offer-summary__label">받은 제안</span>
+                  <strong>{buyOfferCount}</strong>
+                </div>
+                <Button
+                  to="/my"
+                  variant="secondary"
+                >
+                  내 거래에서 보기
+                </Button>
+              </div>
+              {buyOfferCount === 0 ? (
+                <p className="section-desc">판매 제안이 도착하면 여기에서 바로 확인할 수 있어요.</p>
+              ) : (
+                <p className="section-desc">가격과 상태를 비교한 뒤 관심 있는 제안을 선택하세요.</p>
+              )}
+            </>
+          ) : (
+            <h2 className="section-title">{ko.ownerResponsesLead}</h2>
+          )}
+          {demand.type === "BUY" ? null : ownerResponses.length === 0 ? (
             <div className="demand-item__empty">
               <p className="section-desc">{ko.ownerResponsesEmpty}</p>
             </div>

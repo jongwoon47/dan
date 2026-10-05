@@ -60,8 +60,9 @@ export function OwnershipPage() {
     const highest = aggregate?.highestIntentPrice ?? 0;
     const delta = aggregate?.recent7dDelta ?? 0;
     return (
-      <div className="page-stack page-narrow">
+      <div className="page-stack page-narrow ownership-page ownership-page--app">
         <section className="section-stack">
+        <div className="create-page__prompt"><p className="create-page__kicker">내 물건 정보</p><h1 className="section-title">어떤 상태의 물건인가요?</h1></div>
           <h1 className="page-title">{ko.ownDoneTitle}</h1>
           <p className="section-title">{product.name}</p>
           {seekers > 0 ? (
@@ -145,7 +146,7 @@ export function OwnershipPage() {
           onClick={() => void register()}
           disabled={busy || !condition}
         >
-          {busy ? ko.saving : ko.registerOwned}
+          {busy ? ko.saving : "이 물건으로 제안하기"}
         </Button>
       </section>
     </div>

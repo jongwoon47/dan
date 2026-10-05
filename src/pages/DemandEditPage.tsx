@@ -331,9 +331,10 @@ export function DemandEditPage() {
   }
 
   return (
-    <div className="page-stack page-narrow">
+    <div className="page-stack page-narrow demand-edit-page">
+      <div className="create-page__prompt"><p className="create-page__kicker">요청 수정</p><h1 className="section-title">필요한 내용만 바꿔주세요</h1></div>
       <form className="section-stack create-page__body" onSubmit={(e) => void onSave(e)}>
-        <Field label={ko.titleLabel}>
+        <Field label="요청 제목">
           <TextInput
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -342,7 +343,7 @@ export function DemandEditPage() {
         </Field>
 
         {current.type === "BORROW" ? (
-          <Field label={ko.itemName}>
+          <Field label="빌릴 물건">
             <TextInput
               value={itemName}
               onChange={(e) => setItemName(e.target.value)}
@@ -351,7 +352,7 @@ export function DemandEditPage() {
         ) : null}
 
         {current.type === "TASK" || current.type === "SERVICE" ? (
-          <Field label={ko.descLabel}>
+          <Field label={current.type === "TASK" ? "부탁할 일" : current.type === "SERVICE" ? "서비스 설명" : "추가 조건"}>
             <textarea
               className="dan-input dan-textarea"
               value={description}
@@ -360,7 +361,7 @@ export function DemandEditPage() {
             />
           </Field>
         ) : (
-          <Field label={ko.descLabel}>
+          <Field label="추가 조건">
             <textarea
               className="dan-input dan-textarea"
               value={description}

@@ -127,3 +127,65 @@
   color: var(--dan-ink-secondary);
   background: transparent;
 }
+
+
+/* DAN V1 live-demand cards */
+.live-demand-list {
+  display: grid;
+  gap: 12px;
+}
+
+.live-demand-card {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid var(--dan-border);
+  border-radius: 20px;
+  background: var(--dan-surface);
+  color: inherit;
+  text-decoration: none;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.live-demand-card:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--dan-accent) 35%, var(--dan-border));
+  box-shadow: 0 10px 30px rgba(40, 26, 94, 0.08);
+}
+
+.live-demand-card__body {
+  min-width: 0;
+}
+
+.live-demand-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.live-demand-card__top h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.live-demand-card__signal,
+.live-demand-card__meta,
+.live-demand-card__price {
+  margin: 4px 0 0;
+  font-size: 0.8125rem;
+  color: var(--dan-ink-muted);
+}
+
+.live-demand-card__signal strong {
+  color: var(--dan-accent-text);
+}
+
+.live-demand-card__price strong {
+  color: var(--dan-accent-text);
+  font-size: 0.95rem;
+}

@@ -1,109 +1,52 @@
-import { useMemo, useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
-import { MatchList } from "@/components/MatchCard";
+import { useMemo } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { ko } from "@/copy/ko";
 import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
-import {
-  effectiveDemandStatus,
-  formatExpiredOn,
-  isDemandOpen,
-} from "@/domain/demandLifecycle";
-import type { Demand } from "@/domain/types";
+import { effectiveDemandStatus } from "@/domain/demandLifecycle";
+import { formatFulfillmentSummary } from "@/domain/fulfillment";
+import type { Demand, DemandType, Match } from "@/domain/types";
+import { formatWon } from "@/lib/format";
 import "./pages.css";
 
-const EXPIRING_SOON_MS = 3 * 86400000;
+type MyTab = "progress" | "requests" | "completed";
 
-function responseStatusMeta(status: string) {
-  if (status === "OPEN") return ko.statusWaiting;
-  if (status === "ACCEPTED") return ko.statusConnected;
-  if (status === "DECLINED") return ko.statusDeclined;
-  if (status === "WITHDRAWN") return ko.statusWithdrawn;
-  return status;
+const TYPE_LABEL: Record<DemandType, string> = {
+  BUY: "구매",
+  BORROW: "빌리기",
+  TASK: "심부름",
+  SERVICE: "서비스",
+};
+
+function normalizeTab(value: string | null): MyTab {
+  if (value === "completed") return "completed";
+  if (value === "requests" || value === "demands") return "requests";
+  return "progress";
 }
 
-function demandHref(d: { id: string }) {
-  return `/demand/item/${d.id}`;
+function demandAmount(demand: Demand): number {
+  return demand.type === "BUY" ? demand.details.maxPrice : demand.budget;
 }
 
-function daysLeftLabel(demand: Demand, nowMs = Date.now()): string | null {
-  const end = new Date(demand.expiresAt).getTime();
-  if (!Number.isFinite(end)) return null;
-  const days = Math.ceil((end - nowMs) / 86400000);
-  if (days < 0) return null;
-  if (days === 0) return ko.expiresToday;
-  return ko.daysLeft.replace("{n}", String(days));
-}
-
-function requestMeta(
-  demand: Demand,
-  responseCount: number,
-  nowMs = Date.now(),
-): string {
-  const status = effectiveDemandStatus(demand, nowMs);
-  if (status === "MATCHED") {
-    return responseCount > 0
-      ? `${ko.responseCountLabel.replace("{n}", String(responseCount))} · ${ko.statusMatched}`
-      : ko.statusMatched;
-  }
-  if (status === "ACTIVE") {
-    const left = daysLeftLabel(demand, nowMs);
-    if (responseCount > 0) {
-      return `${ko.responseCountLabel.replace("{n}", String(responseCount))} · ${ko.myRequestsActive}`;
+function matchStatusLabel(match: Match): string {
+  if (match.status === "COMPLETED") return "거래 완료";
+  if (match.status === "BUYER_INTERESTED") return "제안 확인 중";
+  if (match.status === "SELLER_ACCEPTED") return "연결 대기";
+  if (match.status === "CONNECTED") {
+    switch (match.dealStage) {
+      case "EVIDENCE_PENDING": return "상품 정보 필요";
+      case "EVIDENCE_READY":
+      case "DEAL_REVIEW": return "거래 조건 확인";
+      case "DEAL_LOCKED":
+      case "PAYMENT_PENDING": return "결제 필요";
+      case "PAID":
+      case "HANDOFF_READY": return "인계 확인";
+      default: return "채팅 중";
     }
-    return left ? `${ko.seekingOnly} · ${left}` : ko.seekingOnly;
   }
-  if (status === "EXPIRED") return ko.statusExpired;
-  return ko.statusClosed;
-}
-
-function RowLink({
-  to,
-  title,
-  meta,
-  trailing,
-}: {
-  to: string;
-  title: string;
-  meta?: string;
-  trailing?: ReactNode;
-}) {
-  return (
-    <Link to={to} className="app-row">
-      <span className="app-row__body">
-        <strong>{title}</strong>
-        {meta ? <span className="app-row__meta">{meta}</span> : null}
-      </span>
-      {trailing ? <span className="app-row__trail">{trailing}</span> : null}
-      <span className="app-row__chevron" aria-hidden>
-        ›
-      </span>
-    </Link>
-  );
-}
-
-function MyBlock({
-  title,
-  children,
-  id,
-  action,
-}: {
-  title: string;
-  children: ReactNode;
-  id?: string;
-  action?: ReactNode;
-}) {
-  return (
-    <section className="my-block" id={id}>
-      <div className="my-block__head">
-        <h2 className="my-block__title">{title}</h2>
-        {action}
-      </div>
-      {children}
-    </section>
-  );
+  return "진행 중";
 }
 
 export function MyDanPage() {
@@ -112,147 +55,43 @@ export function MyDanPage() {
     login,
     currentUser,
     myDemands,
-    myResponses,
     myMatches,
-    activities,
+    getProduct,
     getDemand,
-    state,
-    resetDemo,
-    extendBuyDemand,
-    busy,
   } = useDan();
   const dataMode = getDataMode();
-  const [archivedOpen, setArchivedOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = normalizeTab(searchParams.get("tab"));
 
-  const responseCountByDemand = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const r of state.responses) {
-      if (r.status === "WITHDRAWN") continue;
-      map.set(r.demandId, (map.get(r.demandId) ?? 0) + 1);
-    }
-    return map;
-  }, [state.responses]);
-
-  const nowItems = useMemo(() => {
-    const items: { key: string; text: string; sub?: string; to: string }[] = [];
-    const unread = activities.filter((a) => !a.readAt);
-    const seenTo = new Set<string>();
-    const nowMs = Date.now();
-
-    function push(item: { key: string; text: string; sub?: string; to: string }) {
-      if (seenTo.has(item.to)) return;
-      seenTo.add(item.to);
-      items.push(item);
-    }
-
-    for (const ev of unread) {
-      // Chat lives in 대화 — skip outbound-style message noise from My DAN.
-      if (ev.kind === "NEW_MESSAGE") continue;
-      if (ev.kind === "DEMAND_CLOSED") continue;
-
-      const demand = ev.demandId ? getDemand(ev.demandId) : undefined;
-      const actionable =
-        ev.kind === "NEW_RESPONSE" ||
-        ev.kind === "MATCH_CONNECTED" ||
-        ev.kind === "MATCH_COMPLETED" ||
-        ev.kind === "MATCH_TRADE_CLOSED" ||
-        ev.kind === "RESPONSE_ACCEPTED" ||
-        ev.kind === "BUYER_INTEREST" ||
-        ev.kind === "RESPONSE_DECLINED";
-      if (!actionable) continue;
-
-      const to =
-        ev.matchId &&
-        (ev.kind === "MATCH_CONNECTED" ||
-          ev.kind === "MATCH_COMPLETED" ||
-          ev.kind === "MATCH_TRADE_CLOSED" ||
-          ev.kind === "RESPONSE_ACCEPTED")
-          ? `/match/${ev.matchId}`
-          : ev.kind === "BUYER_INTEREST" && demand?.type === "BUY"
-            ? `/demand/${demand.details.productId}`
-            : ev.demandId
-              ? `/demand/item/${ev.demandId}`
-              : "/activity";
-
-      const text =
-        ev.kind === "NEW_RESPONSE"
-          ? ko.activityNewResponse
-          : ev.kind === "MATCH_CONNECTED"
-            ? ko.activityPeerConnected
-            : ev.kind === "MATCH_COMPLETED"
-              ? ko.activityMatchCompleted
-              : ev.kind === "MATCH_TRADE_CLOSED"
-                ? ko.activityMatchTradeClosed
-                : ev.kind === "RESPONSE_ACCEPTED"
-                  ? ko.activityAccepted
-                  : ev.kind === "BUYER_INTEREST"
-                    ? ko.activityInterest
-                    : ev.kind === "RESPONSE_DECLINED"
-                      ? ko.activityDeclined
-                      : ko.attentionTitle;
-
-      push({
-        key: ev.id,
-        text,
-        sub: demand?.title,
-        to,
-      });
-    }
-
-    for (const d of myDemands) {
-      if (!isDemandOpen(d)) continue;
-      const end = new Date(d.expiresAt).getTime();
-      if (!Number.isFinite(end)) continue;
-      if (end - nowMs > EXPIRING_SOON_MS || end <= nowMs) continue;
-      push({
-        key: `expiring-${d.id}`,
-        text: ko.activityExpiringSoon,
-        sub: d.title,
-        to: demandHref(d),
-      });
-    }
-
-    return items.slice(0, 5);
-  }, [activities, getDemand, myDemands]);
-
-  const openDemands = myDemands.filter((d) => {
-    const s = effectiveDemandStatus(d);
-    return s === "ACTIVE" || s === "MATCHED";
-  });
-  const archivedDemands = myDemands.filter((d) => {
-    const s = effectiveDemandStatus(d);
-    return s === "EXPIRED" || s === "CLOSED";
-  });
-
-  const pendingMatches = useMemo(
+  const activeMatches = useMemo(
     () =>
-      myMatches.filter(
-        (m) =>
-          m.status !== "CONNECTED" &&
-          m.status !== "COMPLETED" &&
-          m.status !== "CLOSED" &&
-          m.status !== "DECLINED",
-      ),
+      myMatches
+        .filter((match) => !["COMPLETED", "CLOSED", "DECLINED"].includes(match.status))
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [myMatches],
   );
 
-  const responseRows = useMemo(() => {
-    return [...myResponses]
-      .filter((r) => r.status !== "WITHDRAWN")
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }, [myResponses]);
+  const completedMatches = useMemo(
+    () =>
+      myMatches
+        .filter((match) => match.status === "COMPLETED")
+        .sort((a, b) => (b.completedAt ?? b.createdAt).localeCompare(a.completedAt ?? a.createdAt)),
+    [myMatches],
+  );
 
-  const connectedMatchByDemand = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const m of myMatches) {
-      if (
-        m.status !== "CONNECTED" &&
-        m.status !== "COMPLETED" &&
-        m.status !== "CLOSED"
-      ) {
-        continue;
-      }
-      map.set(m.demandId, m.id);
+  const visibleRequests = useMemo(
+    () =>
+      myDemands
+        .filter((demand) => ["ACTIVE", "MATCHED"].includes(effectiveDemandStatus(demand)))
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    [myDemands],
+  );
+
+  const responseCountByDemand = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const match of myMatches) {
+      if (["CLOSED", "DECLINED"].includes(match.status)) continue;
+      map.set(match.demandId, (map.get(match.demandId) ?? 0) + 1);
     }
     return map;
   }, [myMatches]);
@@ -260,167 +99,156 @@ export function MyDanPage() {
   if (!isLoggedIn) {
     return (
       <EmptyState
-        title={ko.needLogin}
-        body={ko.needLoginBody}
+        title="로그인이 필요해요"
+        body="진행 중인 거래와 내가 올린 요청을 확인하려면 로그인해 주세요."
         action={
           dataMode === "supabase" ? (
-            <Button to="/login">{ko.login}</Button>
+            <Button to="/login">로그인</Button>
           ) : (
-            <Button onClick={() => login()}>{ko.login}</Button>
+            <Button onClick={() => login()}>로그인</Button>
           )
         }
       />
     );
   }
 
+  function changeTab(next: MyTab) {
+    setSearchParams(next === "progress" ? {} : { tab: next });
+  }
+
+  function renderMatchRow(match: Match, completed = false) {
+    const demand = getDemand(match.demandId);
+    if (!demand) return null;
+    const product = match.productId ? getProduct(match.productId) : undefined;
+    const href =
+      completed
+        ? `/deal/${match.id}/complete`
+        : match.status === "POTENTIAL" || match.status === "BUYER_INTERESTED"
+          ? `/offer/${match.id}`
+          : `/match/${match.id}`;
+
+    return (
+      <Link key={match.id} to={href} className="app-trade-row">
+        <div className="app-trade-row__media">
+          {product ? (
+            <ProductVisual product={product} size="sm" />
+          ) : (
+            <span className="app-trade-row__type">{TYPE_LABEL[demand.type].slice(0, 1)}</span>
+          )}
+        </div>
+        <div className="app-trade-row__body">
+          <div className="app-trade-row__top">
+            <strong>{product?.name ?? demand.title}</strong>
+            <span>{formatWon(demandAmount(demand))}</span>
+          </div>
+          <p>{TYPE_LABEL[demand.type]} · {matchStatusLabel(match)}</p>
+          <small>{formatFulfillmentSummary(demand.fulfillmentOptions)}</small>
+        </div>
+        <span className="app-trade-row__arrow" aria-hidden>›</span>
+      </Link>
+    );
+  }
+
   return (
-    <div className="page-stack my-dan">
-      <header className="my-dan__header">
-        <h1 className="page-title">{ko.myDan}</h1>
-        <Link to={`/profile/${currentUser?.id}`} className="my-dan__name">
-          {currentUser?.name}
+    <div className="page-stack my-dan my-dan--app">
+      <header className="app-page-head app-page-head--profile">
+        <div>
+          <span>내 거래</span>
+          <h1>거래를 한곳에서 관리해요</h1>
+        </div>
+        <Link to={`/profile/${currentUser?.id}`} className="app-page-head__profile">
+          {currentUser?.name.trim().slice(0, 1) || "나"}
         </Link>
       </header>
 
-      {nowItems.length > 0 ? (
-        <MyBlock title={ko.attentionTitle}>
-          <div className="app-row-list">
-            {nowItems.map((item) => (
-              <RowLink
-                key={item.key}
-                to={item.to}
-                title={item.text}
-                meta={item.sub}
-              />
-            ))}
-          </div>
-        </MyBlock>
-      ) : null}
-
-      {pendingMatches.length > 0 ? (
-        <MyBlock title={ko.pendingMatches}>
-          <MatchList matches={pendingMatches} emptyWhenZero={false} />
-        </MyBlock>
-      ) : null}
-
-      <MyBlock title={ko.myRequests}>
-        {openDemands.length === 0 ? (
-          <div className="my-block__empty">
-            <p>{ko.emptyMyRequests}</p>
-            <Button to="/create" size="sm">
-              {ko.navCreate}
-            </Button>
-          </div>
-        ) : (
-          <div className="app-row-list">
-            {openDemands.map((d) => (
-              <RowLink
-                key={d.id}
-                to={demandHref(d)}
-                title={d.title}
-                meta={requestMeta(d, responseCountByDemand.get(d.id) ?? 0)}
-              />
-            ))}
-          </div>
-        )}
-      </MyBlock>
-
-      <MyBlock title={ko.myResponses}>
-        {responseRows.length === 0 ? (
-          <p className="my-block__hint">{ko.emptyMyResponses}</p>
-        ) : (
-          <div className="app-row-list">
-            {responseRows.map((r) => {
-              const demand = getDemand(r.demandId);
-              const matchId = connectedMatchByDemand.get(r.demandId);
-              const to =
-                r.status === "ACCEPTED" && matchId
-                  ? `/match/${matchId}`
-                  : `/demand/item/${r.demandId}`;
-              return (
-                <RowLink
-                  key={r.id}
-                  to={to}
-                  title={demand?.title || r.message || ko.respondCta}
-                  meta={responseStatusMeta(r.status)}
-                />
-              );
-            })}
-          </div>
-        )}
-      </MyBlock>
-
-      <div className="my-secondary">
-        <button
-          type="button"
-          className="my-secondary__row"
-          aria-expanded={archivedOpen}
-          onClick={() => setArchivedOpen((v) => !v)}
-        >
-          <span>{ko.archivedRequests}</span>
-          <span aria-hidden>{archivedOpen ? "∧" : "›"}</span>
+      <nav className="app-tabs" aria-label="내 거래 메뉴">
+        <button className={tab === "progress" ? "is-active" : ""} onClick={() => changeTab("progress")}>
+          진행 중 <span>{activeMatches.length}</span>
         </button>
-        {archivedOpen ? (
-          <div className="my-secondary__panel">
-            {archivedDemands.length === 0 ? (
-              <p className="my-block__hint">{ko.emptyArchived}</p>
-            ) : (
-              <div className="expired-list">
-                {archivedDemands.map((d) => {
-                  const onDate = formatExpiredOn(d);
-                  const isBuy = d.type === "BUY";
-                  const expired = effectiveDemandStatus(d) === "EXPIRED";
-                  return (
-                    <article key={d.id} className="expired-card">
-                      <Link to={demandHref(d)} className="expired-card__title">
-                        {d.title}
-                      </Link>
-                      <p className="expired-card__meta">
-                        {expired
-                          ? isBuy
-                            ? `${ko.expiredOnPrefix}${onDate ? ` · ${onDate}` : ""}`
-                            : ko.expiredTimedBody
-                          : ko.statusClosed}
-                      </p>
-                      {expired && isBuy ? (
-                        <>
-                          <p className="expired-card__ask">{ko.expiredBuyAsk}</p>
-                          <div className="expired-card__actions">
-                            <Button
-                              size="sm"
-                              disabled={busy}
-                              onClick={() => void extendBuyDemand(d.id)}
-                            >
-                              {ko.extend30d}
-                            </Button>
-                          </div>
-                        </>
-                      ) : null}
-                      {expired && !isBuy ? (
-                        <div className="expired-card__actions">
-                          <Button size="sm" to={`/create?type=${d.type}`}>
-                            {ko.recreateSimilar}
-                          </Button>
-                        </div>
-                      ) : null}
-                    </article>
-                  );
-                })}
-              </div>
-            )}
+        <button className={tab === "requests" ? "is-active" : ""} onClick={() => changeTab("requests")}>
+          내 요청 <span>{visibleRequests.length}</span>
+        </button>
+        <button className={tab === "completed" ? "is-active" : ""} onClick={() => changeTab("completed")}>
+          완료 <span>{completedMatches.length}</span>
+        </button>
+      </nav>
+
+      {tab === "progress" ? (
+        <section className="app-trade-section">
+          <div className="app-section-head">
+            <h2>지금 할 일이 있는 거래</h2>
+            <span>제안부터 인계까지 현재 상태를 보여줘요.</span>
           </div>
-        ) : null}
+          {activeMatches.length > 0 ? (
+            <div className="app-trade-list">{activeMatches.map((match) => renderMatchRow(match))}</div>
+          ) : (
+            <EmptyState
+              title="진행 중인 거래가 없어요"
+              body="요청을 올리거나 탐색에서 제안을 보내면 여기에 표시돼요."
+              action={<Button to="/create">새 요청 만들기</Button>}
+            />
+          )}
+        </section>
+      ) : null}
 
-        <Link to={`/profile/${currentUser?.id}`} className="my-secondary__row">
-          <span>{ko.profileTitle}</span>
-          <span aria-hidden>›</span>
-        </Link>
-      </div>
+      {tab === "requests" ? (
+        <section className="app-trade-section">
+          <div className="app-section-head app-section-head--row">
+            <div>
+              <h2>내가 올린 요청</h2>
+              <span>구매·빌리기·심부름·서비스 요청을 모두 보여줘요.</span>
+            </div>
+            <Button to="/create" variant="secondary" size="sm">새 요청</Button>
+          </div>
+          {visibleRequests.length > 0 ? (
+            <div className="app-trade-list">
+              {visibleRequests.map((demand) => {
+                const product = demand.type === "BUY" ? getProduct(demand.details.productId) : undefined;
+                const count = responseCountByDemand.get(demand.id) ?? 0;
+                return (
+                  <Link key={demand.id} to={`/demand/item/${demand.id}`} className="app-trade-row">
+                    <div className="app-trade-row__media">
+                      {product ? (
+                        <ProductVisual product={product} size="sm" />
+                      ) : (
+                        <span className="app-trade-row__type">{TYPE_LABEL[demand.type].slice(0, 1)}</span>
+                      )}
+                    </div>
+                    <div className="app-trade-row__body">
+                      <div className="app-trade-row__top">
+                        <strong>{product?.name ?? demand.title}</strong>
+                        <span>{formatWon(demandAmount(demand))}</span>
+                      </div>
+                      <p>{TYPE_LABEL[demand.type]} · {count > 0 ? `제안/응답 ${count}개` : "응답 기다리는 중"}</p>
+                      <small>{formatFulfillmentSummary(demand.fulfillmentOptions)}</small>
+                    </div>
+                    <span className="app-trade-row__arrow" aria-hidden>›</span>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyState
+              title="진행 중인 요청이 없어요"
+              body="필요한 물건이나 일을 먼저 요청해보세요."
+              action={<Button to="/create">요청 만들기</Button>}
+            />
+          )}
+        </section>
+      ) : null}
 
-      {dataMode === "demo" ? (
-        <Button variant="ghost" onClick={resetDemo}>
-          {ko.resetDemo}
-        </Button>
+      {tab === "completed" ? (
+        <section className="app-trade-section">
+          <div className="app-section-head">
+            <h2>완료한 거래</h2>
+            <span>완료된 거래와 조건을 다시 확인할 수 있어요.</span>
+          </div>
+          {completedMatches.length > 0 ? (
+            <div className="app-trade-list">{completedMatches.map((match) => renderMatchRow(match, true))}</div>
+          ) : (
+            <EmptyState title="완료한 거래가 아직 없어요" body="거래를 완료하면 이곳에 기록돼요." />
+          )}
+        </section>
       ) : null}
     </div>
   );
