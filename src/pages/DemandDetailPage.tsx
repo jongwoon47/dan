@@ -171,11 +171,11 @@ export function DemandDetailPage() {
       {myBuy ? (
         <section className="detail-section demand-my-request">
           <div>
-            <span>내 구매수요</span>
+            <span>내 요청</span>
             <strong>최대 {formatWon(myBuy.budget)}</strong>
           </div>
           <Button to={`/demand/item/${myBuy.id}`} fullWidth variant="secondary">
-            내 구매수요 관리
+            내 요청 관리
           </Button>
         </section>
       ) : (
