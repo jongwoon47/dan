@@ -5,6 +5,7 @@ import path from "node:path";
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL!;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const appBaseUrl = process.env.DAN_E2E_BASE_URL ?? "http://127.0.0.1:5175";
 
 function datetimeLocal(hoursFromNow: number): string {
   const d = new Date(Date.now() + hoursFromNow * 60 * 60 * 1000);
@@ -242,8 +243,8 @@ test("Supabase UI completes BORROW, TASK, and SERVICE with two real browser sess
   const outDir = path.join("qa-screenshots", "supabase-smoke");
   mkdirSync(outDir, { recursive: true });
 
-  const ownerContext = await browser.newContext();
-  const responderContext = await browser.newContext();
+  const ownerContext = await browser.newContext({ baseURL: appBaseUrl });
+  const responderContext = await browser.newContext({ baseURL: appBaseUrl });
   const ownerPage = await ownerContext.newPage();
   const responderPage = await responderContext.newPage();
 
