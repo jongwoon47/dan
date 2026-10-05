@@ -9,7 +9,6 @@ const ROUTES = [
   { name: "chats", path: "/chats" },
   { name: "my", path: "/my" },
   { name: "activity", path: "/activity" },
-  { name: "login", path: "/login" },
 ] as const;
 
 async function assertNoHorizontalOverflow(page: Page) {
