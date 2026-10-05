@@ -590,3 +590,20 @@ body {
     padding-inline: 16px !important;
   }
 }
+
+
+.my-demand-card__type {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--v3-soft);
+  color: var(--v3-purple);
+  font-size: 18px;
+  font-weight: 900;
+}
+.my-demand-card__type--borrow { background: #f5f1ff; }
+.my-demand-card__type--task { background: #eef7ff; color: #3574b8; }
+.my-demand-card__type--service { background: #eef8f3; color: var(--v3-green); }
