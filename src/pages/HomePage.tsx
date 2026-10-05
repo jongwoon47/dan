@@ -97,9 +97,9 @@ export function HomePage() {
     <div className="page-stack home-page home-page--v1">
       <section className="home-demand-header">
         <div className="home-demand-heading">
-          <span className="home-demand-kicker">실시간 수요</span>
-          <h1 aria-label="찾는 물건이 있나요?">찾는 물건이<br />있나요?</h1>
-          <p>원하는 물건을 올려두면, 가진 사람이 판매를 제안해요.</p>
+          <span className="home-demand-kicker">필요한 걸 먼저 요청하세요</span>
+          <h1 aria-label="무엇이 필요하세요?">무엇이<br />필요하세요?</h1>
+          <p>구매, 빌리기, 심부름, 서비스까지 요청하면 맞는 사람이 제안해요.</p>
         </div>
 
         <div className="home-hero-products" aria-hidden>
@@ -116,7 +116,7 @@ export function HomePage() {
           onSubmit={(event) => {
             event.preventDefault();
             const query = intentQuery.trim();
-            navigate(query ? `/buy/new?q=${encodeURIComponent(query)}` : "/buy/new");
+            navigate(query ? `/create?type=BUY&q=${encodeURIComponent(query)}` : "/create");
           }}
         >
           <span className="home-intent-composer__icon" aria-hidden>
@@ -130,16 +130,23 @@ export function HomePage() {
             <input
               value={intentQuery}
               onChange={(event) => setIntentQuery(event.target.value)}
-              placeholder="어떤 제품을 찾고 있나요?"
+              placeholder="찾는 물건이나 필요한 일을 입력해보세요"
               autoComplete="off"
               aria-label="찾는 제품"
             />
-            <small>목록에 없어도 바로 등록할 수 있어요</small>
+            <small>원하는 물건이나 부탁할 일을 바로 요청할 수 있어요</small>
           </label>
-          <button type="submit" className="home-intent-composer__submit" aria-label="구매수요 만들기">
+          <button type="submit" className="home-intent-composer__submit" aria-label="요청 만들기">
             <span aria-hidden>›</span>
           </button>
         </form>
+
+        <div className="home-request-shortcuts" aria-label="요청 유형 바로가기">
+          <Link to="/create?type=BUY"><span>▣</span><strong>구매</strong></Link>
+          <Link to="/create?type=BORROW"><span>◫</span><strong>빌리기</strong></Link>
+          <Link to="/create?type=TASK"><span>↗</span><strong>심부름</strong></Link>
+          <Link to="/create?type=SERVICE"><span>◇</span><strong>서비스</strong></Link>
+        </div>
 
         <div className="home-demand-filters" aria-label="제품 카테고리">
           <button
@@ -174,7 +181,7 @@ export function HomePage() {
           <EmptyState
             title="아직 이 카테고리의 구매수요가 없어요"
             body="찾는 제품을 직접 입력해 첫 구매수요를 남길 수 있어요."
-            action={<Button to="/buy/new">구매수요 등록</Button>}
+            action={<Button to="/create?type=BUY">구매 요청 올리기</Button>}
           />
         ) : (
           <div className="live-demand-list">
