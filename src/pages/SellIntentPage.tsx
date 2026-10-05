@@ -46,7 +46,7 @@ export function SellIntentPage() {
       <EmptyState
         title="등록된 물건이 없어요"
         body="먼저 내 물건을 등록해 주세요."
-        action={<Button to="/feed" variant="secondary">구매수요 보기</Button>}
+        action={<Button to="/feed" variant="secondary">요청 보기</Button>}
       />
     );
   }
@@ -96,7 +96,7 @@ export function SellIntentPage() {
       <section className="deal-product-card">
         <ProductVisual product={product} size="sm" />
         <div>
-          <p className="eyebrow">Quick Offer</p>
+          <p className="eyebrow">판매 제안</p>
           <h1 className="page-title">{product.name}</h1>
           {seekerCount > 0 ? (
             <p className="quick-offer-signal">
@@ -108,7 +108,7 @@ export function SellIntentPage() {
 
       {suggested > 0 ? (
         <section className="live-demand-banner">
-          <span>현재 최고 구매희망가</span>
+          <span>구매자가 원하는 가격</span>
           <strong>{formatWon(suggested)}</strong>
           <button type="button" onClick={() => setPrice(String(suggested))}>
             이 가격 사용
