@@ -130,7 +130,7 @@ export function HomePage() {
             <input
               value={intentQuery}
               onChange={(event) => setIntentQuery(event.target.value)}
-              placeholder="찾는 물건이나 필요한 일을 입력해보세요"
+              placeholder="찾는 물건을 입력하거나 아래에서 요청 유형을 골라보세요"
               autoComplete="off"
               aria-label="찾는 제품"
             />
