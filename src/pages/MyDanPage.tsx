@@ -110,7 +110,7 @@ export function MyDanPage() {
       <header className="my-dan__header my-dan__header--v1">
         <div>
           <p className="eyebrow">내 거래</p>
-          <h1 className="page-title">내 구매수요</h1>
+          <h1 className="page-title">내 거래</h1>
         </div>
         <Link to={"/profile/" + currentUser?.id} className="my-dan__name">
           프로필 보기 <span aria-hidden>›</span>
@@ -123,7 +123,7 @@ export function MyDanPage() {
           className={tab === "demands" ? "is-active" : ""}
           onClick={() => changeTab("demands")}
         >
-          구매수요
+          내 요청
           <span>{openBuyDemands.length}</span>
         </button>
         <button
@@ -148,9 +148,9 @@ export function MyDanPage() {
         <section className="my-demand-panel">
           {openBuyDemands.length === 0 ? (
             <EmptyState
-              title="등록한 구매수요가 없어요"
-              body="원하는 물건과 조건을 먼저 남겨보세요."
-              action={<Button to="/buy/new">구매수요 등록</Button>}
+              title="등록한 요청이 없어요"
+              body="필요한 물건이나 부탁할 일을 먼저 요청해보세요."
+              action={<Button to="/create">요청 올리기</Button>}
             />
           ) : (
             <div className="my-demand-card-list">
@@ -260,7 +260,7 @@ export function MyDanPage() {
           ) : (
             <EmptyState
               title="보낸 판매 제안이 없어요"
-              body="실시간 수요에서 가지고 있는 물건을 찾아 Quick Offer를 보내세요."
+              body="탐색에서 내가 도울 수 있는 요청을 찾아 제안을 보내보세요."
               action={<Button to="/">구매수요 보기</Button>}
             />
           )}
