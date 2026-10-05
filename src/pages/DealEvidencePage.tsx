@@ -186,7 +186,7 @@ export function DealEvidencePage() {
       return;
     }
     if (file.size > 700_000) {
-      setPhotoError("V1에서는 700KB 이하 사진만 사용할 수 있어요.");
+      setPhotoError("700KB 이하 사진을 사용해 주세요.");
       return;
     }
     try {
