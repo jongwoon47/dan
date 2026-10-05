@@ -180,7 +180,7 @@ export function DemandDetailPage() {
         </section>
       ) : (
         <p className="detail-foot">
-          같은 제품을 찾고 있나요? <Link to={`/buy/new?q=${encodeURIComponent(product.name)}`}>나도 구매수요 등록</Link>
+          같은 제품을 찾고 있나요? <Link to={`/create?type=BUY&q=${encodeURIComponent(product.name)}`}>나도 구매 요청 올리기</Link>
         </p>
       )}
     </div>
