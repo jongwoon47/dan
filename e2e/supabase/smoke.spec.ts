@@ -34,6 +34,92 @@ async function signup(page: Page, tag: string) {
   return email;
 }
 
+
+async function signupNamed(page: Page, tag: string, role: string, name: string) {
+  const email = `dan.browser.qa.${role}.${tag}@example.com`;
+  await page.goto("/login");
+  await page.getByRole("button", { name: "계정이 없나요? 회원가입" }).click();
+  await page.getByLabel("이름").fill(name);
+  await page.getByLabel("이메일").fill(email);
+  await page.getByLabel("비밀번호").fill("DanBrowserQa-Pass1!");
+  await page.getByRole("button", { name: "가입하기" }).click();
+  await expect(page.getByRole("heading", { name: "무엇이 필요하세요?" })).toBeVisible();
+  return email;
+}
+
+async function respondToDemand(page: Page, demandPath: string, label: string) {
+  await page.goto(demandPath);
+  await page.getByRole("button", { name: "제가 할게요" }).click();
+  await page.getByLabel("제안 금액").fill("15000");
+  await page.getByLabel("가능한 시간/조건").fill("오늘 저녁 가능");
+  await page.getByLabel("메시지").fill(`${label} 브라우저 QA 응답입니다`);
+  await page.getByRole("button", { name: "응답 보내기" }).click();
+  await expect(page.getByText("응답을 보냈어요")).toBeVisible();
+}
+
+async function sendChat(page: Page, body: string) {
+  const input = page.getByLabel("메시지 입력");
+  await input.fill(body);
+  await page.getByRole("button", { name: "보내기" }).click();
+  await expect(page.getByText(body)).toBeVisible();
+}
+
+async function completeNonBuyUiFlow(args: {
+  ownerPage: Page;
+  responderPage: Page;
+  create: () => Promise<string>;
+  responderName: string;
+  label: string;
+  outDir: string;
+}) {
+  const { ownerPage, responderPage, create, responderName, label, outDir } = args;
+  const title = await create();
+  const demandPath = new URL(ownerPage.url()).pathname;
+
+  await respondToDemand(responderPage, demandPath, label);
+
+  await ownerPage.goto(demandPath);
+  await expect(ownerPage.getByText(responderName)).toBeVisible();
+  await ownerPage.getByRole("button", { name: "수락" }).click();
+  await expect(ownerPage).toHaveURL(/\/match\//);
+  const matchPath = new URL(ownerPage.url()).pathname;
+
+  await responderPage.goto("/chats");
+  const row = responderPage.locator("a.chat-list__row").filter({ hasText: title });
+  await expect(row).toBeVisible();
+  await row.click();
+  await expect(responderPage).toHaveURL(matchPath);
+
+  await sendChat(ownerPage, `${label} 요청자 메시지`);
+  await responderPage.reload();
+  await expect(responderPage.getByText(`${label} 요청자 메시지`)).toBeVisible();
+  await sendChat(responderPage, `${label} 응답자 메시지`);
+
+  await ownerPage.reload();
+  await expect(ownerPage.getByText(`${label} 응답자 메시지`)).toBeVisible();
+  await ownerPage.getByRole("button", { name: "거래 완료" }).click();
+  await expect(ownerPage.getByText("실제 거래가 끝났나요?")).toBeVisible();
+  await ownerPage.getByRole("button", { name: "완료 확인" }).click();
+  await expect(ownerPage.getByText("거래 진행 중")).toBeVisible();
+
+  await responderPage.reload();
+  await expect(responderPage.getByText("상대가 거래 완료를 확인했어요.")).toBeVisible();
+  await responderPage.getByRole("button", { name: "나도 완료했어요" }).click();
+  await expect(responderPage.getByText("실제 거래가 끝났나요?")).toBeVisible();
+  await responderPage.getByRole("button", { name: "완료 확인" }).click();
+  await expect(responderPage.getByText("거래가 완료됐어요")).toBeVisible();
+
+  await ownerPage.reload();
+  await expect(ownerPage.getByText("거래가 완료됐어요")).toBeVisible();
+
+  await ownerPage.screenshot({
+    path: path.join(outDir, `flow-${label.toLowerCase()}-completed.png`),
+    fullPage: true,
+  });
+
+  return { title, demandPath, matchPath };
+}
+
 async function verifyFreshBuyer(email: string) {
   if (!serviceRoleKey) throw new Error("SUPABASE_SERVICE_ROLE_KEY is required for browser smoke setup");
   const admin = createClient(supabaseUrl, serviceRoleKey, {
@@ -148,4 +234,64 @@ test("fresh Supabase user sees real zero states and can create all four request 
     await expect(page.getByText(title)).toBeVisible();
   }
   await page.screenshot({ path: path.join(outDir, "04-four-request-types.png"), fullPage: true });
+});
+
+
+test("Supabase UI completes BORROW, TASK, and SERVICE with two real browser sessions", async ({ browser }) => {
+  const tag = String(Date.now());
+  const outDir = path.join("qa-screenshots", "supabase-smoke");
+  mkdirSync(outDir, { recursive: true });
+
+  const ownerContext = await browser.newContext();
+  const responderContext = await browser.newContext();
+  const ownerPage = await ownerContext.newPage();
+  const responderPage = await responderContext.newPage();
+
+  try {
+    const ownerName = `요청자${tag.slice(-4)}`;
+    const responderName = `응답자${tag.slice(-4)}`;
+    const ownerEmail = await signupNamed(ownerPage, tag, "owner", ownerName);
+    const responderEmail = await signupNamed(responderPage, tag, "responder", responderName);
+    await verifyFreshBuyer(ownerEmail);
+    await verifyFreshBuyer(responderEmail);
+
+    await completeNonBuyUiFlow({
+      ownerPage,
+      responderPage,
+      responderName,
+      label: "BORROW",
+      outDir,
+      create: () => submitBorrow(ownerPage, `${tag}-borrow`),
+    });
+
+    await completeNonBuyUiFlow({
+      ownerPage,
+      responderPage,
+      responderName,
+      label: "TASK",
+      outDir,
+      create: () => submitTask(ownerPage, `${tag}-task`),
+    });
+
+    await completeNonBuyUiFlow({
+      ownerPage,
+      responderPage,
+      responderName,
+      label: "SERVICE",
+      outDir,
+      create: () => submitService(ownerPage, `${tag}-service`),
+    });
+
+    await ownerPage.goto("/my?tab=completed");
+    await expect(ownerPage.getByText(/Browser QA Tent/)).toBeVisible();
+    await expect(ownerPage.getByText(/Browser QA 서류 전달/)).toBeVisible();
+    await expect(ownerPage.getByText(/Browser QA 포트폴리오 피드백/)).toBeVisible();
+    await ownerPage.screenshot({
+      path: path.join(outDir, "05-non-buy-completed.png"),
+      fullPage: true,
+    });
+  } finally {
+    await ownerContext.close();
+    await responderContext.close();
+  }
 });
