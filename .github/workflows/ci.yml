@@ -46,6 +46,19 @@ jobs:
           VITE_SUPABASE_ANON_KEY="$ANON_KEY" \
           SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
           npm run test:e2e:local
+      - run: npx playwright install --with-deps chromium
+      - name: Run Supabase browser smoke
+        run: |
+          eval "$(supabase status -o env)"
+          VITE_SUPABASE_URL="$API_URL" \
+          VITE_SUPABASE_ANON_KEY="$ANON_KEY" \
+          npx playwright test --config=playwright.supabase.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dan-supabase-browser-smoke
+          path: qa-screenshots/supabase-smoke
+          if-no-files-found: warn
       - if: always()
         run: command -v supabase >/dev/null 2>&1 && supabase stop --no-backup || true
 
