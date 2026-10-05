@@ -122,8 +122,8 @@ export function DemandFeedPage() {
   const hasMore =
     productionDiscovery && remoteReady && filtered.length < remoteTotal;
   const demandHref = query.trim()
-    ? `/buy/new?q=${encodeURIComponent(query.trim())}`
-    : "/buy/new";
+    ? `/create?type=BUY&q=${encodeURIComponent(query.trim())}`
+    : "/create?type=BUY";
 
   function resetRemoteDiscovery() {
     setRemoteRows([]);
@@ -152,15 +152,14 @@ export function DemandFeedPage() {
   return (
     <div className="page-stack discovery-page">
       <header className="page-header discovery-header">
-        <span className="eyebrow">Live Demand</span>
-        <h1 className="page-title">사람들이 지금 찾는 제품</h1>
+        <span className="eyebrow">탐색</span>
+        <h1 className="page-title">지금 올라온 요청</h1>
         <p className="section-desc">
-          카메라뿐 아니라 어떤 제품이든 찾을 수 있어요. 원하는 제품이 없으면
-          바로 새 구매수요를 만들 수 있습니다.
+          찾는 물건과 가격을 둘러보고, 내가 가진 물건이라면 바로 제안할 수 있어요.
         </p>
       </header>
 
-      <section className="discovery-panel" aria-label="Live Demand 탐색">
+      <section className="discovery-panel" aria-label="요청 탐색">
         <div className="discovery-search">
           <span className="discovery-search__icon" aria-hidden>
             <svg viewBox="0 0 24 24" fill="none">
@@ -172,7 +171,7 @@ export function DemandFeedPage() {
             value={query}
             onChange={(e) => updateQuery(e.target.value)}
             placeholder="제품, 브랜드, 카테고리 검색"
-            aria-label="Live Demand 검색"
+            aria-label="요청 검색"
             autoComplete="off"
           />
           {query ? (
@@ -234,8 +233,8 @@ export function DemandFeedPage() {
         <EmptyState
           title={
             query.trim()
-              ? `‘${query.trim()}’의 Live Demand가 아직 없어요`
-              : "조건에 맞는 Live Demand가 없어요"
+              ? `‘${query.trim()}’의 구매 요청이 아직 없어요`
+              : "조건에 맞는 요청이 없어요"
           }
           body="찾는 사람이 먼저 수요를 남기면, 그 제품을 가진 판매자가 제안할 수 있어요."
           action={
@@ -260,7 +259,7 @@ export function DemandFeedPage() {
           </div>
           {remoteLoading ? (
             <p className="discovery-loading" role="status">
-              Live Demand 불러오는 중…
+              요청 불러오는 중…
             </p>
           ) : null}
           {hasMore ? (
