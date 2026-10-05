@@ -621,7 +621,7 @@ export function CreateDemandPage() {
                 setFormError(null);
               }}
             >
-              <span className="request-type-current__icon" aria-hidden>{TYPE_META[type].icon}</span>
+              <span className="request-type-current__icon" aria-hidden><RequestTypeIcon type={type} /></span>
               <span>
                 <strong>{TYPE_META[type].label}</strong>
                 <small>요청 유형 변경</small>
