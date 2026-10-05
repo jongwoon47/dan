@@ -354,6 +354,12 @@ body {
   font-weight: 800;
 }
 
+.request-type-card__icon svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
 .request-type-card.is-selected .request-type-card__icon {
   color: var(--v3-accent);
   background: var(--v3-accent-soft);
