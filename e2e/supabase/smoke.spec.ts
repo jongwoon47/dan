@@ -31,7 +31,7 @@ async function signup(page: Page, tag: string) {
   await page.getByLabel("이메일").fill(email);
   await page.getByLabel("비밀번호").fill("DanBrowserQa-Pass1!");
   await page.getByRole("button", { name: "가입하기" }).click();
-  await expect(page.getByRole("heading", { name: "무엇이 필요하세요?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "내 거래" })).toBeVisible();
   return email;
 }
 
@@ -44,7 +44,7 @@ async function signupNamed(page: Page, tag: string, role: string, name: string) 
   await page.getByLabel("이메일").fill(email);
   await page.getByLabel("비밀번호").fill("DanBrowserQa-Pass1!");
   await page.getByRole("button", { name: "가입하기" }).click();
-  await expect(page.getByRole("heading", { name: "무엇이 필요하세요?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "내 거래" })).toBeVisible();
   return email;
 }
 
