@@ -147,6 +147,15 @@ export function DealSnapshotPage() {
     setSnapshot(result);
   }
 
+  if (snapshot?.snapshot?.accountDeleted === true) {
+    return <div className="page-stack page-narrow deal-page">
+      <h1 className="page-title">종료된 거래 기록</h1>
+      <p>회원탈퇴로 개인 작성 내용과 상품 확인 정보가 삭제됐어요.</p>
+      <p>거래 상태: {match.status === 'COMPLETED' ? '완료' : '종료'}</p>
+      <p>합의 금액: {formatWon(snapshot.agreedPrice)}</p>
+      <Button to="/my?tab=completed" variant="secondary">완료된 거래</Button>
+    </div>;
+  }
   if (!evidence) {
     return (
       <EmptyState
