@@ -1228,6 +1228,60 @@ body {
 
 /* ---------- Conversation list ---------- */
 
+.chats-page .chat-list {
+  overflow: visible;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.chats-page .chat-list__row {
+  position: relative;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 8px !important;
+  border: 0 !important;
+  border-radius: 12px;
+  min-width: 0;
+  transition: background 120ms ease;
+}
+
+.chats-page .chat-list__row + .chat-list__row::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 76px;
+  right: 8px;
+  height: 1px;
+  background: var(--v3-line);
+}
+
+.chats-page .chat-list__row:hover { background: #f8f8fb !important; }
+.chats-page .chat-list__row:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 2px; }
+.chats-page .avatar-initial { width: 52px; height: 52px; flex: 0 0 52px; border-radius: 18px; }
+.chats-page .chat-list__body { gap: 5px; }
+.chats-page .chat-list__name { font-size: 16px; font-weight: 700; min-width: 0; }
+.chats-page .chat-list__time { font-size: 11px; }
+.chats-page .chat-list__preview { font-size: 14px; line-height: 1.5; }
+.chat-list__title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Social auth uses only server-enabled providers. */
+.auth-social { display: grid; gap: 10px; width: 100%; }
+.auth-social__button {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; min-height: 52px; padding: 12px 16px;
+  border: 1px solid var(--v3-line); border-radius: 12px;
+  font: inherit; font-weight: 650; cursor: pointer;
+}
+.auth-social__button--kakao { background: #fee500; color: #191919; border-color: #fee500; }
+.auth-social__button--google { background: #fff; color: #202124; }
+.auth-social__button:disabled { cursor: default; opacity: .55; }
+.auth-social__button:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 3px; }
+.auth-social__button small { font-size: 11px; font-weight: 500; }
+.auth-social__divider { display: flex; align-items: center; gap: 12px; margin: 14px 0 4px; color: var(--dan-ink-muted); font-size: 12px; }
+.auth-social__divider::before, .auth-social__divider::after { content: ""; flex: 1; height: 1px; background: var(--v3-line); }
+
 .chat-list__demand {
   display: flex !important;
   align-items: center;

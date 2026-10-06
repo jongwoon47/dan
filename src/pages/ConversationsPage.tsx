@@ -179,7 +179,7 @@ export function ConversationsPage() {
                   ) : null}
                 </span>
                 <span className="chat-list__demand">
-                  {row.demandTitle}
+                  <span className="chat-list__title">{row.demandTitle}</span>
                   <em className="chat-list__stage">{chatStageLabel(row.match)}</em>
                 </span>
                 <span className="chat-list__preview">{row.lastMessage}</span>

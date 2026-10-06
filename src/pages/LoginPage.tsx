@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { availableSocialProviders, startSocialLogin, type SocialProvider } from "@/auth/socialLogin";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/Button";
@@ -27,6 +28,41 @@ export function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [providers, setProviders] = useState<SocialProvider[] | null>(null);
+  const submitLock = useRef(false);
+  const [socialBusy, setSocialBusy] = useState<SocialProvider | null>(null);
+
+  useEffect(() => {
+    if (mode === "demo") return;
+    const controller = new AbortController();
+    void availableSocialProviders(controller.signal)
+      .then(setProviders)
+      .catch(() => { if (!controller.signal.aborted) setProviders([]); });
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    if (params.has("error") || hash.has("error")) {
+      setLocalError("간편 로그인을 완료하지 못했어요. 다시 시도해 주세요.");
+      const clean = new URL(window.location.href);
+      for (const key of ["error", "error_code", "error_description"]) clean.searchParams.delete(key);
+      clean.hash = "";
+      window.history.replaceState(null, "", clean.pathname + clean.search);
+    }
+    return () => controller.abort();
+  }, [mode, params]);
+
+  async function onSocialLogin(provider: SocialProvider) {
+    if (submitLock.current || status === "loading") return;
+    submitLock.current = true;
+    setSocialBusy(provider);
+    setLocalError(null);
+    clearError();
+    try {
+      await startSocialLogin(provider, next);
+    } catch {
+      setLocalError("간편 로그인에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      setSocialBusy(null);
+      submitLock.current = false;
+    }
+  }
 
   if (mode === "demo") {
     return <Navigate to={next} replace />;
@@ -37,6 +73,8 @@ export function LoginPage() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (submitLock.current || status === "loading") return;
+    submitLock.current = true;
     clearError();
     setLocalError(null);
     setNotice(null);
@@ -64,6 +102,7 @@ export function LoginPage() {
       setLocalError(authErrorMessage(err));
     } finally {
       setBusy(false);
+      submitLock.current = false;
     }
   }
 
@@ -81,6 +120,20 @@ export function LoginPage() {
         </p>
       </div>
 
+      <div className="auth-social" aria-label="간편 로그인">
+        {(["kakao", "google"] as const).map((provider) => {
+          const label = provider === "kakao" ? "카카오" : "Google";
+          const enabled = providers?.includes(provider);
+          return <button key={provider} type="button" className={`auth-social__button auth-social__button--${provider}`}
+            disabled={!enabled || busy || socialBusy !== null || status === "loading"}
+            onClick={() => void onSocialLogin(provider)}>
+            <span aria-hidden="true">{provider === "kakao" ? <svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3C6.48 3 2 6.46 2 10.73c0 2.77 1.88 5.2 4.7 6.57l-1.2 4.1c-.1.35.3.63.59.42l4.8-3.28c.37.03.74.05 1.11.05 5.52 0 10-3.46 10-7.86S17.52 3 12 3Z" /></svg> : "G"}</span>
+            {socialBusy === provider ? "연결 중…" : `${label}로 계속하기`}
+            {providers !== null && !enabled ? <small>준비 중</small> : null}
+          </button>;
+        })}
+        <div className="auth-social__divider"><span>또는 이메일로 계속하기</span></div>
+      </div>
       <form className="section-stack" onSubmit={(e) => void onSubmit(e)}>
         {isSignUp ? (
           <Field label={ko.displayNameLabel}>
@@ -121,7 +174,7 @@ export function LoginPage() {
             {notice}
           </p>
         ) : null}
-        <Button fullWidth type="submit" disabled={busy} size="lg">
+        <Button fullWidth type="submit" disabled={busy || socialBusy !== null || status === "loading"} size="lg">
           {busy ? ko.saving : isSignUp ? ko.createAccount : ko.login}
         </Button>
       </form>
@@ -129,6 +182,7 @@ export function LoginPage() {
       <button
         type="button"
         className="text-link"
+        disabled={busy || socialBusy !== null}
         onClick={() => {
           setIsSignUp((v) => !v);
           clearError();
