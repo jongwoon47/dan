@@ -23,6 +23,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - name: Check account deletion Edge Function
+        run: npx --yes deno@2.9.6 check supabase/functions/delete-account/index.ts
       - run: npm run lint
       - run: npm test
       - run: npm run build

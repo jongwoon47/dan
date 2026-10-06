@@ -181,8 +181,9 @@ begin
  delete from public.user_verifications where user_id=v_id;
  delete from public.dan_admin_users where user_id=v_id;
  delete from public.reports where v_id in(reporter_id,target_user_id);
- update public.risk_flags set user_id=null,detail='{}' where user_id=v_id or match_id in(select id from public.matches where v_id in(buyer_id,seller_id));
- update public.admin_audit_log set actor_id=null,target_id='deleted',detail='{}' where actor_id=v_id or target_id=v_id::text;
+ update public.risk_flags set user_id=case when user_id=v_id then null else user_id end,detail='{}' where user_id=v_id or match_id in(select id from public.matches where v_id in(buyer_id,seller_id));
+ update public.admin_audit_log set actor_id=case when actor_id=v_id then null else actor_id end,
+   target_id=case when target_id=v_id::text then 'deleted' else target_id end,detail='{}' where actor_id=v_id or target_id=v_id::text;
  delete from public.deal_evidence_challenges where seller_id=v_id;
  delete from public.deal_evidence where seller_id=v_id;
  -- Free-text from either side of a shared conversation may identify the leaver.
