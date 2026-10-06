@@ -1,0 +1,49 @@
+name: Upload DAN Staging to TestFlight
+
+on:
+  push:
+    branches: [feature/dan-v3-real-app-ui]
+    paths: [.github/workflows/ios-staging-testflight.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: dan-staging-testflight
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    if: github.repository == 'jongwoon47/dan' && github.ref == 'refs/heads/feature/dan-v3-real-app-ui'
+    runs-on: macos-26
+    timeout-minutes: 25
+    environment: ios-staging
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 37455143687
+          name: dan-ios-staging-signed-2a3fbd3895149babb93b5dfafd359ed339057c33
+          path: signed
+      - name: Verify the exact approved staging IPA
+        run: |
+          set -euo pipefail
+          echo 'AB2932E77AEFE0FF7B384DFF3A635948BD7D84926176C9E61DAADB6FA4813238  signed/DAN-Staging.ipa' | shasum -a 256 -c -
+          unzip -q signed/DAN-Staging.ipa -d verified
+          APP=$(find verified/Payload -maxdepth 1 -name '*.app' -type d)
+          codesign --verify --deep --strict "$APP"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")" = app.dan.staging
+      - name: Upload staging build to Apple without public submission
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.IOS_STAGING_ASC_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          printf '%s' "$ASC_PRIVATE_KEY" > "$HOME/.appstoreconnect/private_keys/AuthKey_2JCVD577KL.p8"
+          chmod 600 "$HOME/.appstoreconnect/private_keys/AuthKey_2JCVD577KL.p8"
+          xcrun altool --upload-app --type ios --file signed/DAN-Staging.ipa --apiKey 2JCVD577KL --apiIssuer 49e97453-6a8d-45ae-8a99-ac87915f4936
+      - name: Remove upload credentials
+        if: always()
+        run: rm -f "$HOME/.appstoreconnect/private_keys/AuthKey_2JCVD577KL.p8"
