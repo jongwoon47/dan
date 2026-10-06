@@ -58,6 +58,6 @@ export function clearCreateDraft(): void {
 
 /** Only allow same-origin relative paths for post-login return. */
 export function safeReturnPath(raw: string | null | undefined, fallback = "/my"): string {
-  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return fallback;
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\") || /[\u0000-\u001f\u007f]/.test(raw)) return fallback;
   return raw;
 }

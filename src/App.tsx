@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import { AuthProvider } from "@/auth/AuthProvider";
+import { NativeAuthBridge } from "@/auth/NativeAuthBridge";
 import { AppShell } from "@/components/layout/AppShell";
 import { getDataMode } from "@/data/mode";
 import { DanProvider } from "@/domain/store";
@@ -54,6 +55,7 @@ export default function App() {
         <BrowserRouter
           basename={import.meta.env.BASE_URL.replace(/\/$/, "") || undefined}
         >
+          <NativeAuthBridge />
           <Routes>
             <Route path="login" element={<LoginPage />} />
             <Route element={<AppShell />}>

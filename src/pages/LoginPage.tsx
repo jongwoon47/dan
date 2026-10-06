@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { availableSocialProviders, startSocialLogin, type SocialProvider } from "@/auth/socialLogin";
+import { Capacitor } from "@capacitor/core";
+import { NATIVE_AUTH_FINISHED } from "@/auth/nativeAuth";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/Button";
@@ -31,6 +33,17 @@ export function LoginPage() {
   const [providers, setProviders] = useState<SocialProvider[] | null>(null);
   const submitLock = useRef(false);
   const [socialBusy, setSocialBusy] = useState<SocialProvider | null>(null);
+
+  useEffect(() => {
+    const reset = () => { submitLock.current = false; setSocialBusy(null); };
+    const onPageShow = (event: PageTransitionEvent) => { if (event.persisted) reset(); };
+    window.addEventListener(NATIVE_AUTH_FINISHED, reset);
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      window.removeEventListener(NATIVE_AUTH_FINISHED, reset);
+      window.removeEventListener("pageshow", onPageShow);
+    };
+  }, []);
 
   useEffect(() => {
     if (mode === "demo") return;
@@ -121,13 +134,13 @@ export function LoginPage() {
       </div>
 
       <div className="auth-social" aria-label="간편 로그인">
-        {(["kakao", "google"] as const).map((provider) => {
-          const label = provider === "kakao" ? "카카오" : "Google";
+        {(["kakao", "google", ...(Capacitor.isNativePlatform() ? ["apple" as const] : [])] as SocialProvider[]).map((provider) => {
+          const label = provider === "kakao" ? "카카오" : provider === "google" ? "Google" : "Apple";
           const enabled = providers?.includes(provider);
           return <button key={provider} type="button" className={`auth-social__button auth-social__button--${provider}`}
             disabled={!enabled || busy || socialBusy !== null || status === "loading"}
             onClick={() => void onSocialLogin(provider)}>
-            <span aria-hidden="true">{provider === "kakao" ? <svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3C6.48 3 2 6.46 2 10.73c0 2.77 1.88 5.2 4.7 6.57l-1.2 4.1c-.1.35.3.63.59.42l4.8-3.28c.37.03.74.05 1.11.05 5.52 0 10-3.46 10-7.86S17.52 3 12 3Z" /></svg> : "G"}</span>
+            <span aria-hidden="true">{provider === "kakao" ? <svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3C6.48 3 2 6.46 2 10.73c0 2.77 1.88 5.2 4.7 6.57l-1.2 4.1c-.1.35.3.63.59.42l4.8-3.28c.37.03.74.05 1.11.05 5.52 0 10-3.46 10-7.86S17.52 3 12 3Z" /></svg> : provider === "google" ? "G" : null}</span>
             {socialBusy === provider ? "연결 중…" : `${label}로 계속하기`}
             {providers !== null && !enabled ? <small>준비 중</small> : null}
           </button>;

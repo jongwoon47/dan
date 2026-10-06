@@ -1276,6 +1276,7 @@ body {
 }
 .auth-social__button--kakao { background: #fee500; color: #191919; border-color: #fee500; }
 .auth-social__button--google { background: #fff; color: #202124; }
+.auth-social__button--apple { background: #000; color: #fff; border-color: #000; }
 .auth-social__button:disabled { cursor: default; opacity: .55; }
 .auth-social__button:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 3px; }
 .auth-social__button small { font-size: 11px; font-weight: 500; }
