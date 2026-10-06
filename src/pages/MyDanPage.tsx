@@ -88,10 +88,14 @@ export function MyDanPage() {
           <p className="eyebrow">DAN</p>
           <h1 className="page-title">내 거래</h1>
         </div>
-        <Link to={"/profile/" + currentUser?.id} className="my-dan__name">
-          프로필 <span aria-hidden>›</span>
-        </Link>
-        <Link to="/settings" className="my-dan__name">설정</Link>
+        <div className="my-dan__actions">
+          <Link to={"/profile/" + currentUser?.id} className="my-dan__name">
+            프로필 <span aria-hidden>›</span>
+          </Link>
+          <Link to="/settings" className="my-dan__settings" aria-label="설정">
+            설정
+          </Link>
+        </div>
       </header>
 
       <nav className="my-demand-tabs" aria-label="내 거래 메뉴">
