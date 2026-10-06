@@ -1,5 +1,5 @@
 begin;
-select plan(28);
+select plan(30);
 select ok(not has_function_privilege('anon','public.begin_account_deletion(boolean)','execute'),'anonymous cannot start deletion');
 select ok(not has_function_privilege('authenticated','public.account_deletion_files(uuid)','execute'),'client cannot list arbitrary deletion files');
 select ok(not has_function_privilege('authenticated','dan_private.cleanup_deleted_account()','execute'),'client cannot run privileged cleanup');
@@ -35,7 +35,12 @@ select is((public.account_deletion_status()->>'activeTransactions')::integer,1,'
 select throws_ok('select public.begin_account_deletion(true)','P0001','ACTIVE_TRANSACTIONS','active transaction refuses deletion');
 reset role;
 select ok((select deletion_started_at is null from public.profiles where id='eeeeeeee-1000-4000-8000-000000000001'),'blocked attempt has no partial deletion');
+update public.matches set status='CLOSED',payment_status='PAID' where id='eeeeeeee-4000-4000-8000-000000000001';
+select is(dan_private.deletion_blockers('eeeeeeee-1000-4000-8000-000000000001'),1,'closed but unrefunded payment blocks deletion');
 update public.matches set status='COMPLETED',completed_at=now() where id='eeeeeeee-4000-4000-8000-000000000001';
+insert into public.deal_disputes(match_id,opened_by,reason,status,detail) values('eeeeeeee-4000-4000-8000-000000000001','eeeeeeee-1000-4000-8000-000000000002','OTHER','OPEN','private dispute');
+select is(dan_private.deletion_blockers('eeeeeeee-1000-4000-8000-000000000001'),1,'open dispute blocks deletion even on completed trade');
+update public.deal_disputes set status='CLOSED' where match_id='eeeeeeee-4000-4000-8000-000000000001';
 set local role authenticated;
 select lives_ok('select public.begin_account_deletion(true)','completed trade allows deletion');
 select throws_ok('select public.send_message(''eeeeeeee-4000-4000-8000-000000000001'',''new text'')','42501','account unavailable','pending deletion blocks privileged mutation');
