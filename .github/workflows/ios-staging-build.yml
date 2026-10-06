@@ -1,0 +1,96 @@
+name: Build iOS Staging
+
+on:
+  push:
+    branches: [feature/dan-v3-real-app-ui]
+    paths: [.github/workflows/ios-staging-build.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-staging-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/feature/dan-v3-real-app-ui'
+    runs-on: macos-26
+    timeout-minutes: 35
+    env:
+      DAN_IOS_ENV: staging
+      VITE_DATA_MODE: supabase
+      VITE_DAN_ENV: staging
+      VITE_BASE: /
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Verify Xcode and install dependencies
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          npm ci
+      - name: Read only the existing staging public configuration
+        run: |
+          node --input-type=module <<'NODE'
+          import { appendFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const base = 'https://dan-v1-staging-jongwoon.pages.dev';
+          const html = await (await fetch(base)).text();
+          const asset = html.match(/src="([^"]+\.js)"/)?.[1];
+          if (!asset?.startsWith('/assets/')) throw new Error('Unexpected staging asset');
+          const bundle = Buffer.from(await (await fetch(base + asset)).arrayBuffer());
+          if (createHash('sha256').update(bundle).digest('hex') !== 'b4c2412e5f169a8198592d93a8936bad176cf266fd0c05a746a40440f0820f83') throw new Error('Staging candidate changed');
+          const script = bundle.toString();
+          const ref = 'wmznpuhqmmqunwtewntt';
+          const key = script.match(/sb_publishable_[A-Za-z0-9_-]+/)?.[0];
+          if (!key || !script.includes(ref)) throw new Error('Staging public configuration missing');
+          console.log(`::add-mask::${key}`);
+          appendFileSync(process.env.GITHUB_ENV, `VITE_SUPABASE_URL=https://${ref}.supabase.co\nVITE_SUPABASE_ANON_KEY=${key}\n`);
+          NODE
+      - name: Prepare staging iOS project
+        run: npm run ios:staging
+      - name: Compile simulator app
+        run: |
+          set -euo pipefail
+          mkdir -p ios-build
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath ios-build/simulator \
+            CODE_SIGNING_ALLOWED=NO build > ios-build/simulator-build.log 2>&1 || { tail -n 100 ios-build/simulator-build.log; exit 1; }
+          ditto -c -k --keepParent ios-build/simulator/Build/Products/Release-iphonesimulator/App.app ios-build/DAN-Staging-Simulator.zip
+      - name: Launch app on iPhone simulator
+        run: |
+          set -euo pipefail
+          DEVICE=$(xcrun simctl list devices available -j | jq -r '[.devices[][] | select(.name | startswith("iPhone"))][0].udid')
+          test -n "$DEVICE" && test "$DEVICE" != null
+          xcrun simctl boot "$DEVICE" || true
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcrun simctl install "$DEVICE" ios-build/simulator/Build/Products/Release-iphonesimulator/App.app
+          xcrun simctl launch "$DEVICE" app.dan.staging
+          sleep 10
+          xcrun simctl io "$DEVICE" screenshot ios-build/iphone-simulator.png
+          xcrun simctl shutdown "$DEVICE"
+      - name: Compile unsigned device archive
+        run: |
+          set -euo pipefail
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath ios-build/DAN-Staging-Unsigned.xcarchive \
+            -derivedDataPath ios-build/device CODE_SIGNING_ALLOWED=NO archive \
+            > ios-build/device-build.log 2>&1 || { tail -n 100 ios-build/device-build.log; exit 1; }
+          ditto -c -k --keepParent ios-build/DAN-Staging-Unsigned.xcarchive ios-build/DAN-Staging-Unsigned-Archive.zip
+          printf 'Source SHA: %s\nEnvironment: staging\nBundle ID: app.dan.staging\nSimulator app compiled and launched.\nDevice archive unsigned: cannot install on iPhone or upload to TestFlight until Apple signing is configured.\n' "$GITHUB_SHA" > ios-build/BUILD-INFO.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dan-ios-staging-${{ github.sha }}
+          path: |
+            ios-build/*.zip
+            ios-build/*.png
+            ios-build/*.txt
+            ios-build/*.log
+          if-no-files-found: error
+          retention-days: 14
