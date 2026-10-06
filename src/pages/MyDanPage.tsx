@@ -91,6 +91,7 @@ export function MyDanPage() {
         <Link to={"/profile/" + currentUser?.id} className="my-dan__name">
           프로필 <span aria-hidden>›</span>
         </Link>
+        <Link to="/settings" className="my-dan__name">설정</Link>
       </header>
 
       <nav className="my-demand-tabs" aria-label="내 거래 메뉴">

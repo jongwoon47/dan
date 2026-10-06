@@ -133,6 +133,7 @@ export function LoginPage() {
         </p>
       </div>
 
+      {params.get('account') === 'deleted' && <p role="status">회원탈퇴가 완료됐어요. DAN 계정과 개인정보를 삭제했어요.</p>}
       <div className="auth-social" aria-label="간편 로그인">
         {(["kakao", "google", ...(Capacitor.isNativePlatform() ? ["apple" as const] : [])] as SocialProvider[]).map((provider) => {
           const label = provider === "kakao" ? "카카오" : provider === "google" ? "Google" : "Apple";

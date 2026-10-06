@@ -30,6 +30,8 @@ import { SafePaymentPage } from "@/pages/SafePaymentPage";
 import { SellIntentPage } from "@/pages/SellIntentPage";
 import { TradeCompletePage } from "@/pages/TradeCompletePage";
 import "@/styles/danPremium.css";
+import { SettingsPage } from '@/pages/SettingsPage';
+import { AccountDeletionPage } from '@/pages/AccountDeletionPage';
 
 function LegacyBuyCreateRedirect() {
   const { search } = useLocation();
@@ -83,6 +85,8 @@ export default function App() {
                 element={<SellIntentPage />}
               />
               <Route path="my" element={<MyDanPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+              <Route path="settings/delete-account" element={<AccountDeletionPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>
