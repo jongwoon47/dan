@@ -28,6 +28,6 @@ Settings → deletion explanation → Delete → separate final confirmation. Lo
 
 ## Deployment and verification
 
-Apply `20261006054157_account_deletion.sql` only after tests/CI succeed. Deploy `supabase/functions/delete-account` only to the designated staging project. JWT gateway verification can be disabled only because the function validates each caller with GoTrue `getUser` before any privileged action (required for current asymmetric Auth tokens). Use standard Supabase server environment secrets, never `VITE_` secrets.
+Apply `20261006054157_account_deletion.sql` only after tests succeed. Deploy `supabase/functions/delete-account` only to the designated staging project. JWT gateway verification remains enabled; the function additionally validates each caller with GoTrue `getUser` before any privileged action. Use standard Supabase server environment secrets, never `VITE_` secrets. Complete full CI before the final web deployment.
 
 Rollback: disable the deletion endpoint/UI first. Do not re-add the old cascade FK after any deletion: terminal tombstones no longer have Auth users, and a rollback must never reconstruct deleted identities or personal data. Guards and retention links should remain until a forward repair migration is tested. Backups and access logs follow infrastructure retention controls separately; this feature does not claim immediate physical backup erasure.
