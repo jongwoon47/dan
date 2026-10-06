@@ -15,10 +15,10 @@ afterEach(() => { cleanup(); vi.resetAllMocks(); });
 it("does not advertise unconfigured providers as usable", async () => {
   availableSocialProviders.mockResolvedValue([]);
   render(<MemoryRouter><LoginPage /></MemoryRouter>);
-  await screen.findAllByText("준비 중");
-  expect(screen.getByRole("button", { name: /카카오로/ })).toBeDisabled();
-  expect(screen.getByRole("button", { name: /Google로/ })).toBeDisabled();
-  expect(screen.getByRole("button", { name: "로그인" })).toBeEnabled();
+  await waitFor(() => expect(screen.queryByRole("button", { name: /Google로/ })).not.toBeInTheDocument());
+  expect(screen.queryByRole("button", { name: /카카오로/ })).not.toBeInTheDocument();
+  expect(screen.queryByText("준비 중")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "이메일로 계속하기" })).toBeEnabled();
 });
 
 it("starts OAuth once and preserves the requested action", async () => {
@@ -34,10 +34,10 @@ it("starts OAuth once and preserves the requested action", async () => {
 });
 
 it("recovers from provider errors so another login can be attempted", async () => {
-  availableSocialProviders.mockResolvedValue(["kakao"]);
+  availableSocialProviders.mockResolvedValue(["google"]);
   startSocialLogin.mockRejectedValue(new Error("network"));
   render(<MemoryRouter><LoginPage /></MemoryRouter>);
-  const button = screen.getByRole("button", { name: /카카오로/ });
+  const button = screen.getByRole("button", { name: /Google로/ });
   await waitFor(() => expect(button).toBeEnabled());
   fireEvent.click(button);
   expect(await screen.findByRole("alert")).toHaveTextContent("간편 로그인에 연결하지 못했어요");

@@ -135,20 +135,25 @@ export function LoginPage() {
 
       {params.get('account') === 'deleted' && <p role="status">회원탈퇴가 완료됐어요. DAN 계정과 개인정보를 삭제했어요.</p>}
       <div className="auth-social" aria-label="간편 로그인">
-        {(["kakao", "google", ...(Capacitor.isNativePlatform() ? ["apple" as const] : [])] as SocialProvider[]).map((provider) => {
+        {(["google", "kakao", ...(Capacitor.isNativePlatform() ? ["apple" as const] : [])] as SocialProvider[]).filter((provider) => providers?.includes(provider) || (providers === null && provider === "google")).map((provider) => {
           const label = provider === "kakao" ? "카카오" : provider === "google" ? "Google" : "Apple";
           const enabled = providers?.includes(provider);
           return <button key={provider} type="button" className={`auth-social__button auth-social__button--${provider}`}
             disabled={!enabled || busy || socialBusy !== null || status === "loading"}
+            aria-busy={socialBusy === provider}
             onClick={() => void onSocialLogin(provider)}>
-            <span aria-hidden="true">{provider === "kakao" ? <svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3C6.48 3 2 6.46 2 10.73c0 2.77 1.88 5.2 4.7 6.57l-1.2 4.1c-.1.35.3.63.59.42l4.8-3.28c.37.03.74.05 1.11.05 5.52 0 10-3.46 10-7.86S17.52 3 12 3Z" /></svg> : provider === "google" ? "G" : null}</span>
-            {socialBusy === provider ? "연결 중…" : `${label}로 계속하기`}
-            {providers !== null && !enabled ? <small>준비 중</small> : null}
+            <span className="auth-social__content">
+              <span className="auth-social__icon" aria-hidden="true">{provider === "kakao" ? <svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3C6.48 3 2 6.46 2 10.73c0 2.77 1.88 5.2 4.7 6.57l-1.2 4.1c-.1.35.3.63.59.42l4.8-3.28c.37.03.74.05 1.11.05 5.52 0 10-3.46 10-7.86S17.52 3 12 3Z" /></svg> : provider === "google" ? <img src={`${import.meta.env.BASE_URL}google-g-logo.png`} alt="" width={20} height={20} /> : null}</span>
+              <span className="auth-social__label">
+                <span className={socialBusy === provider ? "auth-social__label--hidden" : undefined}>{`${label}로 계속하기`}</span>
+                {socialBusy === provider ? <span className="auth-social__progress" role="status">연결 중…</span> : null}
+              </span>
+            </span>
           </button>;
         })}
-        <div className="auth-social__divider"><span>또는 이메일로 계속하기</span></div>
+        <div className="auth-social__divider"><span>또는</span></div>
       </div>
-      <form className="section-stack" onSubmit={(e) => void onSubmit(e)}>
+      <form className="section-stack auth-screen__form" onSubmit={(e) => void onSubmit(e)}>
         {isSignUp ? (
           <Field label={ko.displayNameLabel}>
             <TextInput
@@ -189,13 +194,16 @@ export function LoginPage() {
           </p>
         ) : null}
         <Button fullWidth type="submit" disabled={busy || socialBusy !== null || status === "loading"} size="lg">
-          {busy ? ko.saving : isSignUp ? ko.createAccount : ko.login}
+          {busy ? ko.saving : isSignUp ? ko.createAccount : "이메일로 계속하기"}
         </Button>
       </form>
 
+      <p className="auth-screen__signup">
+        <span>{isSignUp ? "이미 계정이 있나요?" : "계정이 없나요?"}</span>
       <button
         type="button"
         className="text-link"
+        aria-label={isSignUp ? ko.haveAccount : ko.needAccount}
         disabled={busy || socialBusy !== null}
         onClick={() => {
           setIsSignUp((v) => !v);
@@ -204,8 +212,9 @@ export function LoginPage() {
           setNotice(null);
         }}
       >
-        {isSignUp ? ko.haveAccount : ko.needAccount}
+        {isSignUp ? "로그인" : "회원가입"}
       </button>
+      </p>
       <Link to="/" className="text-link text-link--muted">
         {ko.goBack}
       </Link>

@@ -188,7 +188,7 @@ export const ko = {
   "demoLogin": "로그인",
   "signup": "회원가입",
   "signupLead": "이메일과 비밀번호로 시작해요.",
-  "loginLead": "이메일과 비밀번호로 로그인해요.",
+  "loginLead": "간편하게 로그인하고 DAN을 시작하세요.",
   "displayNameLabel": "이름",
   "emailLabel": "이메일",
   "passwordLabel": "비밀번호",
