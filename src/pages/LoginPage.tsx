@@ -2,8 +2,9 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { availableSocialProviders, startSocialLogin, type SocialProvider } from "@/auth/socialLogin";
 import { Capacitor } from "@capacitor/core";
 import { NATIVE_AUTH_FINISHED } from "@/auth/nativeAuth";
-import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
+import { consentReturnPath, useConsent } from "@/auth/ConsentProvider";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Input";
 import { ko } from "@/copy/ko";
@@ -20,9 +21,9 @@ function authErrorMessage(err: unknown): string {
 
 export function LoginPage() {
   const { mode, status, signIn, signUp, error, clearError } = useAuth();
-  const navigate = useNavigate();
+  const { resolution } = useConsent();
   const [params] = useSearchParams();
-  const next = safeReturnPath(params.get("next"));
+  const next = consentReturnPath(safeReturnPath(params.get("next")));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -33,6 +34,7 @@ export function LoginPage() {
   const [providers, setProviders] = useState<SocialProvider[] | null>(null);
   const submitLock = useRef(false);
   const [socialBusy, setSocialBusy] = useState<SocialProvider | null>(null);
+  const [awaitingSession, setAwaitingSession] = useState(false);
 
   useEffect(() => {
     const reset = () => { submitLock.current = false; setSocialBusy(null); };
@@ -81,7 +83,16 @@ export function LoginPage() {
     return <Navigate to={next} replace />;
   }
   if (status === "authenticated") {
+    if (resolution === "loading") {
+      return <div className="auth-screen auth-screen--resolving" aria-busy="true" />;
+    }
+    if (resolution === "required") {
+      return <Navigate to={`/consent?next=${encodeURIComponent(next)}`} replace />;
+    }
     return <Navigate to={next} replace />;
+  }
+  if (status === "loading" || awaitingSession) {
+    return <div className="auth-screen auth-screen--resolving" aria-busy="true" />;
   }
 
   async function onSubmit(e: FormEvent) {
@@ -110,9 +121,11 @@ export function LoginPage() {
       } else {
         await signIn(email.trim(), password);
       }
-      navigate(next);
+      // Keep resolving until AuthProvider + ConsentProvider finish; then Navigate above.
+      setAwaitingSession(true);
     } catch (err) {
       setLocalError(authErrorMessage(err));
+      setAwaitingSession(false);
     } finally {
       setBusy(false);
       submitLock.current = false;
@@ -139,7 +152,7 @@ export function LoginPage() {
           const label = provider === "kakao" ? "카카오" : provider === "google" ? "Google" : "Apple";
           const enabled = providers?.includes(provider);
           return <button key={provider} type="button" className={`auth-social__button auth-social__button--${provider}`}
-            disabled={!enabled || busy || socialBusy !== null || status === "loading"}
+            disabled={!enabled || busy || socialBusy !== null}
             aria-busy={socialBusy === provider}
             onClick={() => void onSocialLogin(provider)}>
             <span className="auth-social__content">
@@ -193,7 +206,7 @@ export function LoginPage() {
             {notice}
           </p>
         ) : null}
-        <Button fullWidth type="submit" disabled={busy || socialBusy !== null || status === "loading"} size="lg">
+        <Button fullWidth type="submit" disabled={busy || socialBusy !== null} size="lg">
           {busy ? ko.saving : isSignUp ? ko.createAccount : "이메일로 계속하기"}
         </Button>
       </form>

@@ -5,7 +5,7 @@ import { ko } from "@/copy/ko";
 export type ShellMode = "root" | "deep" | "auth";
 
 export function getShellMode(pathname: string): ShellMode {
-  if (pathname === "/login") return "auth";
+  if (pathname === "/login" || pathname === "/consent") return "auth";
   if (
     pathname === "/" ||
     pathname === "/feed" ||

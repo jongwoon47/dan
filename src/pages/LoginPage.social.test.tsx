@@ -10,6 +10,13 @@ vi.mock("@/auth/socialLogin", () => ({ availableSocialProviders, startSocialLogi
 vi.mock("@/auth/AuthProvider", () => ({ useAuth: () => ({
   mode: "supabase", status: "anonymous", signIn, signUp: vi.fn(), error: null, clearError: vi.fn(),
 }) }));
+vi.mock("@/auth/ConsentProvider", () => ({
+  useConsent: () => ({ resolution: "anonymous", record: null, error: null, accept: vi.fn(), refresh: vi.fn() }),
+  consentReturnPath: (raw: string | null | undefined) => {
+    if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/";
+    return raw;
+  },
+}));
 afterEach(() => { cleanup(); vi.resetAllMocks(); });
 
 it("does not advertise unconfigured providers as usable", async () => {
