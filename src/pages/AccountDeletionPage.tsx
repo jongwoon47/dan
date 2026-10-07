@@ -54,7 +54,7 @@ export function AccountDeletionPage() {
     {status?.pending && <p className="account-deletion-state">이전에 시작한 삭제를 이어서 완료해 주세요.</p>}
     {deleting ? <p className="account-deletion-state" role="status" aria-live="polite">계정을 삭제하고 있어요. 잠시 기다려 주세요…</p> : <div className="account-deletion-actions">
       {error && !status && <Button variant="secondary" onClick={() => setRetry(n => n + 1)}>다시 확인</Button>}
-      <Button variant="danger" disabled={!status || status.activeTransactions > 0} onClick={() => setConfirm(true)}>계정 삭제</Button>
+      <Button variant="danger" disabled={!status || status.activeTransactions > 0} onClick={() => setConfirm(true)}>탈퇴하기</Button>
       <Button to="/settings" variant="secondary">취소</Button>
     </div>}
     <ConfirmSheet open={confirm} title="정말 탈퇴할까요?" body="계정과 개인정보가 삭제되고 복구할 수 없어요. 안내한 거래 기록은 개인 식별정보와 분리하여 남아요."
