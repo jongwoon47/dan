@@ -1,20 +1,58 @@
-name: Deploy Cloudflare Pages
-
-# PRODUCTION DEPLOY IS INTENTIONALLY DISABLED.
-# The former Supabase project is now DAN staging. Provision a separate
-# production Supabase project and update the production guards before enabling.
+name: Deploy Cloudflare Production
 
 on:
   workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type deploy-production to publish DAN production
+        required: true
+        type: string
+
+concurrency:
+  group: cloudflare-production
+  cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
-  blocked:
+  deploy-production:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://dan.pages.dev
+    env:
+      DAN_ENV: production
+      VITE_DAN_ENV: production
+      VITE_DATA_MODE: supabase
+      VITE_BASE: /
+      PRODUCTION_DEPLOY_CONFIRM: ${{ inputs.confirm }}
+      PRODUCTION_CLOUDFLARE_PROJECT: dan
+      DAN_PRODUCTION_SUPABASE_PROJECT_REF: hcbooyexjgsjzjncpvtk
+      PRODUCTION_VITE_SUPABASE_URL: https://hcbooyexjgsjzjncpvtk.supabase.co
+      # Publishable browser key, not a service-role/secret key.
+      PRODUCTION_VITE_SUPABASE_ANON_KEY: sb_publishable_S_rPcZDrwXl9JBEe0-zWfw_BISr12xd
     steps:
-      - name: Refuse until production database exists
-        run: |
-          echo "REFUSED: production Supabase project is not configured."
-          exit 1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Assert exact production targets
+        run: npm run assert:production-deploy
+
+      - name: Build production bundle
+        env:
+          VITE_SUPABASE_URL: ${{ env.PRODUCTION_VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ env.PRODUCTION_VITE_SUPABASE_ANON_KEY }}
+        run: npm run build
+
+      - name: Publish Cloudflare Pages project dan
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=dan --commit-dirty=true
