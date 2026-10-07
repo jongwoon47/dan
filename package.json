@@ -18,7 +18,8 @@
     "test:watch": "vitest",
     "preview": "vite preview",
     "db:seed:staging": "node --experimental-strip-types scripts/seed-staging.ts",
-    "assert:staging-deploy": "node --experimental-strip-types scripts/assert-staging-deploy.ts"
+    "assert:staging-deploy": "node --experimental-strip-types scripts/assert-staging-deploy.ts",
+    "assert:production-deploy": "node --experimental-strip-types scripts/assert-production-deploy.ts"
   },
   "dependencies": {
     "@capacitor/app": "8.1.2",

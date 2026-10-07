@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { assertRemoteMigrationAllowed } from "./remoteDbTargetGuard";
 import {
   PRODUCTION_REMOTE_CONFIRM,
+  PRODUCTION_SUPABASE_PROJECT_REFS,
   STAGING_REMOTE_CONFIRM,
   STAGING_SUPABASE_PROJECT_REF,
   extractSupabaseProjectRef,
@@ -68,14 +69,22 @@ describe("assertRemoteMigrationAllowed", () => {
     expect(allowed.projectRef).toBe(stagingRef);
   });
 
-  it("keeps production remote applies disabled until a production DB exists", () => {
-    const blocked = assertRemoteMigrationAllowed({
+  it("allows only the explicit approved production project", () => {
+    const productionRef = PRODUCTION_SUPABASE_PROJECT_REFS[0]!;
+    const allowed = assertRemoteMigrationAllowed({
       DAN_ENV: "production",
       DAN_REMOTE_CONFIRM: PRODUCTION_REMOTE_CONFIRM,
-      DAN_SUPABASE_PROJECT_REF: "futureprodref001",
+      DAN_SUPABASE_PROJECT_REF: productionRef,
     });
-    expect(blocked.ok).toBe(false);
-    expect(blocked.code).toBe(1);
-    expect(blocked.message).toMatch(/not configured/i);
+    expect(allowed.ok).toBe(true);
+    expect(allowed.projectRef).toBe(productionRef);
+
+    expect(
+      assertRemoteMigrationAllowed({
+        DAN_ENV: "production",
+        DAN_REMOTE_CONFIRM: PRODUCTION_REMOTE_CONFIRM,
+        DAN_SUPABASE_PROJECT_REF: "futureprodref001",
+      }).code,
+    ).toBe(1);
   });
 });
