@@ -390,6 +390,13 @@ test("V3 BUY chat cancellation keeps the request lifecycle structured", async ({
   await settle(page);
 
   await expect(page.locator(".trade-status__state").getByText("거래가 종료됐어요")).toBeVisible();
+  const viewport = page.viewportSize();
+  if (viewport && viewport.width <= 859) {
+    const statusBox = await page.locator(".trade-status").boundingBox();
+    expect(statusBox).not.toBeNull();
+    expect(statusBox!.x).toBeGreaterThanOrEqual(10);
+    expect(statusBox!.x + statusBox!.width).toBeLessThanOrEqual(viewport.width - 10);
+  }
   await expect(page.locator(".chat-deal-progress")).toHaveCount(0);
   await expect(page.getByText("종료된 거래 · 채팅은 읽기 전용이에요.")).toBeVisible();
   await expectNoHorizontalOverflow(page);

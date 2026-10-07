@@ -1467,3 +1467,26 @@ body {
     min-height: 50px;
   }
 }
+
+/* RC: keep mobile trade state content away from the device edge.
+   danPractical.css intentionally flattens chat chrome, so this late V3 rule
+   restores only the compact transaction state card. */
+@media (max-width: 859px) {
+  .chat-page > .trade-status {
+    margin: 6px 12px 0 !important;
+    padding: 10px 12px !important;
+    border: 1px solid var(--v3-line) !important;
+    border-radius: 14px !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  .chat-page > .trade-status .trade-status__actions .dan-btn {
+    min-height: 44px !important;
+  }
+
+  .chat-page__back {
+    width: 44px !important;
+    height: 44px !important;
+  }
+}
