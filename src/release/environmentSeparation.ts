@@ -23,9 +23,9 @@ export const PRODUCTION_CLOUDFLARE_PROJECT = "dan";
 export const PRODUCTION_PAGES_HOSTS = ["dan.pages.dev"] as const;
 
 /** Approved production Supabase refs. Public identifiers only, never keys. */
-export const PRODUCTION_SUPABASE_PROJECT_REFS = [
+export const PRODUCTION_SUPABASE_PROJECT_REFS: readonly string[] = [
   "hcbooyexjgsjzjncpvtk",
-] as const;
+];
 
 /** GitHub secret names for staging. Values are never committed. */
 export const STAGING_GITHUB_SECRET_NAMES = [
