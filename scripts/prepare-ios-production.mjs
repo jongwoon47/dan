@@ -1,25 +1,30 @@
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { assertStagingDeployAllowed } from "../src/release/stagingDeployGuard.ts";
+import { assertProductionDeployAllowed } from "../src/release/productionDeployGuard.ts";
 
 const branch = spawnSync("git", ["branch", "--show-current"], { encoding: "utf8" }).stdout.trim();
 const env = { ...process.env };
-const decision = assertStagingDeployAllowed({
+if (!env.DAN_IOS_BUNDLE_ID?.trim()) {
+  console.error("NEEDS USER: DAN_IOS_BUNDLE_ID must be the registered production bundle ID.");
+  process.exit(2);
+}
+const decision = assertProductionDeployAllowed({
   ...env,
   GITHUB_REF_NAME: branch,
-  STAGING_DEPLOY_CONFIRM: "deploy-staging-only",
-  STAGING_CLOUDFLARE_PROJECT: "dan-v1-staging-jongwoon",
-  STAGING_VITE_SUPABASE_URL: env.VITE_SUPABASE_URL,
-  STAGING_VITE_SUPABASE_ANON_KEY: env.VITE_SUPABASE_ANON_KEY,
-  DAN_STAGING_SUPABASE_PROJECT_REF: "wmznpuhqmmqunwtewntt",
+  DAN_ENV: "production",
+  PRODUCTION_DEPLOY_CONFIRM: "deploy-production",
+  PRODUCTION_CLOUDFLARE_PROJECT: "dan",
+  PRODUCTION_VITE_SUPABASE_URL: env.VITE_SUPABASE_URL,
+  PRODUCTION_VITE_SUPABASE_ANON_KEY: env.VITE_SUPABASE_ANON_KEY,
+  DAN_PRODUCTION_SUPABASE_PROJECT_REF: "hcbooyexjgsjzjncpvtk",
 });
 if (!decision.ok) {
   console.error(decision.message);
   process.exit(decision.code);
 }
 Object.assign(env, {
-  DAN_IOS_ENV: "staging",
-  VITE_DAN_ENV: "staging",
+  DAN_IOS_ENV: "production",
+  VITE_DAN_ENV: "production",
   VITE_DATA_MODE: "supabase",
   VITE_BASE: "/",
 });
@@ -36,4 +41,4 @@ run("node_modules/vite/bin/vite.js", ["build"]);
 const cli = "node_modules/@capacitor/cli/bin/capacitor";
 run(cli, existsSync("ios") ? ["sync", "ios"] : ["add", "ios", "--packagemanager", "SPM"]);
 run("scripts/configure-ios-target.mjs", []);
-console.log("Staging iOS source prepared. No store upload performed.");
+console.log("Production iOS source prepared. Signing/upload still requires the registered Apple bundle ID and team.");
