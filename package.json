@@ -19,7 +19,8 @@
     "preview": "vite preview",
     "db:seed:staging": "node --experimental-strip-types scripts/seed-staging.ts",
     "assert:staging-deploy": "node --experimental-strip-types scripts/assert-staging-deploy.ts",
-    "assert:production-deploy": "node --experimental-strip-types scripts/assert-production-deploy.ts"
+    "assert:production-deploy": "node --experimental-strip-types scripts/assert-production-deploy.ts",
+    "ios:production": "node --experimental-strip-types --env-file-if-exists=.env.local scripts/prepare-ios-production.mjs"
   },
   "dependencies": {
     "@capacitor/app": "8.1.2",
