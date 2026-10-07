@@ -5296,3 +5296,108 @@ body {
     gap: 4px !important;
   }
 }
+
+
+/* Release-candidate settings and destructive-action UX ------------------- */
+.settings-page,
+.account-deletion-page {
+  max-width: 560px;
+}
+
+.settings-section {
+  display: grid;
+  gap: 18px;
+}
+
+.settings-section__head {
+  display: grid;
+  gap: 5px;
+}
+
+.settings-section__head h1,
+.account-deletion-intro h1 {
+  margin: 0;
+  color: var(--dan-ink);
+  font-size: 1.08rem;
+  line-height: 1.35;
+}
+
+.settings-section__head p,
+.account-deletion-intro p {
+  margin: 0;
+  color: var(--dan-ink-muted);
+  font-size: .86rem;
+  line-height: 1.55;
+}
+
+.settings-list {
+  padding-top: 4px;
+  border-top: 1px solid var(--dan-border);
+}
+
+.account-deletion-page {
+  gap: 18px !important;
+}
+
+.account-deletion-intro {
+  display: grid;
+  gap: 6px;
+}
+
+.account-deletion-list {
+  margin: 0;
+  padding: 16px 16px 16px 34px;
+  border: 1px solid var(--dan-border);
+  border-radius: 16px;
+  background: var(--dan-surface);
+  color: var(--dan-ink-secondary);
+  font-size: .84rem;
+  line-height: 1.65;
+}
+
+.account-deletion-list li + li {
+  margin-top: 8px;
+}
+
+.account-deletion-state {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 13px 14px;
+  border-radius: 14px;
+  background: var(--dan-bg-elevated);
+  color: var(--dan-ink-secondary);
+  font-size: .84rem;
+  line-height: 1.5;
+}
+
+.account-deletion-state p {
+  margin: 0;
+}
+
+.account-deletion-state.is-error {
+  background: #fff5f4;
+  color: #a53a32;
+}
+
+.account-deletion-actions {
+  display: grid;
+  gap: 9px;
+  padding-top: 4px;
+}
+
+@media (max-width: 859px) {
+  .settings-page,
+  .account-deletion-page {
+    gap: 20px !important;
+  }
+
+  .settings-section__head h1,
+  .account-deletion-intro h1 {
+    font-size: 1.05rem;
+  }
+
+  .account-deletion-list {
+    padding: 15px 14px 15px 31px;
+  }
+}
