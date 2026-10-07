@@ -211,7 +211,7 @@ export function ProfilePage() {
           </span>
           <div className="trust-card__meta">
             <h1 className="trust-card__name">{profile.displayName}</h1>
-            {areaLine ? <p className="trust-card__area">{areaLine}</p> : null}
+            <p className="trust-card__area">{areaLine || "활동 지역 미설정"}</p>
             {profile.authLabel ? (
               <p className="trust-card__auth">{profile.authLabel}</p>
             ) : null}

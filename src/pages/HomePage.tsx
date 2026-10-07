@@ -39,7 +39,7 @@ export function HomePage() {
   const categoryRows = useMemo(() => {
     const counts = new Map<ProductCategory, number>();
     for (const item of liveProducts) {
-      if (item.kind !== "aggregated") continue;
+      if (item.kind !== "aggregated" || item.product.category === "other") continue;
       counts.set(
         item.product.category,
         (counts.get(item.product.category) ?? 0) + item.aggregate.seekerCount,
