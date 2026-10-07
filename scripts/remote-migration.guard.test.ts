@@ -1,4 +1,7 @@
-import { STAGING_SUPABASE_PROJECT_REF } from "../src/release/environmentSeparation.ts";
+import {
+  PRODUCTION_SUPABASE_PROJECT_REFS,
+  STAGING_SUPABASE_PROJECT_REF,
+} from "../src/release/environmentSeparation.ts";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,6 +13,7 @@ const isolatedEnv = {
   PATH: process.env.PATH,
   HOME: process.env.HOME,
 };
+const productionRef = PRODUCTION_SUPABASE_PROJECT_REFS[0]!;
 
 function runApply(script: string, extraEnv: Record<string, string> = {}) {
   return spawnSync(
@@ -36,7 +40,7 @@ describe("legacy remote apply scripts are default-deny", () => {
     expect(`${result.stderr}${result.stdout}`).toMatch(/default-deny|DAN_ENV/);
   });
 
-  it("refuses staging without confirm and production without confirm", () => {
+  it("refuses staging and production without their explicit confirms", () => {
     const staging = runApply("apply-migrations-remote.mjs", {
       DAN_ENV: "staging",
       DAN_STAGING_SUPABASE_PROJECT_REF: STAGING_SUPABASE_PROJECT_REF,
@@ -46,12 +50,10 @@ describe("legacy remote apply scripts are default-deny", () => {
 
     const production = runApply("apply-0016.mjs", {
       DAN_ENV: "production",
-      DAN_SUPABASE_PROJECT_REF: "wmznpuhqmmqunwtewntt",
+      DAN_SUPABASE_PROJECT_REF: productionRef,
     });
     expect(production.status).not.toBe(0);
-    expect(`${production.stderr}${production.stdout}`).toMatch(
-      /production Supabase project is not configured/i,
-    );
+    expect(`${production.stderr}${production.stdout}`).toMatch(/apply-production-only/);
   });
 
   it("refuses an unexpected staging ref before any remote token access", () => {
@@ -64,13 +66,13 @@ describe("legacy remote apply scripts are default-deny", () => {
     expect(`${result.stderr}${result.stdout}`).toMatch(/unexpected staging/i);
   });
 
-  it("refuses production applies before token access while production is unconfigured", () => {
+  it("refuses an unapproved production ref before any remote token access", () => {
     const result = runApply("apply-migrations-remote.mjs", {
       DAN_ENV: "production",
       DAN_REMOTE_CONFIRM: "apply-production-only",
       DAN_SUPABASE_PROJECT_REF: "futureprodref001",
     });
     expect(result.status).not.toBe(0);
-    expect(`${result.stderr}${result.stdout}`).toMatch(/not configured/i);
+    expect(`${result.stderr}${result.stdout}`).toMatch(/not an approved production project/i);
   });
 });

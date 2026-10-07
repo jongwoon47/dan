@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { STAGING_SUPABASE_PROJECT_REF } from "@/release/environmentSeparation";
+import {
+  PRODUCTION_SUPABASE_PROJECT_REFS,
+  STAGING_SUPABASE_PROJECT_REF,
+} from "@/release/environmentSeparation";
 import { resolveDataMode } from "./mode";
 
 describe("resolveDataMode", () => {
@@ -46,14 +49,23 @@ describe("resolveDataMode", () => {
     ).toThrow(/designated staging/i);
   });
 
-  it("keeps production disabled until a separate production DB is configured", () => {
+  it("allows only the configured production Supabase project", () => {
+    const productionRef = PRODUCTION_SUPABASE_PROJECT_REFS[0]!;
+    expect(
+      resolveDataMode({
+        runtime: "production",
+        url: `https://${productionRef}.supabase.co`,
+        anonKey: "sb_publishable_test",
+      }),
+    ).toBe("supabase");
+
     expect(() =>
       resolveDataMode({
         runtime: "production",
         url: "https://futureprodref001.supabase.co",
         anonKey: "sb_publishable_test",
       }),
-    ).toThrow(/not configured/i);
+    ).toThrow(/configured production/i);
   });
 
   it("refuses secret/service-role frontend keys", () => {

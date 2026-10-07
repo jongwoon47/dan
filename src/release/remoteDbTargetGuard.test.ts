@@ -44,9 +44,9 @@ describe("assertRemoteMigrationAllowed", () => {
     expect(
       assertRemoteMigrationAllowed({
         DAN_ENV: "production",
-        DAN_SUPABASE_PROJECT_REF: "futureprodref001",
+        DAN_SUPABASE_PROJECT_REF: PRODUCTION_SUPABASE_PROJECT_REFS[0]!,
       }).code,
-    ).toBe(1);
+    ).toBe(2);
   });
 
   it("refuses any staging ref other than the designated project", () => {
