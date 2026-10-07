@@ -1,0 +1,86 @@
+name: Build iOS Production Candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type deploy-production to build against DAN production
+        required: true
+        type: string
+      bundle_id:
+        description: Registered Apple production bundle ID
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-production-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: macos-26
+    timeout-minutes: 35
+    environment: production
+    env:
+      DAN_ENV: production
+      DAN_IOS_BUNDLE_ID: ${{ inputs.bundle_id }}
+      VITE_DATA_MODE: supabase
+      VITE_DAN_ENV: production
+      VITE_BASE: /
+      VITE_SUPABASE_URL: https://hcbooyexjgsjzjncpvtk.supabase.co
+      VITE_SUPABASE_ANON_KEY: sb_publishable_S_rPcZDrwXl9JBEe0-zWfw_BISr12xd
+      PRODUCTION_DEPLOY_CONFIRM: ${{ inputs.confirm }}
+      PRODUCTION_CLOUDFLARE_PROJECT: dan
+      DAN_PRODUCTION_SUPABASE_PROJECT_REF: hcbooyexjgsjzjncpvtk
+      PRODUCTION_VITE_SUPABASE_URL: https://hcbooyexjgsjzjncpvtk.supabase.co
+      PRODUCTION_VITE_SUPABASE_ANON_KEY: sb_publishable_S_rPcZDrwXl9JBEe0-zWfw_BISr12xd
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Verify Xcode and install dependencies
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          npm ci
+      - name: Prepare production iOS project
+        run: npm run ios:production
+      - name: Verify production target metadata
+        run: |
+          set -euo pipefail
+          grep -F "<string>DAN</string>" ios/App/App/Info.plist
+          grep -F "<array><string>dan</string></array>" ios/App/App/Info.plist
+          grep -F "PRODUCT_BUNDLE_IDENTIFIER = ${DAN_IOS_BUNDLE_ID};" ios/App/App.xcodeproj/project.pbxproj
+      - name: Compile simulator app
+        run: |
+          set -euo pipefail
+          mkdir -p ios-build
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath ios-build/simulator \
+            CODE_SIGNING_ALLOWED=NO build > ios-build/simulator-build.log 2>&1 || { tail -n 100 ios-build/simulator-build.log; exit 1; }
+          ditto -c -k --keepParent ios-build/simulator/Build/Products/Release-iphonesimulator/App.app ios-build/DAN-Production-Simulator.zip
+      - name: Compile unsigned device archive
+        run: |
+          set -euo pipefail
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath ios-build/DAN-Production-Unsigned.xcarchive \
+            -derivedDataPath ios-build/device CODE_SIGNING_ALLOWED=NO archive \
+            > ios-build/device-build.log 2>&1 || { tail -n 100 ios-build/device-build.log; exit 1; }
+          ditto -c -k --keepParent ios-build/DAN-Production-Unsigned.xcarchive ios-build/DAN-Production-Unsigned-Archive.zip
+          printf 'Source SHA: %s\nEnvironment: production\nBundle ID: %s\nNative callback: dan://auth/callback\nUnsigned archive only; App Store upload requires Apple signing.\n' "$GITHUB_SHA" "$DAN_IOS_BUNDLE_ID" > ios-build/BUILD-INFO.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dan-ios-production-${{ github.sha }}
+          path: |
+            ios-build/*.zip
+            ios-build/*.txt
+            ios-build/*.log
+          if-no-files-found: error
+          retention-days: 14
