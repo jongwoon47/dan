@@ -21,6 +21,7 @@ import {
 import { clearViewerGeo, type ViewerGeo } from "@/lib/geoDistance";
 import { requestViewerGeo } from "@/lib/requestViewerGeo";
 import { translate, useDanLocale } from "@/i18n/locale";
+import { categoryLabel } from "@/i18n/categories";
 import { addSavedArea, useSavedAreas } from "@/lib/savedAreas";
 import {
   filterAndSortLiveDemand,
@@ -520,7 +521,7 @@ export function DemandFeedPage() {
                   className={category === itemCategory ? "discovery-chip is-active" : "discovery-chip"}
                   onClick={() => updateCategory(itemCategory)}
                 >
-                  {CATEGORY_LABEL[itemCategory]} <span>{count}</span>
+                  {categoryLabel(locale, itemCategory)} <span>{count}</span>
                 </button>
               ))}
             </div>
