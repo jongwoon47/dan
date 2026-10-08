@@ -47,6 +47,22 @@ describe("location discovery", () => {
     expect(matchesLocationDiscovery(onsite, filter("online"))).toBe(false);
     expect(matchesLocationDiscovery(onsite, filter("all"))).toBe(true);
   });
+  it("only matches explicitly declared pickup/delivery endpoints", () => {
+    const routeDemand: LocationDemand = {
+      id: "route",
+      fulfillmentOptions: [{
+        mode: "ROUTE",
+        from: { publicLabel: "福岡県 · 博多駅", region2: "博多駅" },
+        to: { publicLabel: "福岡県 · 天神駅", region2: "天神駅" },
+      }],
+    };
+    const base = filter("all");
+    expect(matchesLocationDiscovery(routeDemand, { ...base, mode: "route", routeFrom: "博多駅", routeTo: "天神駅" })).toBe(true);
+    expect(matchesLocationDiscovery(routeDemand, { ...base, mode: "route", routeFrom: "天神駅", routeTo: "博多駅" })).toBe(false);
+    expect(matchesLocationDiscovery(routeDemand, { ...base, mode: "route", routeFrom: "博多駅", routeTo: "" })).toBe(false);
+    expect(matchesLocationDiscovery(onsite, { ...base, mode: "route", routeFrom: "博多駅", routeTo: "天神駅" })).toBe(false);
+  });
+
   it("batches RPC calls at 40 IDs and eliminates duplicates", () => {
     const batches = distanceRequestBatches([...Array.from({ length: 81 }, (_, i) => String(i)), "0"]);
     expect(batches.map((batch) => batch.length)).toEqual([40, 40, 1]);
