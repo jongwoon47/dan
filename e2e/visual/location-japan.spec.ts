@@ -6,6 +6,7 @@ test("Japanese location discovery, saved area, and route controls", async ({ pag
   await page.getByRole("combobox", { name: "표시 언어" }).selectOption("ja");
   await expect(page.getByRole("heading", { name: "表示言語" })).toBeVisible();
 
+  await page.getByRole("combobox", { name: "活動する国" }).selectOption("JP");
   await page.getByPlaceholder("例：博多区、城東区").fill("博多区");
   await page.getByRole("button", { name: "地域を保存" }).click();
   await expect(page.getByRole("link", { name: /JP · 博多区/ })).toBeVisible();
