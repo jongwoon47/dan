@@ -1,0 +1,33 @@
+import { beforeEach, describe, expect, it } from "vitest";
+import { addSavedArea, parseSavedAreas, removeSavedArea } from "./savedAreas";
+
+beforeEach(() => { localStorage.clear(); });
+
+describe("saved activity areas", () => {
+  it("saves at most three region labels and removes one", () => {
+    expect(addSavedArea({ country: "JP", label: "博多区" })).toBe("saved");
+    expect(addSavedArea({ country: "JP", label: "博多区" })).toBe("exists");
+    expect(addSavedArea({ country: "KR", label: "성동구" })).toBe("saved");
+    expect(addSavedArea({ country: "JP", label: "熊本市" })).toBe("saved");
+    expect(addSavedArea({ country: "KR", label: "강남구" })).toBe("full");
+    removeSavedArea({ country: "JP", label: "博多区" });
+    expect(addSavedArea({ country: "KR", label: "강남구" })).toBe("saved");
+  });
+
+  it("rejects invalid and duplicate values from untrusted local storage", () => {
+    expect(addSavedArea({ country: "KR", label: "" })).toBe("invalid");
+    expect(parseSavedAreas("not json")).toEqual([]);
+    expect(parseSavedAreas(JSON.stringify([
+      { label: "博多区", country: "JP" },
+      { label: "博多区", country: "JP" },
+      { label: "하카타", country: "INVALID" },
+    ]))).toEqual([{ label: "博多区", country: "JP" }]);
+  });
+
+  it("never persists coordinates as saved areas", () => {
+    addSavedArea({ country: "KR", label: "성동구" });
+    const stored = localStorage.getItem("dan-saved-areas-v1") ?? "";
+    expect(stored).not.toContain("lat");
+    expect(stored).not.toContain("lng");
+  });
+});
