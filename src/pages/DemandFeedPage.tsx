@@ -396,7 +396,7 @@ export function DemandFeedPage() {
               className={requestType === option.value ? "is-active" : ""}
               onClick={() => updateType(option.value)}
             >
-              {option.label}
+              {option.value === "all" ? t("all") : option.value === "BUY" ? t("buy") : option.value === "BORROW" ? t("borrow") : option.value === "TASK" ? t("task") : t("service")}
             </button>
           ))}
         </div>
@@ -419,7 +419,7 @@ export function DemandFeedPage() {
                   if (option.value !== "all" && requestType === "BUY") setRequestType("all");
                 }}
               >
-                {option.value === "all" ? t("all") : option.value === "BUY" ? t("buy") : option.value === "BORROW" ? t("borrow") : option.value === "TASK" ? t("task") : t("service")}
+                {option.value === "all" ? t("allAreas") : option.value === "nearby" ? t("nearby") : option.value === "area" ? t("byArea") : t("online")}
               </button>
             ))}
           </div>
