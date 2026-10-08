@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { ProductVisual } from "@/components/ProductVisual";
 import { CATEGORY_LABEL, type DemandAggregate, type Product } from "@/domain/types";
-import { formatWon } from "@/lib/format";
+import { formatKRWForLanguage } from "@/lib/format";
+import { useDanLocale } from "@/i18n/locale";
 import "./feedCards.css";
 
 export function AggregatedDemandCard({
@@ -11,6 +12,7 @@ export function AggregatedDemandCard({
   product: Product;
   aggregate: DemandAggregate;
 }) {
+  const locale = useDanLocale();
   const price = aggregate.highestIntentPrice;
   const recentCount = Math.max(
     1,
@@ -33,7 +35,7 @@ export function AggregatedDemandCard({
           <div>
             <div className="live-demand-card__eyebrow">
               <span>{CATEGORY_LABEL[product.category]}</span>
-              {growth > 0 ? <strong>7일 +{growth}</strong> : null}
+              {growth > 0 ? <strong>{locale === "ja" ? "7日" : "7일"} +{growth}</strong> : null}
             </div>
             <h3>{product.name}</h3>
             <span className="live-demand-card__finish">{subtitle}</span>
@@ -47,15 +49,15 @@ export function AggregatedDemandCard({
 
         <div className="live-demand-card__signals">
           <span className="live-demand-card__demand">
-            <strong>{aggregate.seekerCount}</strong>명 찾는 중
+            <strong>{aggregate.seekerCount}</strong>{locale === "ja" ? "人が探しています" : "명 찾는 중"}
           </span>
-          <span>{aggregate.fulfillmentSummary || "거래방식 확인"}</span>
-          <span>최근 확인 {recentCount}명</span>
+          <span>{aggregate.fulfillmentSummary || (locale === "ja" ? "受け渡し方法を確認" : "거래방식 확인")}</span>
+          <span>{locale === "ja" ? "最近確認" : "최근 확인"} {recentCount}{locale === "ja" ? "人" : "명"}</span>
         </div>
 
         {price > 0 ? (
           <p className="live-demand-card__price">
-            최대 희망가 <strong>{formatWon(price)}</strong>
+            {locale === "ja" ? "希望価格の上限" : "최대 희망가"} <strong>{formatKRWForLanguage(price, locale)}</strong>
           </p>
         ) : null}
       </div>
