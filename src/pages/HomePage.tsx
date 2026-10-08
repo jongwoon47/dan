@@ -5,6 +5,8 @@ import { IndividualDemandCard } from "@/components/IndividualDemandCard";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDan } from "@/domain/danContext";
+import { translate, useDanLocale } from "@/i18n/locale";
+import { useSavedAreas } from "@/lib/savedAreas";
 import { CATEGORY_LABEL, type ProductCategory } from "@/domain/types";
 import "./pages.css";
 import "@/components/feedCards.css";
@@ -12,6 +14,9 @@ import "@/components/feedCards.css";
 type HomeCategory = "all" | ProductCategory;
 
 export function HomePage() {
+  const locale = useDanLocale();
+  const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
+  const savedAreas = useSavedAreas();
   const { demandFeed } = useDan();
   const navigate = useNavigate();
   const [category, setCategory] = useState<HomeCategory>("all");
@@ -71,13 +76,13 @@ export function HomePage() {
       <section className="home-demand-header home-demand-header--app">
         <div className="home-demand-heading">
           <span className="home-demand-kicker">DAN</span>
-          <h1>무엇이 필요하세요?</h1>
-          <p>찾는 물건부터 빌리기, 심부름, 서비스까지 먼저 요청해보세요.</p>
+          <h1>{t("whatNeed")}</h1>
+          <p>{t("homeLead")}</p>
         </div>
 
         <form
           className="home-intent-composer"
-          aria-label="요청 검색"
+          aria-label={t("requestSearch")}
           onSubmit={(event) => {
             event.preventDefault();
             const query = intentQuery.trim();
@@ -95,23 +100,36 @@ export function HomePage() {
             <input
               value={intentQuery}
               onChange={(event) => setIntentQuery(event.target.value)}
-              placeholder="무엇을 찾고 있나요?"
+              placeholder={t("searchPlaceholder")}
               autoComplete="off"
-              aria-label="요청 검색"
+              aria-label={t("requestSearch")}
             />
-            <small>구매 · 빌리기 · 심부름 · 서비스를 함께 찾아보세요</small>
+            <small>{t("homeLead")}</small>
           </label>
-          <button type="submit" className="home-intent-composer__submit" aria-label="요청 검색">
+          <button type="submit" className="home-intent-composer__submit" aria-label={t("requestSearch")}>
             <span aria-hidden>›</span>
           </button>
         </form>
 
         <div className="home-request-types" aria-label="요청 유형">
-          <Link to="/create?type=BUY">구매</Link>
-          <Link to="/create?type=BORROW">빌리기</Link>
-          <Link to="/create?type=TASK">심부름</Link>
-          <Link to="/create?type=SERVICE">서비스</Link>
+          <Link to="/create?type=BUY">{t("buy")}</Link>
+          <Link to="/create?type=BORROW">{t("borrow")}</Link>
+          <Link to="/create?type=TASK">{t("task")}</Link>
+          <Link to="/create?type=SERVICE">{t("service")}</Link>
         </div>
+
+        {savedAreas.length > 0 ? (
+          <div className="home-saved-areas" aria-label={t("savedAreas")}>
+            <strong>{t("savedAreas")}</strong>
+            <div className="home-saved-areas__links">
+              {savedAreas.map((area) => (
+                <Link key={area.country + area.label} to={`/feed?area=${encodeURIComponent(area.label)}`}>
+                  {area.country === "JP" ? "JP" : "KR"} · {area.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <div className="home-demand-filters" aria-label="제품 카테고리">
           <button
@@ -119,7 +137,7 @@ export function HomePage() {
             className={category === "all" ? "demand-filter is-active" : "demand-filter"}
             onClick={() => setCategory("all")}
           >
-            전체 {totalDemand}
+            {t("all")} {totalDemand}
           </button>
           {categoryRows.map(([itemCategory, count]) => (
             <button
@@ -137,16 +155,16 @@ export function HomePage() {
       <section className="home-live-section">
         <div className="home-live-heading">
           <div>
-            <span>지금 올라온 요청</span>
-            <h2>찾는 사람이 많은 물건</h2>
+            <span>{t("openRequests")}</span>
+            <h2>{t("popularThings")}</h2>
           </div>
-          <Link to="/feed">더보기 <span aria-hidden>›</span></Link>
+          <Link to="/feed">{t("more")} <span aria-hidden>›</span></Link>
         </div>
         {visibleProducts.length === 0 ? (
           <EmptyState
-            title="아직 이 카테고리의 요청이 없어요"
-            body="찾는 물건을 직접 입력해 첫 요청을 올릴 수 있어요."
-            action={<Button to="/create?type=BUY">구매 요청 올리기</Button>}
+            title={t("noProducts")}
+            body={t("noProductsDetail")}
+            action={<Button to="/create?type=BUY">{t("createRequest")}</Button>}
           />
         ) : (
           <div className="live-demand-list">
@@ -178,10 +196,10 @@ export function HomePage() {
         <section className="home-live-section home-individual-section">
           <div className="home-live-heading">
             <div>
-              <span>빌리기 · 심부름 · 서비스</span>
-              <h2>최근 올라온 요청</h2>
+              <span>{t("borrow")} · {t("task")} · {t("service")}</span>
+              <h2>{t("recentRequests")}</h2>
             </div>
-            <Link to="/feed">전체 보기 <span aria-hidden>›</span></Link>
+            <Link to="/feed">{t("browseAll")} <span aria-hidden>›</span></Link>
           </div>
           <div className="mixed-demand-list home-mixed-request-list">
             {recentIndividualRequests.map((item) =>
