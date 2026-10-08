@@ -60,7 +60,7 @@ export function SettingsPage() {
           {savedAreas.length === 0 ? <p className="location-pref-hint">{t("noSavedAreas")}</p> : null}
           {savedAreas.map((area) => (
             <div className="location-pref-row" key={area.country + ":" + area.label}>
-              <Link to={`/feed?area=${encodeURIComponent(area.label)}`}>
+              <Link to={`/feed?area=${encodeURIComponent(area.label)}&country=${area.country}`}>
                 {area.country === "JP" ? "JP" : "KR"} · {area.label}
               </Link>
               <button type="button" onClick={() => removeSavedArea(area)} aria-label={t("remove") + " " + area.label}>
