@@ -70,7 +70,8 @@ jobs:
         run: command -v supabase >/dev/null 2>&1 && supabase stop --no-backup || true
 
   visual:
-    needs: [verify, supabase]
+    # Visual QA runs in isolated demo mode and must not be blocked by local DB startup.
+    needs: [verify]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
