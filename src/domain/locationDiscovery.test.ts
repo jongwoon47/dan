@@ -8,7 +8,7 @@ import {
 
 const onsite: LocationDemand = {
   id: "onsite",
-  fulfillmentOptions: [{ mode: "ONSITE", place: { publicLabel: "후쿠오카시 하카타구", region2: "하카타구" } }],
+  fulfillmentOptions: [{ mode: "ONSITE", place: { publicLabel: "福岡県 · 福岡市 · 博多区", region2: "博多区" } }],
 };
 const mixed: LocationDemand = {
   id: "mixed",
@@ -36,7 +36,7 @@ describe("location discovery", () => {
   });
   it("matches explicitly labeled area without claiming GPS distance", () => {
     expect(matchesLocationDiscovery(onsite, filter("area", "ハカタ"))).toBe(false);
-    expect(matchesLocationDiscovery(onsite, filter("area", "하카타구"))).toBe(true);
+    expect(matchesLocationDiscovery(onsite, filter("area", "博多区"))).toBe(true);
     expect(matchesLocationDiscovery(mixed, filter("area", "성동구"))).toBe(true);
     expect(matchesLocationDiscovery(online, filter("area", "서울"))).toBe(false);
     expect(matchesLocationDiscovery(onsite, filter("area", ""))).toBe(false);
