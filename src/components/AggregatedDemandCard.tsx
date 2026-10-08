@@ -3,6 +3,7 @@ import { ProductVisual } from "@/components/ProductVisual";
 import { CATEGORY_LABEL, type DemandAggregate, type Product } from "@/domain/types";
 import { formatKRWForLanguage } from "@/lib/format";
 import { useDanLocale } from "@/i18n/locale";
+import { categoryLabel } from "@/i18n/categories";
 import "./feedCards.css";
 
 export function AggregatedDemandCard({
@@ -25,7 +26,7 @@ export function AggregatedDemandCard({
   const subtitle =
     product.brand && product.model && product.model !== product.name
       ? `${product.brand} · ${product.model}`
-      : product.brand || CATEGORY_LABEL[product.category];
+      : product.brand || categoryLabel(locale, product.category);
 
   return (
     <Link to={`/demand/${product.id}`} className="live-demand-card">
@@ -34,7 +35,7 @@ export function AggregatedDemandCard({
         <div className="live-demand-card__top">
           <div>
             <div className="live-demand-card__eyebrow">
-              <span>{CATEGORY_LABEL[product.category]}</span>
+              <span>{categoryLabel(locale, product.category)}</span>
               {growth > 0 ? <strong>{locale === "ja" ? "7日" : "7일"} +{growth}</strong> : null}
             </div>
             <h3>{product.name}</h3>
