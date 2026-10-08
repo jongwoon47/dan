@@ -2,6 +2,14 @@ import { ko } from "@/copy/ko";
 import { formatWhenShort } from "@/lib/datetime";
 import type { Demand } from "@/domain/types";
 
+/** Until Japan multi-currency accounting ships, all live amounts remain KRW. */
+export function formatKRWForLanguage(value: number, language: "ko" | "ja"): string {
+  if (!Number.isFinite(value)) return "";
+  return language === "ja"
+    ? new Intl.NumberFormat("ja-JP", { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(value)
+    : formatWon(value);
+}
+
 export function formatWon(value: number): string {
   return `${value.toLocaleString("ko-KR")}${ko.won}`;
 }
