@@ -1,0 +1,72 @@
+import { collectRegion2Keys, hasRemoteOption, hasShippingOption } from "./fulfillment";
+import type { Demand } from "./types";
+
+export type LocationDiscoveryMode = "all" | "nearby" | "area" | "online";
+export type LocationDemand = Pick<Demand, "id" | "fulfillmentOptions">;
+
+export type LocationDiscoveryFilter = {
+  mode: LocationDiscoveryMode;
+  radiusKm: number;
+  areaQuery: string;
+  /** Approximate server-computed distance only. Never query public raw coordinates. */
+  approximateMetersById: Record<string, number>;
+};
+
+export function hasPhysicalFulfillment(demand: LocationDemand): boolean {
+  return demand.fulfillmentOptions.some(
+    (option) =>
+      option.mode === "MEETUP" ||
+      option.mode === "ONSITE" ||
+      option.mode === "PICKUP" ||
+      option.mode === "ROUTE",
+  );
+}
+
+function normalizeArea(value: string): string {
+  return value.normalize("NFKC").trim().toLocaleLowerCase();
+}
+
+/**
+ * Physical requests without server-calculated distance are excluded from GPS
+ * radius mode, not assigned a guessed distance or a fabricated map pin.
+ * Text area matching is explicitly approximate and never labeled "km".
+ */
+export function matchesLocationDiscovery(
+  demand: LocationDemand,
+  filter: LocationDiscoveryFilter,
+): boolean {
+  const options = demand.fulfillmentOptions;
+  switch (filter.mode) {
+    case "all":
+      return true;
+    case "online":
+      return hasRemoteOption(options) || hasShippingOption(options);
+    case "area": {
+      const query = normalizeArea(filter.areaQuery);
+      if (!query || !hasPhysicalFulfillment(demand)) return false;
+      return collectRegion2Keys(options).some((candidate) => {
+        const value = normalizeArea(candidate);
+        return value.length > 0 && (value.includes(query) || query.includes(value));
+      });
+    }
+    case "nearby": {
+      if (!hasPhysicalFulfillment(demand)) return false;
+      const meters = filter.approximateMetersById[demand.id];
+      return Number.isFinite(meters) && meters >= 0 &&
+        Number.isFinite(filter.radiusKm) && filter.radiusKm > 0 &&
+        meters <= filter.radiusKm * 1000;
+    }
+  }
+}
+
+export function distanceRequestBatches(ids: string[], maxBatchSize = 40): string[][] {
+  if (!Number.isInteger(maxBatchSize) || maxBatchSize < 1 || maxBatchSize > 40) {
+    throw new Error("distance RPC batch size must be between 1 and 40");
+  }
+  const unique = [...new Set(ids.filter(Boolean))];
+  const batches: string[][] = [];
+  for (let i = 0; i < unique.length; i += maxBatchSize) {
+    batches.push(unique.slice(i, i + maxBatchSize));
+  }
+  return batches;
+}
