@@ -354,7 +354,7 @@ test("V3 explore searches all request types and carries a missing query into cre
   await settle(page);
 
   await expect(page.getByRole("heading", { name: "지금 올라온 요청" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "심부름" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "심부름", exact: true })).toBeVisible();
   await page.getByLabel("요청 검색").fill("Aeron");
   await expect(page.getByText("Herman Miller Aeron Chair")).toBeVisible();
   await expectNoHorizontalOverflow(page);
