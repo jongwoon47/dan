@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { NetworkStatusBanner } from "@/components/system/NetworkStatusBanner";
 import { ko } from "@/copy/ko";
+import { translate, useDanLocale } from "@/i18n/locale";
 import { useDan } from "@/domain/danContext";
 import { DeepHeader } from "./DeepHeader";
 import { ShellChromeProvider, useShellChrome } from "./ShellChrome";
@@ -33,6 +35,9 @@ function IconBell({ active }: { active?: boolean }) {
 function formatUnreadBadge(count: number): string { if (count <= 0) return ""; if (count > 9) return "9+"; return String(count); }
 
 function AppShellInner() {
+  const locale = useDanLocale();
+  const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
+  useEffect(() => { document.documentElement.lang = locale; }, [locale]);
   const { currentUser, isLoggedIn, login, logout, unreadActivityCount, unreadChatCount, unreadMyDanCount } = useDan();
   const { pathname } = useLocation();
   const mode = getShellMode(pathname);
@@ -48,9 +53,9 @@ function AppShellInner() {
       {mode === "root" ? (
         <header className="top-nav">
           <div className="top-nav__inner">
-            <NavLink to="/" className="brand" aria-label="DAN 홈">
+            <NavLink to="/" className="brand" aria-label={"DAN " + t("home")}>
               <img className="brand__logo" src={`${import.meta.env.BASE_URL}dan-logo.png`} alt="" width={36} height={36} />
-              <span className="brand__text"><span className="brand__mark">DAN</span><span className="brand__tag">{ko.brandTag}</span></span>
+              <span className="brand__text"><span className="brand__mark">DAN</span><span className="brand__tag">{locale === "ja" ? "探す人から" : ko.brandTag}</span></span>
             </NavLink>
             <div className="top-nav__mobile-actions">
               {isLoggedIn ? (
@@ -61,17 +66,17 @@ function AppShellInner() {
               <NavLink
                 to={currentUser ? `/profile/${currentUser.id}` : "/login"}
                 className="top-nav__mobile-search"
-                aria-label="내 프로필"
+                aria-label={t("profile")}
               >
                 <IconProfile />
               </NavLink>
             </div>
             <nav className="top-nav__links" aria-label="주요 메뉴">
-              <NavLink to="/" end>홈</NavLink>
-              <NavLink to="/feed">탐색</NavLink>
-              <NavLink to="/create">요청</NavLink>
-              <NavLink to="/chats">채팅</NavLink>
-              <NavLink to="/my">내 거래</NavLink>
+              <NavLink to="/" end>{t("home")}</NavLink>
+              <NavLink to="/feed">{t("explore")}</NavLink>
+              <NavLink to="/create">{t("request")}</NavLink>
+              <NavLink to="/chats">{t("chat")}</NavLink>
+              <NavLink to="/my">{t("myTrades")}</NavLink>
             </nav>
             <div className="top-nav__auth top-nav__auth--desktop">
               {isLoggedIn && currentUser ? (
@@ -80,9 +85,9 @@ function AppShellInner() {
                     {({ isActive }) => <span className="top-nav__bell-wrap"><IconBell active={isActive} />{bellBadge ? <span className="nav-badge nav-badge--float">{bellBadge}</span> : null}</span>}
                   </NavLink>
                   <NavLink to={`/profile/${currentUser.id}`} className="top-nav__user">{currentUser.name}</NavLink>
-                  <Button size="sm" variant="secondary" onClick={logout}>{ko.logout}</Button>
+                  <Button size="sm" variant="secondary" onClick={logout}>{t("logout")}</Button>
                 </>
-              ) : <Button size="sm" onClick={() => login()}>{ko.login}</Button>}
+              ) : <Button size="sm" onClick={() => login()}>{t("login")}</Button>}
             </div>
           </div>
         </header>
@@ -96,11 +101,11 @@ function AppShellInner() {
 
       {mode === "root" ? (
         <nav className="bottom-nav bottom-nav--v1" aria-label="하단 메뉴">
-          <NavLink to="/" end>{({ isActive }) => <><IconHome active={isActive} /><span>홈</span></>}</NavLink>
-          <NavLink to="/feed"><IconSearch /><span>탐색</span></NavLink>
-          <NavLink to="/create" className="bottom-nav__create" aria-label="요청 등록"><span className="bottom-nav__create-circle"><IconPlus /></span><span>요청</span></NavLink>
-          <NavLink to="/chats">{({ isActive }) => <><span className="bottom-nav__icon-wrap"><IconChat active={isActive} />{chatBadge ? <span className="nav-badge nav-badge--float">{chatBadge}</span> : null}</span><span>채팅</span></>}</NavLink>
-          <NavLink to="/my">{({ isActive }) => <><span className="bottom-nav__icon-wrap"><IconDemand active={isActive} />{myBadge ? <span className="nav-badge nav-badge--float">{myBadge}</span> : null}</span><span>내 거래</span></>}</NavLink>
+          <NavLink to="/" end>{({ isActive }) => <><IconHome active={isActive} /><span>{t("home")}</span></>}</NavLink>
+          <NavLink to="/feed"><IconSearch /><span>{t("explore")}</span></NavLink>
+          <NavLink to="/create" className="bottom-nav__create" aria-label={t("createRequest")}><span className="bottom-nav__create-circle"><IconPlus /></span><span>{t("request")}</span></NavLink>
+          <NavLink to="/chats">{({ isActive }) => <><span className="bottom-nav__icon-wrap"><IconChat active={isActive} />{chatBadge ? <span className="nav-badge nav-badge--float">{chatBadge}</span> : null}</span><span>{t("chat")}</span></>}</NavLink>
+          <NavLink to="/my">{({ isActive }) => <><span className="bottom-nav__icon-wrap"><IconDemand active={isActive} />{myBadge ? <span className="nav-badge nav-badge--float">{myBadge}</span> : null}</span><span>{t("myTrades")}</span></>}</NavLink>
         </nav>
       ) : null}
     </div>
