@@ -43,7 +43,7 @@ for (const width of [320, 390, 430]) {
     await page.goto("/");
     await settle(page);
     await expect(page.getByRole("heading", { name: "무엇이 필요하세요?" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "심부름" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "심부름", exact: true })).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
     await page.goto("/create");
