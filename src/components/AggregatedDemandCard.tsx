@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ProductVisual } from "@/components/ProductVisual";
-import { CATEGORY_LABEL, type DemandAggregate, type Product } from "@/domain/types";
+import { type DemandAggregate, type Product } from "@/domain/types";
 import { formatKRWForLanguage } from "@/lib/format";
 import { useDanLocale } from "@/i18n/locale";
 import { categoryLabel } from "@/i18n/categories";
