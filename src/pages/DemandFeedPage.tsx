@@ -144,10 +144,13 @@ export function DemandFeedPage() {
   );
 
   const physicalDemandIds = useMemo(
-    () => individualRows
-      .filter((item) => hasPhysicalFulfillment(item.demand))
+    () => demandFeed
+      .filter(
+        (item): item is Extract<FeedItem, { kind: "individual" }> =>
+          item.kind === "individual" && hasPhysicalFulfillment(item.demand),
+      )
       .map((item) => item.demand.id),
-    [individualRows],
+    [demandFeed],
   );
 
   useEffect(() => {
@@ -182,7 +185,7 @@ export function DemandFeedPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [locationMode, viewerGeo, productionDiscovery, currentUser, physicalDemandIds]);
+  }, [locationMode, viewerGeo, productionDiscovery, currentUser?.id, physicalDemandIds]);
 
   useEffect(() => {
     if (!productionDiscovery || !includesBuy) {
