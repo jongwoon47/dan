@@ -13,6 +13,14 @@ export function saveViewerGeo(lat: number, lng: number): void {
   }
 }
 
+export function clearViewerGeo(): void {
+  try {
+    sessionStorage.removeItem(VIEWER_GEO_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function loadViewerGeo(maxAgeMs = 6 * 3600_000): ViewerGeo | null {
   try {
     const raw = sessionStorage.getItem(VIEWER_GEO_KEY);
