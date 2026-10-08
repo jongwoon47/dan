@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDan } from "@/domain/danContext";
 import { translate, useDanLocale } from "@/i18n/locale";
+import { categoryLabel } from "@/i18n/categories";
 import { useSavedAreas } from "@/lib/savedAreas";
 import { CATEGORY_LABEL, type ProductCategory } from "@/domain/types";
 import "./pages.css";
@@ -146,7 +147,7 @@ export function HomePage() {
               className={category === itemCategory ? "demand-filter is-active" : "demand-filter"}
               onClick={() => setCategory(itemCategory)}
             >
-              {CATEGORY_LABEL[itemCategory]} {count}
+              {categoryLabel(locale, itemCategory)} {count}
             </button>
           ))}
         </div>
