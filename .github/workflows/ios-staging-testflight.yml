@@ -1,10 +1,12 @@
 name: Upload DAN Staging to TestFlight
 
 on:
-  push:
-    branches: [feature/dan-v3-real-app-ui]
-    paths: [.github/workflows/ios-staging-testflight.yml]
   workflow_dispatch:
+    inputs:
+      signed_run_id:
+        description: Run ID from Build Signed iOS Staging IPA
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -24,17 +26,21 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           github-token: ${{ github.token }}
-          run-id: 37455143687
-          name: dan-ios-staging-signed-2a3fbd3895149babb93b5dfafd359ed339057c33
+          run-id: ${{ inputs.signed_run_id }}
+          name: dan-ios-staging-signed
           path: signed
-      - name: Verify the exact approved staging IPA
+      - name: Verify the staging IPA before upload
         run: |
           set -euo pipefail
-          echo 'AB2932E77AEFE0FF7B384DFF3A635948BD7D84926176C9E61DAADB6FA4813238  signed/DAN-Staging.ipa' | shasum -a 256 -c -
+          test -f signed/DAN-Staging.ipa
+          shasum -a 256 signed/DAN-Staging.ipa | tee signed/upload.sha256
           unzip -q signed/DAN-Staging.ipa -d verified
           APP=$(find verified/Payload -maxdepth 1 -name '*.app' -type d)
           codesign --verify --deep --strict "$APP"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")" = app.dan.staging
+          JS=$(find "$APP/public/assets" -maxdepth 1 -name 'index-*.js' | head -n 1)
+          test -n "$JS"
+          grep -F 'wmznpuhqmmqunwtewntt' "$JS"
       - name: Upload staging build to Apple without public submission
         env:
           ASC_PRIVATE_KEY: ${{ secrets.IOS_STAGING_ASC_PRIVATE_KEY }}

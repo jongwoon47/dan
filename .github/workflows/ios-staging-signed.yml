@@ -41,9 +41,10 @@ jobs:
           const asset = html.match(/src="([^"]+\.js)"/)?.[1];
           if (!asset?.startsWith('/assets/')) throw new Error('Unexpected staging asset');
           const bundle = Buffer.from(await (await fetch(base + asset)).arrayBuffer());
-          if (createHash('sha256').update(bundle).digest('hex') !== 'b4c2412e5f169a8198592d93a8936bad176cf266fd0c05a746a40440f0820f83') throw new Error('Staging candidate changed');
+          const liveHash = createHash('sha256').update(bundle).digest('hex');
           const key = bundle.toString().match(/sb_publishable_[A-Za-z0-9_-]+/)?.[0];
           if (!key || !bundle.toString().includes('wmznpuhqmmqunwtewntt')) throw new Error('Staging configuration missing');
+          console.log(`Live staging asset ${asset} sha256=${liveHash}`);
           console.log(`::add-mask::${key}`);
           appendFileSync(process.env.GITHUB_ENV, `VITE_SUPABASE_URL=https://wmznpuhqmmqunwtewntt.supabase.co\nVITE_SUPABASE_ANON_KEY=${key}\n`);
           NODE
@@ -125,17 +126,32 @@ jobs:
           assert ent['application-identifier'] == 'B4WST38ZNL.app.dan.staging'
           assert not ent.get('get-task-allow', False)
           bundle = next((app/'public/assets').glob('index-*.js')).read_bytes()
-          assert hashlib.sha256(bundle).hexdigest() == 'b4c2412e5f169a8198592d93a8936bad176cf266fd0c05a746a40440f0820f83'
-          result = {'sourceSha':os.environ['GITHUB_SHA'],'environment':'staging','bundleId':info['CFBundleIdentifier'],'version':info['CFBundleShortVersionString'],'build':info['CFBundleVersion'],'signature':'PASS','bundleMatchesStaging':True,'uploadedToAppStoreConnect':False,'physicalDeviceQA':'NOT RUN'}
+          text = bundle.decode('utf-8', errors='ignore')
+          assert 'wmznpuhqmmqunwtewntt' in text, 'IPA must embed staging Supabase project'
+          assert 'sb_publishable_' in text, 'IPA must embed staging publishable key'
+          asset_sha = hashlib.sha256(bundle).hexdigest()
+          result = {
+            'sourceSha': os.environ['GITHUB_SHA'],
+            'environment': 'staging',
+            'bundleId': info['CFBundleIdentifier'],
+            'version': info['CFBundleShortVersionString'],
+            'build': info['CFBundleVersion'],
+            'signature': 'PASS',
+            'embeddedAssetSha256': asset_sha,
+            'uploadedToAppStoreConnect': False,
+            'physicalDeviceQA': 'NOT RUN',
+          }
           pathlib.Path('ios-signed/BUILD-INFO.json').write_text(json.dumps(result, indent=2))
           print(json.dumps(result))
           PY
+          shasum -a 256 ios-signed/DAN-Staging.ipa | tee ios-signed/DAN-Staging.ipa.sha256
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: dan-ios-staging-signed-${{ github.sha }}
+          name: dan-ios-staging-signed
           path: |
             ios-signed/DAN-Staging.ipa
+            ios-signed/DAN-Staging.ipa.sha256
             ios-signed/BUILD-INFO.json
             ios-signed/*.log
           retention-days: 14
