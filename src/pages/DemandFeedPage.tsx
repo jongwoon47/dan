@@ -53,6 +53,7 @@ const LOCATION_MODES: Array<{ value: LocationDiscoveryMode; label: string }> = [
   { value: "nearby", label: "내 주변" },
   { value: "area", label: "지역명" },
   { value: "online", label: "온라인·택배" },
+  { value: "route", label: "동선 심부름" },
 ];
 
 const REQUEST_TYPES: Array<{ value: RequestTypeFilter; label: string }> = [
@@ -74,7 +75,7 @@ function toFeedRow(row: RemoteLiveDemandRow): LiveDemandRow {
 }
 
 function matchesIndividualQuery(item: Extract<FeedItem, { kind: "individual" }>, raw: string) {
-  const query = raw.trim().toLocaleLowerCase("ko-KR");
+  const query = raw.trim().normalize("NFKC").toLocaleLowerCase();
   if (!query) return true;
   const demand = item.demand;
   const hay = [
@@ -84,7 +85,7 @@ function matchesIndividualQuery(item: Extract<FeedItem, { kind: "individual" }>,
   ]
     .filter(Boolean)
     .join(" ")
-    .toLocaleLowerCase("ko-KR");
+    .normalize("NFKC").toLocaleLowerCase();
   return hay.includes(query);
 }
 
@@ -103,6 +104,8 @@ export function DemandFeedPage() {
   const [areaQuery, setAreaQuery] = useState(urlArea);
   const [areaCountry, setAreaCountry] = useState<"KR" | "JP">(urlCountry === "JP" || (!urlCountry && locale === "ja") ? "JP" : "KR");
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
+  const [routeFrom, setRouteFrom] = useState("");
+  const [routeTo, setRouteTo] = useState("");
   const [radiusKm, setRadiusKm] = useState(3);
   const [viewerGeo, setViewerGeo] = useState<ViewerGeo | null>(null);
   const [locating, setLocating] = useState(false);
@@ -260,6 +263,8 @@ export function DemandFeedPage() {
         mode: locationMode,
         radiusKm,
         areaQuery,
+        routeFrom,
+        routeTo,
         approximateMetersById: distanceMap,
       }),
     );
@@ -270,7 +275,7 @@ export function DemandFeedPage() {
       );
     }
     return result;
-  }, [individualRows, locationMode, radiusKm, areaQuery, distanceMap]);
+  }, [individualRows, locationMode, radiusKm, areaQuery, routeFrom, routeTo, distanceMap]);
 
   const visibleFeed = useMemo<FeedItem[]>(() => {
     // Product-level BUY aggregates have no single request coordinate.
@@ -419,7 +424,7 @@ export function DemandFeedPage() {
                   if (option.value !== "all" && requestType === "BUY") setRequestType("all");
                 }}
               >
-                {option.value === "all" ? t("allAreas") : option.value === "nearby" ? t("nearby") : option.value === "area" ? t("byArea") : t("online")}
+                {option.value === "all" ? t("allAreas") : option.value === "nearby" ? t("nearby") : option.value === "area" ? t("byArea") : option.value === "route" ? t("route") : t("online")}
               </button>
             ))}
           </div>
@@ -468,6 +473,17 @@ export function DemandFeedPage() {
                   setSavedMessage(result === "full" ? t("savedAreaFull") : result === "saved" || result === "exists" ? t("areaSaved") : t("savedAreaHint"));
                 }}>{t("saveArea")}</button>
               <p>{t("areaHint")}</p>
+            </div>
+          ) : null}
+          {locationMode === "route" ? (
+            <div className="location-discovery__detail">
+              <label>{t("routeFrom")}
+                <input value={routeFrom} onChange={(event) => setRouteFrom(event.target.value)} placeholder={t("areaExample")} aria-label={t("routeFrom")} />
+              </label>
+              <label>{t("routeTo")}
+                <input value={routeTo} onChange={(event) => setRouteTo(event.target.value)} placeholder={t("areaExample")} aria-label={t("routeTo")} />
+              </label>
+              <p>{t("routeHint")}</p>
             </div>
           ) : null}
           {locationMode === "online" ? (
@@ -546,7 +562,9 @@ export function DemandFeedPage() {
             ? t("radiusEmpty")
             : locationMode === "area" && !areaQuery.trim()
               ? t("areaEmpty")
-              : t("noRequestsDetail")}
+              : locationMode === "route" && (!routeFrom.trim() || !routeTo.trim())
+                ? t("routeMissing")
+                : t("noRequestsDetail")}
           action={<Button to={demandHref}>{t("createRequest")}</Button>}
         />
       ) : (
