@@ -123,7 +123,7 @@ export function HomePage() {
             <strong>{t("savedAreas")}</strong>
             <div className="home-saved-areas__links">
               {savedAreas.map((area) => (
-                <Link key={area.country + area.label} to={`/feed?area=${encodeURIComponent(area.label)}`}>
+                <Link key={area.country + area.label} to={`/feed?area=${encodeURIComponent(area.label)}&country=${area.country}`}>
                   {area.country === "JP" ? "JP" : "KR"} · {area.label}
                 </Link>
               ))}
