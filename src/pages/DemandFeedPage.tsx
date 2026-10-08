@@ -20,6 +20,8 @@ import {
 } from "@/domain/locationDiscovery";
 import { clearViewerGeo, type ViewerGeo } from "@/lib/geoDistance";
 import { requestViewerGeo } from "@/lib/requestViewerGeo";
+import { translate, useDanLocale } from "@/i18n/locale";
+import { addSavedArea, useSavedAreas } from "@/lib/savedAreas";
 import {
   filterAndSortLiveDemand,
   liveDemandCategoryCounts,
@@ -87,13 +89,20 @@ function matchesIndividualQuery(item: Extract<FeedItem, { kind: "individual" }>,
 }
 
 export function DemandFeedPage() {
+  const locale = useDanLocale();
+  const t = (key: Parameters<typeof translate>[1], vars: Record<string, string | number> = {}) => translate(locale, key, vars);
+  const savedAreas = useSavedAreas();
   const { demandFeed, currentUser } = useDan();
   const [params] = useSearchParams();
   const urlQuery = params.get("q")?.trim() ?? "";
+  const urlArea = params.get("area")?.trim() ?? "";
+  const urlCountry = params.get("country");
   const [query, setQuery] = useState(urlQuery);
   const [requestType, setRequestType] = useState<RequestTypeFilter>("all");
-  const [locationMode, setLocationMode] = useState<LocationDiscoveryMode>("all");
-  const [areaQuery, setAreaQuery] = useState("");
+  const [locationMode, setLocationMode] = useState<LocationDiscoveryMode>(urlArea ? "area" : "all");
+  const [areaQuery, setAreaQuery] = useState(urlArea);
+  const [areaCountry, setAreaCountry] = useState<"KR" | "JP">(urlCountry === "JP" || (!urlCountry && locale === "ja") ? "JP" : "KR");
+  const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const [radiusKm, setRadiusKm] = useState(3);
   const [viewerGeo, setViewerGeo] = useState<ViewerGeo | null>(null);
   const [locating, setLocating] = useState(false);
@@ -114,6 +123,12 @@ export function DemandFeedPage() {
     setQuery(urlQuery);
     setPage(0);
   }, [urlQuery]);
+  useEffect(() => {
+    if (!urlArea) return;
+    setAreaQuery(urlArea);
+    setLocationMode("area");
+    setAreaCountry(urlCountry === "JP" ? "JP" : "KR");
+  }, [urlArea, urlCountry]);
 
   const categoryRows = useMemo(
     () => liveDemandCategoryCounts(demandFeed),
@@ -180,7 +195,7 @@ export function DemandFeedPage() {
         if (!cancelled) {
           setDistanceMap({});
           setDistanceReady(true);
-          setLocationError("거리 정보를 확인하지 못했어요. 지역명 검색을 사용해 주세요.");
+          setLocationError(t("locationFailed"));
         }
       }
     })();
@@ -313,7 +328,7 @@ export function DemandFeedPage() {
 
   async function refreshViewerLocation() {
     if (!productionDiscovery || !currentUser) {
-      setLocationError("거리 검색은 로그인한 계정에서 사용할 수 있어요. 지역명 검색은 누구나 이용할 수 있어요.");
+      setLocationError(t("locationLogin"));
       return;
     }
     setLocating(true);
@@ -325,8 +340,8 @@ export function DemandFeedPage() {
       setViewerGeo(null);
       setLocationError(
         result.reason === "denied"
-          ? "위치 권한이 거부됐어요. 설정에서 허용하거나 지역명을 검색해 주세요."
-          : "현재 위치를 찾지 못했어요. 다시 시도하거나 지역명을 검색해 주세요.",
+          ? t("locationDenied")
+          : t("locationFailed"),
       );
       return;
     }
@@ -339,10 +354,10 @@ export function DemandFeedPage() {
   return (
     <div className="page-stack discovery-page discovery-page--v3">
       <header className="page-header discovery-header">
-        <span className="eyebrow">탐색</span>
-        <h1 className="page-title">지금 올라온 요청</h1>
+        <span className="eyebrow">{t("explore")}</span>
+        <h1 className="page-title">{t("openRequests")}</h1>
         <p className="section-desc">
-          물건 구매부터 빌리기, 심부름, 서비스까지 올라온 요청을 둘러보세요.
+          {t("browseLead")}
         </p>
       </header>
 
@@ -357,8 +372,8 @@ export function DemandFeedPage() {
           <TextInput
             value={query}
             onChange={(e) => updateQuery(e.target.value)}
-            placeholder="물건, 심부름, 서비스 검색"
-            aria-label="요청 검색"
+            placeholder={t("searchPlaceholder")}
+            aria-label={t("requestSearch")}
             autoComplete="off"
           />
           {query ? (
@@ -388,8 +403,8 @@ export function DemandFeedPage() {
 
         <div className="location-discovery" aria-label="위치 기반 검색">
           <div className="location-discovery__heading">
-            <strong>어디서 찾을까요?</strong>
-            <span>정확한 현재 위치는 공개하지 않아요</span>
+            <strong>{t("selectArea")}</strong>
+            <span>{t("privacyLocation")}</span>
           </div>
           <div className="location-discovery__modes" role="group" aria-label="지역 필터">
             {LOCATION_MODES.map((option) => (
@@ -404,48 +419,71 @@ export function DemandFeedPage() {
                   if (option.value !== "all" && requestType === "BUY") setRequestType("all");
                 }}
               >
-                {option.label}
+                {option.value === "all" ? t("all") : option.value === "BUY" ? t("buy") : option.value === "BORROW" ? t("borrow") : option.value === "TASK" ? t("task") : t("service")}
               </button>
             ))}
           </div>
           {locationMode === "nearby" ? (
             <div className="location-discovery__detail">
               <label>
-                탐색 반경
+                {t("searchRadius")}
                 <select
                   value={radiusKm}
                   onChange={(event) => setRadiusKm(Number(event.target.value))}
                   aria-label="탐색 반경"
                 >
                   {[1, 3, 5, 10].map((km) =>
-                    <option key={km} value={km}>약 {km}km 이내</option>,
+                    <option key={km} value={km}>{t("aroundKm", { km })}</option>,
                   )}
                 </select>
               </label>
               <button type="button" className="location-discovery__action" disabled={locating} onClick={() => void refreshViewerLocation()}>
-                {locating ? "위치 확인 중…" : viewerGeo ? "현재 위치 새로 확인" : "현재 위치 사용"}
+                {locating ? t("locating") : viewerGeo ? t("refreshLocation") : t("currentLocation")}
               </button>
-              <p>거리 확인이 가능한 현장 요청만 표시해요. 거리 정보가 없는 요청과 제품별 구매 집계는 제외돼요.</p>
+              <p>{t("nearestHint")}</p>
             </div>
           ) : null}
           {locationMode === "area" ? (
             <div className="location-discovery__detail">
               <label>
-                지역 이름
+                {t("areaName")}
                 <input
                   aria-label="지역 이름 입력"
                   value={areaQuery}
                   onChange={(event) => setAreaQuery(event.target.value)}
-                  placeholder="예: 성동구, 하카타구"
+                  placeholder={t("areaExample")}
                   autoComplete="off"
                 />
               </label>
-              <p>게시물에 적힌 지역명으로 대략 검색해요. km 반경 검색과는 달라요.</p>
+              <label>
+                {t("chooseCountry")}
+                <select value={areaCountry} onChange={(event) => setAreaCountry(event.target.value === "JP" ? "JP" : "KR")}>
+                  <option value="KR">{t("countryKr")}</option>
+                  <option value="JP">{t("countryJp")}</option>
+                </select>
+              </label>
+              <button type="button" className="location-discovery__action" disabled={!areaQuery.trim() || savedAreas.length >= 3}
+                onClick={() => {
+                  const result = addSavedArea({ label: areaQuery, country: areaCountry });
+                  setSavedMessage(result === "full" ? t("savedAreaFull") : result === "saved" || result === "exists" ? t("areaSaved") : t("savedAreaHint"));
+                }}>{t("saveArea")}</button>
+              <p>{t("areaHint")}</p>
             </div>
           ) : null}
           {locationMode === "online" ? (
-            <p className="location-discovery__note">온라인 또는 택배가 가능한 개별 요청만 표시해요.</p>
+            <p className="location-discovery__note">{t("onlineHint")}</p>
           ) : null}
+          {savedAreas.length > 0 ? (
+            <div className="location-discovery__saved" aria-label={t("savedAreas")}>
+              <span>{t("savedAreas")}</span>
+              {savedAreas.map((area) => (
+                <button key={area.country + area.label} type="button" onClick={() => {
+                  setAreaQuery(area.label); setAreaCountry(area.country); setLocationMode("area"); setSavedMessage(null);
+                }}>{area.country} · {area.label}</button>
+              ))}
+            </div>
+          ) : null}
+          {savedMessage ? <p role="status" className="location-discovery__note">{savedMessage}</p> : null}
           {locationError ? <p role="alert" className="location-discovery__error">{locationError}</p> : null}
         </div>
 
@@ -473,7 +511,7 @@ export function DemandFeedPage() {
 
             <div className="discovery-toolbar">
               <p className="discovery-summary">
-                <strong>{buyRows.length}</strong>개 제품
+                {t("products", { n: buyRows.length })}
               </p>
               <div className="discovery-sort" aria-label="정렬">
                 {SORT_OPTIONS.map((option) => (
@@ -484,7 +522,7 @@ export function DemandFeedPage() {
                     aria-pressed={sort === option.value}
                     onClick={() => updateSort(option.value)}
                   >
-                    {option.label}
+                    {option.value === "all" ? t("allAreas") : option.value === "nearby" ? t("nearby") : option.value === "area" ? t("byArea") : t("online")}
                   </button>
                 ))}
               </div>
@@ -493,23 +531,23 @@ export function DemandFeedPage() {
         ) : (
           <div className="discovery-toolbar discovery-toolbar--simple">
             <p className="discovery-summary" aria-live="polite">
-              <strong>{visibleFeed.length}</strong>개 요청
+              {t("results", { n: visibleFeed.length })}
             </p>
           </div>
         )}
       </section>
 
       {distanceLoading || locating ? (
-        <p className="discovery-loading" role="status">주변 요청을 확인하는 중…</p>
+        <p className="discovery-loading" role="status">{t("locatingResults")}</p>
       ) : visibleFeed.length === 0 && !remoteLoading ? (
         <EmptyState
-          title={query.trim() ? `‘${query.trim()}’ 요청이 아직 없어요` : "조건에 맞는 요청이 없어요"}
+          title={query.trim() ? t("noMatchingSearch", { q: query.trim() }) : t("noRequests")}
           body={locationMode === "nearby"
-            ? "현재 위치에서 거리 확인이 가능한 요청이 없어요. 다른 반경 또는 지역명 검색을 사용해 보세요."
+            ? t("radiusEmpty")
             : locationMode === "area" && !areaQuery.trim()
-              ? "검색할 지역 이름을 입력해 주세요."
-              : "필요한 것을 먼저 요청하면 다른 사람이 제안할 수 있어요."}
-          action={<Button to={demandHref}>요청 올리기</Button>}
+              ? t("areaEmpty")
+              : t("noRequestsDetail")}
+          action={<Button to={demandHref}>{t("createRequest")}</Button>}
         />
       ) : (
         <>
@@ -532,7 +570,7 @@ export function DemandFeedPage() {
           </div>
 
           {remoteLoading ? (
-            <p className="discovery-loading" role="status">요청 불러오는 중…</p>
+            <p className="discovery-loading" role="status">{t("loading")}</p>
           ) : null}
 
           {hasMore ? (
@@ -541,7 +579,7 @@ export function DemandFeedPage() {
               fullWidth
               onClick={() => setPage((value) => value + 1)}
             >
-              더 보기
+              {t("loadMore")}
             </Button>
           ) : null}
         </>
@@ -549,11 +587,11 @@ export function DemandFeedPage() {
 
       <section className="discovery-create-banner">
         <div>
-          <span>원하는 요청이 없나요?</span>
-          <strong>구매, 빌리기, 심부름, 서비스 중 필요한 요청을 먼저 올려보세요.</strong>
+          <span>{t("noRequests")}</span>
+          <strong>{t("homeLead")}</strong>
         </div>
         <Button to="/create" variant="secondary">
-          요청 올리기
+          {t("createRequest")}
         </Button>
       </section>
     </div>
