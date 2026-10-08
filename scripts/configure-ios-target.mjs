@@ -36,11 +36,11 @@ plist = plist
   );
 // Capacitor sync or freshly generated iOS targets must retain foreground-only location messaging.
 if (!plist.includes("<key>NSLocationWhenInUseUsageDescription</key>")) {
-  const endOfPlist = "</dict>\\n</plist>";
+  const endOfPlist = "</dict>\n</plist>";
   if (!plist.includes(endOfPlist)) throw new Error("Unexpected Info.plist structure");
   plist = plist.replace(
     endOfPlist,
-    `  <key>NSLocationWhenInUseUsageDescription</key>\\n  <string>가까운 심부름과 거래 요청을 찾을 때만 현재 위치를 사용합니다. 위치를 허용하지 않아도 지역명으로 검색할 수 있습니다.</string>\\n${endOfPlist}`,
+    `  <key>NSLocationWhenInUseUsageDescription</key>\n  <string>가까운 심부름과 거래 요청을 찾을 때만 현재 위치를 사용합니다. 위치를 허용하지 않아도 지역명으로 검색할 수 있습니다.</string>\n${endOfPlist}`,
   );
 }
 writeFileSync(plistPath, plist);
