@@ -18,7 +18,7 @@ import {
   matchesLocationDiscovery,
   type LocationDiscoveryMode,
 } from "@/domain/locationDiscovery";
-import { loadViewerGeo, type ViewerGeo } from "@/lib/geoDistance";
+import { clearViewerGeo, type ViewerGeo } from "@/lib/geoDistance";
 import { requestViewerGeo } from "@/lib/requestViewerGeo";
 import {
   filterAndSortLiveDemand,
@@ -95,9 +95,7 @@ export function DemandFeedPage() {
   const [locationMode, setLocationMode] = useState<LocationDiscoveryMode>("all");
   const [areaQuery, setAreaQuery] = useState("");
   const [radiusKm, setRadiusKm] = useState(3);
-  const [viewerGeo, setViewerGeo] = useState<ViewerGeo | null>(
-    () => loadViewerGeo(30 * 60_000),
-  );
+  const [viewerGeo, setViewerGeo] = useState<ViewerGeo | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [distanceMap, setDistanceMap] = useState<Record<string, number>>({});
@@ -320,6 +318,8 @@ export function DemandFeedPage() {
     const result = await requestViewerGeo();
     setLocating(false);
     if (!result.ok) {
+      clearViewerGeo();
+      setViewerGeo(null);
       setLocationError(
         result.reason === "denied"
           ? "위치 권한이 거부됐어요. 설정에서 허용하거나 지역명을 검색해 주세요."
