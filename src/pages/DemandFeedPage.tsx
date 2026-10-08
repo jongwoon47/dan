@@ -538,7 +538,7 @@ export function DemandFeedPage() {
                     aria-pressed={sort === option.value}
                     onClick={() => updateSort(option.value)}
                   >
-                    {option.value === "all" ? t("allAreas") : option.value === "nearby" ? t("nearby") : option.value === "area" ? t("byArea") : t("online")}
+                    {option.value === "popular" ? t("popular") : option.value === "growing" ? t("growing") : t("price")}
                   </button>
                 ))}
               </div>
