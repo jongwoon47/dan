@@ -2802,3 +2802,21 @@
   line-height: 1.5;
   margin: 0;
 }
+
+/* Preferences and place shortcuts — no user coordinate data exposed in UI. */
+.location-pref-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; font-size: .84rem; font-weight: 600; }
+.location-pref-field select, .location-pref-field input { width: 100%; border: 1px solid var(--dan-border); border-radius: 10px; padding: 11px; color: var(--dan-ink); background: var(--dan-surface); font: inherit; }
+.location-pref-hint { color: var(--dan-ink-secondary); font-size: .8rem; line-height: 1.6; margin: 3px 0; }
+.location-pref-form { display: grid; grid-template-columns: minmax(0, .7fr) minmax(0, 1.3fr); gap: 12px; padding: 12px 0; }
+.location-pref-form > button, .location-pref-form > p { grid-column: 1 / -1; }
+.location-pref-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 4px; border-bottom: 1px solid var(--dan-border); }
+.location-pref-row a { color: var(--dan-ink); flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.location-pref-row button { background: transparent; border: 0; cursor: pointer; color: var(--dan-ink-secondary); font: inherit; }
+.location-discovery__saved { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.location-discovery__saved > span { font-size: .8rem; color: var(--dan-ink-secondary); }
+.location-discovery__saved > button { border: 1px solid var(--dan-border); border-radius: 999px; padding: 7px 10px; background: var(--dan-surface); color: var(--dan-ink); font: inherit; font-size: .82rem; cursor: pointer; }
+.home-saved-areas { padding: 12px 0 4px; display: flex; flex-direction: column; gap: 9px; }
+.home-saved-areas > strong { font-size: .84rem; }
+.home-saved-areas__links { display: flex; flex-wrap: wrap; gap: 8px; }
+.home-saved-areas__links a { padding: 8px 12px; font-size: .83rem; border: 1px solid var(--dan-border); border-radius: 999px; color: var(--dan-ink); background: var(--dan-surface); text-decoration: none; }
+@media (max-width: 420px) { .location-pref-form { grid-template-columns: 1fr; } }
