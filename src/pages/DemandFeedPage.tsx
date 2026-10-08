@@ -31,7 +31,6 @@ import {
   type LiveDemandSort,
 } from "@/domain/liveDemandDiscovery";
 import {
-  CATEGORY_LABEL,
   DEMAND_TYPE_LABEL,
   type DemandType,
   type FeedItem,
