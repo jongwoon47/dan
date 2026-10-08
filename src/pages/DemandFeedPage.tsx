@@ -494,7 +494,7 @@ export function DemandFeedPage() {
               <span>{t("savedAreas")}</span>
               {savedAreas.map((area) => (
                 <button key={area.country + area.label} type="button" onClick={() => {
-                  setAreaQuery(area.label); setAreaCountry(area.country); setLocationMode("area"); setSavedMessage(null);
+                  setAreaQuery(area.label); setAreaCountry(area.country); setLocationMode("area"); setRequestType("all"); setSavedMessage(null);
                 }}>{area.country} · {area.label}</button>
               ))}
             </div>
