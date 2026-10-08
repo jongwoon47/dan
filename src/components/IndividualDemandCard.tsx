@@ -10,10 +10,10 @@ import {
 } from "@/lib/geoDistance";
 import "./feedCards.css";
 
-function feedPlaceLine(demand: Demand): string {
+function feedPlaceLine(demand: Demand, approxMeters?: number): string {
   const place = primaryPublicPlace(demand.fulfillmentOptions);
   if (place) {
-    return formatPublicPlaceLine(place, loadViewerGeo());
+    return formatPublicPlaceLine(place, loadViewerGeo(), { approxMeters });
   }
   const remote = demand.fulfillmentOptions.some((o) => o.mode === "REMOTE");
   const shipping = demand.fulfillmentOptions.some((o) => o.mode === "SHIPPING");
@@ -22,8 +22,8 @@ function feedPlaceLine(demand: Demand): string {
   return "";
 }
 
-export function IndividualDemandCard({ demand }: { demand: Demand }) {
-  const placeLine = feedPlaceLine(demand);
+export function IndividualDemandCard({ demand, approxMeters }: { demand: Demand; approxMeters?: number }) {
+  const placeLine = feedPlaceLine(demand, approxMeters);
   const when = formatDemandWhen(demand);
   const meta = [placeLine, when].filter(Boolean).join(" · ");
   const showPrice = demand.budget > 0;
