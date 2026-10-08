@@ -1,13 +1,15 @@
 import { collectRegion2Keys, hasRemoteOption, hasShippingOption } from "./fulfillment";
 import type { Demand } from "./types";
 
-export type LocationDiscoveryMode = "all" | "nearby" | "area" | "online";
+export type LocationDiscoveryMode = "all" | "nearby" | "area" | "online" | "route";
 export type LocationDemand = Pick<Demand, "id" | "fulfillmentOptions">;
 
 export type LocationDiscoveryFilter = {
   mode: LocationDiscoveryMode;
   radiusKm: number;
   areaQuery: string;
+  routeFrom?: string;
+  routeTo?: string;
   /** Approximate server-computed distance only. Never query public raw coordinates. */
   approximateMetersById: Record<string, number>;
 };
@@ -47,6 +49,21 @@ export function matchesLocationDiscovery(
       return collectRegion2Keys(options).some((candidate) => {
         const value = normalizeArea(candidate);
         return value.length > 0 && (value.includes(query) || query.includes(value));
+      });
+    }
+    case "route": {
+      const from = normalizeArea(filter.routeFrom ?? "");
+      const to = normalizeArea(filter.routeTo ?? "");
+      if (!from || !to) return false;
+      return options.some((option) => {
+        if (option.mode !== "ROUTE") return false;
+        const matches = (label: string, query: string) => {
+          const normalized = normalizeArea(label);
+          return normalized.length > 0 &&
+            (normalized.includes(query) || query.includes(normalized));
+        };
+        return matches(option.from.region2 ?? option.from.publicLabel, from) &&
+          matches(option.to.region2 ?? option.to.publicLabel, to);
       });
     }
     case "nearby": {
