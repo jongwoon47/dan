@@ -2713,3 +2713,92 @@
     height: 78px !important;
   }
 }
+
+/* Location discovery: explicit area search and optional foreground GPS. */
+.location-discovery {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 0 6px;
+  border-top: 1px solid var(--dan-border);
+}
+.location-discovery__heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+.location-discovery__heading strong {
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+.location-discovery__heading span,
+.location-discovery__note,
+.location-discovery__detail p {
+  color: var(--dan-ink-secondary);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+.location-discovery__modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.location-discovery__modes button,
+.location-discovery__action {
+  cursor: pointer;
+  border-radius: 100px;
+  border: 1px solid var(--dan-border);
+  padding: 8px 12px;
+  background: var(--dan-surface);
+  color: var(--dan-ink);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+.location-discovery__modes button.is-active {
+  background: var(--dan-ink);
+  border-color: var(--dan-ink);
+  color: white;
+}
+.location-discovery__detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px 14px;
+}
+.location-discovery__detail label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  min-width: min(210px, 100%);
+}
+.location-discovery__detail input,
+.location-discovery__detail select {
+  border: 1px solid var(--dan-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--dan-surface);
+  color: var(--dan-ink);
+  min-width: 0;
+  font: inherit;
+  font-size: 0.9rem;
+}
+.location-discovery__action:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.location-discovery__detail p,
+.location-discovery__note {
+  flex-basis: 100%;
+  margin: 0;
+}
+.location-discovery__error {
+  color: #a32929;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin: 0;
+}
