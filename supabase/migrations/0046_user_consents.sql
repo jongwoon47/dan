@@ -1,3 +1,9 @@
+-- Fresh local migration replay must not depend on a manually-created private schema.
+-- The existing remote database already has dan_private; these idempotent statements
+-- leave it intact. No live database mutation is performed by committing this file.
+create schema if not exists dan_private;
+revoke all on schema dan_private from public, anon, authenticated;
+
 -- User terms/privacy consent records for App Store / production release gate.
 -- One row per user; versions are compared client-side against CURRENT_* constants.
 
