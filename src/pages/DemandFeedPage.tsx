@@ -6,15 +6,14 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { TextInput } from "@/components/ui/Input";
 import {
-  fetchApproxDistancesRemote,
+  listDemandsByIds,
+  searchNearbyDemandDistancesRemote,
   searchLiveDemandRemote,
   type RemoteLiveDemandRow,
 } from "@/data/supabase/api";
 import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
 import {
-  distanceRequestBatches,
-  hasPhysicalFulfillment,
   matchesLocationDiscovery,
   type LocationDiscoveryMode,
 } from "@/domain/locationDiscovery";
@@ -112,6 +111,7 @@ export function DemandFeedPage() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [distanceMap, setDistanceMap] = useState<Record<string, number>>({});
   const [distanceReady, setDistanceReady] = useState(false);
+  const [nearbyRows, setNearbyRows] = useState<Array<Extract<FeedItem, { kind: "individual" }>>>([]);
   const [category, setCategory] = useState<LiveDemandCategory>("all");
   const [sort, setSort] = useState<LiveDemandSort>("popular");
   const [page, setPage] = useState(0);
@@ -161,49 +161,54 @@ export function DemandFeedPage() {
     [demandFeed, query, requestType],
   );
 
-  const physicalDemandIds = useMemo(
-    () => demandFeed
-      .filter(
-        (item): item is Extract<FeedItem, { kind: "individual" }> =>
-          item.kind === "individual" && hasPhysicalFulfillment(item.demand),
-      )
-      .map((item) => item.demand.id),
-    [demandFeed],
-  );
-
   useEffect(() => {
     if (locationMode !== "nearby" || !viewerGeo || !productionDiscovery || !currentUser) {
       setDistanceMap({});
+      setNearbyRows([]);
       setDistanceReady(false);
       return;
     }
     let cancelled = false;
     setDistanceMap({});
+    setNearbyRows([]);
     setDistanceReady(false);
+    setLocationError(null);
     void (async () => {
       try {
-        const next: Record<string, number> = {};
-        // Supabase distance RPC has a hard limit of 40 request IDs per call.
-        // Run sequentially to avoid bursts; move to spatial server search at scale.
-        for (const ids of distanceRequestBatches(physicalDemandIds)) {
-          const distances = await fetchApproxDistancesRemote(ids, viewerGeo);
-          Object.assign(next, distances);
-          if (cancelled) return;
-        }
-        if (!cancelled) {
-          setDistanceMap(next);
-          setDistanceReady(true);
-        }
+        // Do not enumerate public demand IDs to a distance oracle. The server
+        // picks active, policy-visible results and returns coarse km distances.
+        const distances = await searchNearbyDemandDistancesRemote(
+          viewerGeo,
+          radiusKm as 1 | 3 | 5 | 10,
+        );
+        const records = distances.length
+          ? await listDemandsByIds(distances.map((entry) => entry.id))
+          : [];
+        if (cancelled) return;
+        const byDistance = Object.fromEntries(distances.map((d) => [d.id, d.meters]));
+        const rows = records
+          .filter((demand) => byDistance[demand.id] != null)
+          .map((demand): Extract<FeedItem, { kind: "individual" }> => ({
+            kind: "individual",
+            id: `nearby:${demand.id}`,
+            demand,
+            sortAt: demand.createdAt,
+          }))
+          .sort((a, b) => byDistance[a.demand.id] - byDistance[b.demand.id]);
+        setDistanceMap(byDistance);
+        setNearbyRows(rows);
+        setDistanceReady(true);
       } catch {
         if (!cancelled) {
           setDistanceMap({});
+          setNearbyRows([]);
           setDistanceReady(true);
           setLocationError(t("locationFailed"));
         }
       }
     })();
     return () => { cancelled = true; };
-  }, [locationMode, viewerGeo, productionDiscovery, currentUser?.id, physicalDemandIds]);
+  }, [locationMode, viewerGeo, productionDiscovery, currentUser?.id, radiusKm]);
 
   useEffect(() => {
     if (!productionDiscovery || !includesBuy) {
@@ -258,7 +263,13 @@ export function DemandFeedPage() {
       : [];
 
   const locationFilteredIndividualRows = useMemo(() => {
-    const result = individualRows.filter((item) =>
+    const sourceRows = locationMode === "nearby"
+      ? nearbyRows.filter((item) =>
+          (requestType === "all" || item.demand.type === requestType) &&
+          matchesIndividualQuery(item, query),
+        )
+      : individualRows;
+    const result = sourceRows.filter((item) =>
       matchesLocationDiscovery(item.demand, {
         mode: locationMode,
         radiusKm,
@@ -275,12 +286,12 @@ export function DemandFeedPage() {
       );
     }
     return result;
-  }, [individualRows, locationMode, radiusKm, areaQuery, routeFrom, routeTo, distanceMap]);
+  }, [individualRows, nearbyRows, requestType, query, locationMode, radiusKm, areaQuery, routeFrom, routeTo, distanceMap]);
 
   const visibleFeed = useMemo<FeedItem[]>(() => {
     // Product-level BUY aggregates have no single request coordinate.
     // Never present them as a verified GPS-nearby result.
-    if (requestType === "BUY") return locationMode === "all" ? buyRows : [];
+    if (requestType === "BUY") return locationMode === "all" ? buyRows : locationFilteredIndividualRows;
     if (requestType !== "all") return locationFilteredIndividualRows;
     if (locationMode !== "all") return locationFilteredIndividualRows;
     return [...buyRows, ...locationFilteredIndividualRows].sort(
