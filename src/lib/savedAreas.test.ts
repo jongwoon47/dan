@@ -24,6 +24,13 @@ describe("saved activity areas", () => {
     ]))).toEqual([{ label: "博多区", country: "JP" }]);
   });
 
+  it("refuses precise residential addresses, GPS coords and postcodes", () => {
+    expect(addSavedArea({ country: "JP", label: "〒812-0012 福岡市" })).toBe("invalid");
+    expect(addSavedArea({ country: "KR", label: "역삼동 123-45" })).toBe("invalid");
+    expect(addSavedArea({ country: "JP", label: "33.59, 130.42" })).toBe("invalid");
+    expect(addSavedArea({ country: "JP", label: "博多区" })).toBe("saved");
+  });
+  
   it("never persists coordinates as saved areas", () => {
     addSavedArea({ country: "KR", label: "성동구" });
     const stored = localStorage.getItem("dan-saved-areas-v1") ?? "";
