@@ -4,9 +4,12 @@ import { useAuth } from "@/auth/AuthProvider";
 import { consentReturnPath, useConsent } from "@/auth/ConsentProvider";
 import { legalDocumentHref } from "@/auth/consentVersions";
 import { Button } from "@/components/ui/Button";
+import { useDanLocale } from "@/i18n/locale";
 import "@/pages/pages.css";
 
 export function ConsentPage() {
+  const locale = useDanLocale();
+  const ja = locale === "ja";
   const { mode, status } = useAuth();
   const { resolution, accept } = useConsent();
   const navigate = useNavigate();
@@ -52,7 +55,7 @@ export function ConsentPage() {
       await accept();
       navigate(next, { replace: true });
     } catch {
-      setError("동의 내용을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      setError(ja ? "同意内容を保存できませんでした。もう一度お試しください。" : "동의 내용을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
       setBusy(false);
     }
   }
@@ -67,11 +70,11 @@ export function ConsentPage() {
           height={56}
         />
         <p className="auth-screen__mark">DAN</p>
-        <h1 className="auth-screen__headline">DAN 시작하기</h1>
-        <p className="section-desc">서비스 이용을 위해 아래 내용을 확인해 주세요.</p>
+        <h1 className="auth-screen__headline">{ja ? "DANを始める" : "DAN 시작하기"}</h1>
+        <p className="section-desc">{ja ? "サービスの利用には、以下の内容をご確認ください。" : "서비스 이용을 위해 아래 내용을 확인해 주세요."}</p>
       </div>
 
-      <div className="consent-list" role="group" aria-label="필수 동의">
+      <div className="consent-list" role="group" aria-label={ja ? "必須の同意" : "필수 동의"}>
         <div className="consent-row consent-row--all">
           <button
             type="button"
@@ -83,7 +86,7 @@ export function ConsentPage() {
             <span className="consent-check" aria-hidden="true" data-checked={allChecked}>
               {allChecked ? "✓" : ""}
             </span>
-            <span className="consent-row__label">전체 동의</span>
+            <span className="consent-row__label">{ja ? "すべてに同意" : "전체 동의"}</span>
           </button>
         </div>
 
@@ -101,7 +104,7 @@ export function ConsentPage() {
               {terms ? "✓" : ""}
             </span>
             <span className="consent-row__label">
-              <span className="consent-row__required">[필수]</span> 이용약관 동의
+              <span className="consent-row__required">{ja ? "[必須]" : "[필수]"}</span> {ja ? "利用規約に同意" : "이용약관 동의"}
             </span>
           </button>
           <a
@@ -109,9 +112,9 @@ export function ConsentPage() {
             href={legalDocumentHref("terms")}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="이용약관 보기"
+            aria-label={ja ? "利用規約を開く" : "이용약관 보기"}
           >
-            보기 <span aria-hidden="true">›</span>
+            {ja ? "見る" : "보기"} <span aria-hidden="true">›</span>
           </a>
         </div>
 
@@ -127,7 +130,7 @@ export function ConsentPage() {
               {privacy ? "✓" : ""}
             </span>
             <span className="consent-row__label">
-              <span className="consent-row__required">[필수]</span> 개인정보처리방침 동의
+              <span className="consent-row__required">{ja ? "[必須]" : "[필수]"}</span> {ja ? "プライバシーポリシーに同意" : "개인정보처리방침 동의"}
             </span>
           </button>
           <a
@@ -135,13 +138,14 @@ export function ConsentPage() {
             href={legalDocumentHref("privacy")}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="개인정보처리방침 보기"
+            aria-label={ja ? "プライバシーポリシーを開く" : "개인정보처리방침 보기"}
           >
-            보기 <span aria-hidden="true">›</span>
+            {ja ? "見る" : "보기"} <span aria-hidden="true">›</span>
           </a>
         </div>
       </div>
 
+      {ja ? <p className="section-desc">※ 法的文書は現在韓国語版です。日本向け正式版と対応地域の準備が完了するまでは、試験運用段階です。</p> : null}
       {error ? (
         <p className="form-error" role="alert">
           {error}
@@ -154,7 +158,7 @@ export function ConsentPage() {
         disabled={!canSubmit}
         onClick={() => void onSubmit()}
       >
-        {busy ? "저장 중…" : "동의하고 시작하기"}
+        {busy ? (ja ? "保存中…" : "저장 중…") : ja ? "同意して始める" : "동의하고 시작하기"}
       </Button>
     </div>
   );
