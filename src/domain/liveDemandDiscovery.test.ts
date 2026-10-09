@@ -72,10 +72,18 @@ describe("live demand discovery", () => {
 
   it("filters categories and counts active seekers", () => {
     expect(filterAndSortLiveDemand(items, { category: "furniture" }).map((x) => x.product.id)).toEqual(["chair"]);
-    expect(Object.fromEntries(liveDemandCategoryCounts(items))).toMatchObject({
+    const other = row(
+      { id: "misc", name: "기타 물품", brand: "", model: "", category: "other" },
+      20,
+      0,
+      10_000,
+    );
+    const counts = Object.fromEntries(liveDemandCategoryCounts([...items, other]));
+    expect(counts).toMatchObject({
       electronics: 11,
       furniture: 7,
       camera: 5,
     });
+    expect(counts.other).toBeUndefined();
   });
 });

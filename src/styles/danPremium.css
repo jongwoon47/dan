@@ -5045,3 +5045,380 @@ body {
     color: #5b52d0 !important;
   }
 }
+
+
+/* Release-candidate mobile UX pass --------------------------------------- */
+@media (max-width: 859px) {
+  /* My DAN: keep the page title dominant and actions compact. */
+  .my-dan__header.my-dan__header--v1 {
+    align-items: center !important;
+    gap: 12px !important;
+  }
+
+  .my-dan__actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+  }
+
+  .my-dan__header--v1 .my-dan__name,
+  .my-dan__settings {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    box-shadow: none;
+    color: var(--dan-ink-secondary);
+    font-size: .78rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .my-dan__settings {
+    min-width: 44px;
+  }
+
+  .my-demand-tabs {
+    min-height: 48px;
+    border-bottom: 1px solid var(--dan-border);
+  }
+
+  .my-demand-tabs button {
+    min-height: 48px;
+    padding: 0 10px !important;
+    font-size: .82rem !important;
+  }
+
+  .my-demand-tabs button span {
+    margin-left: 4px;
+    font-size: .72rem;
+  }
+
+  .my-demand-panel {
+    gap: 8px !important;
+  }
+
+  .my-demand-card-list {
+    gap: 0 !important;
+    overflow: hidden;
+    border-top: 1px solid var(--dan-border);
+    border-bottom: 1px solid var(--dan-border);
+  }
+
+  .my-demand-card {
+    min-height: 76px !important;
+    padding: 12px 2px !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--dan-border) !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .my-demand-card:last-child {
+    border-bottom: 0 !important;
+  }
+
+  .my-demand-card .product-visual--sm {
+    width: 52px !important;
+    height: 52px !important;
+    border-radius: 13px !important;
+  }
+
+  .my-demand-card .request-type-avatar {
+    width: 52px !important;
+    height: 52px !important;
+    border-radius: 13px !important;
+  }
+
+  .my-demand-card__body {
+    gap: 2px !important;
+  }
+
+  .my-demand-card__head strong {
+    font-size: .94rem !important;
+    line-height: 1.35 !important;
+  }
+
+  .my-demand-card__head > span {
+    font-size: .7rem !important;
+    font-weight: 600 !important;
+  }
+
+  .my-demand-card__body p {
+    margin: 2px 0 0 !important;
+    font-size: .78rem !important;
+    line-height: 1.4 !important;
+  }
+
+  .my-demand-card__body small {
+    font-size: .72rem !important;
+    line-height: 1.35 !important;
+  }
+
+  .my-demand-card__chevron {
+    padding-left: 2px;
+    color: #aaa7b1;
+  }
+
+  /* Trade chat: reduce stacked chrome and give conversation the viewport. */
+  .app-shell--deep .app-main:has(.chat-page) {
+    padding: 0 !important;
+  }
+
+  .chat-page {
+    min-height: 100dvh !important;
+    height: 100dvh !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+  }
+
+  .chat-page__header {
+    min-height: calc(58px + env(safe-area-inset-top, 0px)) !important;
+    padding: calc(7px + env(safe-area-inset-top, 0px)) 10px 7px !important;
+    grid-template-columns: 44px 34px minmax(0,1fr) 44px !important;
+    gap: 7px !important;
+  }
+
+  .chat-page__back {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .chat-page__header .avatar-initial--sm {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 11px !important;
+  }
+
+  .chat-page__name {
+    font-size: .94rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .chat-page__demand {
+    margin-top: 1px !important;
+    font-size: .7rem !important;
+    line-height: 1.25 !important;
+  }
+
+  .chat-page__view-demand {
+    display: inline-block;
+    margin-top: 1px !important;
+    font-size: .7rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .chat-realtime-status {
+    font-size: .66rem !important;
+  }
+
+  .chat-deal-progress {
+    padding: 8px 16px 2px !important;
+  }
+
+  .trade-status {
+    margin: 6px 12px 0 !important;
+    padding: 10px 12px !important;
+    border-radius: 14px !important;
+    box-shadow: none !important;
+  }
+
+  .trade-status__title,
+  .trade-status__product strong {
+    font-size: .86rem !important;
+  }
+
+  .trade-status__hint {
+    margin-top: 3px !important;
+    font-size: .74rem !important;
+    line-height: 1.4 !important;
+  }
+
+  .trade-status .dan-btn,
+  .trade-status a.dan-btn {
+    min-height: 44px !important;
+    font-size: .8rem !important;
+  }
+
+  .chat-thread {
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    padding: 16px 14px 18px !important;
+    background: #fff !important;
+  }
+
+  .chat-bubble {
+    max-width: 78% !important;
+    padding: 9px 11px !important;
+    box-shadow: none !important;
+  }
+
+  .chat-composer {
+    position: sticky !important;
+    bottom: 0 !important;
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+    border-top: 1px solid var(--dan-border);
+    background: rgba(255,255,255,.98) !important;
+  }
+
+  .chat-composer input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .chat-composer .dan-btn {
+    min-height: 44px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .my-dan__header--v1 .my-dan__name,
+  .my-dan__settings {
+    padding-inline: 7px;
+    font-size: .74rem;
+  }
+
+  .my-demand-tabs button {
+    padding-inline: 7px !important;
+  }
+
+  .chat-deal-progress {
+    padding-inline: 10px !important;
+    gap: 4px !important;
+  }
+}
+
+
+/* Release-candidate settings and destructive-action UX ------------------- */
+.settings-page,
+.account-deletion-page {
+  max-width: 560px;
+}
+
+.settings-section {
+  display: grid;
+  gap: 18px;
+}
+
+.settings-section__head {
+  display: grid;
+  gap: 5px;
+}
+
+.settings-section__head h1,
+.account-deletion-intro h1 {
+  margin: 0;
+  color: var(--dan-ink);
+  font-size: 1.08rem;
+  line-height: 1.35;
+}
+
+.settings-section__head p,
+.account-deletion-intro p {
+  margin: 0;
+  color: var(--dan-ink-muted);
+  font-size: .86rem;
+  line-height: 1.55;
+}
+
+.settings-list {
+  padding-top: 4px;
+  border-top: 1px solid var(--dan-border);
+  display: grid;
+  gap: 4px;
+}
+
+.settings-link-row {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 2px;
+  color: inherit;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.settings-link-row:focus-visible {
+  outline: 2px solid var(--dan-accent);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.account-deletion-page {
+  gap: 18px !important;
+}
+
+.account-deletion-intro {
+  display: grid;
+  gap: 6px;
+}
+
+.account-deletion-list {
+  margin: 0;
+  padding: 16px 16px 16px 34px;
+  border: 1px solid var(--dan-border);
+  border-radius: 16px;
+  background: var(--dan-surface);
+  color: var(--dan-ink-secondary);
+  font-size: .84rem;
+  line-height: 1.65;
+}
+
+.account-deletion-list li + li {
+  margin-top: 8px;
+}
+
+.account-deletion-state {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 13px 14px;
+  border-radius: 14px;
+  background: var(--dan-bg-elevated);
+  color: var(--dan-ink-secondary);
+  font-size: .84rem;
+  line-height: 1.5;
+}
+
+.account-deletion-state p {
+  margin: 0;
+}
+
+.account-deletion-state.is-error {
+  background: #fff5f4;
+  color: #a53a32;
+}
+
+.account-deletion-actions {
+  display: grid;
+  gap: 9px;
+  padding-top: 4px;
+}
+
+@media (max-width: 859px) {
+  .settings-page,
+  .account-deletion-page {
+    gap: 20px !important;
+  }
+
+  .settings-section__head h1,
+  .account-deletion-intro h1 {
+    font-size: 1.05rem;
+  }
+
+  .account-deletion-list {
+    padding: 15px 14px 15px 31px;
+  }
+}

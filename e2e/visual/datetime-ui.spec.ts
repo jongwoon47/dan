@@ -1,17 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 
-test.use({
-  viewport: { width: 390, height: 844 },
-  isMobile: true,
-  hasTouch: true,
-});
-
-test("BORROW datetime empty state shows Korean placeholder", async ({ page }) => {
+test("BORROW request keeps Korean datetime guidance in the unified flow", async ({ page }) => {
   mkdirSync("qa-screenshots/datetime", { recursive: true });
+
   await page.goto("/create?type=BORROW");
-  await page.getByRole("radio", { name: "빌리기" }).click();
-  await page.getByLabel("제목").fill("캠핑 텐트");
+  await expect(page.getByRole("heading", { name: "어떤 물건을 빌리고 싶나요?" })).toBeVisible();
+
+  await page.getByPlaceholder("예: 캠핑 텐트").fill("캠핑 텐트");
   await page.getByLabel(/예산/).fill("30000");
   await page.getByRole("button", { name: "다음" }).click();
 

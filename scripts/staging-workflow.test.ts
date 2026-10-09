@@ -3,6 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
+  PRODUCTION_CLOUDFLARE_PROJECT,
+  PRODUCTION_SUPABASE_PROJECT_REFS,
   STAGING_CLOUDFLARE_PROJECT,
   STAGING_SUPABASE_PROJECT_REF,
 } from "../src/release/environmentSeparation.ts";
@@ -10,12 +12,15 @@ import {
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 describe("Cloudflare workflow isolation", () => {
-  it("keeps production deploys disabled until a separate production DB exists", () => {
+  it("publishes production only through the guarded production project", () => {
     const cloudflare = readFileSync(
       path.join(root, ".github/workflows/deploy-cloudflare.yml"),
       "utf8",
     );
-    expect(cloudflare).toContain("production Supabase project is not configured");
+    expect(cloudflare).toContain("deploy-production");
+    expect(cloudflare).toContain(PRODUCTION_SUPABASE_PROJECT_REFS[0]!);
+    expect(cloudflare).toContain(`--project-name=${PRODUCTION_CLOUDFLARE_PROJECT}`);
+    expect(cloudflare).toContain("github.ref == 'refs/heads/main'");
     expect(cloudflare).not.toContain(STAGING_SUPABASE_PROJECT_REF);
     expect(cloudflare).not.toContain(`--project-name=${STAGING_CLOUDFLARE_PROJECT}`);
 

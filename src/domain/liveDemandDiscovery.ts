@@ -23,6 +23,8 @@ export function liveDemandCategoryCounts(
 ): Array<[ProductCategory, number]> {
   const counts = new Map<ProductCategory, number>();
   for (const row of listLiveDemandRows(items)) {
+    // "other" is a catalog fallback, not a useful discovery filter.
+    if (row.product.category === "other") continue;
     counts.set(
       row.product.category,
       (counts.get(row.product.category) ?? 0) + row.aggregate.seekerCount,

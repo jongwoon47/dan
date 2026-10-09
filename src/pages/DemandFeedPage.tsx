@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AggregatedDemandCard } from "@/components/AggregatedDemandCard";
+import { IndividualDemandCard } from "@/components/IndividualDemandCard";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { TextInput } from "@/components/ui/Input";
@@ -16,7 +18,12 @@ import {
   type LiveDemandRow,
   type LiveDemandSort,
 } from "@/domain/liveDemandDiscovery";
-import { CATEGORY_LABEL } from "@/domain/types";
+import {
+  CATEGORY_LABEL,
+  DEMAND_TYPE_LABEL,
+  type DemandType,
+  type FeedItem,
+} from "@/domain/types";
 import "./pages.css";
 import "@/components/feedCards.css";
 
@@ -25,7 +32,17 @@ const PAGE_SIZE = 24;
 const SORT_OPTIONS: Array<{ value: LiveDemandSort; label: string }> = [
   { value: "popular", label: "인기" },
   { value: "growing", label: "급상승" },
-  { value: "price", label: "희망가" },
+  { value: "price", label: "가격" },
+];
+
+type RequestTypeFilter = "all" | DemandType;
+
+const REQUEST_TYPES: Array<{ value: RequestTypeFilter; label: string }> = [
+  { value: "all", label: "전체" },
+  { value: "BUY", label: "구매" },
+  { value: "BORROW", label: "빌리기" },
+  { value: "TASK", label: "심부름" },
+  { value: "SERVICE", label: "서비스" },
 ];
 
 function toFeedRow(row: RemoteLiveDemandRow): LiveDemandRow {
@@ -38,9 +55,27 @@ function toFeedRow(row: RemoteLiveDemandRow): LiveDemandRow {
   };
 }
 
+function matchesIndividualQuery(item: Extract<FeedItem, { kind: "individual" }>, raw: string) {
+  const query = raw.trim().toLocaleLowerCase("ko-KR");
+  if (!query) return true;
+  const demand = item.demand;
+  const hay = [
+    demand.title,
+    demand.description,
+    DEMAND_TYPE_LABEL[demand.type],
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLocaleLowerCase("ko-KR");
+  return hay.includes(query);
+}
+
 export function DemandFeedPage() {
   const { demandFeed } = useDan();
-  const [query, setQuery] = useState("");
+  const [params] = useSearchParams();
+  const urlQuery = params.get("q")?.trim() ?? "";
+  const [query, setQuery] = useState(urlQuery);
+  const [requestType, setRequestType] = useState<RequestTypeFilter>("all");
   const [category, setCategory] = useState<LiveDemandCategory>("all");
   const [sort, setSort] = useState<LiveDemandSort>("popular");
   const [page, setPage] = useState(0);
@@ -49,13 +84,19 @@ export function DemandFeedPage() {
   const [remoteLoading, setRemoteLoading] = useState(false);
   const [remoteReady, setRemoteReady] = useState(false);
   const productionDiscovery = getDataMode() === "supabase";
+  const includesBuy = requestType === "all" || requestType === "BUY";
+
+  useEffect(() => {
+    setQuery(urlQuery);
+    setPage(0);
+  }, [urlQuery]);
 
   const categoryRows = useMemo(
     () => liveDemandCategoryCounts(demandFeed),
     [demandFeed],
   );
 
-  const localRows = useMemo(
+  const localBuyRows = useMemo(
     () =>
       filterAndSortLiveDemand(demandFeed, {
         query,
@@ -65,11 +106,25 @@ export function DemandFeedPage() {
     [category, demandFeed, query, sort],
   );
 
+  const individualRows = useMemo(
+    () =>
+      demandFeed
+        .filter(
+          (item): item is Extract<FeedItem, { kind: "individual" }> =>
+            item.kind === "individual" &&
+            (requestType === "all" || item.demand.type === requestType) &&
+            matchesIndividualQuery(item, query),
+        )
+        .sort((a, b) => b.sortAt.localeCompare(a.sortAt)),
+    [demandFeed, query, requestType],
+  );
+
   useEffect(() => {
-    if (!productionDiscovery) {
+    if (!productionDiscovery || !includesBuy) {
       setRemoteRows([]);
       setRemoteTotal(0);
       setRemoteReady(false);
+      setRemoteLoading(false);
       return;
     }
 
@@ -96,9 +151,7 @@ export function DemandFeedPage() {
           setRemoteReady(true);
         })
         .catch(() => {
-          if (cancelled) return;
-          // Keep the locally hydrated feed as a resilient fallback.
-          setRemoteReady(false);
+          if (!cancelled) setRemoteReady(false);
         })
         .finally(() => {
           if (!cancelled) setRemoteLoading(false);
@@ -109,21 +162,32 @@ export function DemandFeedPage() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [category, page, productionDiscovery, query, sort]);
+  }, [category, includesBuy, page, productionDiscovery, query, sort]);
 
-  const filtered =
-    productionDiscovery && remoteReady ? remoteRows : localRows;
-  const totalProducts =
-    productionDiscovery && remoteReady ? remoteTotal : filtered.length;
-  const activeSeekers = filtered.reduce(
-    (sum, row) => sum + row.aggregate.seekerCount,
-    0,
-  );
+  const buyRows =
+    includesBuy
+      ? productionDiscovery && remoteReady
+        ? remoteRows
+        : localBuyRows
+      : [];
+
+  const visibleFeed = useMemo<FeedItem[]>(() => {
+    if (requestType === "BUY") return buyRows;
+    if (requestType !== "all") return individualRows;
+    return [...buyRows, ...individualRows].sort(
+      (a, b) => b.sortAt.localeCompare(a.sortAt),
+    );
+  }, [buyRows, individualRows, requestType]);
+
   const hasMore =
-    productionDiscovery && remoteReady && filtered.length < remoteTotal;
+    requestType === "BUY" &&
+    productionDiscovery &&
+    remoteReady &&
+    remoteRows.length < remoteTotal;
+
   const demandHref = query.trim()
-    ? `/buy/new?q=${encodeURIComponent(query.trim())}`
-    : "/buy/new";
+    ? `/create?type=BUY&q=${encodeURIComponent(query.trim())}`
+    : "/create";
 
   function resetRemoteDiscovery() {
     setRemoteRows([]);
@@ -149,18 +213,24 @@ export function DemandFeedPage() {
     setPage(0);
   }
 
+  function updateType(value: RequestTypeFilter) {
+    resetRemoteDiscovery();
+    setRequestType(value);
+    setPage(0);
+    if (value !== "BUY") setCategory("all");
+  }
+
   return (
-    <div className="page-stack discovery-page">
+    <div className="page-stack discovery-page discovery-page--v3">
       <header className="page-header discovery-header">
-        <span className="eyebrow">Live Demand</span>
-        <h1 className="page-title">사람들이 지금 찾는 제품</h1>
+        <span className="eyebrow">탐색</span>
+        <h1 className="page-title">지금 올라온 요청</h1>
         <p className="section-desc">
-          카메라뿐 아니라 어떤 제품이든 찾을 수 있어요. 원하는 제품이 없으면
-          바로 새 구매수요를 만들 수 있습니다.
+          물건 구매부터 빌리기, 심부름, 서비스까지 올라온 요청을 둘러보세요.
         </p>
       </header>
 
-      <section className="discovery-panel" aria-label="Live Demand 탐색">
+      <section className="discovery-panel" aria-label="요청 탐색">
         <div className="discovery-search">
           <span className="discovery-search__icon" aria-hidden>
             <svg viewBox="0 0 24 24" fill="none">
@@ -171,8 +241,8 @@ export function DemandFeedPage() {
           <TextInput
             value={query}
             onChange={(e) => updateQuery(e.target.value)}
-            placeholder="제품, 브랜드, 카테고리 검색"
-            aria-label="Live Demand 검색"
+            placeholder="물건, 심부름, 서비스 검색"
+            aria-label="요청 검색"
             autoComplete="off"
           />
           {query ? (
@@ -187,82 +257,95 @@ export function DemandFeedPage() {
           ) : null}
         </div>
 
-        <div className="discovery-filter-scroll" aria-label="제품 카테고리">
-          <button
-            type="button"
-            className={category === "all" ? "discovery-chip is-active" : "discovery-chip"}
-            onClick={() => updateCategory("all")}
-          >
-            전체
-          </button>
-          {categoryRows.map(([itemCategory, count]) => (
+        <div className="request-type-filter" aria-label="요청 유형">
+          {REQUEST_TYPES.map((option) => (
             <button
-              key={itemCategory}
+              key={option.value}
               type="button"
-              className={category === itemCategory ? "discovery-chip is-active" : "discovery-chip"}
-              onClick={() => updateCategory(itemCategory)}
+              className={requestType === option.value ? "is-active" : ""}
+              onClick={() => updateType(option.value)}
             >
-              {CATEGORY_LABEL[itemCategory]} <span>{count}</span>
+              {option.label}
             </button>
           ))}
         </div>
 
-        <div className="discovery-toolbar">
-          <p className="discovery-summary" aria-live="polite">
-            <strong>{totalProducts}</strong>개 제품
-            {filtered.length > 0 ? (
-              <> · 현재 <strong>{activeSeekers}</strong>명 구매수요</>
-            ) : null}
-          </p>
-          <div className="discovery-sort" aria-label="정렬">
-            {SORT_OPTIONS.map((option) => (
+        {requestType === "BUY" ? (
+          <>
+            <div className="discovery-filter-scroll" aria-label="제품 카테고리">
               <button
-                key={option.value}
                 type="button"
-                className={sort === option.value ? "is-active" : ""}
-                aria-pressed={sort === option.value}
-                onClick={() => updateSort(option.value)}
+                className={category === "all" ? "discovery-chip is-active" : "discovery-chip"}
+                onClick={() => updateCategory("all")}
               >
-                {option.label}
+                전체
               </button>
-            ))}
+              {categoryRows.map(([itemCategory, count]) => (
+                <button
+                  key={itemCategory}
+                  type="button"
+                  className={category === itemCategory ? "discovery-chip is-active" : "discovery-chip"}
+                  onClick={() => updateCategory(itemCategory)}
+                >
+                  {CATEGORY_LABEL[itemCategory]} <span>{count}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="discovery-toolbar">
+              <p className="discovery-summary">
+                <strong>{buyRows.length}</strong>개 제품
+              </p>
+              <div className="discovery-sort" aria-label="정렬">
+                {SORT_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={sort === option.value ? "is-active" : ""}
+                    aria-pressed={sort === option.value}
+                    onClick={() => updateSort(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="discovery-toolbar discovery-toolbar--simple">
+            <p className="discovery-summary" aria-live="polite">
+              <strong>{visibleFeed.length}</strong>개 요청
+            </p>
           </div>
-        </div>
+        )}
       </section>
 
-      {filtered.length === 0 && !remoteLoading ? (
+      {visibleFeed.length === 0 && !remoteLoading ? (
         <EmptyState
-          title={
-            query.trim()
-              ? `‘${query.trim()}’의 Live Demand가 아직 없어요`
-              : "조건에 맞는 Live Demand가 없어요"
-          }
-          body="찾는 사람이 먼저 수요를 남기면, 그 제품을 가진 판매자가 제안할 수 있어요."
-          action={
-            <Button to={demandHref}>
-              {query.trim() ? "이 제품 구매수요 만들기" : "구매수요 등록"}
-            </Button>
-          }
+          title={query.trim() ? `‘${query.trim()}’ 요청이 아직 없어요` : "조건에 맞는 요청이 없어요"}
+          body="필요한 것을 먼저 요청하면 다른 사람이 제안할 수 있어요."
+          action={<Button to={demandHref}>요청 올리기</Button>}
         />
       ) : (
         <>
-          <div
-            className="live-demand-list live-demand-list--discovery"
-            aria-busy={remoteLoading}
-          >
-            {filtered.map((item) => (
-              <AggregatedDemandCard
-                key={item.id}
-                product={item.product}
-                aggregate={item.aggregate}
-              />
-            ))}
+          <div className="mixed-demand-list" aria-busy={remoteLoading}>
+            {visibleFeed.map((item) =>
+              item.kind === "aggregated" ? (
+                <AggregatedDemandCard
+                  key={item.id}
+                  product={item.product}
+                  aggregate={item.aggregate}
+                />
+              ) : (
+                <IndividualDemandCard key={item.id} demand={item.demand} />
+              ),
+            )}
           </div>
+
           {remoteLoading ? (
-            <p className="discovery-loading" role="status">
-              Live Demand 불러오는 중…
-            </p>
+            <p className="discovery-loading" role="status">요청 불러오는 중…</p>
           ) : null}
+
           {hasMore ? (
             <Button
               variant="secondary"
@@ -277,11 +360,11 @@ export function DemandFeedPage() {
 
       <section className="discovery-create-banner">
         <div>
-          <span>찾는 제품이 없나요?</span>
-          <strong>목록에 없어도 제품명을 직접 입력해 첫 수요를 만들 수 있어요.</strong>
+          <span>원하는 요청이 없나요?</span>
+          <strong>구매, 빌리기, 심부름, 서비스 중 필요한 요청을 먼저 올려보세요.</strong>
         </div>
-        <Button to={demandHref} variant="secondary">
-          직접 등록
+        <Button to="/create" variant="secondary">
+          요청 올리기
         </Button>
       </section>
     </div>

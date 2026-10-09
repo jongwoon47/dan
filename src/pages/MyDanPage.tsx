@@ -8,15 +8,22 @@ import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
 import { effectiveDemandStatus } from "@/domain/demandLifecycle";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
-import { isBuyDemand, type BuyDemand } from "@/domain/types";
+import { DEMAND_TYPE_LABEL, isBuyDemand } from "@/domain/types";
 import { formatWon } from "@/lib/format";
 import "./pages.css";
 
-type MyTab = "demands" | "offers" | "selling";
+type MyTab = "active" | "requests" | "completed";
 
 function normalizeTab(value: string | null): MyTab {
-  if (value === "offers" || value === "selling") return value;
-  return "demands";
+  if (value === "requests" || value === "completed") return value;
+  return "active";
+}
+
+function requestStatusLabel(status: string): string {
+  if (status === "MATCHED") return "거래 진행";
+  if (status === "EXPIRED") return "기간 만료";
+  if (status === "CLOSED") return "종료";
+  return "요청 중";
 }
 
 export function MyDanPage() {
@@ -25,71 +32,40 @@ export function MyDanPage() {
     login,
     currentUser,
     myDemands,
-    mySellIntents,
     myMatches,
     getProduct,
   } = useDan();
   const dataMode = getDataMode();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = normalizeTab(searchParams.get("tab"));
-  const demandFilter = searchParams.get("demand");
 
-  const openBuyDemands = useMemo(
+  const activeMatches = useMemo(
     () =>
-      myDemands.filter((demand): demand is BuyDemand => {
-        if (!isBuyDemand(demand)) return false;
-        const status = effectiveDemandStatus(demand);
-        return status === "ACTIVE" || status === "MATCHED";
-      }),
+      myMatches.filter(
+        (match) =>
+          match.status !== "COMPLETED" &&
+          match.status !== "CLOSED" &&
+          match.status !== "DECLINED",
+      ),
+    [myMatches],
+  );
+
+  const completedMatches = useMemo(
+    () => myMatches.filter((match) => match.status === "COMPLETED"),
+    [myMatches],
+  );
+
+  const requestRows = useMemo(
+    () =>
+      [...myDemands].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [myDemands],
   );
-
-  const receivedOffers = useMemo(
-    () =>
-      myMatches.filter(
-        (match) =>
-          match.buyerId === currentUser?.id &&
-          Boolean(match.sellIntentId) &&
-          match.status !== "DECLINED" &&
-          match.status !== "CLOSED",
-      ),
-    [currentUser?.id, myMatches],
-  );
-
-  const visibleReceivedOffers = useMemo(
-    () =>
-      demandFilter
-        ? receivedOffers.filter((match) => match.demandId === demandFilter)
-        : receivedOffers,
-    [demandFilter, receivedOffers],
-  );
-
-  const sellerMatches = useMemo(
-    () =>
-      myMatches.filter(
-        (match) =>
-          match.sellerId === currentUser?.id &&
-          Boolean(match.sellIntentId) &&
-          match.status !== "POTENTIAL" &&
-          match.status !== "DECLINED" &&
-          match.status !== "CLOSED",
-      ),
-    [currentUser?.id, myMatches],
-  );
-
-  const offerCountByDemand = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const match of receivedOffers) {
-      map.set(match.demandId, (map.get(match.demandId) ?? 0) + 1);
-    }
-    return map;
-  }, [receivedOffers]);
 
   if (!isLoggedIn) {
     return (
       <EmptyState
         title="로그인이 필요해요"
-        body="내 구매수요와 받은 제안을 확인하려면 로그인해 주세요."
+        body="진행 중인 거래와 내가 올린 요청을 확인하려면 로그인해 주세요."
         action={
           dataMode === "supabase" ? (
             <Button to="/login">로그인</Button>
@@ -102,166 +78,138 @@ export function MyDanPage() {
   }
 
   function changeTab(next: MyTab) {
-    setSearchParams(next === "demands" ? {} : { tab: next });
+    setSearchParams(next === "active" ? {} : { tab: next });
   }
 
   return (
-    <div className="page-stack my-dan my-dan--blueprint">
+    <div className="page-stack my-dan my-dan--v3">
       <header className="my-dan__header my-dan__header--v1">
         <div>
-          <p className="eyebrow">내 거래</p>
-          <h1 className="page-title">내 구매수요</h1>
+          <p className="eyebrow">DAN</p>
+          <h1 className="page-title">내 거래</h1>
         </div>
-        <Link to={"/profile/" + currentUser?.id} className="my-dan__name">
-          프로필 보기 <span aria-hidden>›</span>
-        </Link>
+        <div className="my-dan__actions">
+          <Link to={"/profile/" + currentUser?.id} className="my-dan__name">
+            프로필 <span aria-hidden>›</span>
+          </Link>
+          <Link to="/settings" className="my-dan__settings" aria-label="설정">
+            설정
+          </Link>
+        </div>
       </header>
 
       <nav className="my-demand-tabs" aria-label="내 거래 메뉴">
         <button
           type="button"
-          className={tab === "demands" ? "is-active" : ""}
-          onClick={() => changeTab("demands")}
+          className={tab === "active" ? "is-active" : ""}
+          onClick={() => changeTab("active")}
         >
-          구매수요
-          <span>{openBuyDemands.length}</span>
+          진행 중
+          <span>{activeMatches.length}</span>
         </button>
         <button
           type="button"
-          className={tab === "offers" ? "is-active" : ""}
-          onClick={() => changeTab("offers")}
+          className={tab === "requests" ? "is-active" : ""}
+          onClick={() => changeTab("requests")}
         >
-          받은 제안
-          <span>{receivedOffers.length}</span>
+          내 요청
+          <span>{requestRows.length}</span>
         </button>
         <button
           type="button"
-          className={tab === "selling" ? "is-active" : ""}
-          onClick={() => changeTab("selling")}
+          className={tab === "completed" ? "is-active" : ""}
+          onClick={() => changeTab("completed")}
         >
-          판매 제안
-          <span>{mySellIntents.length}</span>
+          완료
+          <span>{completedMatches.length}</span>
         </button>
       </nav>
 
-      {tab === "demands" ? (
+      {tab === "active" ? (
         <section className="my-demand-panel">
-          {openBuyDemands.length === 0 ? (
-            <EmptyState
-              title="등록한 구매수요가 없어요"
-              body="원하는 물건과 조건을 먼저 남겨보세요."
-              action={<Button to="/buy/new">구매수요 등록</Button>}
-            />
+          <div className="my-demand-section-head">
+            <div>
+              <h2>지금 이어가야 할 거래</h2>
+              <p>새 제안부터 채팅, 조건 확인, 결제·인계까지 한곳에서 이어갈 수 있어요.</p>
+            </div>
+          </div>
+          {activeMatches.length > 0 ? (
+            <MatchList matches={activeMatches} emptyWhenZero={false} />
           ) : (
+            <EmptyState
+              title="진행 중인 거래가 없어요"
+              body="요청을 올리거나 탐색에서 다른 사람의 요청에 제안해보세요."
+              action={<Button to="/feed" variant="secondary">요청 둘러보기</Button>}
+            />
+          )}
+        </section>
+      ) : null}
+
+      {tab === "requests" ? (
+        <section className="my-demand-panel">
+          {requestRows.length > 0 ? (
             <div className="my-demand-card-list">
-              {openBuyDemands.map((demand) => {
-                const product = getProduct(demand.details.productId);
-                if (!product) return null;
-                const offerCount = offerCountByDemand.get(demand.id) ?? 0;
+              {requestRows.map((demand) => {
+                const status = effectiveDemandStatus(demand);
+                const product = isBuyDemand(demand)
+                  ? getProduct(demand.details.productId)
+                  : undefined;
                 return (
-                  <Link key={demand.id} to={"/demand/item/" + demand.id} className="my-demand-card">
-                    <ProductVisual product={product} size="sm" />
+                  <Link
+                    key={demand.id}
+                    to={"/demand/item/" + demand.id}
+                    className="my-demand-card my-demand-card--all-types"
+                  >
+                    {product ? (
+                      <ProductVisual product={product} size="sm" />
+                    ) : (
+                      <span className="request-type-avatar" aria-hidden>
+                        {DEMAND_TYPE_LABEL[demand.type].slice(0, 1)}
+                      </span>
+                    )}
                     <div className="my-demand-card__body">
                       <div className="my-demand-card__head">
-                        <strong>{product.name}</strong>
-                        <span>{effectiveDemandStatus(demand) === "MATCHED" ? "거래 진행" : "구매중"}</span>
+                        <strong>{demand.title}</strong>
+                        <span>{requestStatusLabel(status)}</span>
                       </div>
-                      <p>최대 {formatWon(demand.details.maxPrice)}</p>
+                      <p>
+                        {DEMAND_TYPE_LABEL[demand.type]} · {formatWon(demand.budget)}
+                      </p>
                       <small>{formatFulfillmentSummary(demand.fulfillmentOptions)}</small>
                     </div>
-                    <div className="my-demand-card__offer">
-                      <strong>{offerCount}</strong>
-                      <span>제안</span>
-                    </div>
+                    <span className="my-demand-card__chevron" aria-hidden>›</span>
                   </Link>
                 );
               })}
             </div>
+          ) : (
+            <EmptyState
+              title="아직 올린 요청이 없어요"
+              body="구매, 빌리기, 심부름, 서비스 중 필요한 요청을 올려보세요."
+              action={<Button to="/create">요청 올리기</Button>}
+            />
           )}
 
-          <Button to="/buy/new" fullWidth size="lg">
-            새 구매수요 등록
+          <Button to="/create" variant="secondary" fullWidth>
+            새 요청 올리기
           </Button>
         </section>
       ) : null}
 
-      {tab === "offers" ? (
+      {tab === "completed" ? (
         <section className="my-demand-panel">
           <div className="my-demand-section-head">
             <div>
-              <h2>받은 제안</h2>
-              <p>가격과 기본 상태를 비교한 뒤 제안 상세에서 관심을 표시하세요.</p>
-            </div>
-            {demandFilter ? (
-              <button type="button" className="my-demand-filter-clear" onClick={() => setSearchParams({ tab: "offers" })}>
-                전체 보기
-              </button>
-            ) : null}
-          </div>
-          {visibleReceivedOffers.length > 0 ? (
-            <MatchList matches={visibleReceivedOffers} emptyWhenZero={false} />
-          ) : (
-            <EmptyState
-              title="아직 받은 제안이 없어요"
-              body="구매수요를 본 판매자가 판매 제안을 보내면 여기에 표시돼요."
-              action={<Button to="/" variant="secondary">실시간 수요 보기</Button>}
-            />
-          )}
-        </section>
-      ) : null}
-
-      {tab === "selling" ? (
-        <section className="my-demand-panel">
-          {sellerMatches.length > 0 ? (
-            <>
-              <div className="my-demand-section-head">
-                <div>
-                  <h2>구매자 반응</h2>
-                  <p>구매자가 관심을 보이면 먼저 연결해 대화하고, 거래를 계속할 때 증거와 조건을 확정하세요.</p>
-                </div>
-              </div>
-              <MatchList matches={sellerMatches} emptyWhenZero={false} />
-            </>
-          ) : null}
-
-          <div className="my-demand-section-head">
-            <div>
-              <h2>보낸 판매 제안</h2>
-              <p>내가 보낸 판매 제안의 현재 상태예요.</p>
+              <h2>완료된 거래</h2>
+              <p>확정된 거래 결과와 상대 정보를 다시 확인할 수 있어요.</p>
             </div>
           </div>
-
-          {mySellIntents.length > 0 ? (
-            <div className="seller-offer-list">
-              {[...mySellIntents]
-                .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-                .map((offer) => {
-                  const product = getProduct(offer.productId);
-                  const status =
-                    offer.status === "OPEN"
-                      ? "구매자 검토 대기"
-                      : offer.status === "MATCHED"
-                        ? "거래 진행 중"
-                        : offer.status === "PAUSED"
-                          ? "일시정지"
-                          : "종료";
-                  return (
-                    <Link key={offer.id} to={"/demand/" + offer.productId} className="seller-offer-row">
-                      <ProductVisual product={product!} size="sm" />
-                      <div>
-                        <strong>{product?.name ?? "판매 제안"}</strong>
-                        <span>{formatWon(offer.minimumPrice)} · {status}</span>
-                      </div>
-                      <span aria-hidden>›</span>
-                    </Link>
-                  );
-                })}
-            </div>
+          {completedMatches.length > 0 ? (
+            <MatchList matches={completedMatches} emptyWhenZero={false} />
           ) : (
             <EmptyState
-              title="보낸 판매 제안이 없어요"
-              body="실시간 수요에서 가지고 있는 물건을 찾아 Quick Offer를 보내세요."
-              action={<Button to="/">구매수요 보기</Button>}
+              title="완료된 거래가 아직 없어요"
+              body="거래가 끝나면 여기에 기록됩니다."
             />
           )}
         </section>

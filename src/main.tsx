@@ -6,6 +6,7 @@ import { configureAnalytics, NoopAnalyticsProvider } from "@/analytics/contract"
 import { AppErrorBoundary } from "@/components/system/AppErrorBoundary";
 import "./styles/global.css";
 import "./styles/danPractical.css";
+import "./styles/danAppV3.css";
 
 configureAnalytics(new NoopAnalyticsProvider());
 

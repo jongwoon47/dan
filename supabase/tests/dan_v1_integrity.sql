@@ -1,6 +1,6 @@
 begin;
 
-select plan(85);
+select plan(86);
 
 select has_table('public', 'deal_evidence_challenges', 'evidence challenge table exists');
 select has_table('public', 'user_verifications', 'verification table exists');
@@ -370,6 +370,20 @@ select ok(
     ), '')
   ) > 0,
   'restricted BUY demand disappears from public discovery immediately'
+);
+
+select ok(
+  position(
+    'm.demand_id = demands.id'
+    in coalesce((
+      select qual
+      from pg_policies
+      where schemaname = 'public'
+        and tablename = 'demands'
+        and policyname = 'demands_select_public_or_own'
+    ), '')
+  ) > 0,
+  'matched parties keep read access to request context'
 );
 
 select ok(

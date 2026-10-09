@@ -88,6 +88,14 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
           ),
         ];
         const matchedSells = await api.listSellIntentsByIds(matchedSellIds);
+        const matchedDemandIds = [
+          ...new Set(
+            myMatches
+              .map((match) => match.demandId)
+              .filter((id): id is string => Boolean(id)),
+          ),
+        ];
+        const matchedDemands = await api.listDemandsByIds(matchedDemandIds);
 
         const ownershipIds = [
           ...new Set([
@@ -115,6 +123,7 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         setDemands((prev) => {
           const map = new Map(prev.map((d) => [d.id, d]));
           for (const d of myDemands) map.set(d.id, d);
+          for (const d of matchedDemands) map.set(d.id, d);
           return [...map.values()];
         });
       } else {

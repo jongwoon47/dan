@@ -687,7 +687,7 @@ textarea.dan-input,
 /* Auth: get in quickly */
 .app-shell--auth .app-main { max-width: 420px !important; padding-top: 72px !important; }
 .auth-screen { gap: 26px !important; }
-.auth-screen__brand { gap: 8px !important; }
+.auth-screen__brand { gap: 0 !important; }
 .auth-screen__brand img { width: 44px !important; height: 44px !important; }
 .auth-screen__mark { font-size: 13px !important; color: var(--dan-accent-text) !important; }
 .auth-screen__headline { font-size: 26px !important; letter-spacing: -.045em !important; }
@@ -839,7 +839,7 @@ textarea.dan-input,
   .trust-card__identity { align-items: center !important; }
   .trust-card__stats { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
 
-  .auth-screen { padding-top: 4px; }
+  .auth-screen { padding-top: max(32px, env(safe-area-inset-top)); }
 }
 
 /* Small phones */

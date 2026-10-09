@@ -20,6 +20,7 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": [
+    "capacitor.config.ts",
     "vite.config.ts",
     "scripts/seed-staging.ts",
     "scripts/assert-staging-deploy.ts",

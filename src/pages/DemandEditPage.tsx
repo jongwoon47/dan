@@ -221,7 +221,13 @@ export function DemandEditPage() {
 
   async function onSave(e: FormEvent) {
     e.preventDefault();
-    if (!title.trim() || price <= 0) {
+    const nextTitle =
+      current.type === "BORROW"
+        ? itemName.trim()
+        : current.type === "TASK"
+          ? description.trim().split("\n")[0].slice(0, 60)
+          : title.trim();
+    if (!nextTitle || price <= 0) {
       setError(ko.genericError);
       return;
     }
@@ -289,18 +295,16 @@ export function DemandEditPage() {
 
     const result = await updateDemand({
       demandId: current.id,
-      title: title.trim(),
+      title: nextTitle,
       description: description.trim(),
       budget: price,
       fulfillmentOptions: stripGeoFromFulfillmentOptions(fulfillmentOptions),
       expiresAt,
       maxPrice: current.type === "BUY" ? price : undefined,
       itemName:
-        current.type === "BORROW" ? itemName.trim() || title.trim() : undefined,
+        current.type === "BORROW" ? itemName.trim() : undefined,
       taskDescription:
-        current.type === "TASK"
-          ? description.trim() || current.details.taskDescription
-          : undefined,
+        current.type === "TASK" ? description.trim() : undefined,
       serviceDescription:
         current.type === "SERVICE"
           ? description.trim() || current.details.serviceDescription
@@ -332,43 +336,64 @@ export function DemandEditPage() {
 
   return (
     <div className="page-stack page-narrow">
-      <form className="section-stack create-page__body" onSubmit={(e) => void onSave(e)}>
-        <Field label={ko.titleLabel}>
-          <TextInput
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
-        </Field>
+      <form className="section-stack create-page__body request-edit-form" onSubmit={(e) => void onSave(e)}>
+        <div className="create-page__prompt">
+          <p className="create-page__kicker">요청 수정</p>
+          <h1 className="section-title">
+            {current.type === "BUY"
+              ? "찾는 물건의 조건을 수정할까요?"
+              : current.type === "BORROW"
+                ? "빌릴 물건의 조건을 수정할까요?"
+                : current.type === "TASK"
+                  ? "부탁할 내용을 수정할까요?"
+                  : "필요한 서비스 조건을 수정할까요?"}
+          </h1>
+        </div>
 
-        {current.type === "BORROW" ? (
-          <Field label={ko.itemName}>
+        {current.type === "BUY" ? (
+          <div className="request-edit-primary">
+            <span>제품</span>
+            <strong>{title}</strong>
+          </div>
+        ) : current.type === "BORROW" ? (
+          <Field label="빌릴 물건">
             <TextInput
               value={itemName}
               onChange={(e) => setItemName(e.target.value)}
+              required
             />
           </Field>
-        ) : null}
+        ) : current.type === "TASK" ? (
+          <Field label="부탁할 일">
+            <textarea
+              className="dan-input dan-textarea"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={4}
+              required
+            />
+          </Field>
+        ) : (
+          <Field label="필요한 서비스">
+            <TextInput
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </Field>
+        )}
 
-        {current.type === "TASK" || current.type === "SERVICE" ? (
-          <Field label={ko.descLabel}>
+        {current.type !== "TASK" ? (
+          <Field label={current.type === "SERVICE" ? "추가 설명" : "추가 조건"}>
             <textarea
               className="dan-input dan-textarea"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
+              placeholder="선택 사항을 적어주세요"
             />
           </Field>
-        ) : (
-          <Field label={ko.descLabel}>
-            <textarea
-              className="dan-input dan-textarea"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-            />
-          </Field>
-        )}
+        ) : null}
 
         <Field
           label={budgetLabelForType(current.type)}

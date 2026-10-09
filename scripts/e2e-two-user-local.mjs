@@ -81,6 +81,133 @@ async function createOffer(client, productId, demandId, minimumPrice) {
   return { ownership, offer };
 }
 
+async function createResponseDemand(client, input) {
+  const now = Date.now();
+  const { data: authData, error: authError } = await client.auth.getUser();
+  if (authError) throw authError;
+  assert(authData.user?.id, `${input.type} demand requires authenticated owner`);
+  const base = {
+    user_id: authData.user.id,
+    type: input.type,
+    title: input.title,
+    description: input.description ?? input.title,
+    category:
+      input.type === "BORROW"
+        ? "rental"
+        : input.type === "TASK"
+          ? "errand"
+          : "service",
+    budget: input.budget,
+    location: input.location ?? "서울",
+    fulfillment_options: input.fulfillmentOptions,
+    status: "ACTIVE",
+    expires_at: new Date(now + 7 * 86400000).toISOString(),
+  };
+
+  const details =
+    input.type === "BORROW"
+      ? {
+          item_name: input.itemName,
+          start_at: input.startAt,
+          end_at: input.endAt,
+        }
+      : input.type === "TASK"
+        ? {
+            task_description: input.taskDescription,
+            due_at: input.dueAt,
+          }
+        : {
+            service_description: input.serviceDescription,
+            preferred_at: input.preferredAt,
+            estimated_duration_minutes: input.estimatedDurationMinutes,
+          };
+
+  const { data, error } = await client
+    .from("demands")
+    .insert({ ...base, ...details })
+    .select("*")
+    .single();
+  if (error) throw error;
+  assert(data.type === input.type, `${input.type} demand type mismatch`);
+  assert(data.status === "ACTIVE", `${input.type} demand not ACTIVE`);
+  return data;
+}
+
+async function completeResponseFlow({
+  owner,
+  responder,
+  outsider,
+  demand,
+  offeredPrice,
+  label,
+}) {
+  const response = await rpc(responder, "upsert_response", {
+    p_demand_id: demand.id,
+    p_message: `${label} 응답 가능합니다`,
+    p_offered_price: offeredPrice,
+    p_availability_text: "오늘 가능",
+  });
+  assert(response.status === "OPEN", `${label} response not OPEN`);
+
+  const connected = await rpc(owner, "accept_response", {
+    p_response_id: response.id,
+  });
+  assert(connected.status === "CONNECTED", `${label} did not CONNECT`);
+  assert(connected.response_id === response.id, `${label} response link missing`);
+
+  await rpc(owner, "send_message", {
+    p_match_id: connected.id,
+    p_body: `${label} 요청자 메시지`,
+  });
+  await rpc(responder, "send_message", {
+    p_match_id: connected.id,
+    p_body: `${label} 응답자 메시지`,
+  });
+
+  const { data: messages, error: messagesError } = await owner
+    .from("messages")
+    .select("id")
+    .eq("match_id", connected.id);
+  if (messagesError) throw messagesError;
+  assert((messages ?? []).length === 2, `${label} chat messages missing`);
+
+  const outsiderMessages = await outsider
+    .from("messages")
+    .select("id")
+    .eq("match_id", connected.id);
+  if (outsiderMessages.error) throw outsiderMessages.error;
+  assert(
+    (outsiderMessages.data ?? []).length === 0,
+    `${label} outsider could read private chat`,
+  );
+
+  const ownerDone = await rpc(owner, "confirm_match_completion", {
+    p_match_id: connected.id,
+  });
+  assert(
+    ownerDone.status === "CONNECTED",
+    `${label} one-sided completion should stay CONNECTED`,
+  );
+
+  const responderDone = await rpc(responder, "confirm_match_completion", {
+    p_match_id: connected.id,
+  });
+  assert(
+    responderDone.status === "COMPLETED",
+    `${label} two-sided completion failed`,
+  );
+
+  const { data: closedDemand, error: closedDemandError } = await owner
+    .from("demands")
+    .select("status")
+    .eq("id", demand.id)
+    .single();
+  if (closedDemandError) throw closedDemandError;
+  assert(closedDemand.status === "CLOSED", `${label} completed demand must close`);
+
+  return { response, connected, completed: responderDone };
+}
+
 const report = {
   auth: "FAIL",
   verification: "FAIL",
@@ -96,17 +223,24 @@ const report = {
   completion: "FAIL",
   trustHistory: "FAIL",
   cancelAndReopen: "FAIL",
+  zeroData: "FAIL",
+  borrowFlow: "FAIL",
+  taskFlow: "FAIL",
+  serviceFlow: "FAIL",
 };
 
 try {
   const buyer = sb();
   const seller = sb();
+  const outsider = sb();
   const admin = sb(serviceRoleKey);
   const tag = Date.now();
 
   const buyerUser = await signup(buyer, `dan.local.buyer.${tag}@example.com`, "Local Buyer");
   const sellerUser = await signup(seller, `dan.local.seller.${tag}@example.com`, "Local Seller");
+  const outsiderUser = await signup(outsider, `dan.local.outsider.${tag}@example.com`, "Local Outsider");
   assert(buyerUser.id !== sellerUser.id, "buyer and seller must differ");
+  assert(![buyerUser.id, sellerUser.id].includes(outsiderUser.id), "outsider must differ");
   report.auth = "PASS";
 
   await rpc(admin, "ops_set_user_verification", {
@@ -128,6 +262,29 @@ try {
     p_seller_type: "INDIVIDUAL",
   });
   report.verification = "PASS";
+
+  await rpc(admin, "ops_set_user_verification", {
+    p_user_id: outsiderUser.id,
+    p_phone_verified: true,
+    p_identity_verified: false,
+    p_payout_verified: false,
+    p_legal_name: "Local Outsider",
+    p_payout_account_ref: null,
+    p_seller_type: null,
+  });
+
+  const [outsiderMatches, outsiderActivities, outsiderOwnDemands] = await Promise.all([
+    outsider.from("matches").select("id"),
+    outsider.from("activity_events").select("id"),
+    outsider.from("demands").select("id").eq("user_id", outsiderUser.id),
+  ]);
+  if (outsiderMatches.error) throw outsiderMatches.error;
+  if (outsiderActivities.error) throw outsiderActivities.error;
+  if (outsiderOwnDemands.error) throw outsiderOwnDemands.error;
+  assert((outsiderMatches.data ?? []).length === 0, "fresh user should have no matches");
+  assert((outsiderActivities.data ?? []).length === 0, "fresh user should have no activities");
+  assert((outsiderOwnDemands.data ?? []).length === 0, "fresh user should have no own demands");
+  report.zeroData = "PASS";
 
   const { data: products, error: productsError } = await buyer
     .from("products")
@@ -325,6 +482,76 @@ try {
   });
   assert(reopened.status === "ACTIVE", "buyer could not reopen cancelled demand");
   report.cancelAndReopen = "PASS";
+
+  const startAt = new Date(Date.now() + 2 * 86400000).toISOString();
+  const endAt = new Date(Date.now() + 3 * 86400000).toISOString();
+  const borrowDemand = await createResponseDemand(buyer, {
+    type: "BORROW",
+    title: `LOCAL E2E BORROW ${tag}`,
+    description: "주말 캠핑용 텐트 대여",
+    budget: 30_000,
+    location: "서울",
+    fulfillmentOptions: [{ mode: "MEETUP", place: { publicLabel: "서울" } }],
+    itemName: "2인용 캠핑 텐트",
+    startAt,
+    endAt,
+  });
+  await completeResponseFlow({
+    owner: buyer,
+    responder: seller,
+    outsider,
+    demand: borrowDemand,
+    offeredPrice: 25_000,
+    label: "BORROW",
+  });
+  report.borrowFlow = "PASS";
+
+  const taskDemand = await createResponseDemand(buyer, {
+    type: "TASK",
+    title: `LOCAL E2E TASK ${tag}`,
+    description: "서류를 대신 전달해 주세요",
+    budget: 20_000,
+    location: "평택역 → 고덕",
+    fulfillmentOptions: [
+      {
+        mode: "ROUTE",
+        from: { publicLabel: "평택역" },
+        to: { publicLabel: "고덕" },
+      },
+    ],
+    taskDescription: "평택역에서 서류 수령 후 고덕 전달",
+    dueAt: new Date(Date.now() + 2 * 86400000).toISOString(),
+  });
+  await completeResponseFlow({
+    owner: buyer,
+    responder: seller,
+    outsider,
+    demand: taskDemand,
+    offeredPrice: 18_000,
+    label: "TASK",
+  });
+  report.taskFlow = "PASS";
+
+  const serviceDemand = await createResponseDemand(buyer, {
+    type: "SERVICE",
+    title: `LOCAL E2E SERVICE ${tag}`,
+    description: "30분 온라인 포트폴리오 피드백",
+    budget: 15_000,
+    location: "온라인",
+    fulfillmentOptions: [{ mode: "REMOTE" }],
+    serviceDescription: "포트폴리오 피드백",
+    preferredAt: new Date(Date.now() + 2 * 86400000).toISOString(),
+    estimatedDurationMinutes: 30,
+  });
+  await completeResponseFlow({
+    owner: buyer,
+    responder: seller,
+    outsider,
+    demand: serviceDemand,
+    offeredPrice: 15_000,
+    label: "SERVICE",
+  });
+  report.serviceFlow = "PASS";
 
   console.log(JSON.stringify(report, null, 2));
   const failed = Object.entries(report).filter(([, value]) => value !== "PASS");

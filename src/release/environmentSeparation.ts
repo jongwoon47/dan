@@ -2,28 +2,30 @@
  * Production vs staging identifiers. No secret values live here.
  *
  * Staging must never point at the public Cloudflare project `dan`
- * or `dan.pages.dev`. The currently restored DAN Supabase project is
- * explicitly designated as staging until a separate production DB is created.
+ * or `dan.pages.dev`. Production and staging use separate Supabase refs;
+ * both refs are public identifiers, never credentials.
  */
 
 export const STAGING_CLOUDFLARE_PROJECT = "dan-v1-staging-jongwoon";
 export const STAGING_PAGES_URL = "https://dan-v1-staging-jongwoon.pages.dev";
 export const STAGING_DEPLOY_CONFIRM = "deploy-staging-only";
+export const PRODUCTION_DEPLOY_CONFIRM = "deploy-production";
 export const STAGING_SEED_CONFIRM = "seed-staging-only";
 export const STAGING_REMOTE_CONFIRM = "apply-staging-only";
 export const PRODUCTION_REMOTE_CONFIRM = "apply-production-only";
 export const STAGING_GITHUB_ENVIRONMENT = "staging";
+export const PRODUCTION_GITHUB_ENVIRONMENT = "production";
 export const STAGING_PROJECT_REF_ENV = "DAN_STAGING_SUPABASE_PROJECT_REF";
+export const PRODUCTION_PROJECT_REF_ENV = "DAN_PRODUCTION_SUPABASE_PROJECT_REF";
 export const STAGING_SUPABASE_PROJECT_REF = "wmznpuhqmmqunwtewntt";
 
 export const PRODUCTION_CLOUDFLARE_PROJECT = "dan";
 export const PRODUCTION_PAGES_HOSTS = ["dan.pages.dev"] as const;
 
-/**
- * Deny-list only. Never use these as a script default or implicit target.
- * Legacy apply scripts used to hardcode the first ref as the execution URL.
- */
-export const PRODUCTION_SUPABASE_PROJECT_REFS = [] as readonly string[];
+/** Approved production Supabase refs. Public identifiers only, never keys. */
+export const PRODUCTION_SUPABASE_PROJECT_REFS: readonly string[] = [
+  "hcbooyexjgsjzjncpvtk",
+];
 
 /** GitHub secret names for staging. Values are never committed. */
 export const STAGING_GITHUB_SECRET_NAMES = [
@@ -41,6 +43,7 @@ export const PRODUCTION_GITHUB_SECRET_NAMES = [
   "VITE_SUPABASE_ANON_KEY",
   "CLOUDFLARE_API_TOKEN",
   "CLOUDFLARE_ACCOUNT_ID",
+  "DAN_PRODUCTION_SUPABASE_PROJECT_REF",
 ] as const;
 
 export function containsProductionSupabaseRef(value: string): boolean {

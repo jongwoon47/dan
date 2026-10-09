@@ -1,0 +1,1492 @@
+
+/* DAN App V3 — app-first UI layer
+   Loaded after global + danPractical. This file owns the final product look. */
+
+:root {
+  --v3-ink: #17171b;
+  --v3-sub: #5f6069;
+  --v3-muted: #8a8b94;
+  --v3-line: #ececf0;
+  --v3-line-strong: #ddddE5;
+  --v3-surface: #ffffff;
+  --v3-soft: #f7f7f9;
+  --v3-accent: #6347f5;
+  --v3-accent-soft: #f1efff;
+  --v3-success: #16805c;
+  --v3-danger: #b42318;
+  --v3-shell: 1180px;
+  --v3-form: 700px;
+  --v3-radius: 12px;
+}
+
+body {
+  background: #fff !important;
+  color: var(--v3-ink);
+}
+
+.app-main {
+  max-width: var(--v3-shell) !important;
+}
+
+/* ---------- Root navigation ---------- */
+
+.top-nav {
+  background: rgba(255,255,255,.96) !important;
+  border-bottom: 1px solid var(--v3-line) !important;
+  backdrop-filter: blur(12px);
+}
+
+.top-nav__inner {
+  max-width: var(--v3-shell) !important;
+}
+
+.top-nav__links {
+  gap: 24px !important;
+}
+
+.top-nav__links a {
+  color: var(--v3-sub) !important;
+  font-weight: 680 !important;
+}
+
+.top-nav__links a.active {
+  color: var(--v3-ink) !important;
+}
+
+.bottom-nav--v1 {
+  background: rgba(255,255,255,.98) !important;
+  border-top: 1px solid var(--v3-line) !important;
+  box-shadow: 0 -4px 18px rgba(20,20,30,.04) !important;
+}
+
+.bottom-nav--v1 a {
+  color: var(--v3-muted) !important;
+}
+
+.bottom-nav--v1 a.active {
+  color: var(--v3-ink) !important;
+}
+
+.bottom-nav__create-circle {
+  width: 42px !important;
+  height: 42px !important;
+  margin-top: -19px !important;
+  background: var(--v3-accent) !important;
+  box-shadow: 0 6px 16px rgba(99,71,245,.22) !important;
+}
+
+/* Mobile root-header actions are explicit controls, not incidental inline links. */
+.top-nav__mobile-actions {
+  margin-left: auto;
+  display: none;
+  align-items: center;
+  gap: 2px;
+}
+
+.top-nav__mobile-bell,
+.top-nav__mobile-search {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--v3-sub);
+  text-decoration: none;
+}
+
+.top-nav__mobile-bell:active,
+.top-nav__mobile-search:active {
+  background: var(--v3-soft);
+}
+
+/* ---------- Shared type ---------- */
+
+.page-title {
+  color: var(--v3-ink);
+  letter-spacing: -.04em !important;
+}
+
+.section-title {
+  color: var(--v3-ink);
+  letter-spacing: -.025em;
+}
+
+.section-desc,
+.muted {
+  color: var(--v3-sub) !important;
+}
+
+.eyebrow {
+  color: var(--v3-muted) !important;
+  letter-spacing: 0 !important;
+}
+
+.dan-btn {
+  min-height: 48px !important;
+  border-radius: 11px !important;
+  box-shadow: none !important;
+}
+
+.dan-btn--primary {
+  background: var(--v3-accent) !important;
+  border-color: var(--v3-accent) !important;
+}
+
+.dan-btn--secondary {
+  background: #fff !important;
+  border-color: var(--v3-line-strong) !important;
+}
+
+.dan-btn--ghost {
+  color: var(--v3-sub) !important;
+}
+
+.dan-input,
+.composer-sheet input,
+.composer-sheet textarea {
+  border: 1px solid var(--v3-line-strong) !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  border-radius: 11px !important;
+}
+
+.dan-input:focus,
+.composer-sheet input:focus,
+.composer-sheet textarea:focus {
+  border-color: #9384f7 !important;
+  outline: 3px solid rgba(99,71,245,.08) !important;
+}
+
+.dan-chip--selected {
+  background: var(--v3-accent-soft) !important;
+  color: #4f38dc !important;
+}
+
+/* ---------- Home ---------- */
+
+.home-page {
+  gap: 28px !important;
+}
+
+.home-demand-header--app {
+  padding: 26px 0 22px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.home-demand-header--app .home-demand-heading {
+  max-width: 640px;
+  gap: 7px !important;
+}
+
+.home-demand-header--app .home-demand-kicker {
+  color: var(--v3-accent) !important;
+}
+
+.home-demand-header--app .home-demand-heading h1 {
+  font-size: clamp(28px, 4vw, 40px) !important;
+  line-height: 1.12 !important;
+}
+
+.home-demand-header--app .home-demand-heading p {
+  color: var(--v3-sub) !important;
+}
+
+.home-demand-header--app .home-intent-composer {
+  margin-top: 18px !important;
+  max-width: 680px;
+  min-height: 58px !important;
+  border: 1px solid var(--v3-line-strong) !important;
+  border-radius: 14px !important;
+  box-shadow: none !important;
+}
+
+.home-request-types {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.home-request-types::-webkit-scrollbar { display: none; }
+
+.home-request-types a {
+  flex: 0 0 auto;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 13px;
+  border: 1px solid var(--v3-line);
+  border-radius: 999px;
+  color: var(--v3-ink);
+  background: #fff;
+  font-size: 13px;
+  font-weight: 720;
+}
+
+.home-demand-filters {
+  margin-top: 16px !important;
+}
+
+.home-live-section {
+  max-width: 920px;
+}
+
+.home-live-heading h2 {
+  font-size: 21px !important;
+}
+
+.home-live-footer,
+.seller-entry-banner {
+  border: 0 !important;
+  border-top: 1px solid var(--v3-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 18px 0 !important;
+}
+
+/* ---------- Explore ---------- */
+
+.discovery-page {
+  max-width: 980px;
+}
+
+.discovery-header {
+  max-width: 700px;
+  gap: 6px !important;
+}
+
+.discovery-panel {
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.discovery-search {
+  border: 1px solid var(--v3-line-strong) !important;
+  border-radius: 13px !important;
+}
+
+.discovery-filter-scroll {
+  gap: 7px !important;
+}
+
+.discovery-toolbar {
+  border: 0 !important;
+  border-bottom: 1px solid var(--v3-line) !important;
+  background: transparent !important;
+  padding-inline: 0 !important;
+}
+
+.discovery-create-banner {
+  border: 0 !important;
+  border-top: 1px solid var(--v3-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 20px 0 !important;
+}
+
+/* ---------- Request create ---------- */
+
+.create-page {
+  max-width: var(--v3-form) !important;
+}
+
+.create-page__body {
+  gap: 22px !important;
+}
+
+.create-page__prompt {
+  gap: 4px !important;
+}
+
+.create-page__kicker {
+  color: var(--v3-accent) !important;
+  font-size: 12px !important;
+  font-weight: 760 !important;
+}
+
+.create-page__prompt .section-title {
+  font-size: 25px !important;
+  line-height: 1.2;
+}
+
+.request-type-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.request-type-card {
+  min-height: 88px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  padding: 14px;
+  border: 1px solid var(--v3-line);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--v3-ink);
+}
+
+.request-type-card:hover {
+  border-color: #cfc9ff;
+}
+
+.request-type-card.is-selected {
+  border-color: #8d7bf8;
+  background: #faf9ff;
+}
+
+.request-type-card__icon {
+  flex: 0 0 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--v3-soft);
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.request-type-card__icon svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.request-type-card.is-selected .request-type-card__icon {
+  color: var(--v3-accent);
+  background: var(--v3-accent-soft);
+}
+
+.request-type-card__copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.request-type-card__copy strong {
+  font-size: 15px;
+}
+
+.request-type-card__copy small {
+  color: var(--v3-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.create-progress {
+  display: grid;
+  gap: 7px;
+  padding: 2px 0 8px;
+}
+
+.create-progress__track {
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eeeef3;
+}
+
+.create-progress__track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--v3-accent);
+  transition: width .2s ease;
+}
+
+.create-progress__labels {
+  display: flex;
+  justify-content: space-between;
+  color: var(--v3-muted);
+  font-size: 12px;
+  font-weight: 660;
+}
+
+.create-progress__labels .is-active {
+  color: var(--v3-ink);
+}
+
+.create-page .dan-field {
+  gap: 7px !important;
+}
+
+.create-page .dan-field__label,
+.create-page .field-inline-label {
+  color: var(--v3-ink) !important;
+  font-size: 13px !important;
+}
+
+.create-page .dan-input {
+  min-height: 52px;
+}
+
+.create-page__footer {
+  padding-top: 8px !important;
+}
+
+/* ---------- Demand detail / offers ---------- */
+
+.demand-item,
+.detail-page,
+.quick-offer-page,
+.offer-detail-page {
+  max-width: 760px !important;
+}
+
+.demand-item__header,
+.demand-detail-hero {
+  padding-bottom: 18px !important;
+  border-bottom: 1px solid var(--v3-line) !important;
+}
+
+.detail-facts--panel,
+.offer-detail-facts {
+  border-top: 1px solid var(--v3-line) !important;
+  border-bottom: 1px solid var(--v3-line) !important;
+}
+
+.detail-facts__row,
+.offer-detail-facts > div {
+  min-height: 54px;
+  padding: 12px 0 !important;
+  border-bottom: 1px solid var(--v3-line) !important;
+}
+
+.detail-facts__row:last-child,
+.offer-detail-facts > div:last-child {
+  border-bottom: 0 !important;
+}
+
+.quick-offer-product-card,
+.offer-detail-product {
+  border-bottom: 1px solid var(--v3-line) !important;
+  padding-bottom: 18px !important;
+}
+
+.live-demand-banner {
+  display: grid !important;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px !important;
+  align-items: center;
+  padding: 14px 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--v3-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.live-demand-banner strong {
+  font-size: 24px !important;
+  color: var(--v3-ink) !important;
+}
+
+.live-demand-banner button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.quick-offer-form {
+  gap: 20px !important;
+}
+
+.quick-offer-note {
+  border: 0 !important;
+  background: var(--v3-soft) !important;
+  border-radius: 11px !important;
+  padding: 12px 14px !important;
+}
+
+.offer-detail-price {
+  color: var(--v3-ink) !important;
+  font-size: 30px !important;
+}
+
+.offer-seller-card {
+  padding: 18px 0 !important;
+  border-top: 1px solid var(--v3-line) !important;
+  border-bottom: 1px solid var(--v3-line) !important;
+}
+
+.offer-seller-card__facts {
+  gap: 16px !important;
+}
+
+.offer-next-state {
+  border: 0 !important;
+  border-top: 1px solid var(--v3-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 18px 0 !important;
+}
+
+/* ---------- My transactions ---------- */
+
+.my-dan {
+  max-width: 900px;
+}
+
+.my-dan__header--v1 {
+  align-items: center !important;
+}
+
+.my-demand-tabs {
+  gap: 22px !important;
+  border-bottom: 1px solid var(--v3-line) !important;
+}
+
+.my-demand-panel {
+  padding: 0 !important;
+}
+
+.my-demand-card-list,
+.seller-offer-list {
+  border-top: 1px solid var(--v3-line);
+}
+
+.my-demand-card,
+.seller-offer-row {
+  padding: 14px 0 !important;
+  border-bottom: 1px solid var(--v3-line) !important;
+  background: transparent !important;
+}
+
+.my-demand-card__offer strong {
+  color: var(--v3-ink) !important;
+}
+
+/* ---------- Chat as transaction hub ---------- */
+
+.chat-page {
+  max-width: 820px !important;
+  min-height: calc(100dvh - 72px);
+}
+
+/* Chat owns the viewport. Remove the deep-page padding/margin combination so
+   only the message thread scrolls and the composer stays stable. */
+.app-shell--deep .app-main:has(.chat-page) {
+  max-width: none !important;
+  padding: 0 !important;
+}
+
+.app-shell--deep .app-main:has(.chat-page) .chat-page {
+  width: min(100%, 900px);
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  max-height: 100dvh !important;
+  margin: 0 auto !important;
+}
+
+.chat-page__header {
+  border-bottom: 1px solid var(--v3-line);
+}
+
+.chat-deal-progress {
+  padding: 10px 0 !important;
+  border-bottom: 1px solid var(--v3-line) !important;
+}
+
+.trade-status {
+  margin: 0 !important;
+  padding: 13px 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--v3-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.trade-status__state {
+  font-size: 15px !important;
+  font-weight: 760 !important;
+}
+
+.trade-status__hint {
+  color: var(--v3-sub) !important;
+  font-size: 13px !important;
+}
+
+.trade-status__actions {
+  display: flex !important;
+  gap: 8px !important;
+  flex-wrap: wrap;
+}
+
+.trade-status__actions .dan-btn {
+  width: auto !important;
+  min-height: 42px !important;
+}
+
+.chat-thread {
+  background: #fff !important;
+  padding: 18px 0 !important;
+}
+
+.chat-bubble {
+  border: 0 !important;
+  background: #f0f0f3 !important;
+}
+
+.chat-bubble--mine {
+  background: var(--v3-accent) !important;
+}
+
+.chat-composer {
+  border-top: 1px solid var(--v3-line) !important;
+  background: rgba(255,255,255,.98) !important;
+}
+
+/* ---------- Transaction steps ---------- */
+
+.deal-page,
+.safe-payment-page,
+.handoff-page,
+.trade-complete-page {
+  max-width: 760px !important;
+}
+
+.deal-product-card,
+.payment-product-card,
+.trade-complete-product {
+  padding: 0 0 18px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--v3-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.trust-explainer,
+.deal-evidence-summary,
+.deal-snapshot-card,
+.payment-breakdown,
+.payment-provider-gate,
+.payment-safety-note,
+.trade-progress-card,
+.final-confirm-card,
+.trade-complete-card {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.trust-explainer {
+  padding: 10px 0 !important;
+  border-bottom: 1px solid var(--v3-line) !important;
+  background: transparent !important;
+}
+
+.deal-evidence-review__photo {
+  border-radius: 12px !important;
+}
+
+.deal-facts,
+.snapshot-section,
+.payment-breakdown {
+  border-color: var(--v3-line) !important;
+}
+
+.deal-snapshot-card {
+  padding: 0 !important;
+  border-top: 1px solid var(--v3-line) !important;
+  border-bottom: 1px solid var(--v3-line) !important;
+}
+
+.snapshot-section {
+  min-height: 54px;
+  padding: 12px 0 !important;
+  border-bottom: 1px solid var(--v3-line) !important;
+}
+
+.snapshot-section:last-child {
+  border-bottom: 0 !important;
+}
+
+.payment-methods {
+  border-top: 1px solid var(--v3-line);
+}
+
+.payment-method {
+  min-height: 56px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--v3-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.payment-method.is-selected {
+  background: #faf9ff !important;
+}
+
+.trade-progress-card {
+  padding: 0 !important;
+  border-top: 1px solid var(--v3-line) !important;
+  border-bottom: 1px solid var(--v3-line) !important;
+}
+
+.trade-progress-row {
+  border-bottom: 1px solid var(--v3-line) !important;
+}
+
+.trade-progress-row:last-child { border-bottom: 0 !important; }
+
+.trade-complete-hero {
+  padding: 26px 0 12px !important;
+}
+
+.trade-complete-check {
+  width: 50px !important;
+  height: 50px !important;
+}
+
+/* ---------- Profile ---------- */
+
+.profile-page {
+  max-width: 720px !important;
+}
+
+.trust-card {
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+.trust-card__identity {
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--v3-line);
+}
+
+.trust-card__stats {
+  padding: 14px 0 !important;
+  border-top: 0 !important;
+  border-bottom: 1px solid var(--v3-line) !important;
+}
+
+.trust-history {
+  padding: 18px 0 !important;
+  border-bottom: 1px solid var(--v3-line) !important;
+}
+
+.trust-summary-strip {
+  background: transparent !important;
+  border-top: 1px solid var(--v3-line) !important;
+  border-bottom: 1px solid var(--v3-line) !important;
+  border-radius: 0 !important;
+}
+
+.trust-fact-list {
+  border-top: 0 !important;
+}
+
+.profile-trade-tabs {
+  border-bottom: 1px solid var(--v3-line) !important;
+}
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 767px) {
+  .app-main {
+    padding: 16px 16px calc(82px + env(safe-area-inset-bottom,0px)) !important;
+  }
+
+  .top-nav__mobile-actions {
+    display: flex;
+  }
+
+  .top-nav__mobile-bell,
+  .top-nav__mobile-search {
+    display: inline-flex !important;
+    margin-left: 0 !important;
+  }
+
+  .app-shell--deep .app-main {
+    padding-bottom: calc(24px + env(safe-area-inset-bottom,0px)) !important;
+  }
+
+  .page-stack {
+    gap: 22px !important;
+  }
+
+  .home-demand-header--app {
+    margin: 0 !important;
+    padding: 12px 0 18px !important;
+    border-bottom: 0 !important;
+  }
+
+  .home-demand-header--app .home-demand-heading h1 {
+    font-size: 28px !important;
+  }
+
+  .home-intent-composer__copy small {
+    display: none;
+  }
+
+  .home-request-types {
+    margin-inline: -16px;
+    padding-inline: 16px;
+  }
+
+  .home-demand-filters {
+    margin-inline: -16px;
+    padding-inline: 16px;
+    overflow-x: auto;
+    flex-wrap: nowrap !important;
+    scrollbar-width: none;
+  }
+
+  .home-live-footer {
+    display: none !important;
+  }
+
+  .request-type-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .request-type-card {
+    min-height: 94px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .request-type-card__copy small {
+    font-size: 11.5px;
+  }
+
+  .create-page {
+    padding-bottom: 74px;
+  }
+
+  .create-page__footer,
+  .create-sticky-action {
+    position: sticky !important;
+    bottom: 0;
+    z-index: 20;
+    margin-inline: -16px;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom,0px)) !important;
+    border-top: 1px solid var(--v3-line);
+    background: rgba(255,255,255,.98) !important;
+    backdrop-filter: blur(10px);
+  }
+
+  .demand-item,
+  .detail-page,
+  .quick-offer-page,
+  .offer-detail-page,
+  .deal-page,
+  .safe-payment-page,
+  .handoff-page,
+  .trade-complete-page,
+  .profile-page {
+    max-width: none !important;
+  }
+
+  .quick-offer-page,
+  .offer-detail-page,
+  .deal-page,
+  .safe-payment-page,
+  .handoff-page {
+    padding-bottom: 72px;
+  }
+
+  .chat-page {
+    max-width: none !important;
+    min-height: calc(100dvh - 56px) !important;
+  }
+
+  .trade-status__actions {
+    display: grid !important;
+  }
+
+  .trade-status__actions .dan-btn {
+    width: 100% !important;
+  }
+
+  .my-demand-tabs {
+    margin-inline: -16px;
+    padding-inline: 16px !important;
+    overflow-x: auto;
+  }
+
+  .trust-card__actions .action-row--split {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ---------- Desktop ---------- */
+
+@media (min-width: 1024px) {
+  .app-main {
+    padding-top: 36px !important;
+  }
+
+  .home-page,
+  .discovery-page {
+    max-width: 1040px;
+  }
+
+  .create-page {
+    max-width: var(--v3-form) !important;
+  }
+
+  .home-demand-header--app {
+    display: grid;
+    grid-template-columns: minmax(0, 700px);
+  }
+
+  .live-demand-list--discovery {
+    grid-template-columns: 1fr 1fr !important;
+    column-gap: 28px !important;
+  }
+
+  .chat-page {
+    max-width: 900px !important;
+  }
+
+  .deal-page,
+  .safe-payment-page,
+  .handoff-page,
+  .trade-complete-page {
+    max-width: 820px !important;
+  }
+}
+
+
+/* ---------- Transaction rows ---------- */
+
+.trade-row-list {
+  display: grid;
+  border-top: 1px solid var(--v3-line);
+}
+
+.trade-row-card {
+  border-bottom: 1px solid var(--v3-line);
+  background: transparent;
+}
+
+.trade-row-card__link {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 86px;
+  padding: 13px 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.trade-row-card__photo {
+  width: 58px;
+  height: 58px;
+  object-fit: cover;
+  border-radius: 12px;
+  background: var(--v3-soft);
+}
+
+.trade-row-card__body {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 3px;
+}
+
+.trade-row-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.trade-row-card__head strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+}
+
+.trade-row-card__head span {
+  flex: 0 0 auto;
+  color: var(--v3-accent);
+  font-size: 11.5px;
+  font-weight: 760;
+}
+
+.trade-row-card__price {
+  margin: 0;
+  color: var(--v3-ink);
+  font-size: 17px;
+  font-weight: 820;
+  letter-spacing: -.025em;
+}
+
+.trade-row-card__body small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--v3-muted);
+  font-size: 12px;
+}
+
+.trade-row-card__delta.is-good {
+  color: var(--v3-success) !important;
+}
+
+.trade-row-card__trail {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 2px 0;
+  color: var(--v3-muted);
+}
+
+.trade-row-card__trail time {
+  font-size: 11px;
+}
+
+.trade-row-card__trail span,
+.trade-row-card__chevron {
+  color: var(--v3-muted);
+  font-size: 20px;
+}
+
+.trade-row-card__inline-action {
+  padding: 0 0 12px 70px;
+}
+
+.request-type-avatar {
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--v3-soft);
+  color: var(--v3-sub);
+  font-weight: 820;
+}
+
+.my-demand-card--all-types {
+  grid-template-columns: 58px minmax(0,1fr) auto !important;
+}
+
+.my-demand-card__chevron {
+  color: var(--v3-muted);
+  font-size: 20px;
+}
+
+/* ---------- Offer optional details ---------- */
+
+.offer-extra-details {
+  border-top: 1px solid var(--v3-line);
+  border-bottom: 1px solid var(--v3-line);
+}
+
+.offer-extra-details > summary {
+  min-height: 54px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  list-style: none;
+}
+
+.offer-extra-details > summary::-webkit-details-marker { display: none; }
+
+.offer-extra-details > summary > span:first-child {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.offer-extra-details > summary small {
+  color: var(--v3-muted);
+  font-size: 12px;
+}
+
+.offer-extra-details__body {
+  display: grid;
+  gap: 18px;
+  padding: 4px 0 18px;
+}
+
+.quick-offer-photo__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.quick-offer-photo__head small,
+.quick-offer-helper {
+  color: var(--v3-muted);
+  font-size: 12.5px;
+}
+
+.quick-offer-helper {
+  margin: -4px 0 0;
+  line-height: 1.5;
+}
+
+@media (max-width: 767px) {
+  .trade-row-card__link {
+    grid-template-columns: 52px minmax(0,1fr) auto;
+    min-height: 80px;
+  }
+
+  .trade-row-card__photo {
+    width: 52px;
+    height: 52px;
+  }
+
+  .request-type-avatar {
+    width: 48px;
+    height: 48px;
+  }
+
+  .trade-row-card__inline-action {
+    padding-left: 64px;
+  }
+}
+
+
+/* ---------- Unified request discovery ---------- */
+
+.request-type-filter {
+  display: flex;
+  gap: 7px;
+  padding: 14px 0 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.request-type-filter::-webkit-scrollbar { display: none; }
+
+.request-type-filter button {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 13px;
+  border: 1px solid var(--v3-line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--v3-sub);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.request-type-filter button.is-active {
+  border-color: var(--v3-ink);
+  background: var(--v3-ink);
+  color: #fff;
+}
+
+.discovery-toolbar--simple {
+  justify-content: flex-start !important;
+}
+
+.mixed-demand-list {
+  display: grid;
+  border-top: 1px solid var(--v3-line);
+}
+
+.mixed-demand-list > * {
+  border-bottom: 1px solid var(--v3-line) !important;
+}
+
+.mixed-demand-list .feed-row,
+.mixed-demand-list .live-demand-card {
+  margin: 0 !important;
+  border-radius: 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.mixed-demand-list .live-demand-card {
+  grid-template-columns: 64px minmax(0, 1fr);
+  padding: 14px 0 !important;
+}
+
+.mixed-demand-list .feed-row {
+  padding: 15px 0 !important;
+}
+
+.mixed-demand-list .live-demand-card:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  background: #fafafa !important;
+}
+
+/* ---------- Conversation list ---------- */
+
+.chats-page .chat-list {
+  overflow: visible;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.chats-page .chat-list__row {
+  position: relative;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 8px !important;
+  border: 0 !important;
+  border-radius: 12px;
+  min-width: 0;
+  transition: background 120ms ease;
+}
+
+.chats-page .chat-list__row + .chat-list__row::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 76px;
+  right: 8px;
+  height: 1px;
+  background: var(--v3-line);
+}
+
+.chats-page .chat-list__row:hover { background: #f8f8fb !important; }
+.chats-page .chat-list__row:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 2px; }
+.chats-page .avatar-initial { width: 52px; height: 52px; flex: 0 0 52px; border-radius: 18px; }
+.chats-page .chat-list__body { gap: 5px; }
+.chats-page .chat-list__name { font-size: 16px; font-weight: 700; min-width: 0; }
+.chats-page .chat-list__time { font-size: 11px; }
+.chats-page .chat-list__preview { font-size: 14px; line-height: 1.5; }
+.chat-list__title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Social auth uses only server-enabled providers. */
+.auth-social { display: grid; gap: 10px; width: 100%; }
+.auth-social__button {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; height: 56px; padding: 12px 16px;
+  border: 1px solid var(--v3-line); border-radius: 12px;
+  font: inherit; font-weight: 600; cursor: pointer;
+  transition: background-color .15s ease;
+}
+.auth-social__content { display: inline-flex; align-items: center; gap: 12px; min-width: 0; }
+.auth-social__icon, .auth-social__icon img { display: block; width: 20px; height: 20px; flex: 0 0 20px; }
+.auth-social__label { position: relative; white-space: nowrap; }
+.auth-social__label--hidden { visibility: hidden; }
+.auth-social__progress { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+@media (hover: hover) { .auth-social__button--google:hover:not(:disabled) { background: #f8f9fa; } }
+.auth-social__button--google:active:not(:disabled) { background: #f1f3f4; }
+.auth-social__button--kakao { background: #fee500; color: #191919; border-color: #fee500; }
+.auth-social__button--google { background: #fff; color: #202124; }
+.auth-social__button--apple { background: #000; color: #fff; border-color: #000; }
+.auth-social__button:disabled { cursor: default; opacity: .55; }
+.auth-social__button:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 3px; }
+.auth-social__divider { display: flex; align-items: center; gap: 12px; margin: 16px 0 0; color: var(--dan-ink-muted); font-size: 13px; }
+.auth-social__divider::before, .auth-social__divider::after { content: ""; flex: 1; height: 1px; background: var(--v3-line); }
+
+.chat-list__demand {
+  display: flex !important;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.chat-list__stage {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--v3-accent-soft);
+  color: #5840de;
+  font-size: 10.5px;
+  font-style: normal;
+  font-weight: 740;
+}
+
+/* ---------- Cleaner request details ---------- */
+
+.demand-owner-actions {
+  gap: 6px !important;
+}
+
+.demand-owner-actions .dan-btn {
+  min-height: 38px !important;
+  padding-inline: 12px !important;
+}
+
+.demand-item__responses {
+  border-top: 1px solid var(--v3-line) !important;
+}
+
+.response-card {
+  padding: 14px 0 !important;
+  border-bottom: 1px solid var(--v3-line) !important;
+}
+
+.response-card .action-row {
+  margin-top: 4px;
+}
+
+@media (max-width: 767px) {
+  .request-type-filter {
+    margin-inline: -16px;
+    padding-inline: 16px;
+  }
+
+  .mixed-demand-list {
+    margin-inline: 0;
+  }
+
+  .mixed-demand-list .live-demand-card {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .discovery-header .section-desc {
+    display: block !important;
+    font-size: 13px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mixed-demand-list {
+    grid-template-columns: 1fr 1fr;
+    column-gap: 30px;
+    border-top: 0;
+  }
+
+  .mixed-demand-list > * {
+    border-top: 1px solid var(--v3-line) !important;
+  }
+}
+
+
+/* ---------- Request edit ---------- */
+
+.request-edit-form {
+  max-width: var(--v3-form);
+}
+
+.request-edit-primary {
+  min-height: 58px;
+  display: grid;
+  gap: 3px;
+  padding: 11px 0 14px;
+  border-bottom: 1px solid var(--v3-line);
+}
+
+.request-edit-primary span {
+  color: var(--v3-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.request-edit-primary strong {
+  font-size: 18px;
+  letter-spacing: -.02em;
+}
+
+
+/* Request type selection is an entry decision, not persistent form chrome. */
+.request-type-current {
+  width: 100%;
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border: 1px solid var(--v3-line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--v3-ink);
+  text-align: left;
+}
+
+.request-type-current:hover {
+  border-color: #cfc9ff;
+  background: #fcfbff;
+}
+
+.request-type-current__icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--v3-accent-soft);
+  color: var(--v3-accent);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.request-type-current__icon svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.request-type-current > span:nth-child(2) {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.request-type-current strong {
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.request-type-current small {
+  color: var(--v3-muted);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.request-type-current__chevron {
+  color: var(--v3-muted);
+  font-size: 22px;
+  line-height: 1;
+}
+
+@media (max-width: 767px) {
+  .request-type-grid {
+    gap: 8px;
+  }
+
+  .request-type-card {
+    min-height: 82px;
+    padding: 12px;
+  }
+
+  .request-type-current {
+    min-height: 50px;
+  }
+}
+
+/* RC: keep mobile trade state content away from the device edge.
+   danPractical.css intentionally flattens chat chrome, so this late V3 rule
+   restores only the compact transaction state card. */
+@media (max-width: 859px) {
+  .chat-page > .trade-status {
+    margin: 6px 12px 0 !important;
+    padding: 10px 12px !important;
+    border: 1px solid var(--v3-line) !important;
+    border-radius: 14px !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  .chat-page > .trade-status .trade-status__actions .dan-btn {
+    min-height: 44px !important;
+  }
+
+  .chat-page__back {
+    width: 44px !important;
+    height: 44px !important;
+  }
+}

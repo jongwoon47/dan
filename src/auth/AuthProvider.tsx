@@ -12,6 +12,7 @@ import { getDataMode, isSupabaseConfigured } from "@/data/mode";
 import { getSupabase } from "@/data/supabase/client";
 import * as api from "@/data/supabase/api";
 import type { User } from "@/domain/types";
+import { clearDeletedAccountStorage } from './accountDeletion';
 
 export type AuthStatus = "loading" | "authenticated" | "anonymous";
 
@@ -28,6 +29,7 @@ interface AuthContextValue {
   ) => Promise<{ confirmationRequired: boolean }>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  finishAccountDeletion: () => Promise<void>;
   clearError: () => void;
 }
 
@@ -70,6 +72,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       try {
+        const { data: validated, error: validationError } = await sb.auth.getUser();
+        if (cancelled || revision !== sessionRevision) return;
+        if (validationError && [401, 403, 404].includes(validationError.status ?? 0)) {
+          setSession(null); setUser(null); setStatus('anonymous');
+          await sb.auth.signOut({ scope: 'local' });
+          clearDeletedAccountStorage();
+          return;
+        }
+        if (!validationError && !validated.user) {
+          setSession(null); setUser(null); setStatus('anonymous'); return;
+        }
         const profileUser = await api.fetchSessionUser();
         if (cancelled || revision !== sessionRevision) return;
         setUser(profileUser ?? fallbackUser(next));
@@ -102,10 +115,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = sb.auth.onAuthStateChange((_event, next) => {
       void applySession(next);
     });
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) void sb.auth.getSession().then(({ data }) => applySession(data.session));
+    };
+    window.addEventListener('pageshow', onPageShow);
 
     return () => {
       cancelled = true;
       sub.subscription.unsubscribe();
+      window.removeEventListener('pageshow', onPageShow);
     };
   }, [mode]);
 
@@ -151,6 +169,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp,
       signIn,
       signOut,
+      finishAccountDeletion: async () => {
+        setSession(null); setUser(null); setStatus('anonymous'); setError(null);
+        try { await getSupabase().auth.signOut({ scope: 'local' }); } catch { /* server already removed Auth */ }
+        clearDeletedAccountStorage();
+        // Full document replacement clears provider caches and history restoration.
+        window.location.replace(`${import.meta.env.BASE_URL}login?account=deleted`);
+      },
       clearError: () => setError(null),
     }),
     [mode, status, session, user, error, signUp, signIn, signOut],

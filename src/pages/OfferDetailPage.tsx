@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
+import { parsePotentialMatchId } from "@/domain/matchLifecycle";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
 import { CONDITION_LABEL, type PublicProfile } from "@/domain/types";
 import { formatWon } from "@/lib/format";
@@ -24,7 +25,11 @@ export function OfferDetailPage() {
   const [sellerProfile, setSellerProfile] = useState<PublicProfile | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const match = myMatches.find((row) => row.id === matchId);
+  const pair = parsePotentialMatchId(matchId);
+  const match = myMatches.find((row) => row.id === matchId) ??
+    (pair ? myMatches.find((row) =>
+      row.demandId === pair.demandId && row.sellIntentId === pair.sellIntentId,
+    ) : undefined);
   const demand = match ? getDemand(match.demandId) : undefined;
   const sell = match?.sellIntentId
     ? state.sellIntents.find((row) => row.id === match.sellIntentId)
@@ -53,10 +58,15 @@ export function OfferDetailPage() {
       <EmptyState
         title="제안을 찾을 수 없어요"
         body="받은 제안 목록에서 다시 확인해 주세요."
-        action={<Button to="/my?tab=offers" variant="secondary">받은 제안</Button>}
+        action={<Button to="/my" variant="secondary">받은 제안</Button>}
       />
     );
   }
+
+  const completedTrades = sellerProfile?.completedDemandCount ?? 0;
+  const issueTrades =
+    (sellerProfile?.sellerFaultCancellationCount ?? 0) +
+    (sellerProfile?.unresolvedDisputeCount ?? 0);
 
   const usageValue =
     sell.approxUsageCount == null
@@ -127,9 +137,11 @@ export function OfferDetailPage() {
           {sellerProfile?.identityVerified ? <span className="trust-verified-badge">본인인증 완료</span> : null}
         </div>
         <div className="offer-seller-card__facts">
-          <div><strong>{sellerProfile?.completedDemandCount ?? 0}</strong><span>거래 완료</span></div>
-          <div><strong>{sellerProfile?.sellerFaultCancellationCount ?? 0}</strong><span>판매자 귀책 취소</span></div>
-          <div><strong>{sellerProfile?.unresolvedDisputeCount ?? 0}</strong><span>미해결 분쟁</span></div>
+          <div><strong>{completedTrades}</strong><span>거래 완료</span></div>
+          <div>
+            <strong>{issueTrades === 0 ? "없음" : issueTrades}</strong>
+            <span>문제 거래</span>
+          </div>
         </div>
         <Button to={"/profile/" + match.sellerId} variant="ghost" fullWidth>
           거래 이력 보기
@@ -138,19 +150,19 @@ export function OfferDetailPage() {
 
       {match.status === "POTENTIAL" ? (
         <Button fullWidth size="lg" disabled={busy} onClick={() => void interest()}>
-          {busy ? "처리 중…" : "관심 있어요"}
+          {busy ? "처리 중…" : "이 제안 선택하기"}
         </Button>
       ) : match.status === "BUYER_INTERESTED" ? (
         <section className="offer-next-state">
-          <strong>판매자에게 관심을 보냈어요</strong>
-          <p>판매자가 수락하면 채팅할 수 있어요. 상세 증거는 거래를 이어갈 때 확인해요.</p>
-          <Button to="/my?tab=offers" variant="secondary" fullWidth>받은 제안으로 돌아가기</Button>
+          <strong>제안을 선택했어요</strong>
+          <p>상대가 수락하면 채팅이 열려요. 거래를 이어갈 때 상품 정보를 확인합니다.</p>
+          <Button to="/my" variant="secondary" fullWidth>받은 제안으로 돌아가기</Button>
         </section>
       ) : match.status === "CONNECTED" ? (
         <section className="offer-next-state">
           <strong>판매자와 연결됐어요</strong>
           <p>
-            먼저 채팅으로 거래 의사를 확인하세요. 상세 증거가 올라오면 최종 조건을 확인할 수 있어요.
+            먼저 채팅으로 거래 의사를 확인하세요. 상품 정보가 올라오면 거래 조건을 확인할 수 있어요.
           </p>
           <Button to={"/match/" + match.id} fullWidth size="lg">
             채팅 시작하기
@@ -159,7 +171,7 @@ export function OfferDetailPage() {
           match.dealStage === "DEAL_REVIEW" ||
           match.dealStage === "DEAL_LOCKED" ? (
             <Button to={"/deal/" + match.id + "/evidence"} fullWidth variant="secondary">
-              판매자 증거 확인
+              상품 정보 확인
             </Button>
           ) : null}
         </section>
@@ -168,7 +180,7 @@ export function OfferDetailPage() {
           완료된 거래 보기
         </Button>
       ) : (
-        <Button to="/my?tab=offers" fullWidth variant="secondary">받은 제안</Button>
+        <Button to="/my" fullWidth variant="secondary">받은 제안</Button>
       )}
     </div>
   );
