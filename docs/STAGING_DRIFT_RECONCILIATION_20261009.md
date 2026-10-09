@@ -84,15 +84,38 @@ select dan_private.jp_market_writes_allowed() as jp_writes_allowed; -- expect fa
 ## Local verification without Docker
 
 - Unit: `npx vitest run src/domain/routeCandidates.test.ts src/lib/pilotRegions.test.ts`  
+- Drift plan (filesystem only): `npx vitest run src/lib/stagingDriftPlan.test.ts`  
+  — asserts forward migration order + consent `IF NOT EXISTS`  
 - Typecheck: `npm run typecheck`  
 - Full migration/pgTAP requires local Supabase Docker (`supabase db reset` + `supabase test db`) — **not available in this agent VM**; treat as CI/owner path.
 
-### Optional pgTAP note (when Docker available)
+### Local drift simulator (no staging write)
 
-```sql
--- supabase/tests/jp_pilot_regions.sql (add only when running supabase test db)
-select has_function('public', 'list_pilot_regions', array['text']);
-select is(dan_private.jp_market_writes_allowed(), false, 'JP writes default off');
+```bash
+# Always safe: prints SKIP + dry-run checklist when no local DB / psql
+node scripts/simulate-staging-drift.mjs
+
+# Optional: apply forward migrations against local Supabase only
+# (refuses non-localhost SUPABASE_DB_URL)
+SUPABASE_DB_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres \
+  node scripts/simulate-staging-drift.mjs
+```
+
+The script documents tip `20261006054157` + preexisting consent + missing market,
+simulates consent-without-ledger when a local DB is reachable, then applies
+`20261007` … `20261009130000`. It never targets remote staging/production.
+
+### pgTAP target state (when Docker available)
+
+`supabase/tests/staging_drift_forward.sql` — after full reset / forward apply:
+
+- `demands.country_code` / `currency_code` present  
+- `dan_private.jp_market_writes_allowed()` is **false**  
+- `public.list_pilot_regions(text)` exists (authenticated execute; anon revoked)  
+- JP pilot browse regions seeded  
+
+```bash
+supabase db reset && supabase test db
 ```
 
 ## Explicit non-goals

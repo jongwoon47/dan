@@ -463,4 +463,75 @@ describe("store mutations / login race", () => {
       result.current.state.demands.find((d) => d.id === demandId)?.status,
     ).toBe("ACTIVE");
   });
+
+  it("cancelDeal closes a CONNECTED match; demo block/report stay no-ops", async () => {
+    const { result } = renderHook(() => useDan(), { wrapper });
+
+    act(() => {
+      result.current.resetDemo();
+    });
+    act(() => {
+      result.current.login("user-you");
+    });
+    await act(async () => {
+      await result.current.createDemand({
+        type: "BUY",
+        title: "Cancel flow Sony",
+        productId: "prod-sony-a7iv",
+        maxPrice: 2_500_000,
+        conditionPreference: "any",
+        fulfillmentOptions: [{ mode: "SHIPPING" }],
+      });
+    });
+
+    const potential = result.current.myMatches.find(
+      (m) =>
+        m.status === "POTENTIAL" &&
+        m.buyerId === "user-you" &&
+        m.productId === "prod-sony-a7iv",
+    );
+    expect(potential).toBeTruthy();
+
+    await act(async () => {
+      await result.current.expressBuyerInterest(potential!.id);
+    });
+    const interested = result.current.state.matches.find(
+      (m) => m.buyerId === "user-you" && m.status === "BUYER_INTERESTED",
+    );
+    expect(interested).toBeTruthy();
+
+    act(() => {
+      result.current.login("user-jun");
+    });
+    await act(async () => {
+      await result.current.connectAsSeller(interested!.id);
+    });
+    expect(
+      result.current.state.matches.find((m) => m.id === interested!.id)?.status,
+    ).toBe("CONNECTED");
+
+    act(() => {
+      result.current.login("user-you");
+    });
+    await act(async () => {
+      const cancelled = await result.current.cancelDeal({
+        matchId: interested!.id,
+        reason: "BUYER_CHANGED_MIND",
+      });
+      expect(cancelled?.status).toBe("CLOSED");
+      expect(cancelled?.dealStage).toBe("CANCELLED");
+      expect(cancelled?.cancelReason).toBe("BUYER_CHANGED_MIND");
+      expect(cancelled?.cancelledBy).toBe("user-you");
+    });
+
+    await act(async () => {
+      expect(await result.current.blockUser("user-jun")).toBe(false);
+      expect(
+        await result.current.reportUser({
+          targetUserId: "user-jun",
+          reason: "spam",
+        }),
+      ).toBe(false);
+    });
+  });
 });
