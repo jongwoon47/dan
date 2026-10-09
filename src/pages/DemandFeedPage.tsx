@@ -19,6 +19,7 @@ import {
 } from "@/domain/locationDiscovery";
 import { clearViewerGeo, type ViewerGeo } from "@/lib/geoDistance";
 import { requestViewerGeo } from "@/lib/requestViewerGeo";
+import { externalRouteUrl } from "@/lib/mapLinks";
 import { translate, useDanLocale } from "@/i18n/locale";
 import { categoryLabel } from "@/i18n/categories";
 import { addSavedArea, useSavedAreas } from "@/lib/savedAreas";
@@ -497,6 +498,13 @@ export function DemandFeedPage() {
                 <input value={routeTo} onChange={(event) => setRouteTo(event.target.value)} placeholder={t("areaExample")} aria-label={t("routeTo")} />
               </label>
               <p>{t("routeHint")}</p>
+              {externalRouteUrl("google", routeFrom, routeTo) && externalRouteUrl("apple", routeFrom, routeTo) ? (
+                <div className="location-discovery__maps">
+                  <a href={externalRouteUrl("google", routeFrom, routeTo)!} target="_blank" rel="noopener noreferrer">{t("googleMap")}</a>
+                  <a href={externalRouteUrl("apple", routeFrom, routeTo)!} target="_blank" rel="noopener noreferrer">{t("appleMap")}</a>
+                  <p>{t("routeMapDisclosure")}</p>
+                </div>
+              ) : null}
             </div>
           ) : null}
           {locationMode === "online" ? (
