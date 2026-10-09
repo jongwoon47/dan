@@ -6,7 +6,7 @@
 |---|---|
 | BRANCH | `cursor/dan-commercial-complete-e0e7` → ff `feature/dan-location-jp-launch-plan-20261009` |
 | Base green | `4feef57` / CI [37960877815](https://github.com/jongwoon47/dan/actions/runs/37960877815) |
-| This sprint tip | see `git rev-parse HEAD` after push |
+| This sprint tip | `3d3c7a8` (await CI; base green `4feef57`) |
 | Ready | **NO** |
 
 ## Shipped after 4feef57 (this session)
