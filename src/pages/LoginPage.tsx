@@ -89,7 +89,7 @@ export function LoginPage() {
     if (resolution === "loading") {
       return <div className="auth-screen auth-screen--resolving" aria-busy="true" />;
     }
-    if (resolution === "required") {
+    if (resolution === "required" || resolution === "error") {
       return <Navigate to={`/consent?next=${encodeURIComponent(next)}`} replace />;
     }
     return <Navigate to={next} replace />;

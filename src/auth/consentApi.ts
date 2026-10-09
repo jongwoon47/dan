@@ -1,9 +1,5 @@
 import { getSupabase } from "@/data/supabase/client";
-import {
-  CURRENT_PRIVACY_VERSION,
-  CURRENT_TERMS_VERSION,
-  type UserConsentRecord,
-} from "./consentVersions";
+import type { ConsentRequirements, UserConsentRecord } from "./consentVersions";
 
 type DbConsent = {
   user_id: string;
@@ -23,6 +19,20 @@ function mapConsent(row: DbConsent): UserConsentRecord {
   };
 }
 
+export async function fetchConsentRequirements(): Promise<ConsentRequirements> {
+  const { data, error } = await getSupabase().rpc("get_consent_requirements");
+  if (error) throw error;
+  const row = (data ?? {}) as Record<string, unknown>;
+  const termsVersion =
+    typeof row.termsVersion === "string" ? row.termsVersion.trim() : "";
+  const privacyVersion =
+    typeof row.privacyVersion === "string" ? row.privacyVersion.trim() : "";
+  if (!termsVersion || !privacyVersion) {
+    throw new Error("consent requirements missing");
+  }
+  return { termsVersion, privacyVersion };
+}
+
 export async function fetchMyConsent(): Promise<UserConsentRecord | null> {
   const sb = getSupabase();
   const { data: auth } = await sb.auth.getUser();
@@ -38,28 +48,9 @@ export async function fetchMyConsent(): Promise<UserConsentRecord | null> {
   return data ? mapConsent(data as DbConsent) : null;
 }
 
+/** Server assigns versions + timestamps; clients cannot forge either. */
 export async function acceptCurrentConsents(): Promise<UserConsentRecord> {
-  const sb = getSupabase();
-  const { data: auth } = await sb.auth.getUser();
-  if (!auth.user) throw new Error("not authenticated");
-
-  const now = new Date().toISOString();
-  const payload = {
-    user_id: auth.user.id,
-    terms_version: CURRENT_TERMS_VERSION,
-    privacy_version: CURRENT_PRIVACY_VERSION,
-    terms_accepted_at: now,
-    privacy_accepted_at: now,
-  };
-
-  const { data, error } = await sb
-    .from("user_consents")
-    .upsert(payload, { onConflict: "user_id" })
-    .select(
-      "user_id, terms_version, privacy_version, terms_accepted_at, privacy_accepted_at",
-    )
-    .single();
-
+  const { data, error } = await getSupabase().rpc("accept_my_consents");
   if (error || !data) {
     throw error ?? new Error("consent save failed");
   }

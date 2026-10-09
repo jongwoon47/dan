@@ -17,7 +17,10 @@ export function RequireConsent() {
     return <div className="auth-screen auth-screen--resolving" aria-busy="true" />;
   }
 
-  if (status === "authenticated" && resolution === "required") {
+  if (
+    status === "authenticated" &&
+    (resolution === "required" || resolution === "error")
+  ) {
     const next = consentReturnPath(`${location.pathname}${location.search}`);
     return (
       <Navigate
