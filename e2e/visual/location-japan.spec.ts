@@ -20,8 +20,8 @@ test("Japanese location discovery, saved area, and route controls", async ({ pag
   await page.getByRole("textbox", { name: "出発地" }).fill("博多駅");
   await page.getByRole("textbox", { name: "目的地" }).fill("天神駅");
   await expect(page.getByText(/実際の経路や所要時間の計算はまだ行いません/)).toBeVisible();
-  await expect(page.getByRole("link", { name: "Googleマップで経路を見る" })).toHaveAttribute("href", /www\\.google\\.com\\/maps\\/dir/);
-  await expect(page.getByRole("link", { name: "Appleマップで経路を見る" })).toHaveAttribute("href", /maps\\.apple\\.com/);
+  expect(await page.getByRole("link", { name: "Googleマップで経路を見る" }).getAttribute("href")).toContain("https://www.google.com/maps/dir/");
+  expect(await page.getByRole("link", { name: "Appleマップで経路を見る" }).getAttribute("href")).toContain("https://maps.apple.com/");
 
 
   await page.goto("/create?country=JP");
