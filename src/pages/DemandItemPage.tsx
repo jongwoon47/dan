@@ -22,7 +22,7 @@ import {
 import {
   formatDemandWhen,
   formatDurationMinutes,
-  formatKRWForLanguage,
+  formatStoredMoney,
 } from "@/lib/format";
 import {
   formatPublicPlaceLine,
@@ -235,7 +235,7 @@ export function DemandItemPage() {
                 ? copy.reward
                 : copy.detailBudget}
           </dt>
-          <dd>{formatKRWForLanguage(demand.budget, locale)}</dd>
+          <dd>{formatStoredMoney(demand.budget, demand.currencyCode ?? "KRW", locale)}</dd>
         </div>
         <div className="detail-facts__row">
           <dt>
