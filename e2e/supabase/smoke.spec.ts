@@ -29,7 +29,10 @@ async function completeRequiredConsent(page: Page) {
   await expect(page.getByRole("heading", { name: "DAN 시작하기" })).toBeVisible();
   const confirm = page.getByRole("button", { name: "동의하고 시작하기" });
   await expect(confirm).toBeDisabled();
-  await page.getByRole("checkbox", { name: "전체 동의" }).click();
+  // Custom checkbox UI: visible .consent-check span intercepts the clipped input.
+  // Prefer label activation (real user path) over clicking the visually-hidden input.
+  await page.locator("label").filter({ hasText: "전체 동의" }).click();
+  await expect(page.getByRole("checkbox", { name: "전체 동의" })).toBeChecked();
   await expect(confirm).toBeEnabled();
   await confirm.click();
   await expect(page).not.toHaveURL(/\/consent(?:\?|$)/);

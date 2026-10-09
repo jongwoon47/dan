@@ -1618,6 +1618,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  /* Decorative only — keep pointer events on the label / clipped input. */
+  pointer-events: none;
   font-size: 0.8125rem;
   font-weight: 800;
   color: #fff;
