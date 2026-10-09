@@ -42,8 +42,7 @@ select ok(
     'country_code' in pg_get_viewdef('public.buy_demand_aggregates'::regclass, true)
   ) > 0,
   'BUY aggregates are country-scoped in SQL');
-select ok(
-  has_column('public', 'deal_snapshots', 'currency_code'),
+select has_column('public', 'deal_snapshots', 'currency_code',
   'deal snapshots retain the agreed currency');
 select ok(
   not has_function_privilege('authenticated',
