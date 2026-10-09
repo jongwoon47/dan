@@ -24,8 +24,7 @@ begin
     raise exception 'not authenticated' using errcode = '28000';
   end if;
   if p_lat is null or p_lng is null or
-     not (p_lat between -90 and 90) or not (p_lng between -180 and 180) or
-     not isfinite(p_lat) or not isfinite(p_lng) then
+     not (p_lat between -90 and 90) or not (p_lng between -180 and 180) then
     raise exception 'invalid location';
   end if;
   if p_radius_m not in (1000, 3000, 5000, 10000) then
