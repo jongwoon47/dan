@@ -82,6 +82,11 @@ const messages = {
     clearSearch: "검색어 지우기",
     locationBasedSearch: "위치 기반 검색",
     productCategory: "제품 카테고리",
+    moreDemandTitle: "더 많은 수요를 둘러볼까요?",
+    moreDemandBody: "전체 요청을 검색하고 카테고리별로 둘러볼 수 있어요.",
+    sellerEntryLead: "가지고 있는 물건이 보이나요?",
+    sellerEntryBody: "판매글을 새로 만들지 않고 원하는 사람에게 바로 제안할 수 있어요.",
+    browseAllRequests: "전체 요청 둘러보기",
   },
   ja: {
     home: "ホーム", explore: "探す", request: "依頼", chat: "チャット", myTrades: "取引",
@@ -160,6 +165,11 @@ const messages = {
     clearSearch: "検索をクリア",
     locationBasedSearch: "位置情報で検索",
     productCategory: "商品カテゴリ",
+    moreDemandTitle: "もっと需要を見てみますか？",
+    moreDemandBody: "すべての依頼を検索し、カテゴリ別に眺められます。",
+    sellerEntryLead: "お持ちの物が見えますか？",
+    sellerEntryBody: "出品を新しく作らず、探している人にそのまま提案できます。",
+    browseAllRequests: "すべての依頼を見る",
   },
 } as const;
 

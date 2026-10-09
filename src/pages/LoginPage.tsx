@@ -228,7 +228,7 @@ export function LoginPage() {
           setNotice(null);
         }}
       >
-        {isSignUp ? "로그인" : "회원가입"}
+        {isSignUp ? copy.login : copy.signup}
       </button>
       </p>
       <Link to="/" className="text-link text-link--muted">

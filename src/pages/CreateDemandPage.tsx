@@ -671,7 +671,7 @@ function CreateDemandForm() {
             <button
               type="button"
               className="request-type-current"
-              aria-label={locale === "ja" ? "依頼の種類を変更" : "요청 유형 변경"}
+              aria-label={copy.changeDemandType}
               onClick={() => {
                 setType(null);
                 setPhase(1);
@@ -681,7 +681,7 @@ function CreateDemandForm() {
               <span className="request-type-current__icon" aria-hidden><RequestTypeIcon type={type} /></span>
               <span>
                 <strong>{(locale === "ja" ? JP_TYPE_META : TYPE_META)[type].label}</strong>
-                <small>요청 유형 변경</small>
+                <small>{copy.changeDemandType}</small>
               </span>
               <span className="request-type-current__chevron" aria-hidden>›</span>
             </button>
@@ -692,10 +692,10 @@ function CreateDemandForm() {
               <div className="create-progress__track"><span style={{ width: phase === 1 ? "50%" : "100%" }} /></div>
               <div className="create-progress__labels">
                 <span className={phase === 1 ? "is-active" : ""}>
-                  {locale === "ja" ? "なにを" : "무엇을"}
+                  {copy.stepWhat}
                 </span>
                 <span className={phase === 2 ? "is-active" : ""}>
-                  {locale === "ja" ? "どこで · いつ" : "어디서 · 언제"}
+                  {copy.stepWhereWhen}
                 </span>
               </div>
             </div>
@@ -760,7 +760,7 @@ function CreateDemandForm() {
                       hint={copy.maxPriceHint}
                       value={maxPrice}
                       onChange={setMaxPrice}
-                      placeholder="예: 800,000"
+                      placeholder={copy.createMaxPricePh}
                       kind="buy"
                     />
                     <div>
@@ -786,7 +786,7 @@ function CreateDemandForm() {
                       <TextInput
                         value={itemName}
                         onChange={(e) => setItemName(e.target.value)}
-                        placeholder="예: 캠핑 텐트"
+                        placeholder={copy.createItemNamePh}
                       />
                     </Field>
                     <MoneyInput
@@ -794,7 +794,7 @@ function CreateDemandForm() {
                       hint={copy.borrowBudgetHint}
                       value={budget}
                       onChange={setBudget}
-                      placeholder="예: 30,000"
+                      placeholder={copy.createBorrowBudgetPh}
                       kind="borrow"
                     />
                   </>
@@ -807,7 +807,7 @@ function CreateDemandForm() {
                         className="dan-input dan-textarea"
                         value={detail}
                         onChange={(e) => setDetail(e.target.value)}
-                        placeholder="예: 평택역에서 짐 옮겨주세요"
+                        placeholder={copy.createTaskDescPh}
                         rows={3}
                       />
                     </Field>
@@ -815,7 +815,7 @@ function CreateDemandForm() {
                       label={budgetLabelForType(type, locale)}
                       value={budget}
                       onChange={setBudget}
-                      placeholder="예: 20,000"
+                      placeholder={copy.createTaskBudgetPh}
                       kind="reward"
                     />
                   </>
@@ -834,7 +834,7 @@ function CreateDemandForm() {
                       label={copy.reward}
                       value={budget}
                       onChange={setBudget}
-                      placeholder="예: 1,000"
+                      placeholder={copy.createRewardPh}
                       kind="reward"
                     />
                     <Field

@@ -97,7 +97,7 @@ export function HomePage() {
             </svg>
           </span>
           <label className="home-intent-composer__copy">
-            <span className="sr-only">요청 검색</span>
+            <span className="sr-only">{t("requestSearch")}</span>
             <input
               value={intentQuery}
               onChange={(event) => setIntentQuery(event.target.value)}
@@ -112,7 +112,7 @@ export function HomePage() {
           </button>
         </form>
 
-        <div className="home-request-types" aria-label="요청 유형">
+        <div className="home-request-types" aria-label={t("requestTypeFilter")}>
           <Link to="/create?type=BUY">{t("buy")}</Link>
           <Link to="/create?type=BORROW">{t("borrow")}</Link>
           <Link to="/create?type=TASK">{t("task")}</Link>
@@ -132,7 +132,7 @@ export function HomePage() {
           </div>
         ) : null}
 
-        <div className="home-demand-filters" aria-label="제품 카테고리">
+        <div className="home-demand-filters" aria-label={t("productCategory")}>
           <button
             type="button"
             className={category === "all" ? "demand-filter is-active" : "demand-filter"}
@@ -183,11 +183,11 @@ export function HomePage() {
         {visibleProducts.length > 0 ? (
           <div className="home-live-footer">
             <div>
-              <strong>더 많은 수요를 둘러볼까요?</strong>
-              <span>전체 요청을 검색하고 카테고리별로 둘러볼 수 있어요.</span>
+              <strong>{t("moreDemandTitle")}</strong>
+              <span>{t("moreDemandBody")}</span>
             </div>
             <Button to="/feed" variant="secondary">
-              전체 탐색
+              {t("browseAll")}
             </Button>
           </div>
         ) : null}
@@ -214,11 +214,11 @@ export function HomePage() {
 
       <section className="seller-entry-banner">
         <div>
-          <span>가지고 있는 물건이 보이나요?</span>
-          <strong>판매글을 새로 만들지 않고 원하는 사람에게 바로 제안할 수 있어요.</strong>
+          <span>{t("sellerEntryLead")}</span>
+          <strong>{t("sellerEntryBody")}</strong>
         </div>
         <Button to="/feed" variant="secondary">
-          전체 요청 둘러보기
+          {t("browseAllRequests")}
         </Button>
       </section>
     </div>

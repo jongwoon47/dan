@@ -47,7 +47,7 @@ export function OfferDetailPage() {
   const product = match?.productId ? getProduct(match.productId) : undefined;
   const isBuyer = Boolean(match && currentUser?.id === match.buyerId);
 
-  useDeepHeader({ title: "제안 상세" });
+  useDeepHeader({ title: copy.offerDetailTitle });
 
   useEffect(() => {
     if (!match?.sellerId) return;
@@ -63,9 +63,9 @@ export function OfferDetailPage() {
   if (!match || !demand || !sell || !ownership || !product || !currentUser || !isBuyer) {
     return (
       <EmptyState
-        title="제안을 찾을 수 없어요"
-        body="받은 제안 목록에서 다시 확인해 주세요."
-        action={<Button to="/my" variant="secondary">받은 제안</Button>}
+        title={copy.offerMissingTitle}
+        body={copy.offerMissingBody}
+        action={<Button to="/my" variant="secondary">{copy.receivedOffers}</Button>}
       />
     );
   }
@@ -105,13 +105,13 @@ export function OfferDetailPage() {
           <img
             className="offer-detail-product__photo"
             src={sell.quickPhotoUrl}
-            alt={`${product.name} 판매자가 올린 현재 물품`}
+            alt={fillCopyTemplate(copy.sellerPhotoAlt, { name: product.name })}
           />
         ) : (
           <ProductVisual product={product} size="sm" />
         )}
         <div>
-          <p className="eyebrow">판매 제안</p>
+          <p className="eyebrow">{copy.quickOfferEyebrow}</p>
           <h1 className="page-title">{product.name}</h1>
           <strong className="offer-detail-price">{money(sell.minimumPrice)}</strong>
         </div>
@@ -130,10 +130,16 @@ export function OfferDetailPage() {
           <span>{copy.condition}</span>
           <strong>{conditionLabel(locale, ownership.condition)}</strong>
         </div>
-        <div><span>상태 메모</span><strong>{sell.conditionNote || "특이사항 없음"}</strong></div>
-        <div><span>구매자 희망</span><strong>{formatFulfillmentSummary(demand.fulfillmentOptions)}</strong></div>
         <div>
-          <span>판매자 가능</span>
+          <span>{copy.conditionNoteLabel}</span>
+          <strong>{sell.conditionNote || copy.noSpecialNotes}</strong>
+        </div>
+        <div>
+          <span>{copy.buyerHopeFulfillment}</span>
+          <strong>{formatFulfillmentSummary(demand.fulfillmentOptions, locale)}</strong>
+        </div>
+        <div>
+          <span>{copy.sellerCanFulfill}</span>
           <strong>
             {!sell.tradeMethod
               ? "—"
@@ -147,56 +153,63 @@ export function OfferDetailPage() {
       <section className="offer-seller-card">
         <div className="offer-seller-card__head">
           <div>
-            <span>판매자</span>
-            <strong>{sellerProfile?.displayName || "판매자"}</strong>
+            <span>{copy.sellerLabel}</span>
+            <strong>{sellerProfile?.displayName || copy.sellerLabel}</strong>
           </div>
-          {sellerProfile?.identityVerified ? <span className="trust-verified-badge">본인인증 완료</span> : null}
+          {sellerProfile?.identityVerified ? (
+            <span className="trust-verified-badge">{copy.identityVerified}</span>
+          ) : null}
         </div>
         <div className="offer-seller-card__facts">
-          <div><strong>{completedTrades}</strong><span>거래 완료</span></div>
           <div>
-            <strong>{issueTrades === 0 ? "없음" : issueTrades}</strong>
-            <span>문제 거래</span>
+            <strong>{completedTrades}</strong>
+            <span>{copy.completedTradesLabel}</span>
+          </div>
+          <div>
+            <strong>{issueTrades === 0 ? copy.dealNone : issueTrades}</strong>
+            <span>{copy.issueTradesLabel}</span>
           </div>
         </div>
         <Button to={"/profile/" + match.sellerId} variant="ghost" fullWidth>
-          거래 이력 보기
+          {copy.viewTradeHistory}
         </Button>
       </section>
 
       {match.status === "POTENTIAL" ? (
         <Button fullWidth size="lg" disabled={busy} onClick={() => void interest()}>
-          {busy ? "처리 중…" : "이 제안 선택하기"}
+          {busy ? copy.processing : copy.selectThisOffer}
         </Button>
       ) : match.status === "BUYER_INTERESTED" ? (
         <section className="offer-next-state">
-          <strong>제안을 선택했어요</strong>
-          <p>상대가 수락하면 채팅이 열려요. 거래를 이어갈 때 상품 정보를 확인합니다.</p>
-          <Button to="/my" variant="secondary" fullWidth>받은 제안으로 돌아가기</Button>
+          <strong>{copy.offerSelectedTitle}</strong>
+          <p>{copy.offerSelectedBody}</p>
+          <Button to="/my" variant="secondary" fullWidth>
+            {copy.backToReceivedOffers}
+          </Button>
         </section>
       ) : match.status === "CONNECTED" ? (
         <section className="offer-next-state">
-          <strong>판매자와 연결됐어요</strong>
-          <p>
-            먼저 채팅으로 거래 의사를 확인하세요. 상품 정보가 올라오면 거래 조건을 확인할 수 있어요.
-          </p>
+          <strong>{copy.connectedWithSeller}</strong>
+          <p>{copy.connectedWithSellerBody}</p>
           <Button to={"/match/" + match.id} fullWidth size="lg">
-            채팅 시작하기
+            {copy.startChat}
           </Button>
           {match.dealStage === "EVIDENCE_READY" ||
           match.dealStage === "DEAL_REVIEW" ||
           match.dealStage === "DEAL_LOCKED" ? (
             <Button to={"/deal/" + match.id + "/evidence"} fullWidth variant="secondary">
-              상품 정보 확인
+              {copy.reviewProductInfo}
             </Button>
           ) : null}
         </section>
       ) : match.status === "COMPLETED" ? (
         <Button to={"/deal/" + match.id + "/complete"} fullWidth variant="secondary">
-          완료된 거래 보기
+          {copy.viewCompletedTrade}
         </Button>
       ) : (
-        <Button to="/my" fullWidth variant="secondary">받은 제안</Button>
+        <Button to="/my" fullWidth variant="secondary">
+          {copy.receivedOffers}
+        </Button>
       )}
     </div>
   );
