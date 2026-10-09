@@ -119,8 +119,15 @@ export interface Product {
   createdAt: string;
 }
 
+export type MarketCountry = "KR" | "JP";
+export type MoneyCurrency = "KRW" | "JPY";
+
 export interface DemandBase {
   id: string;
+  /** Market is independent of UI language. */
+  countryCode?: MarketCountry;
+  /** Stored budget denomination, never guessed from locale. */
+  currencyCode?: MoneyCurrency;
   userId: string;
   type: DemandType;
   title: string;
