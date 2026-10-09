@@ -48,7 +48,7 @@ export function IndividualDemandCard({ demand, approxMeters }: { demand: Demand;
         <div className="feed-row__stats">
           <div>
             <span>{priceLabel}</span>
-            <strong>{formatKRWForLanguage(demand.budget, locale)}</strong>
+            <strong>{formatStoredMoney(demand.budget, demand.currencyCode ?? "KRW", locale)}</strong>
           </div>
         </div>
       ) : null}
