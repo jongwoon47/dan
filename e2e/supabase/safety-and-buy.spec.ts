@@ -5,6 +5,7 @@ import {
   TINY_PNG,
   appBaseUrl,
   latestMatchIdForUser,
+  latestPotentialBuyOfferId,
   respondToDemand,
   signupNamed,
   submitBuy,
@@ -184,10 +185,13 @@ test("BUY browser path reaches evidence→snapshot→payment honesty gate (no fa
     const demandPath = new URL(buyerPage.url()).pathname;
 
     // Seller: demand item → product detail → quick offer (condition required)
+    const demandId = demandPath.split("/").pop()!;
     await sellerPage.goto(demandPath);
     await sellerPage.getByRole("link", { name: "가지고 있어요" }).click();
     await expect(sellerPage.getByRole("heading", { name: title })).toBeVisible();
-    await sellerPage.getByRole("link", { name: "제안 보내기" }).click();
+    // Prefer target-bound offer so the sell intent links to this BUY demand.
+    const productPath = new URL(sellerPage.url()).pathname; // /demand/:productId
+    await sellerPage.goto(`${productPath}/offer?target=${encodeURIComponent(demandId)}`);
     await expect(sellerPage.getByLabel("희망 판매가")).toBeVisible({
       timeout: 30_000,
     });

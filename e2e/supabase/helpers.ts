@@ -137,3 +137,47 @@ export async function latestMatchIdForUser(userId: string): Promise<string> {
   if (!data?.id) throw new Error("no match for user");
   return data.id as string;
 }
+
+/**
+ * BUY quick offers are not persisted as matches until the buyer expresses
+ * interest. Resolve the derived potential id from the buyer's active demand
+ * and the newest OPEN sell intent on that product.
+ */
+export async function latestPotentialBuyOfferId(buyerId: string): Promise<string> {
+  const admin = adminClient();
+  const { data: demand, error: demandError } = await admin
+    .from("demands")
+    .select("id,product_id")
+    .eq("user_id", buyerId)
+    .eq("type", "BUY")
+    .eq("status", "ACTIVE")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (demandError) throw demandError;
+  if (!demand?.id || !demand.product_id) {
+    throw new Error("no active BUY demand for buyer");
+  }
+
+  const { data: ownerships, error: ownershipError } = await admin
+    .from("ownerships")
+    .select("id")
+    .eq("product_id", demand.product_id)
+    .eq("status", "OWNED");
+  if (ownershipError) throw ownershipError;
+  const ownershipIds = (ownerships ?? []).map((row) => row.id as string);
+  if (ownershipIds.length === 0) throw new Error("no ownerships for product");
+
+  const { data: sell, error: sellError } = await admin
+    .from("sell_intents")
+    .select("id,created_at")
+    .eq("status", "OPEN")
+    .in("ownership_id", ownershipIds)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (sellError) throw sellError;
+  if (!sell?.id) throw new Error("no OPEN sell intent for product");
+
+  return `potential::${demand.id}::${sell.id}`;
+}
