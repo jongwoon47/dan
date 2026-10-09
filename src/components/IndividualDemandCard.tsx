@@ -11,10 +11,10 @@ import {
 } from "@/lib/geoDistance";
 import "./feedCards.css";
 
-function feedPlaceLine(demand: Demand, approxMeters?: number): string {
+function feedPlaceLine(demand: Demand, approxMeters?: number, locale: "ko" | "ja" = "ko"): string {
   const place = primaryPublicPlace(demand.fulfillmentOptions);
   if (place) {
-    return formatPublicPlaceLine(place, loadViewerGeo(), { approxMeters });
+    return formatPublicPlaceLine(place, loadViewerGeo(), { approxMeters, locale });
   }
   const remote = demand.fulfillmentOptions.some((o) => o.mode === "REMOTE");
   const shipping = demand.fulfillmentOptions.some((o) => o.mode === "SHIPPING");
@@ -26,7 +26,7 @@ function feedPlaceLine(demand: Demand, approxMeters?: number): string {
 export function IndividualDemandCard({ demand, approxMeters }: { demand: Demand; approxMeters?: number }) {
   const locale = useDanLocale();
   const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
-  const placeLine = feedPlaceLine(demand, approxMeters);
+  const placeLine = feedPlaceLine(demand, approxMeters, locale);
   const when = formatDemandWhen(demand);
   const meta = [placeLine, when].filter(Boolean).join(" · ");
   const showPrice = demand.budget > 0;
