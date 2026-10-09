@@ -7,7 +7,8 @@ import { useDanLocale } from "@/i18n/locale";
  * persisting translated strings as domain values. Missing keys stay Korean,
  * and must be audited before enabling Japan storefront availability.
  */
-export const jaPilotCopy: Partial<typeof ko> = {
+export type LocalizedCopy = { [K in keyof typeof ko]: string };
+export const jaPilotCopy: Partial<LocalizedCopy> = {
   brandTag: "必要な人から",
   navCreate: "依頼する", navCreateShort: "依頼", navFeed: "探す", navChats: "チャット", navHome: "ホーム",
   displayName: "表示名", logout: "ログアウト", login: "ログイン",
@@ -103,7 +104,7 @@ export const jaPilotCopy: Partial<typeof ko> = {
   authExists: "このメールアドレスは登録されています。",
   authWeakPassword: "パスワードは6文字以上必要です。",
 };
-export function useDanCopy(): typeof ko {
+export function useDanCopy(): LocalizedCopy {
   const locale = useDanLocale();
   return useMemo(() => locale === "ja" ? { ...ko, ...jaPilotCopy } : ko, [locale]);
 }
