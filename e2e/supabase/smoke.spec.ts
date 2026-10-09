@@ -227,7 +227,7 @@ test("fresh Supabase user sees real zero states and can create all four request 
   await expect(page.getByRole("heading", { name: "내 거래" })).toBeVisible();
   await expect(page.getByText("진행 중인 거래가 없어요")).toBeVisible();
   await page.getByRole("button", { name: /내 요청/ }).click();
-  await expect(page.getByText("아직 올린 요청이 없어요")).toBeVisible();
+  await expect(page.getByText("아직 요청이 없어요.")).toBeVisible();
   await page.screenshot({ path: path.join(outDir, "01-my-zero.png"), fullPage: true });
 
   await page.goto("/chats");
