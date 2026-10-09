@@ -29,7 +29,7 @@ async function completeRequiredConsent(page: Page) {
   await expect(page.getByRole("heading", { name: "DAN 시작하기" })).toBeVisible();
   const confirm = page.getByRole("button", { name: "동의하고 시작하기" });
   await expect(confirm).toBeDisabled();
-  await page.getByRole("button", { name: "전체 동의" }).click();
+  await page.getByRole("checkbox", { name: "전체 동의" }).click();
   await expect(confirm).toBeEnabled();
   await confirm.click();
   await expect(page).not.toHaveURL(/\/consent(?:\?|$)/);
