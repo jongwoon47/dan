@@ -10,11 +10,28 @@ import { dedupeConnectedMatches } from "@/domain/matchLifecycle";
 import type { ChatMessage, Match } from "@/domain/types";
 import "./pages.css";
 
-function formatRelativeChatTime(iso: string, nowMs = Date.now()): string {
+function formatRelativeChatTime(
+  iso: string,
+  locale: "ko" | "ja",
+  nowMs = Date.now(),
+): string {
   const t = new Date(iso).getTime();
   if (!Number.isFinite(t)) return "";
   const diff = Math.max(0, nowMs - t);
   const min = Math.floor(diff / 60000);
+  if (locale === "ja") {
+    if (min < 1) return "たった今";
+    if (min < 60) return `${min}分前`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr}時間前`;
+    const day = Math.floor(hr / 24);
+    if (day === 1) return "昨日";
+    if (day < 7) return `${day}日前`;
+    return new Date(iso).toLocaleDateString("ja-JP", {
+      month: "short",
+      day: "numeric",
+    });
+  }
   if (min < 1) return "방금";
   if (min < 60) return `${min}분 전`;
   const hr = Math.floor(min / 60);
@@ -32,13 +49,19 @@ function initialOf(name: string) {
   return (name.trim().slice(0, 1) || "?").toUpperCase();
 }
 
-function chatStageLabel(match: Match): string {
-  if (match.status === "CLOSED") return "거래 종료";
-  if (match.status === "COMPLETED") return "거래 완료";
-  if (match.dealStage === "HANDOFF_READY" || match.paymentStatus === "PAID") return "인계 확인";
-  if (match.dealStage === "PAYMENT_PENDING" || match.dealStage === "DEAL_LOCKED") return "결제";
-  if (match.dealStage === "EVIDENCE_READY" || match.dealStage === "DEAL_REVIEW") return "조건 확인";
-  return "채팅 중";
+function chatStageLabel(match: Match, copy: ReturnType<typeof useDanCopy>, locale: "ko" | "ja"): string {
+  if (match.status === "CLOSED") return copy.tradeClosedTitle;
+  if (match.status === "COMPLETED") return copy.matchStatusCompleted;
+  if (match.dealStage === "HANDOFF_READY" || match.paymentStatus === "PAID") {
+    return locale === "ja" ? "受け渡し確認" : "인계 확인";
+  }
+  if (match.dealStage === "PAYMENT_PENDING" || match.dealStage === "DEAL_LOCKED") {
+    return locale === "ja" ? "支払い" : "결제";
+  }
+  if (match.dealStage === "EVIDENCE_READY" || match.dealStage === "DEAL_REVIEW") {
+    return locale === "ja" ? "条件確認" : "조건 확인";
+  }
+  return locale === "ja" ? "チャット中" : "채팅 중";
 }
 
 type Preview = {
@@ -179,13 +202,13 @@ export function ConversationsPage() {
                   <strong className="chat-list__name">{row.peerName}</strong>
                   {row.lastAt ? (
                     <time dateTime={row.lastAt} className="chat-list__time">
-                      {formatRelativeChatTime(row.lastAt)}
+                      {formatRelativeChatTime(row.lastAt, locale)}
                     </time>
                   ) : null}
                 </span>
                 <span className="chat-list__demand">
                   <span className="chat-list__title">{row.demandTitle}</span>
-                  <em className="chat-list__stage">{chatStageLabel(row.match)}</em>
+                  <em className="chat-list__stage">{chatStageLabel(row.match, copy, locale)}</em>
                 </span>
                 <span className="chat-list__preview">{row.lastMessage}</span>
               </span>

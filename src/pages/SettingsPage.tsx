@@ -157,10 +157,10 @@ export function SettingsPage() {
           <p>{t("legalHint")}</p>
         </div>
         <div className="settings-list">
-          <a className="settings-link-row" href={legalDocumentHref("terms")} target="_blank" rel="noopener noreferrer">
+          <a className="settings-link-row" href={legalDocumentHref("terms", locale)} target="_blank" rel="noopener noreferrer">
             <span>{t("terms")}</span><span aria-hidden>›</span>
           </a>
-          <a className="settings-link-row" href={legalDocumentHref("privacy")} target="_blank" rel="noopener noreferrer">
+          <a className="settings-link-row" href={legalDocumentHref("privacy", locale)} target="_blank" rel="noopener noreferrer">
             <span>{t("privacy")}</span><span aria-hidden>›</span>
           </a>
         </div>

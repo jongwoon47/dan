@@ -4,6 +4,7 @@ import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
+import { useDanCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
 import type { DealSnapshot, PublicProfile } from "@/domain/types";
 import { useDanLocale } from "@/i18n/locale";
@@ -13,6 +14,8 @@ import "./pages.css";
 export function TradeCompletePage() {
   const { matchId = "" } = useParams();
   const locale = useDanLocale();
+  const copy = useDanCopy();
+  const ja = locale === "ja";
   const {
     myMatches,
     currentUser,
@@ -27,7 +30,7 @@ export function TradeCompletePage() {
   const [snapshot, setSnapshot] = useState<DealSnapshot | null>(null);
   const [peer, setPeer] = useState<PublicProfile | null>(null);
 
-  useDeepHeader({ title: "거래 완료" });
+  useDeepHeader({ title: copy.matchStatusCompleted });
 
   useEffect(() => {
     if (!matchId || !match || !currentUser) return;
@@ -43,15 +46,24 @@ export function TradeCompletePage() {
   }, [currentUser, getDealSnapshot, getPublicProfile, match, matchId]);
 
   if (!match || !product || !currentUser) {
-    return <EmptyState title="거래 정보를 찾을 수 없어요" action={<Button to="/my">내 거래</Button>} />;
+    return (
+      <EmptyState
+        title={ja ? "取引情報が見つかりません" : "거래 정보를 찾을 수 없어요"}
+        action={<Button to="/my">{ja ? "自分の取引" : "내 거래"}</Button>}
+      />
+    );
   }
 
   if (match.status !== "COMPLETED") {
     return (
       <EmptyState
-        title="아직 거래가 완료되지 않았어요"
-        body="양쪽이 직거래 인계를 확인하면 완료됩니다."
-        action={<Button to={"/deal/" + match.id + "/handoff"}>거래 진행</Button>}
+        title={ja ? "まだ取引が完了していません" : "아직 거래가 완료되지 않았어요"}
+        body={
+          ja
+            ? "双方が受け渡しを確認すると完了します。"
+            : "양쪽이 직거래 인계를 확인하면 완료됩니다."
+        }
+        action={<Button to={"/deal/" + match.id + "/handoff"}>{copy.tradeInProgress}</Button>}
       />
     );
   }
@@ -62,8 +74,12 @@ export function TradeCompletePage() {
     <div className="page-stack page-narrow trade-complete-page">
       <section className="trade-complete-hero">
         <span className="trade-complete-check" aria-hidden>✓</span>
-        <h1>거래가 완료됐어요</h1>
-        <p>양쪽의 인계 확인이 끝났어요.</p>
+        <h1>{copy.tradeDoneTitle}</h1>
+        <p>
+          {ja
+            ? "双方の受け渡し確認が終わりました。"
+            : "양쪽의 인계 확인이 끝났어요."}
+        </p>
       </section>
 
       <section className="trade-complete-product">
@@ -77,18 +93,18 @@ export function TradeCompletePage() {
                   snapshot.currencyCode ?? demand?.currencyCode ?? "KRW",
                   locale,
                 )
-              : "거래 완료"}
+              : copy.matchStatusCompleted}
           </span>
         </div>
       </section>
 
       <section className="deal-snapshot-card trade-receipt">
         <div className="snapshot-section">
-          <span>거래 상태</span>
-          <strong>완료</strong>
+          <span>{ja ? "取引状態" : "거래 상태"}</span>
+          <strong>{copy.matchStatusCompleted}</strong>
         </div>
         <div className="snapshot-section">
-          <span>최종 거래 금액</span>
+          <span>{ja ? "最終取引金額" : "최종 거래 금액"}</span>
           <strong>
             {snapshot
               ? formatStoredMoney(
@@ -96,37 +112,42 @@ export function TradeCompletePage() {
                   snapshot.currencyCode ?? demand?.currencyCode ?? "KRW",
                   locale,
                 )
-              : "확인 중"}
+              : ja
+                ? "確認中"
+                : "확인 중"}
           </strong>
         </div>
         <div className="snapshot-section">
-          <span>거래 상대</span>
-          <strong>{peer?.displayName || "상대"}</strong>
+          <span>{ja ? "取引相手" : "거래 상대"}</span>
+          <strong>{peer?.displayName || (ja ? "相手" : "상대")}</strong>
         </div>
         <div className="snapshot-section">
-          <span>완료 시각</span>
+          <span>{ja ? "完了時刻" : "완료 시각"}</span>
           <strong>
             {match.completedAt
-              ? new Date(match.completedAt).toLocaleString("ko-KR", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-              : "완료"}
+              ? new Date(match.completedAt).toLocaleString(
+                  ja ? "ja-JP" : "ko-KR",
+                  {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  },
+                )
+              : copy.matchStatusCompleted}
           </strong>
         </div>
       </section>
 
       <Button to="/my?tab=completed" fullWidth>
-        거래 내역 보기
+        {ja ? "取引履歴を見る" : "거래 내역 보기"}
       </Button>
       <Button to={"/profile/" + peerId} fullWidth variant="secondary">
-        상대 프로필 보기
+        {ja ? "相手のプロフィールを見る" : "상대 프로필 보기"}
       </Button>
       <Button to="/" fullWidth variant="ghost">
-        홈으로
+        {ja ? "ホームへ" : "홈으로"}
       </Button>
     </div>
   );

@@ -156,7 +156,7 @@ export function ConsentPage() {
           </label>
           <a
             className="consent-row__view"
-            href={legalDocumentHref("terms")}
+            href={legalDocumentHref("terms", locale)}
             target="_blank"
             rel="noopener noreferrer"
             aria-label={t("consentViewTerms")}
@@ -183,7 +183,7 @@ export function ConsentPage() {
           </label>
           <a
             className="consent-row__view"
-            href={legalDocumentHref("privacy")}
+            href={legalDocumentHref("privacy", locale)}
             target="_blank"
             rel="noopener noreferrer"
             aria-label={t("consentViewPrivacy")}

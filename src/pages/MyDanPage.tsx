@@ -4,6 +4,7 @@ import { MatchList } from "@/components/MatchCard";
 import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { useDanCopy, type LocalizedCopy } from "@/copy/useDanCopy";
 import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
 import { effectiveDemandStatus } from "@/domain/demandLifecycle";
@@ -20,15 +21,17 @@ function normalizeTab(value: string | null): MyTab {
   return "active";
 }
 
-function requestStatusLabel(status: string): string {
-  if (status === "MATCHED") return "거래 진행";
-  if (status === "EXPIRED") return "기간 만료";
-  if (status === "CLOSED") return "종료";
-  return "요청 중";
+function requestStatusLabel(status: string, copy: LocalizedCopy): string {
+  if (status === "MATCHED") return copy.tradeInProgress;
+  if (status === "EXPIRED") return copy.statusExpired;
+  if (status === "CLOSED") return copy.matchStatusClosed;
+  return copy.statusActive;
 }
 
 export function MyDanPage() {
   const locale = useDanLocale();
+  const copy = useDanCopy();
+  const ja = locale === "ja";
   const {
     isLoggedIn,
     login,
@@ -66,13 +69,13 @@ export function MyDanPage() {
   if (!isLoggedIn) {
     return (
       <EmptyState
-        title="로그인이 필요해요"
-        body="진행 중인 거래와 내가 올린 요청을 확인하려면 로그인해 주세요."
+        title={copy.needLogin}
+        body={copy.needLoginBody}
         action={
           dataMode === "supabase" ? (
-            <Button to="/login">로그인</Button>
+            <Button to="/login">{copy.login}</Button>
           ) : (
-            <Button onClick={() => login()}>로그인</Button>
+            <Button onClick={() => login()}>{copy.login}</Button>
           )
         }
       />
@@ -88,25 +91,29 @@ export function MyDanPage() {
       <header className="my-dan__header my-dan__header--v1">
         <div>
           <p className="eyebrow">DAN</p>
-          <h1 className="page-title">내 거래</h1>
+          <h1 className="page-title">{ja ? "自分の取引" : "내 거래"}</h1>
         </div>
         <div className="my-dan__actions">
           <Link to={"/profile/" + currentUser?.id} className="my-dan__name">
-            프로필 <span aria-hidden>›</span>
+            {copy.profileTitle} <span aria-hidden>›</span>
           </Link>
-          <Link to="/settings" className="my-dan__settings" aria-label="설정">
-            설정
+          <Link
+            to="/settings"
+            className="my-dan__settings"
+            aria-label={ja ? "設定" : "설정"}
+          >
+            {ja ? "設定" : "설정"}
           </Link>
         </div>
       </header>
 
-      <nav className="my-demand-tabs" aria-label="내 거래 메뉴">
+      <nav className="my-demand-tabs" aria-label={ja ? "自分の取引メニュー" : "내 거래 메뉴"}>
         <button
           type="button"
           className={tab === "active" ? "is-active" : ""}
           onClick={() => changeTab("active")}
         >
-          진행 중
+          {copy.myRequestsActive}
           <span>{activeMatches.length}</span>
         </button>
         <button
@@ -114,7 +121,7 @@ export function MyDanPage() {
           className={tab === "requests" ? "is-active" : ""}
           onClick={() => changeTab("requests")}
         >
-          내 요청
+          {copy.myRequests}
           <span>{requestRows.length}</span>
         </button>
         <button
@@ -122,7 +129,7 @@ export function MyDanPage() {
           className={tab === "completed" ? "is-active" : ""}
           onClick={() => changeTab("completed")}
         >
-          완료
+          {copy.matchStatusCompleted}
           <span>{completedMatches.length}</span>
         </button>
       </nav>
@@ -131,17 +138,29 @@ export function MyDanPage() {
         <section className="my-demand-panel">
           <div className="my-demand-section-head">
             <div>
-              <h2>지금 이어가야 할 거래</h2>
-              <p>새 제안부터 채팅, 조건 확인, 결제·인계까지 한곳에서 이어갈 수 있어요.</p>
+              <h2>{ja ? "今つなげる取引" : "지금 이어가야 할 거래"}</h2>
+              <p>
+                {ja
+                  ? "新しい提案からチャット、条件確認、支払い・受け渡しまで、ここで続けられます。"
+                  : "새 제안부터 채팅, 조건 확인, 결제·인계까지 한곳에서 이어갈 수 있어요."}
+              </p>
             </div>
           </div>
           {activeMatches.length > 0 ? (
             <MatchList matches={activeMatches} emptyWhenZero={false} />
           ) : (
             <EmptyState
-              title="진행 중인 거래가 없어요"
-              body="요청을 올리거나 탐색에서 다른 사람의 요청에 제안해보세요."
-              action={<Button to="/feed" variant="secondary">요청 둘러보기</Button>}
+              title={ja ? "進行中の取引はありません" : "진행 중인 거래가 없어요"}
+              body={
+                ja
+                  ? "依頼を出すか、探す画面で他の人の依頼に応えてみてください。"
+                  : "요청을 올리거나 탐색에서 다른 사람의 요청에 제안해보세요."
+              }
+              action={
+                <Button to="/feed" variant="secondary">
+                  {copy.ctaBrowse}
+                </Button>
+              }
             />
           )}
         </section>
@@ -172,7 +191,7 @@ export function MyDanPage() {
                     <div className="my-demand-card__body">
                       <div className="my-demand-card__head">
                         <strong>{demand.title}</strong>
-                        <span>{requestStatusLabel(status)}</span>
+                        <span>{requestStatusLabel(status, copy)}</span>
                       </div>
                       <p>
                         {DEMAND_TYPE_LABEL[demand.type]} ·{" "}
@@ -187,14 +206,18 @@ export function MyDanPage() {
             </div>
           ) : (
             <EmptyState
-              title="아직 올린 요청이 없어요"
-              body="구매, 빌리기, 심부름, 서비스 중 필요한 요청을 올려보세요."
-              action={<Button to="/create">요청 올리기</Button>}
+              title={copy.emptyMyRequests}
+              body={
+                ja
+                  ? "購入、レンタル、おつかい、サービスから必要な依頼を出してみましょう。"
+                  : "구매, 빌리기, 심부름, 서비스 중 필요한 요청을 올려보세요."
+              }
+              action={<Button to="/create">{copy.ctaCreate}</Button>}
             />
           )}
 
           <Button to="/create" variant="secondary" fullWidth>
-            새 요청 올리기
+            {ja ? "新しい依頼を出す" : "새 요청 올리기"}
           </Button>
         </section>
       ) : null}
@@ -203,16 +226,24 @@ export function MyDanPage() {
         <section className="my-demand-panel">
           <div className="my-demand-section-head">
             <div>
-              <h2>완료된 거래</h2>
-              <p>확정된 거래 결과와 상대 정보를 다시 확인할 수 있어요.</p>
+              <h2>{ja ? "完了した取引" : "완료된 거래"}</h2>
+              <p>
+                {ja
+                  ? "確定した取引結果と相手情報を再度確認できます。"
+                  : "확정된 거래 결과와 상대 정보를 다시 확인할 수 있어요."}
+              </p>
             </div>
           </div>
           {completedMatches.length > 0 ? (
             <MatchList matches={completedMatches} emptyWhenZero={false} />
           ) : (
             <EmptyState
-              title="완료된 거래가 아직 없어요"
-              body="거래가 끝나면 여기에 기록됩니다."
+              title={ja ? "完了した取引はまだありません" : "완료된 거래가 아직 없어요"}
+              body={
+                ja
+                  ? "取引が終わるとここに記録されます。"
+                  : "거래가 끝나면 여기에 기록됩니다."
+              }
             />
           )}
         </section>

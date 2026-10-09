@@ -30,4 +30,11 @@ describe("JA trade / safety copy coverage", () => {
       expect(jaPilotCopy[key]).not.toEqual(ko[key]);
     }
   });
+
+  it("covers every ko copy key in jaPilotCopy", () => {
+    const koKeys = Object.keys(ko) as (keyof typeof ko)[];
+    const missing = koKeys.filter((key) => !jaPilotCopy[key]);
+    expect(missing).toEqual([]);
+    expect(Object.keys(jaPilotCopy).length).toBe(koKeys.length);
+  });
 });
