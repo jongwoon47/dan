@@ -94,5 +94,8 @@ $$;
 revoke all on function public.search_nearby_demands(double precision,double precision,integer,integer) from public, anon, authenticated;
 grant execute on function public.search_nearby_demands(double precision,double precision,integer,integer) to authenticated;
 
--- Existing app versions may call approx_demand_distances; deprecation and
--- revoke of that older 250m oracle requires a versioned compatibility review.
+-- Retire the legacy arbitrary-ID/250m distance oracle. The current released
+-- consumer UI does not invoke this RPC; it was reserved for the older draft.
+-- This prevents probing an arbitrary target by repeating origin coordinates.
+revoke execute on function public.approx_demand_distances(double precision,double precision,uuid[])
+  from public, anon, authenticated;
