@@ -357,7 +357,7 @@ export function DemandItemPage() {
                       <div className="response-card__fact">
                         <span className="response-card__label">{copy.offerPrice}</span>
                         <strong className="response-card__price">
-                          {formatKRWForLanguage(myOpen.offeredPrice, locale)}
+                          {formatStoredMoney(myOpen.offeredPrice, demand.currencyCode ?? "KRW", locale)}
                         </strong>
                       </div>
                     ) : null}
@@ -519,7 +519,7 @@ export function DemandItemPage() {
                   <div className="response-card__fact">
                     <span className="response-card__label">{copy.offerPrice}</span>
                     <strong className="response-card__price">
-                      {formatKRWForLanguage(r.offeredPrice, locale)}
+                      {formatStoredMoney(r.offeredPrice, demand.currencyCode ?? "KRW", locale)}
                     </strong>
                   </div>
                 ) : null}
