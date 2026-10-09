@@ -7,13 +7,12 @@ import { useAuth } from "@/auth/AuthProvider";
 import { consentReturnPath, useConsent } from "@/auth/ConsentProvider";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Input";
-import { ko } from "@/copy/ko";
-import { useDanCopy } from "@/copy/useDanCopy";
+import { useDanCopy, type LocalizedCopy } from "@/copy/useDanCopy";
 import { useDanLocale } from "@/i18n/locale";
 import { safeReturnPath } from "@/lib/createDraft";
 import "@/pages/pages.css";
 
-function authErrorMessage(err: unknown, copy: typeof ko): string {
+function authErrorMessage(err: unknown, copy: LocalizedCopy): string {
   const msg = err instanceof Error ? err.message : "";
   if (/invalid login|invalid credentials/i.test(msg)) return copy.authInvalid;
   if (/already registered|user already/i.test(msg)) return copy.authExists;
