@@ -2,7 +2,11 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
+    # main keeps release gating; feature/dan-* lets commercialization PRs
+    # (e.g. into the location/JP launch branch) run the same verify+supabase+visual suite.
+    branches:
+      - main
+      - "feature/dan-**"
   workflow_dispatch:
 
 permissions:

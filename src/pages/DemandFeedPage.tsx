@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AggregatedDemandCard } from "@/components/AggregatedDemandCard";
 import { IndividualDemandCard } from "@/components/IndividualDemandCard";
+import { NearbyBandMap } from "@/components/NearbyBandMap";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { TextInput } from "@/components/ui/Input";
@@ -130,6 +131,7 @@ export function DemandFeedPage() {
   const [nearbyHasMore, setNearbyHasMore] = useState(false);
   const [nearbyLoadingMore, setNearbyLoadingMore] = useState(false);
   const [physicalSort, setPhysicalSort] = useState<PhysicalDiscoverySort>("nearest");
+  const [resultView, setResultView] = useState<"list" | "map">("list");
   const [category, setCategory] = useState<LiveDemandCategory>("all");
   const [sort, setSort] = useState<LiveDemandSort>("popular");
   const [page, setPage] = useState(0);
@@ -692,7 +694,29 @@ export function DemandFeedPage() {
             ) : null}
           </div>
         )}
-        <p className="location-discovery__note">{t("mapViewSoon")}</p>
+        {locationMode === "nearby" ? (
+          <div className="discovery-view-toggle" role="group" aria-label={t("mapView")}>
+            <button
+              type="button"
+              className={resultView === "list" ? "is-active" : ""}
+              aria-pressed={resultView === "list"}
+              onClick={() => setResultView("list")}
+            >
+              {t("listView")}
+            </button>
+            <button
+              type="button"
+              className={resultView === "map" ? "is-active" : ""}
+              aria-pressed={resultView === "map"}
+              onClick={() => setResultView("map")}
+            >
+              {t("mapView")}
+            </button>
+            <p className="location-discovery__note">{t("mapViewSoon")}</p>
+          </div>
+        ) : (
+          <p className="location-discovery__note">{t("mapViewSoon")}</p>
+        )}
       </section>
 
       {remoteError && includesBuy ? (
@@ -735,23 +759,35 @@ export function DemandFeedPage() {
         />
       ) : (
         <>
-          <div className="mixed-demand-list" aria-busy={remoteLoading || nearbyLoadingMore}>
-            {visibleFeed.map((item) =>
-              item.kind === "aggregated" ? (
-                <AggregatedDemandCard
-                  key={item.id}
-                  product={item.product}
-                  aggregate={item.aggregate}
-                />
-              ) : (
-                <IndividualDemandCard
-                  key={item.id}
-                  demand={item.demand}
-                  approxMeters={locationMode === "nearby" ? distanceMap[item.demand.id] : undefined}
-                />
-              ),
-            )}
-          </div>
+          {locationMode === "nearby" && resultView === "map" ? (
+            <NearbyBandMap
+              radiusKm={radiusKm}
+              items={visibleFeed
+                .filter((item): item is Extract<FeedItem, { kind: "individual" }> => item.kind === "individual")
+                .map((item) => ({
+                  demand: item.demand,
+                  approxMeters: distanceMap[item.demand.id],
+                }))}
+            />
+          ) : (
+            <div className="mixed-demand-list" aria-busy={remoteLoading || nearbyLoadingMore}>
+              {visibleFeed.map((item) =>
+                item.kind === "aggregated" ? (
+                  <AggregatedDemandCard
+                    key={item.id}
+                    product={item.product}
+                    aggregate={item.aggregate}
+                  />
+                ) : (
+                  <IndividualDemandCard
+                    key={item.id}
+                    demand={item.demand}
+                    approxMeters={locationMode === "nearby" ? distanceMap[item.demand.id] : undefined}
+                  />
+                ),
+              )}
+            </div>
+          )}
 
           {remoteLoading || nearbyLoadingMore ? (
             <p className="discovery-loading" role="status">{t("loading")}</p>

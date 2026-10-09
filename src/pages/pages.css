@@ -2752,6 +2752,33 @@
   font-size: 0.8rem;
   line-height: 1.5;
 }
+.discovery-view-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.discovery-view-toggle > button {
+  border: 1px solid var(--dan-border);
+  border-radius: 999px;
+  padding: 7px 12px;
+  background: var(--dan-surface);
+  color: var(--dan-ink);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.discovery-view-toggle > button.is-active {
+  border-color: var(--dan-ink);
+  font-weight: 700;
+}
+
+.discovery-view-toggle .location-discovery__note {
+  flex-basis: 100%;
+}
+
 .location-discovery__modes {
   display: flex;
   flex-wrap: wrap;
