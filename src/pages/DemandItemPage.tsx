@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
-import { ko } from "@/copy/ko";
-import { useDanCopy } from "@/copy/useDanCopy";
+import { useDanCopy, type LocalizedCopy } from "@/copy/useDanCopy";
 import { useDanLocale } from "@/i18n/locale";
 import { useDan } from "@/domain/danContext";
 import { effectiveDemandStatus, isDemandOpen } from "@/domain/demandLifecycle";
@@ -30,11 +29,11 @@ import {
 } from "@/lib/geoDistance";
 import "./pages.css";
 
-function responseStatusLabel(status: string) {
-  if (status === "OPEN") return ko.statusOpen;
-  if (status === "ACCEPTED") return ko.statusAccepted;
-  if (status === "DECLINED") return ko.statusDeclined;
-  if (status === "WITHDRAWN") return ko.statusWithdrawn;
+function responseStatusLabel(status: string, copy: LocalizedCopy) {
+  if (status === "OPEN") return copy.statusOpen;
+  if (status === "ACCEPTED") return copy.statusAccepted;
+  if (status === "DECLINED") return copy.statusDeclined;
+  if (status === "WITHDRAWN") return copy.statusWithdrawn;
   return status;
 }
 
@@ -373,7 +372,7 @@ export function DemandItemPage() {
                       <span className="response-card__label">{copy.responseMessage}</span>
                       <span>{myOpen.message}</span>
                     </div>
-                    <p className="muted">{responseStatusLabel(myOpen.status)}</p>
+                    <p className="muted">{responseStatusLabel(myOpen.status, copy)}</p>
                   </div>
                   <div className="action-row">
                     <Button
@@ -513,7 +512,7 @@ export function DemandItemPage() {
                       상대
                     </Link>
                   )}
-                  <span className="muted">{responseStatusLabel(r.status)}</span>
+                  <span className="muted">{responseStatusLabel(r.status, copy)}</span>
                 </div>
                 {r.offeredPrice != null ? (
                   <div className="response-card__fact">

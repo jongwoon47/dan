@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Chip, ChipGroup, DatetimeLocalInput, Field, TextInput } from "@/components/ui/Input";
-import { ko } from "@/copy/ko";
+import { useDanCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
 import {
   defaultExpiresAtIso,
@@ -73,6 +73,7 @@ function routeOf(options: FulfillmentOption[]): { from: string; to: string } {
 }
 
 export function DemandEditPage() {
+  const copy = useDanCopy();
   const { demandId = "" } = useParams();
   const navigate = useNavigate();
   const { getDemand, updateDemand, currentUser, busy } = useDan();
@@ -191,8 +192,8 @@ export function DemandEditPage() {
   if (!demand || demand.userId !== currentUser?.id) {
     return (
       <EmptyState
-        title={ko.missingDemand}
-        action={<Button to="/my" variant="secondary">{ko.navMy}</Button>}
+        title={copy.missingDemand}
+        action={<Button to="/my" variant="secondary">{copy.navMy}</Button>}
       />
     );
   }
@@ -200,10 +201,10 @@ export function DemandEditPage() {
   if (demand.status !== "ACTIVE") {
     return (
       <EmptyState
-        title={ko.demandClosed}
+        title={copy.demandClosed}
         action={
           <Button to={`/demand/item/${demand.id}`} variant="secondary">
-            {ko.goBack}
+            {copy.goBack}
           </Button>
         }
       />
@@ -228,52 +229,52 @@ export function DemandEditPage() {
           ? description.trim().split("\n")[0].slice(0, 60)
           : title.trim();
     if (!nextTitle || price <= 0) {
-      setError(ko.genericError);
+      setError(copy.genericError);
       return;
     }
     if (current.type === "BORROW") {
       if (!borrowStart.trim() || !borrowEnd.trim()) {
-        setError(ko.timeRequiredError);
+        setError(copy.timeRequiredError);
         return;
       }
       if (!isBorrowRangeValid(borrowStart, borrowEnd)) {
-        setError(ko.borrowRangeError);
+        setError(copy.borrowRangeError);
         return;
       }
       if (
         !isDatetimeLocalNotPast(borrowStart) ||
         !isDatetimeLocalNotPast(borrowEnd)
       ) {
-        setError(ko.timePastError);
+        setError(copy.timePastError);
         return;
       }
     }
     if (current.type === "TASK") {
       if (!dueAt.trim()) {
-        setError(ko.timeRequiredError);
+        setError(copy.timeRequiredError);
         return;
       }
       if (!isDatetimeLocalNotPast(dueAt)) {
-        setError(ko.timePastError);
+        setError(copy.timePastError);
         return;
       }
     }
     if (current.type === "SERVICE") {
       if (!preferredAt.trim()) {
-        setError(ko.timeRequiredError);
+        setError(copy.timeRequiredError);
         return;
       }
       if (!isDatetimeLocalNotPast(preferredAt)) {
-        setError(ko.timePastError);
+        setError(copy.timePastError);
         return;
       }
     }
     if (current.type === "BUY" && !(buyShipping || buyMeetup)) {
-      setError(ko.genericError);
+      setError(copy.genericError);
       return;
     }
     if (!areFulfillmentOptionsValid(fulfillmentOptions)) {
-      setError(ko.genericError);
+      setError(copy.genericError);
       return;
     }
 
@@ -328,7 +329,7 @@ export function DemandEditPage() {
           : undefined,
     });
     if (!result) {
-      setError(ko.genericError);
+      setError(copy.genericError);
       return;
     }
     navigate(`/demand/item/${current.id}`);
@@ -397,7 +398,7 @@ export function DemandEditPage() {
 
         <Field
           label={budgetLabelForType(current.type)}
-          hint={current.type === "BORROW" ? ko.borrowBudgetHint : undefined}
+          hint={current.type === "BORROW" ? copy.borrowBudgetHint : undefined}
         >
           <TextInput
             inputMode="numeric"
@@ -411,7 +412,7 @@ export function DemandEditPage() {
         {current.type === "BUY" ? (
           <>
             <div>
-              <p className="field-inline-label">{ko.condition}</p>
+              <p className="field-inline-label">{copy.condition}</p>
               <ChipGroup>
                 {CONDITIONS.map((c) => (
                   <Chip
@@ -425,28 +426,28 @@ export function DemandEditPage() {
               </ChipGroup>
             </div>
             <div>
-              <p className="field-inline-label">{ko.tradeMethod}</p>
+              <p className="field-inline-label">{copy.tradeMethod}</p>
               <ChipGroup>
                 <Chip
                   selected={buyShipping}
                   onClick={() => setBuyShipping((v) => !v)}
                 >
-                  {ko.buyShippingOpt}
+                  {copy.buyShippingOpt}
                 </Chip>
                 <Chip
                   selected={buyMeetup}
                   onClick={() => setBuyMeetup((v) => !v)}
                 >
-                  {ko.buyMeetupOpt}
+                  {copy.buyMeetupOpt}
                 </Chip>
               </ChipGroup>
             </div>
             {buyMeetup ? (
-              <Field label={ko.buyMeetupWhere}>
+              <Field label={copy.buyMeetupWhere}>
                 <TextInput
                   value={meetupPlace}
                   onChange={(e) => setMeetupPlace(e.target.value)}
-                  placeholder={ko.locationPh}
+                  placeholder={copy.locationPh}
                 />
               </Field>
             ) : null}
@@ -455,21 +456,21 @@ export function DemandEditPage() {
 
         {current.type === "BORROW" ? (
           <>
-            <Field label={ko.borrowWhere}>
+            <Field label={copy.borrowWhere}>
               <TextInput
                 value={borrowPlace}
                 onChange={(e) => setBorrowPlace(e.target.value)}
-                placeholder={ko.locationPh}
+                placeholder={copy.locationPh}
               />
             </Field>
-            <Field label={ko.borrowStart}>
+            <Field label={copy.borrowStart}>
               <DatetimeLocalInput
                 value={borrowStart}
                 onChange={setBorrowStart}
                 required
               />
             </Field>
-            <Field label={ko.borrowEnd}>
+            <Field label={copy.borrowEnd}>
               <DatetimeLocalInput
                 value={borrowEnd}
                 onChange={setBorrowEnd}
@@ -482,51 +483,51 @@ export function DemandEditPage() {
         {current.type === "TASK" ? (
           <>
             <div>
-              <p className="field-inline-label">{ko.taskHow}</p>
+              <p className="field-inline-label">{copy.taskHow}</p>
               <ChipGroup>
                 <Chip
                   selected={taskMode === "onsite"}
                   onClick={() => setTaskMode("onsite")}
                 >
-                  {ko.taskModeOnsite}
+                  {copy.taskModeOnsite}
                 </Chip>
                 <Chip
                   selected={taskMode === "pickup"}
                   onClick={() => setTaskMode("pickup")}
                 >
-                  {ko.taskModePickup}
+                  {copy.taskModePickup}
                 </Chip>
                 <Chip
                   selected={taskMode === "route"}
                   onClick={() => setTaskMode("route")}
                 >
-                  {ko.taskModeRoute}
+                  {copy.taskModeRoute}
                 </Chip>
                 <Chip
                   selected={taskMode === "remote"}
                   onClick={() => setTaskMode("remote")}
                 >
-                  {ko.taskModeRemote}
+                  {copy.taskModeRemote}
                 </Chip>
               </ChipGroup>
             </div>
             {taskMode === "route" ? (
               <div className="route-fields">
-                <Field label={ko.taskRouteFrom}>
+                <Field label={copy.taskRouteFrom}>
                   <TextInput
                     value={routeFrom}
                     onChange={(e) => setRouteFrom(e.target.value)}
-                    placeholder={ko.placePh}
+                    placeholder={copy.placePh}
                   />
                 </Field>
                 <span className="route-arrow" aria-hidden>
-                  {ko.routeArrow}
+                  {copy.routeArrow}
                 </span>
-                <Field label={ko.taskRouteTo}>
+                <Field label={copy.taskRouteTo}>
                   <TextInput
                     value={routeTo}
                     onChange={(e) => setRouteTo(e.target.value)}
-                    placeholder={ko.placePh}
+                    placeholder={copy.placePh}
                   />
                 </Field>
               </div>
@@ -534,17 +535,17 @@ export function DemandEditPage() {
             {taskMode === "onsite" || taskMode === "pickup" ? (
               <Field
                 label={
-                  taskMode === "pickup" ? ko.taskPickupPlace : ko.taskPlace
+                  taskMode === "pickup" ? copy.taskPickupPlace : copy.taskPlace
                 }
               >
                 <TextInput
                   value={taskPlace}
                   onChange={(e) => setTaskPlace(e.target.value)}
-                  placeholder={ko.locationPh}
+                  placeholder={copy.locationPh}
                 />
               </Field>
             ) : null}
-            <Field label={ko.dueAt}>
+            <Field label={copy.dueAt}>
               <DatetimeLocalInput
                 value={dueAt}
                 onChange={setDueAt}
@@ -557,32 +558,32 @@ export function DemandEditPage() {
         {current.type === "SERVICE" ? (
           <>
             <div>
-              <p className="field-inline-label">{ko.fulfillHow}</p>
+              <p className="field-inline-label">{copy.fulfillHow}</p>
               <ChipGroup>
                 <Chip
                   selected={serviceMode === "onsite"}
                   onClick={() => setServiceMode("onsite")}
                 >
-                  {ko.serviceOnsite}
+                  {copy.serviceOnsite}
                 </Chip>
                 <Chip
                   selected={serviceMode === "remote"}
                   onClick={() => setServiceMode("remote")}
                 >
-                  {ko.serviceRemote}
+                  {copy.serviceRemote}
                 </Chip>
               </ChipGroup>
             </div>
             {serviceMode === "onsite" ? (
-              <Field label={ko.servicePlace}>
+              <Field label={copy.servicePlace}>
                 <TextInput
                   value={servicePlace}
                   onChange={(e) => setServicePlace(e.target.value)}
-                  placeholder={ko.locationPh}
+                  placeholder={copy.locationPh}
                 />
               </Field>
             ) : null}
-            <Field label={ko.preferredAt}>
+            <Field label={copy.preferredAt}>
               <DatetimeLocalInput
                 value={preferredAt}
                 onChange={setPreferredAt}
@@ -594,7 +595,7 @@ export function DemandEditPage() {
 
         {error ? <p className="form-error">{error}</p> : null}
         <Button type="submit" fullWidth size="lg" disabled={busy}>
-          {busy ? ko.saving : ko.saveDemand}
+          {busy ? copy.saving : copy.saveDemand}
         </Button>
       </form>
     </div>

@@ -4,7 +4,7 @@ import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
 import { Chip, ChipGroup } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { ko } from "@/copy/ko";
+import { useDanCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
 import type { ItemCondition } from "@/domain/types";
 import { CONDITION_LABEL } from "@/domain/types";
@@ -15,6 +15,7 @@ import "./pages.css";
 const CONDITIONS: ItemCondition[] = ["sealed", "like_new", "lightly_used"];
 
 export function OwnershipPage() {
+  const copy = useDanCopy();
   const { productId = "" } = useParams();
   const navigate = useNavigate();
   const { getProduct, getAggregate, createOwnership } = useDan();
@@ -29,8 +30,8 @@ export function OwnershipPage() {
   if (!product) {
     return (
       <EmptyState
-        title={ko.missingProduct}
-        action={<Button to="/feed" variant="secondary">{ko.goBack}</Button>}
+        title={copy.missingProduct}
+        action={<Button to="/feed" variant="secondary">{copy.goBack}</Button>}
       />
     );
   }
@@ -62,48 +63,48 @@ export function OwnershipPage() {
     return (
       <div className="page-stack page-narrow">
         <section className="section-stack">
-          <h1 className="page-title">{ko.ownDoneTitle}</h1>
+          <h1 className="page-title">{copy.ownDoneTitle}</h1>
           <p className="section-title">{product.name}</p>
           {seekers > 0 ? (
             <p className="detail-hero__count">
               <strong>
                 {seekers}
-                {ko.myung}
+                {copy.myung}
               </strong>
-              {ko.seekingDetailSuffix.replace(ko.myung, "")}
+              {copy.seekingDetailSuffix.replace(copy.myung, "")}
             </p>
           ) : (
-            <p className="section-desc">{ko.ownDoneBody}</p>
+            <p className="section-desc">{copy.ownDoneBody}</p>
           )}
           {(highest > 0 || delta > 0) && (
             <div className="kpi-strip kpi-strip--compact">
               {highest > 0 ? (
                 <div className="kpi-strip__item">
-                  <span>{ko.highestHopeShort}</span>
+                  <span>{copy.highestHopeShort}</span>
                   <strong>{formatWon(highest)}</strong>
                 </div>
               ) : null}
               {delta > 0 ? (
                 <div className="kpi-strip__item">
-                  <span>{ko.thisWeek}</span>
+                  <span>{copy.thisWeek}</span>
                   <strong className="demand-card__trend">
                     +{delta}
-                    {ko.myung}
+                    {copy.myung}
                   </strong>
                 </div>
               ) : null}
             </div>
           )}
-          {seekers > 0 ? <p className="section-desc">{ko.ownDoneBody}</p> : null}
+          {seekers > 0 ? <p className="section-desc">{copy.ownDoneBody}</p> : null}
           <Button
             fullWidth
             size="lg"
             onClick={() => navigate(`/ownership/${doneId}/sell-intent`)}
           >
-            {ko.sellCta}
+            {copy.sellCta}
           </Button>
           <Button to={`/demand/${productId}`} variant="secondary" fullWidth>
-            {ko.reviewDemand}
+            {copy.reviewDemand}
           </Button>
         </section>
       </div>
@@ -119,14 +120,14 @@ export function OwnershipPage() {
             <h2 className="section-title">{product.name}</h2>
             {aggregate && aggregate.seekerCount > 0 ? (
               <p className="section-desc">
-                {ko.seekersLabel} {aggregate.seekerCount}
-                {ko.myung}
+                {copy.seekersLabel} {aggregate.seekerCount}
+                {copy.myung}
               </p>
             ) : null}
           </div>
         </div>
         <div>
-          <p className="field-inline-label">{ko.condition}</p>
+          <p className="field-inline-label">{copy.condition}</p>
           <ChipGroup>
             {CONDITIONS.map((c) => (
               <Chip
@@ -145,7 +146,7 @@ export function OwnershipPage() {
           onClick={() => void register()}
           disabled={busy || !condition}
         >
-          {busy ? ko.saving : ko.registerOwned}
+          {busy ? copy.saving : copy.registerOwned}
         </Button>
       </section>
     </div>

@@ -4,7 +4,7 @@ import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
-import { ko } from "@/copy/ko";
+import { useDanCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
 import { CONDITION_LABEL, isBuyDemand, type BuyDemand } from "@/domain/types";
@@ -12,6 +12,7 @@ import { formatWon } from "@/lib/format";
 import "./pages.css";
 
 export function DemandDetailPage() {
+  const copy = useDanCopy();
   const { productId = "" } = useParams();
   const { getProduct, getAggregate, myOwnerships, myDemands, currentUser, state } = useDan();
   const [shareStatus, setShareStatus] = useState("");
@@ -61,7 +62,7 @@ export function DemandDetailPage() {
   }
 
   useDeepHeader({
-    title: product?.name ?? ko.seekingOnly,
+    title: product?.name ?? copy.seekingOnly,
     hide: !product,
     right: product ? (
       <button
@@ -78,9 +79,9 @@ export function DemandDetailPage() {
   if (!product || !aggregate) {
     return (
       <EmptyState
-        title={ko.missingDemand}
-        body={ko.detailMissingBody}
-        action={<Button to="/feed" variant="secondary">탐색</Button>}
+        title={copy.missingDemand}
+        body={copy.detailMissingBody}
+        action={<Button to="/feed" variant="secondary">{copy.navFeed}</Button>}
       />
     );
   }
