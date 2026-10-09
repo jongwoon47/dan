@@ -62,8 +62,9 @@ export function matchesLocationDiscovery(
           return normalized.length > 0 &&
             (normalized.includes(query) || query.includes(normalized));
         };
-        return matches(option.from.region2 ?? option.from.publicLabel, from) &&
-          matches(option.to.region2 ?? option.to.publicLabel, to);
+        const atEnd = (place: { publicLabel: string; region2?: string }, query: string) =>
+          matches(place.publicLabel, query) || (place.region2 ? matches(place.region2, query) : false);
+        return atEnd(option.from, from) && atEnd(option.to, to);
       });
     }
     case "nearby": {
