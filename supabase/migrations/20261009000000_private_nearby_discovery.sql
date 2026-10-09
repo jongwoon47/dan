@@ -23,6 +23,9 @@ begin
   if auth.uid() is null then
     raise exception 'not authenticated' using errcode = '28000';
   end if;
+  -- 20261006054157 account deletion migration already installed this helper.
+  -- SECURITY DEFINER bypasses table RLS, so protect this new RPC explicitly.
+  perform dan_private.require_live_account();
   if p_lat is null or p_lng is null or
      not (p_lat between -90 and 90) or not (p_lng between -180 and 180) then
     raise exception 'invalid location';
@@ -67,6 +70,12 @@ begin
         where
           d.status = 'ACTIVE'
           and (d.expires_at is null or d.expires_at > now())
+          and exists (
+            select 1 from public.profiles owner
+            where owner.id = d.user_id
+              and owner.deleted_at is null
+              and owner.deletion_started_at is null
+          )
           and not public.interaction_blocked_with(d.user_id)
           and (
             d.type <> 'BUY'
