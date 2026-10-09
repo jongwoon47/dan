@@ -122,9 +122,11 @@ export function OfferDetailPage() {
         <div>
           <span>판매자 가능</span>
           <strong>
-            {sell.tradeMethod === "any"
-              ? `${tradeLabel(locale, "meetup")} · ${tradeLabel(locale, "shipping")}`
-              : tradeLabel(locale, sell.tradeMethod)}
+            {!sell.tradeMethod
+              ? "—"
+              : sell.tradeMethod === "any"
+                ? `${tradeLabel(locale, "meetup")} · ${tradeLabel(locale, "shipping")}`
+                : tradeLabel(locale, sell.tradeMethod)}
           </strong>
         </div>
       </section>
