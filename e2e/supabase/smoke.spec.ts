@@ -118,17 +118,27 @@ async function completeNonBuyUiFlow(args: {
   await ownerPage.getByRole("button", { name: "거래 완료" }).click();
   await expect(ownerPage.getByText("실제 거래가 끝났나요?")).toBeVisible();
   await ownerPage.getByRole("button", { name: "완료 확인" }).click();
-  await expect(ownerPage.getByText("거래 진행 중")).toBeVisible();
+  // Wait for persisted one-sided completion — not the generic "거래 진행 중" chrome.
+  await expect(
+    ownerPage.getByText("상대의 완료 확인을 기다리는 중이에요."),
+  ).toBeVisible({ timeout: 30_000 });
+  await expect(ownerPage.getByRole("button", { name: "거래 완료" })).toHaveCount(0);
 
   await responderPage.reload();
-  await expect(responderPage.getByText("상대가 거래 완료를 확인했어요.")).toBeVisible();
+  await expect(
+    responderPage.getByText("상대가 거래 완료를 확인했어요."),
+  ).toBeVisible({ timeout: 30_000 });
   await responderPage.getByRole("button", { name: "나도 완료했어요" }).click();
   await expect(responderPage.getByText("실제 거래가 끝났나요?")).toBeVisible();
   await responderPage.getByRole("button", { name: "완료 확인" }).click();
-  await expect(responderPage.getByText("거래가 완료됐어요")).toBeVisible();
+  await expect(responderPage.getByText("거래가 완료됐어요")).toBeVisible({
+    timeout: 30_000,
+  });
 
   await ownerPage.reload();
-  await expect(ownerPage.getByText("거래가 완료됐어요")).toBeVisible();
+  await expect(ownerPage.getByText("거래가 완료됐어요")).toBeVisible({
+    timeout: 30_000,
+  });
 
   await ownerPage.screenshot({
     path: path.join(outDir, `flow-${label.toLowerCase()}-completed.png`),

@@ -650,8 +650,11 @@ export function MatchChatPage() {
         onCancel={() => setConfirm(null)}
         onConfirm={() => {
           void confirmMatchCompletion(matchId).then((updated) => {
+            if (!updated) {
+              setError(copy.genericError);
+              return;
+            }
             setConfirm(null);
-            if (!updated) setError(copy.genericError);
           });
         }}
       />
@@ -675,8 +678,11 @@ export function MatchChatPage() {
                 })
               : closeMatch(matchId);
           void action.then((updated) => {
+            if (!updated) {
+              setError(copy.genericError);
+              return;
+            }
             setConfirm(null);
-            if (!updated) setError(copy.genericError);
           });
         }}
       />

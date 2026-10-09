@@ -202,6 +202,11 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
 
   const run = useCallback(
     async <T,>(fn: () => Promise<T>): Promise<T | null> => {
+      // Brief wait instead of silent drop — confirm/cancel after chat send can
+      // overlap the prior mutation's refresh and would otherwise no-op.
+      for (let attempt = 0; attempt < 40 && mutationInFlightRef.current; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
       if (mutationInFlightRef.current) return null;
       mutationInFlightRef.current = true;
       setBusy(true);
