@@ -108,3 +108,8 @@ grant execute on function public.search_nearby_demands(double precision,double p
 -- This prevents probing an arbitrary target by repeating origin coordinates.
 revoke execute on function public.approx_demand_distances(double precision,double precision,uuid[])
   from public, anon, authenticated;
+
+-- Defensive grant cleanup: a later baseline migration granted anon SELECT on
+-- the exact-coordinate relation even though its RLS policy returned no rows.
+-- Remove the grant itself so privacy does not rely on a single RLS condition.
+revoke select on table public.demand_exact_geo from public, anon;
