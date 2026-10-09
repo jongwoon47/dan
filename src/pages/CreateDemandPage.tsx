@@ -680,8 +680,12 @@ function CreateDemandForm() {
             <div className="create-progress" aria-label="작성 단계">
               <div className="create-progress__track"><span style={{ width: phase === 1 ? "50%" : "100%" }} /></div>
               <div className="create-progress__labels">
-                <span className={phase === 1 ? "is-active" : ""}>무엇을</span>
-                <span className={phase === 2 ? "is-active" : ""}>어디서 · 언제</span>
+                <span className={phase === 1 ? "is-active" : ""}>
+                  {locale === "ja" ? "なにを" : "무엇을"}
+                </span>
+                <span className={phase === 2 ? "is-active" : ""}>
+                  {locale === "ja" ? "どこで · いつ" : "어디서 · 언제"}
+                </span>
               </div>
             </div>
 

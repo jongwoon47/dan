@@ -254,6 +254,16 @@ async function main() {
     if (localUp) {
       dbUrl = LOCAL_DEFAULT_URL;
       console.log(`Detected local Supabase Postgres on 54322 → ${dbUrl}`);
+    } else {
+      // Optional isolated drift sandbox (not a substitute for full supabase reset).
+      const sandboxUp = await portOpen("127.0.0.1", 54333);
+      if (sandboxUp) {
+        dbUrl =
+          "postgresql://postgres:postgres@127.0.0.1:54333/postgres";
+        console.log(
+          `Detected local Postgres sandbox on 54333 → ${dbUrl} (forward apply only; needs preexisting schemas)`,
+        );
+      }
     }
   }
 

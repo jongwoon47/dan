@@ -10,7 +10,7 @@ import type { ItemCondition } from "@/domain/types";
 import { conditionLabel } from "@/i18n/categories";
 import { useDanLocale } from "@/i18n/locale";
 import { clearOwnDraft, loadOwnDraft, saveOwnDraft } from "@/lib/actionDraft";
-import { formatWon } from "@/lib/format";
+import { formatStoredMoney } from "@/lib/format";
 import "./pages.css";
 
 const CONDITIONS: ItemCondition[] = ["sealed", "like_new", "lightly_used"];
@@ -83,7 +83,7 @@ export function OwnershipPage() {
               {highest > 0 ? (
                 <div className="kpi-strip__item">
                   <span>{copy.highestHopeShort}</span>
-                  <strong>{formatWon(highest)}</strong>
+                  <strong>{formatStoredMoney(highest, "KRW", locale)}</strong>
                 </div>
               ) : null}
               {delta > 0 ? (
