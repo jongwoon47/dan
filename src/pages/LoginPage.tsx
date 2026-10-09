@@ -15,10 +15,10 @@ import "@/pages/pages.css";
 
 function authErrorMessage(err: unknown, copy: typeof ko): string {
   const msg = err instanceof Error ? err.message : "";
-  if (/invalid login|invalid credentials/i.test(msg)) return ko.authInvalid;
-  if (/already registered|user already/i.test(msg)) return ko.authExists;
-  if (/password/i.test(msg) && /6|least|weak/i.test(msg)) return ko.authWeakPassword;
-  return ko.genericError;
+  if (/invalid login|invalid credentials/i.test(msg)) return copy.authInvalid;
+  if (/already registered|user already/i.test(msg)) return copy.authExists;
+  if (/password/i.test(msg) && /6|least|weak/i.test(msg)) return copy.authWeakPassword;
+  return copy.genericError;
 }
 
 export function LoginPage() {
