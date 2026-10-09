@@ -293,13 +293,13 @@ export function DemandFeedPage() {
   const visibleFeed = useMemo<FeedItem[]>(() => {
     // Product-level BUY aggregates have no single request coordinate.
     // Never present them as a verified GPS-nearby result.
-    if (requestType === "BUY") return locationMode === "all" ? buyRows : locationFilteredIndividualRows;
+    if (requestType === "BUY") return locationMode === "all" && areaCountry === "KR" ? buyRows : locationFilteredIndividualRows;
     if (requestType !== "all") return locationFilteredIndividualRows;
     if (locationMode !== "all") return locationFilteredIndividualRows;
     return [...buyRows, ...locationFilteredIndividualRows].sort(
       (a, b) => b.sortAt.localeCompare(a.sortAt),
     );
-  }, [buyRows, locationFilteredIndividualRows, locationMode, requestType]);
+  }, [buyRows, locationFilteredIndividualRows, locationMode, requestType, areaCountry]);
 
   const hasMore =
     locationMode === "all" &&
@@ -631,7 +631,7 @@ export function DemandFeedPage() {
           <span>{t("noRequests")}</span>
           <strong>{t("homeLead")}</strong>
         </div>
-        <Button to="/create" variant="secondary">
+        <Button to={demandHref} variant="secondary">
           {t("createRequest")}
         </Button>
       </section>
