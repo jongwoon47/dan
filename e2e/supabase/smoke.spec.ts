@@ -23,6 +23,20 @@ function datetimeLocal(hoursFromNow: number): string {
   ].join("");
 }
 
+async function completeRequiredConsent(page: Page) {
+  // Sign-up must require explicit Terms and Privacy consent. Exercise the
+  // actual flow, do not bypass the gate with fixtures or service role writes.
+  await expect(page.getByRole("heading", { name: "DAN 시작하기" })).toBeVisible();
+  const confirm = page.getByRole("button", { name: "동의하고 시작하기" });
+  await expect(confirm).toBeDisabled();
+  await page.getByRole("button", { name: "전체 동의" }).click();
+  await expect(confirm).toBeEnabled();
+  await confirm.click();
+  await expect(page).not.toHaveURL(/\/consent(?:\?|$)/);
+  await page.goto("/my");
+  await expect(page.getByRole("heading", { name: "내 거래" })).toBeVisible();
+}
+
 async function signup(page: Page, tag: string) {
   const email = `dan.browser.qa.${tag}@example.com`;
   await page.goto("/login");
@@ -31,7 +45,7 @@ async function signup(page: Page, tag: string) {
   await page.getByLabel("이메일").fill(email);
   await page.getByLabel("비밀번호").fill("DanBrowserQa-Pass1!");
   await page.getByRole("button", { name: "가입하기" }).click();
-  await expect(page.getByRole("heading", { name: "내 거래" })).toBeVisible();
+  await completeRequiredConsent(page);
   return email;
 }
 
@@ -44,7 +58,7 @@ async function signupNamed(page: Page, tag: string, role: string, name: string) 
   await page.getByLabel("이메일").fill(email);
   await page.getByLabel("비밀번호").fill("DanBrowserQa-Pass1!");
   await page.getByRole("button", { name: "가입하기" }).click();
-  await expect(page.getByRole("heading", { name: "내 거래" })).toBeVisible();
+  await completeRequiredConsent(page);
   return email;
 }
 
