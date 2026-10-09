@@ -5,8 +5,14 @@ import { useAuth } from "@/auth/AuthProvider";
 import { legalDocumentHref } from "@/auth/consentVersions";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { setDanLocale, translate, useDanLocale } from "@/i18n/locale";
-import { readStoredMarketCountry } from "@/lib/marketPrefs";
-import { addSavedArea, removeSavedArea, useSavedAreas, type SavedArea } from "@/lib/savedAreas";
+import { readStoredMarketCountry, writeStoredMarketCountry } from "@/lib/marketPrefs";
+import {
+  addSavedArea,
+  removeSavedArea,
+  updateSavedArea,
+  useSavedAreas,
+  type SavedArea,
+} from "@/lib/savedAreas";
 
 export function SettingsPage() {
   const auth = useAuth();
@@ -16,11 +22,32 @@ export function SettingsPage() {
   const [areaText, setAreaText] = useState("");
   // Market country is independent of UI language (never infer JP from Japanese locale).
   const [country, setCountry] = useState<SavedArea["country"]>(() => readStoredMarketCountry());
+  const [editing, setEditing] = useState<SavedArea | null>(null);
   const [saveMessage, setSaveMessage] = useState("");
   useDeepHeader({ title: t("settings") });
 
+  function selectCountry(next: SavedArea["country"]) {
+    setCountry(next);
+    writeStoredMarketCountry(next);
+  }
+
   function saveArea(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (editing) {
+      const result = updateSavedArea(editing, { label: areaText, country });
+      if (result === "saved") {
+        setAreaText("");
+        setEditing(null);
+        setSaveMessage(t("areaUpdated"));
+      } else {
+        setSaveMessage(
+          result === "exists" ? t("areaSaved") :
+          result === "missing" ? t("noSavedAreas") :
+          t("savedAreaHint"),
+        );
+      }
+      return;
+    }
     const result = addSavedArea({ label: areaText, country });
     if (result === "saved") {
       setAreaText("");
@@ -65,6 +92,18 @@ export function SettingsPage() {
               <Link to={`/feed?area=${encodeURIComponent(area.label)}&country=${area.country}`}>
                 {area.country === "JP" ? "JP" : "KR"} · {area.label}
               </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditing(area);
+                  setCountry(area.country);
+                  setAreaText(area.label);
+                  setSaveMessage("");
+                }}
+                aria-label={t("editArea") + " " + area.label}
+              >
+                {t("editArea")}
+              </button>
               <button type="button" onClick={() => removeSavedArea(area)} aria-label={t("remove") + " " + area.label}>
                 {t("remove")}
               </button>
@@ -73,7 +112,7 @@ export function SettingsPage() {
           <form className="location-pref-form" onSubmit={saveArea}>
             <label className="location-pref-field">
               <span>{t("chooseCountry")}</span>
-              <select value={country} onChange={(event) => setCountry(event.target.value === "JP" ? "JP" : "KR")}>
+              <select value={country} onChange={(event) => selectCountry(event.target.value === "JP" ? "JP" : "KR")}>
                 <option value="KR">{t("countryKr")}</option>
                 <option value="JP">{t("countryJp")}</option>
               </select>
@@ -87,9 +126,25 @@ export function SettingsPage() {
                 placeholder={t("areaExample")}
               />
             </label>
-            <Button type="submit" variant="secondary" disabled={savedAreas.length >= 3 || !areaText.trim()}>
-              {t("addArea")}
+            <Button
+              type="submit"
+              variant="secondary"
+              disabled={!areaText.trim() || (!editing && savedAreas.length >= 3)}
+            >
+              {editing ? t("editArea") : t("addArea")}
             </Button>
+            {editing ? (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setEditing(null);
+                  setAreaText("");
+                }}
+              >
+                {t("cancelEdit")}
+              </Button>
+            ) : null}
             {saveMessage ? <p role="status" className="location-pref-hint">{saveMessage}</p> : null}
           </form>
         </div>

@@ -89,3 +89,36 @@ export function removeSavedArea(area: SavedArea): void {
     window.dispatchEvent(new Event(CHANGE_EVENT));
   } catch { /* ignore */ }
 }
+
+/**
+ * In-place edit of a saved living area. Keeps max-3 and uniqueness invariants.
+ * Returns the same status codes as add, plus "missing" when the source row is gone.
+ */
+export function updateSavedArea(
+  previous: SavedArea,
+  nextInput: SavedArea,
+): "saved" | "exists" | "full" | "invalid" | "missing" {
+  const cleaned = sanitizeArea(nextInput);
+  if (!cleaned) return "invalid";
+  const existing = parseSavedAreas(snapshot());
+  const index = existing.findIndex(
+    (entry) => entry.country === previous.country && entry.label === previous.label,
+  );
+  if (index < 0) return "missing";
+  const nextKey = `${cleaned.country}:${cleaned.label.normalize("NFKC").toLocaleLowerCase()}`;
+  const conflict = existing.some((entry, i) => {
+    if (i === index) return false;
+    const key = `${entry.country}:${entry.label.normalize("NFKC").toLocaleLowerCase()}`;
+    return key === nextKey;
+  });
+  if (conflict) return "exists";
+  try {
+    const next = [...existing];
+    next[index] = cleaned;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    window.dispatchEvent(new Event(CHANGE_EVENT));
+    return "saved";
+  } catch {
+    return "invalid";
+  }
+}

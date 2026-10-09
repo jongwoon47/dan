@@ -92,16 +92,16 @@ export function createId(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 9)}-${Date.now().toString(36)}`;
 }
 
-/** Demand-first “언제” line for feed/detail. */
-export function formatDemandWhen(demand: Demand): string | null {
+/** Demand-first “언제” line for feed/detail. Locale affects display only, never market/currency. */
+export function formatDemandWhen(demand: Demand, language: "ko" | "ja" = "ko"): string | null {
   if (demand.type === "BORROW") {
-    const start = formatWhenShort(demand.details.startAt);
-    const end = formatWhenShort(demand.details.endAt);
+    const start = formatWhenShort(demand.details.startAt, language);
+    const end = formatWhenShort(demand.details.endAt, language);
     if (start && end) return `${start} ~ ${end}`;
     return start ?? end;
   }
-  if (demand.type === "TASK") return formatWhenShort(demand.details.dueAt);
-  if (demand.type === "SERVICE") return formatWhenShort(demand.details.preferredAt);
+  if (demand.type === "TASK") return formatWhenShort(demand.details.dueAt, language);
+  if (demand.type === "SERVICE") return formatWhenShort(demand.details.preferredAt, language);
   return null;
 }
 

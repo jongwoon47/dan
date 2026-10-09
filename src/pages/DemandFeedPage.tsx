@@ -13,10 +13,11 @@ import {
 } from "@/data/supabase/api";
 import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
+import { type LocationDiscoveryMode } from "@/domain/locationDiscovery";
 import {
-  matchesLocationDiscovery,
-  type LocationDiscoveryMode,
-} from "@/domain/locationDiscovery";
+  rankEligibleRequests,
+  type PhysicalDiscoverySort,
+} from "@/domain/requestRanking";
 import { clearViewerGeo, type ViewerGeo } from "@/lib/geoDistance";
 import { requestViewerGeo } from "@/lib/requestViewerGeo";
 import { externalRouteUrl } from "@/lib/mapLinks";
@@ -44,11 +45,18 @@ import "./pages.css";
 import "@/components/feedCards.css";
 
 const PAGE_SIZE = 24;
+const NEARBY_PAGE_SIZE = 40;
 
 const SORT_OPTIONS: Array<{ value: LiveDemandSort; label: string }> = [
   { value: "popular", label: "인기" },
   { value: "growing", label: "급상승" },
   { value: "price", label: "가격" },
+];
+
+const PHYSICAL_SORT_OPTIONS: Array<{ value: PhysicalDiscoverySort; labelKey: "sortNearest" | "sortNewest" | "sortRelevance" }> = [
+  { value: "nearest", labelKey: "sortNearest" },
+  { value: "newest", labelKey: "sortNewest" },
+  { value: "relevance", labelKey: "sortRelevance" },
 ];
 
 type RequestTypeFilter = "all" | DemandType;
@@ -118,6 +126,10 @@ export function DemandFeedPage() {
   const [distanceMap, setDistanceMap] = useState<Record<string, number>>({});
   const [distanceReady, setDistanceReady] = useState(false);
   const [nearbyRows, setNearbyRows] = useState<Array<Extract<FeedItem, { kind: "individual" }>>>([]);
+  const [nearbyOffset, setNearbyOffset] = useState(0);
+  const [nearbyHasMore, setNearbyHasMore] = useState(false);
+  const [nearbyLoadingMore, setNearbyLoadingMore] = useState(false);
+  const [physicalSort, setPhysicalSort] = useState<PhysicalDiscoverySort>("nearest");
   const [category, setCategory] = useState<LiveDemandCategory>("all");
   const [sort, setSort] = useState<LiveDemandSort>("popular");
   const [page, setPage] = useState(0);
@@ -125,6 +137,8 @@ export function DemandFeedPage() {
   const [remoteTotal, setRemoteTotal] = useState(0);
   const [remoteLoading, setRemoteLoading] = useState(false);
   const [remoteReady, setRemoteReady] = useState(false);
+  const [remoteError, setRemoteError] = useState<string | null>(null);
+  const [discoveryRetry, setDiscoveryRetry] = useState(0);
   const productionDiscovery = getDataMode() === "supabase";
   const includesBuy = areaCountry === "KR" && (requestType === "all" || requestType === "BUY");
 
@@ -181,12 +195,16 @@ export function DemandFeedPage() {
     if (locationMode !== "nearby" || !viewerGeo || !productionDiscovery || !currentUser) {
       setDistanceMap({});
       setNearbyRows([]);
+      setNearbyOffset(0);
+      setNearbyHasMore(false);
       setDistanceReady(false);
       return;
     }
     let cancelled = false;
     setDistanceMap({});
     setNearbyRows([]);
+    setNearbyOffset(0);
+    setNearbyHasMore(false);
     setDistanceReady(false);
     setLocationError(null);
     void (async () => {
@@ -197,6 +215,7 @@ export function DemandFeedPage() {
           viewerGeo,
           radiusKm as 1 | 3 | 5 | 10,
           areaCountry,
+          0,
         );
         const records = distances.length
           ? await listDemandsByIds(distances.map((entry) => entry.id))
@@ -210,22 +229,24 @@ export function DemandFeedPage() {
             id: `nearby:${demand.id}`,
             demand,
             sortAt: demand.createdAt,
-          }))
-          .sort((a, b) => byDistance[a.demand.id] - byDistance[b.demand.id]);
+          }));
         setDistanceMap(byDistance);
         setNearbyRows(rows);
+        setNearbyOffset(distances.length);
+        setNearbyHasMore(distances.length >= NEARBY_PAGE_SIZE);
         setDistanceReady(true);
       } catch {
         if (!cancelled) {
           setDistanceMap({});
           setNearbyRows([]);
+          setNearbyHasMore(false);
           setDistanceReady(true);
           setLocationError(t("locationFailed"));
         }
       }
     })();
     return () => { cancelled = true; };
-  }, [locationMode, viewerGeo, productionDiscovery, currentUser?.id, radiusKm, areaCountry]);
+  }, [locationMode, viewerGeo, productionDiscovery, currentUser?.id, radiusKm, areaCountry, discoveryRetry]);
 
   useEffect(() => {
     if (!productionDiscovery || !includesBuy) {
@@ -233,12 +254,14 @@ export function DemandFeedPage() {
       setRemoteTotal(0);
       setRemoteReady(false);
       setRemoteLoading(false);
+      setRemoteError(null);
       return;
     }
 
     let cancelled = false;
     const timer = window.setTimeout(() => {
       setRemoteLoading(true);
+      setRemoteError(null);
       void searchLiveDemandRemote({
         query,
         category,
@@ -258,9 +281,13 @@ export function DemandFeedPage() {
           });
           setRemoteTotal(result.total);
           setRemoteReady(true);
+          setRemoteError(null);
         })
         .catch(() => {
-          if (!cancelled) setRemoteReady(false);
+          if (!cancelled) {
+            setRemoteReady(false);
+            setRemoteError(t("discoveryError"));
+          }
         })
         .finally(() => {
           if (!cancelled) setRemoteLoading(false);
@@ -271,7 +298,7 @@ export function DemandFeedPage() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [areaCountry, category, includesBuy, page, productionDiscovery, query, sort]);
+  }, [areaCountry, category, includesBuy, page, productionDiscovery, query, sort, discoveryRetry]);
 
   const buyRows =
     includesBuy
@@ -282,29 +309,48 @@ export function DemandFeedPage() {
 
   const locationFilteredIndividualRows = useMemo(() => {
     const sourceRows = locationMode === "nearby"
-      ? nearbyRows.filter((item) =>
-          (requestType === "all" || item.demand.type === requestType) &&
-          matchesIndividualQuery(item, query),
-        )
-      : individualRows;
-    const result = sourceRows.filter((item) =>
-      (item.demand.countryCode ?? "KR") === areaCountry && matchesLocationDiscovery(item.demand, {
-        mode: locationMode,
-        radiusKm,
-        areaQuery,
-        routeFrom,
-        routeTo,
+      ? nearbyRows.filter((item) => matchesIndividualQuery(item, query))
+      : individualRows.filter((item) => matchesIndividualQuery(item, query));
+    const locationFilter = {
+      mode: locationMode,
+      radiusKm,
+      areaQuery,
+      routeFrom,
+      routeTo,
+      approximateMetersById: distanceMap,
+    } as const;
+    const sortMode: PhysicalDiscoverySort =
+      locationMode === "nearby" || locationMode === "route" || locationMode === "area"
+        ? physicalSort
+        : "newest";
+    const ranked = rankEligibleRequests(
+      sourceRows.map((item) => item.demand),
+      {
+        marketCountry: areaCountry,
+        requestType,
+        sort: sortMode,
         approximateMetersById: distanceMap,
-      }),
+        location: locationFilter,
+      },
     );
-    if (locationMode === "nearby") {
-      result.sort(
-        (a, b) => (distanceMap[a.demand.id] ?? Infinity) -
-          (distanceMap[b.demand.id] ?? Infinity),
-      );
-    }
-    return result;
-  }, [individualRows, nearbyRows, requestType, query, locationMode, radiusKm, areaQuery, routeFrom, routeTo, distanceMap, areaCountry]);
+    const byId = new Map(sourceRows.map((item) => [item.demand.id, item]));
+    return ranked
+      .map((demand) => byId.get(demand.id))
+      .filter((item): item is Extract<FeedItem, { kind: "individual" }> => Boolean(item));
+  }, [
+    individualRows,
+    nearbyRows,
+    requestType,
+    query,
+    locationMode,
+    radiusKm,
+    areaQuery,
+    routeFrom,
+    routeTo,
+    distanceMap,
+    areaCountry,
+    physicalSort,
+  ]);
 
   const visibleFeed = useMemo<FeedItem[]>(() => {
     // Product-level BUY aggregates have no single request coordinate.
@@ -334,6 +380,43 @@ export function DemandFeedPage() {
     setRemoteRows([]);
     setRemoteTotal(0);
     setRemoteReady(false);
+    setRemoteError(null);
+  }
+
+  async function loadMoreNearby() {
+    if (!viewerGeo || nearbyLoadingMore || !nearbyHasMore) return;
+    setNearbyLoadingMore(true);
+    try {
+      const distances = await searchNearbyDemandDistancesRemote(
+        viewerGeo,
+        radiusKm as 1 | 3 | 5 | 10,
+        areaCountry,
+        nearbyOffset,
+      );
+      const records = distances.length
+        ? await listDemandsByIds(distances.map((entry) => entry.id))
+        : [];
+      const byDistance = Object.fromEntries(distances.map((d) => [d.id, d.meters]));
+      setDistanceMap((prev) => ({ ...prev, ...byDistance }));
+      setNearbyRows((prev) => {
+        const seen = new Set(prev.map((row) => row.demand.id));
+        const extra = records
+          .filter((demand) => byDistance[demand.id] != null && !seen.has(demand.id))
+          .map((demand): Extract<FeedItem, { kind: "individual" }> => ({
+            kind: "individual",
+            id: `nearby:${demand.id}`,
+            demand,
+            sortAt: demand.createdAt,
+          }));
+        return [...prev, ...extra];
+      });
+      setNearbyOffset((value) => value + distances.length);
+      setNearbyHasMore(distances.length >= NEARBY_PAGE_SIZE);
+    } catch {
+      setLocationError(t("locationFailed"));
+    } finally {
+      setNearbyLoadingMore(false);
+    }
   }
 
   function updateQuery(value: string) {
@@ -588,17 +671,57 @@ export function DemandFeedPage() {
             </div>
           </>
         ) : (
-          <div className="discovery-toolbar discovery-toolbar--simple">
+          <div className="discovery-toolbar">
             <p className="discovery-summary" aria-live="polite">
               {t("results", { n: visibleFeed.length })}
             </p>
+            {locationMode === "nearby" || locationMode === "area" || locationMode === "route" ? (
+              <div className="discovery-sort" aria-label={t("sortNearest")}>
+                {PHYSICAL_SORT_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={physicalSort === option.value ? "is-active" : ""}
+                    aria-pressed={physicalSort === option.value}
+                    onClick={() => setPhysicalSort(option.value)}
+                  >
+                    {t(option.labelKey)}
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
         )}
+        <p className="location-discovery__note">{t("mapViewSoon")}</p>
       </section>
 
-      {distanceLoading || locating ? (
-        <p className="discovery-loading" role="status">{t("locatingResults")}</p>
-      ) : visibleFeed.length === 0 && !remoteLoading ? (
+      {remoteError && includesBuy ? (
+        <EmptyState
+          title={t("discoveryError")}
+          body={t("noRequestsDetail")}
+          action={
+            <Button
+              variant="secondary"
+              onClick={() => {
+                resetRemoteDiscovery();
+                setDiscoveryRetry((value) => value + 1);
+              }}
+            >
+              {t("retryDiscovery")}
+            </Button>
+          }
+        />
+      ) : distanceLoading || locating || (remoteLoading && visibleFeed.length === 0) ? (
+        <p className="discovery-loading" role="status">
+          {distanceLoading || locating ? t("locatingResults") : t("loading")}
+        </p>
+      ) : locationError && locationMode === "nearby" && !viewerGeo ? (
+        <EmptyState
+          title={locationError}
+          body={t("areaHint")}
+          action={<Button onClick={() => setLocationMode("area")}>{t("byArea")}</Button>}
+        />
+      ) : visibleFeed.length === 0 ? (
         <EmptyState
           title={query.trim() ? t("noMatchingSearch", { q: query.trim() }) : t("noRequests")}
           body={locationMode === "nearby"
@@ -612,7 +735,7 @@ export function DemandFeedPage() {
         />
       ) : (
         <>
-          <div className="mixed-demand-list" aria-busy={remoteLoading}>
+          <div className="mixed-demand-list" aria-busy={remoteLoading || nearbyLoadingMore}>
             {visibleFeed.map((item) =>
               item.kind === "aggregated" ? (
                 <AggregatedDemandCard
@@ -630,7 +753,7 @@ export function DemandFeedPage() {
             )}
           </div>
 
-          {remoteLoading ? (
+          {remoteLoading || nearbyLoadingMore ? (
             <p className="discovery-loading" role="status">{t("loading")}</p>
           ) : null}
 
@@ -641,6 +764,17 @@ export function DemandFeedPage() {
               onClick={() => setPage((value) => value + 1)}
             >
               {t("loadMore")}
+            </Button>
+          ) : null}
+
+          {locationMode === "nearby" && nearbyHasMore ? (
+            <Button
+              variant="secondary"
+              fullWidth
+              disabled={nearbyLoadingMore}
+              onClick={() => void loadMoreNearby()}
+            >
+              {t("loadMoreNearby")}
             </Button>
           ) : null}
         </>

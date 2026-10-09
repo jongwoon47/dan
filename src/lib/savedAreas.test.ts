@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { addSavedArea, parseSavedAreas, removeSavedArea } from "./savedAreas";
+import { addSavedArea, parseSavedAreas, removeSavedArea, updateSavedArea } from "./savedAreas";
 
 beforeEach(() => { localStorage.clear(); });
 
@@ -36,5 +36,26 @@ describe("saved activity areas", () => {
     const stored = localStorage.getItem("dan-saved-areas-v1") ?? "";
     expect(stored).not.toContain("lat");
     expect(stored).not.toContain("lng");
+  });
+
+  it("edits a saved area in place without exceeding the max", () => {
+    expect(addSavedArea({ country: "JP", label: "博多区" })).toBe("saved");
+    expect(addSavedArea({ country: "KR", label: "성동구" })).toBe("saved");
+    expect(updateSavedArea(
+      { country: "JP", label: "博多区" },
+      { country: "JP", label: "中央区" },
+    )).toBe("saved");
+    expect(parseSavedAreas(localStorage.getItem("dan-saved-areas-v1") ?? "[]")).toEqual([
+      { label: "中央区", country: "JP" },
+      { label: "성동구", country: "KR" },
+    ]);
+    expect(updateSavedArea(
+      { country: "JP", label: "中央区" },
+      { country: "KR", label: "성동구" },
+    )).toBe("exists");
+    expect(updateSavedArea(
+      { country: "JP", label: "없는지역" },
+      { country: "JP", label: "天神" },
+    )).toBe("missing");
   });
 });

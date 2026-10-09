@@ -18,6 +18,7 @@ import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import type { ChatMessage, DealSnapshot, Demand, Match } from "@/domain/types";
+import { useDanLocale } from "@/i18n/locale";
 import "./pages.css";
 
 const POLL_MS = 60_000;
@@ -28,8 +29,8 @@ function dayKey(iso: string) {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
 
-function dayLabel(iso: string) {
-  return new Date(iso).toLocaleDateString("ko-KR", {
+function dayLabel(iso: string, language: "ko" | "ja" = "ko") {
+  return new Date(iso).toLocaleDateString(language === "ja" ? "ja-JP" : "ko-KR", {
     month: "long",
     day: "numeric",
     weekday: "short",
@@ -52,9 +53,9 @@ function tradeConfirmBody(demand?: Demand) {
   }
 }
 
-function formatCompletedDate(iso?: string) {
+function formatCompletedDate(iso?: string, language: "ko" | "ja" = "ko") {
   if (!iso) return "";
-  return new Date(iso).toLocaleDateString("ko-KR", {
+  return new Date(iso).toLocaleDateString(language === "ja" ? "ja-JP" : "ko-KR", {
     year: "numeric",
     month: "numeric",
     day: "numeric",
@@ -76,6 +77,7 @@ function peerConfirmed(match: Match, userId: string) {
 export function MatchChatPage() {
   const { matchId = "" } = useParams();
   const navigate = useNavigate();
+  const locale = useDanLocale();
   const {
     myMatches,
     getDemand,
@@ -407,7 +409,7 @@ export function MatchChatPage() {
             <p className="trade-status__state">✓ {ko.tradeDoneTitle}</p>
             {match.completedAt ? (
               <p className="trade-status__meta">
-                {formatCompletedDate(match.completedAt)}
+                {formatCompletedDate(match.completedAt, locale)}
               </p>
             ) : null}
             <p className="trade-status__hint">{ko.tradeDoneHint}</p>
@@ -584,7 +586,7 @@ export function MatchChatPage() {
             <div key={m.id} className="chat-thread__item">
               {showSep ? (
                 <div className="chat-day-sep">
-                  <span>{dayLabel(m.createdAt)}</span>
+                  <span>{dayLabel(m.createdAt, locale)}</span>
                 </div>
               ) : null}
               <div

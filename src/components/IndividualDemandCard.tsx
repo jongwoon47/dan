@@ -27,7 +27,7 @@ export function IndividualDemandCard({ demand, approxMeters }: { demand: Demand;
   const locale = useDanLocale();
   const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
   const placeLine = feedPlaceLine(demand, approxMeters, locale);
-  const when = formatDemandWhen(demand);
+  const when = formatDemandWhen(demand, locale);
   const meta = [placeLine, when].filter(Boolean).join(" · ");
   const showPrice = demand.budget > 0;
   const priceLabel =

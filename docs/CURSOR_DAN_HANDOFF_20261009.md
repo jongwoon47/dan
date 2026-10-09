@@ -4,6 +4,7 @@
 
 ## 0. Source of truth / starting point
 
+- Product commercialization spec: `docs/DAN_COMMERCIALIZATION_SPEC_V1.md` (v1.0).
 - Repository: [jongwoon47/dan](https://github.com/jongwoon47/dan).
 - Feature branch: `feature/dan-location-jp-launch-plan-20261009`.
 - **Reviewable draft PR [#31](https://github.com/jongwoon47/dan/pull/31)** targets `feature/dan-v3-real-app-ui`. This branch is the working baseline to continue from. Avoid using `main` as the base for this feature until integration and release sequencing are reviewed.
