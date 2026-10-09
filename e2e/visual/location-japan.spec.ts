@@ -24,6 +24,10 @@ test("Japanese location discovery, saved area, and route controls", async ({ pag
   await expect(page.getByRole("link", { name: "Appleマップで経路を見る" })).toHaveAttribute("href", /maps\\.apple\\.com/);
 
 
+  await page.goto("/create?country=JP");
+  await expect(page.getByRole("heading", { name: "日本向けの依頼は準備中です" })).toBeVisible();
+  await expect(page.getByText(/日本の依頼を韓国の取引として保存せず/)).toBeVisible();
+
   await page.goto("/create?type=TASK");
   await expect(page.getByText(/韓国ウォン（KRW）/).first()).toBeVisible();
   await expect(page.getByText(/日本円での取引はまだ利用できません/).first()).toBeVisible();
