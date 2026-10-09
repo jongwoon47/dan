@@ -101,7 +101,7 @@ export function DemandFeedPage() {
   const [requestType, setRequestType] = useState<RequestTypeFilter>("all");
   const [locationMode, setLocationMode] = useState<LocationDiscoveryMode>(urlArea ? "area" : "all");
   const [areaQuery, setAreaQuery] = useState(urlArea);
-  const [areaCountry, setAreaCountry] = useState<"KR" | "JP">(urlCountry === "JP" || (!urlCountry && locale === "ja") ? "JP" : "KR");
+  const [areaCountry, setAreaCountry] = useState<"KR" | "JP">(urlCountry === "JP" ? "JP" : "KR");
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const [routeFrom, setRouteFrom] = useState("");
   const [routeTo, setRouteTo] = useState("");
@@ -120,7 +120,7 @@ export function DemandFeedPage() {
   const [remoteLoading, setRemoteLoading] = useState(false);
   const [remoteReady, setRemoteReady] = useState(false);
   const productionDiscovery = getDataMode() === "supabase";
-  const includesBuy = requestType === "all" || requestType === "BUY";
+  const includesBuy = areaCountry === "KR" && (requestType === "all" || requestType === "BUY");
 
   useEffect(() => {
     setQuery(urlQuery);
@@ -134,8 +134,8 @@ export function DemandFeedPage() {
   }, [urlArea, urlCountry]);
 
   const categoryRows = useMemo(
-    () => liveDemandCategoryCounts(demandFeed),
-    [demandFeed],
+    () => areaCountry === "KR" ? liveDemandCategoryCounts(demandFeed) : [],
+    [demandFeed, areaCountry],
   );
 
   const localBuyRows = useMemo(
@@ -180,6 +180,7 @@ export function DemandFeedPage() {
         const distances = await searchNearbyDemandDistancesRemote(
           viewerGeo,
           radiusKm as 1 | 3 | 5 | 10,
+          areaCountry,
         );
         const records = distances.length
           ? await listDemandsByIds(distances.map((entry) => entry.id))
@@ -208,7 +209,7 @@ export function DemandFeedPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [locationMode, viewerGeo, productionDiscovery, currentUser?.id, radiusKm]);
+  }, [locationMode, viewerGeo, productionDiscovery, currentUser?.id, radiusKm, areaCountry]);
 
   useEffect(() => {
     if (!productionDiscovery || !includesBuy) {
@@ -270,7 +271,7 @@ export function DemandFeedPage() {
         )
       : individualRows;
     const result = sourceRows.filter((item) =>
-      matchesLocationDiscovery(item.demand, {
+      (item.demand.countryCode ?? "KR") === areaCountry && matchesLocationDiscovery(item.demand, {
         mode: locationMode,
         radiusKm,
         areaQuery,
@@ -286,7 +287,7 @@ export function DemandFeedPage() {
       );
     }
     return result;
-  }, [individualRows, nearbyRows, requestType, query, locationMode, radiusKm, areaQuery, routeFrom, routeTo, distanceMap]);
+  }, [individualRows, nearbyRows, requestType, query, locationMode, radiusKm, areaQuery, routeFrom, routeTo, distanceMap, areaCountry]);
 
   const visibleFeed = useMemo<FeedItem[]>(() => {
     // Product-level BUY aggregates have no single request coordinate.
@@ -339,7 +340,7 @@ export function DemandFeedPage() {
     setRequestType(value);
     setPage(0);
     if (value !== "BUY") setCategory("all");
-    if (value === "BUY") setLocationMode("all");
+    // Changing request type does not reset the active location filter.
   }
 
   async function refreshViewerLocation() {
@@ -422,6 +423,14 @@ export function DemandFeedPage() {
             <strong>{t("selectArea")}</strong>
             <span>{t("privacyLocation")}</span>
           </div>
+          <label className="location-discovery__market">
+            <span>{t("chooseCountry")}</span>
+            <select value={areaCountry} onChange={(event) => setAreaCountry(event.target.value === "JP" ? "JP" : "KR")} aria-label={t("chooseCountry")}>
+              <option value="KR">{t("countryKr")}</option>
+              <option value="JP">{t("countryJp")}</option>
+            </select>
+          </label>
+          <p className="location-discovery__note">{areaCountry === "JP" ? t("marketPilot") : t("marketHint")}</p>
           <div className="location-discovery__modes" role="group" aria-label="지역 필터">
             {LOCATION_MODES.map((option) => (
               <button
@@ -432,7 +441,7 @@ export function DemandFeedPage() {
                 onClick={() => {
                   setLocationMode(option.value);
                   setLocationError(null);
-                  if (option.value !== "all" && requestType === "BUY") setRequestType("all");
+                  // Preserve BUY filtering when switching location modes.
                 }}
               >
                 {option.value === "all" ? t("allAreas") : option.value === "nearby" ? t("nearby") : option.value === "area" ? t("byArea") : option.value === "route" ? t("route") : t("online")}
@@ -470,13 +479,6 @@ export function DemandFeedPage() {
                   placeholder={t("areaExample")}
                   autoComplete="off"
                 />
-              </label>
-              <label>
-                {t("chooseCountry")}
-                <select value={areaCountry} onChange={(event) => setAreaCountry(event.target.value === "JP" ? "JP" : "KR")}>
-                  <option value="KR">{t("countryKr")}</option>
-                  <option value="JP">{t("countryJp")}</option>
-                </select>
               </label>
               <button type="button" className="location-discovery__action" disabled={!areaQuery.trim() || savedAreas.length >= 3}
                 onClick={() => {
