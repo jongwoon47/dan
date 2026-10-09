@@ -3,7 +3,7 @@ import { ko } from "@/copy/ko";
 import { primaryPublicPlace } from "@/domain/fulfillment";
 import type { Demand } from "@/domain/types";
 import { DEMAND_TYPE_LABEL } from "@/domain/types";
-import { formatDemandWhen, formatKRWForLanguage } from "@/lib/format";
+import { formatDemandWhen, formatStoredMoney } from "@/lib/format";
 import { translate, useDanLocale } from "@/i18n/locale";
 import {
   formatPublicPlaceLine,
