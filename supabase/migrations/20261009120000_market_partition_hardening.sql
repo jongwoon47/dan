@@ -496,13 +496,19 @@ revoke execute on function public.search_nearby_demands(
 
 -- ---------------------------------------------------------------------------
 -- Retired exact-ID distance oracle: hard-fail even if privileges are restored.
+-- Keep returns jsonb to match the historical signature (0014); CREATE OR REPLACE
+-- cannot change return type without DROP.
 -- ---------------------------------------------------------------------------
-create or replace function public.approx_demand_distances(
+drop function if exists public.approx_demand_distances(
+  double precision, double precision, uuid[]
+);
+
+create function public.approx_demand_distances(
   p_lat double precision,
   p_lng double precision,
   p_demand_ids uuid[]
 )
-returns table (id uuid, meters integer)
+returns jsonb
 language plpgsql
 security definer
 set search_path = ''
