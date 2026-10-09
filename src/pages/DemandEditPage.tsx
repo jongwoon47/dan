@@ -17,7 +17,7 @@ import {
   type FulfillmentOption,
 } from "@/domain/fulfillment";
 import type { ConditionPreference } from "@/domain/types";
-import { CONDITION_LABEL } from "@/domain/types";
+import { conditionLabel } from "@/i18n/categories";
 import {
   fromDatetimeLocalValue,
   isBorrowRangeValid,
@@ -399,12 +399,12 @@ export function DemandEditPage() {
         ) : null}
 
         <Field
-          label={budgetLabelForType(current.type)}
+          label={budgetLabelForType(current.type, locale)}
           hint={current.type === "BORROW" ? copy.borrowBudgetHint : undefined}
         >
           <TextInput
             inputMode="numeric"
-            value={formatDigitsGrouped(budget)}
+            value={formatDigitsGrouped(budget, locale)}
             onChange={(e) => setBudget(digitsOnly(e.target.value))}
             required
           />
@@ -422,7 +422,7 @@ export function DemandEditPage() {
                     selected={condition === c}
                     onClick={() => setCondition(c)}
                   >
-                    {CONDITION_LABEL[c]}
+                    {conditionLabel(locale, c)}
                   </Chip>
                 ))}
               </ChipGroup>

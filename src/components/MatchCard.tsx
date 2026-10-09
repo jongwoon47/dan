@@ -6,8 +6,9 @@ import { ProductVisual } from "@/components/ProductVisual";
 import { useDanCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
-import { CONDITION_LABEL, type Match } from "@/domain/types";
+import { type Match } from "@/domain/types";
 import { isBuyDemand } from "@/domain/types";
+import { conditionLabel } from "@/i18n/categories";
 import { useDanLocale } from "@/i18n/locale";
 import { formatRelativeTime, formatStoredMoney } from "@/lib/format";
 import "./matchCard.css";
@@ -142,7 +143,7 @@ export function MatchCard({ match }: { match: Match }) {
             </div>
             <p className="trade-row-card__price">{money(sell.minimumPrice)}</p>
             <small>
-              {CONDITION_LABEL[ownership.condition]}
+              {conditionLabel(locale, ownership.condition)}
               {sell.conditionNote ? ` · ${sell.conditionNote}` : ""}
             </small>
             <small className={delta >= 0 ? "trade-row-card__delta is-good" : "trade-row-card__delta"}>

@@ -1,4 +1,11 @@
-import { CATEGORY_LABEL, type DemandCategory } from "@/domain/types";
+import {
+  CATEGORY_LABEL,
+  CONDITION_LABEL,
+  TRADE_LABEL,
+  type ConditionPreference,
+  type DemandCategory,
+  type TradeMethod,
+} from "@/domain/types";
 import type { DanLocale } from "./locale";
 
 const categoriesJa: Record<DemandCategory, string> = {
@@ -30,6 +37,30 @@ const categoriesJa: Record<DemandCategory, string> = {
   rental: "レンタル",
 };
 
+const conditionsJa: Record<ConditionPreference, string> = {
+  sealed: "未開封",
+  like_new: "ほぼ新品",
+  lightly_used: "使用感少なめ",
+  any: "こだわらない",
+};
+
+const tradeJa: Record<TradeMethod, string> = {
+  meetup: "手渡し",
+  shipping: "配送",
+  any: "こだわらない",
+};
+
 export function categoryLabel(locale: DanLocale, category: DemandCategory): string {
   return locale === "ja" ? categoriesJa[category] : CATEGORY_LABEL[category];
+}
+
+export function conditionLabel(
+  locale: DanLocale,
+  condition: ConditionPreference,
+): string {
+  return locale === "ja" ? conditionsJa[condition] : CONDITION_LABEL[condition];
+}
+
+export function tradeLabel(locale: DanLocale, method: TradeMethod): string {
+  return locale === "ja" ? tradeJa[method] : TRADE_LABEL[method];
 }

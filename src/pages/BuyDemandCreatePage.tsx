@@ -12,13 +12,13 @@ import {
 } from "@/domain/productName";
 import {
   CATEGORY_LABEL,
-  CONDITION_LABEL,
   PRODUCT_CATEGORY_OPTIONS,
-  TRADE_LABEL,
   type ConditionPreference,
   type ProductCategory,
   type TradeMethod,
 } from "@/domain/types";
+import { conditionLabel, tradeLabel } from "@/i18n/categories";
+import { useDanLocale } from "@/i18n/locale";
 import {
   formatDigitsGrouped,
   formatWon,
@@ -63,6 +63,7 @@ const PREFERENCE_PLACEHOLDER: Partial<Record<ProductCategory, string>> = {
 const TRADE_OPTIONS: TradeMethod[] = ["meetup", "shipping", "any"];
 
 export function BuyDemandCreatePage() {
+  const locale = useDanLocale();
   const {
     products,
     createDemand,
@@ -245,11 +246,11 @@ export function BuyDemandCreatePage() {
           </div>
           <div className="snapshot-section">
             <span>허용 상태</span>
-            <strong>{CONDITION_LABEL[condition]}</strong>
+            <strong>{conditionLabel(locale, condition)}</strong>
           </div>
           <div className="snapshot-section">
             <span>거래 방식</span>
-            <strong>{TRADE_LABEL[tradeMethod]}</strong>
+            <strong>{tradeLabel(locale, tradeMethod)}</strong>
           </div>
           {meetupNeeded ? (
             <div className="snapshot-section">
@@ -365,7 +366,7 @@ export function BuyDemandCreatePage() {
         >
           <TextInput
             inputMode="numeric"
-            value={formatDigitsGrouped(maxPrice)}
+            value={formatDigitsGrouped(maxPrice, locale)}
             onChange={(event) => setMaxPrice(digitsOnly(event.target.value))}
             placeholder="예: 850,000"
           />
@@ -387,7 +388,7 @@ export function BuyDemandCreatePage() {
                 selected={condition === item}
                 onClick={() => setCondition(item)}
               >
-                {CONDITION_LABEL[item]}
+                {conditionLabel(locale, item)}
               </Chip>
             ))}
           </ChipGroup>
@@ -402,7 +403,7 @@ export function BuyDemandCreatePage() {
                 selected={tradeMethod === item}
                 onClick={() => setTradeMethod(item)}
               >
-                {TRADE_LABEL[item]}
+                {tradeLabel(locale, item)}
               </Chip>
             ))}
           </ChipGroup>

@@ -78,6 +78,10 @@ const messages = {
     consentLegalPendingJa: "현재 약관·개인정보문서는 한국어 원문입니다. 일본어 법적 문서는 현지 검토 후 확정합니다.",
     jpPrefectureHint: "예: 福岡県 · 福岡市 · 博多区 (시·구 단위)",
     marketTimezoneHint: "거래 국가의 시간대 기준으로 일정을 표시합니다. 표시 언어와는 별개입니다.",
+    requestExplore: "요청 탐색",
+    clearSearch: "검색어 지우기",
+    locationBasedSearch: "위치 기반 검색",
+    productCategory: "제품 카테고리",
   },
   ja: {
     home: "ホーム", explore: "探す", request: "依頼", chat: "チャット", myTrades: "取引",
@@ -152,6 +156,10 @@ const messages = {
     consentLegalPendingJa: "現在の規約・プライバシー文書は韓国語原文です。日本語の法務文書は現地レビュー後に確定します。",
     jpPrefectureHint: "例：福岡県 · 福岡市 · 博多区（市区町村単位）",
     marketTimezoneHint: "予定は取引国のタイムゾーンで表示します。表示言語とは別です。",
+    requestExplore: "依頼を探す",
+    clearSearch: "検索をクリア",
+    locationBasedSearch: "位置情報で検索",
+    productCategory: "商品カテゴリ",
   },
 } as const;
 

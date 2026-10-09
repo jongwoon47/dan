@@ -522,7 +522,7 @@ export function DemandFeedPage() {
         </p>
       </header>
 
-      <section className="discovery-panel" aria-label="요청 탐색">
+      <section className="discovery-panel" aria-label={t("requestExplore")}>
         <div className="discovery-search">
           <span className="discovery-search__icon" aria-hidden>
             <svg viewBox="0 0 24 24" fill="none">
@@ -541,7 +541,7 @@ export function DemandFeedPage() {
             <button
               type="button"
               className="discovery-search__clear"
-              aria-label="검색어 지우기"
+              aria-label={t("clearSearch")}
               onClick={() => updateQuery("")}
             >
               ×
@@ -562,7 +562,7 @@ export function DemandFeedPage() {
           ))}
         </div>
 
-        <div className="location-discovery" aria-label="위치 기반 검색">
+        <div className="location-discovery" aria-label={t("locationBasedSearch")}>
           <div className="location-discovery__heading">
             <strong>{t("selectArea")}</strong>
             <span>{t("privacyLocation")}</span>
@@ -615,7 +615,7 @@ export function DemandFeedPage() {
                 <select
                   value={radiusKm}
                   onChange={(event) => setRadiusKm(Number(event.target.value))}
-                  aria-label="탐색 반경"
+                  aria-label={t("searchRadius")}
                 >
                   {[1, 3, 5, 10].map((km) =>
                     <option key={km} value={km}>{t("aroundKm", { km })}</option>,
@@ -633,7 +633,7 @@ export function DemandFeedPage() {
               <label>
                 {t("areaName")}
                 <input
-                  aria-label="지역 이름 입력"
+                  aria-label={t("areaName")}
                   value={areaQuery}
                   onChange={(event) => setAreaQuery(event.target.value)}
                   placeholder={t("areaExample")}
@@ -686,13 +686,13 @@ export function DemandFeedPage() {
 
         {requestType === "BUY" ? (
           <>
-            <div className="discovery-filter-scroll" aria-label="제품 카테고리">
+            <div className="discovery-filter-scroll" aria-label={t("productCategory")}>
               <button
                 type="button"
                 className={category === "all" ? "discovery-chip is-active" : "discovery-chip"}
                 onClick={() => updateCategory("all")}
               >
-                전체
+                {t("all")}
               </button>
               {categoryRows.map(([itemCategory, count]) => (
                 <button

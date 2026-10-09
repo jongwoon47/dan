@@ -15,7 +15,7 @@ import type {
   ConditionPreference,
   DemandType,
 } from "@/domain/types";
-import { CONDITION_LABEL } from "@/domain/types";
+import { conditionLabel } from "@/i18n/categories";
 import {
   clearCreateDraft,
   loadCreateDraft,
@@ -131,7 +131,7 @@ function MoneyInput({
     <Field label={label} hint={hint}>
       <TextInput
         inputMode="numeric"
-        value={formatDigitsGrouped(value)}
+        value={formatDigitsGrouped(value, locale)}
         onChange={(e) => onChange(digitsOnly(e.target.value))}
         placeholder={placeholder}
       />
@@ -757,7 +757,7 @@ function CreateDemandForm() {
                             selected={condition === c}
                             onClick={() => setCondition(c)}
                           >
-                            {CONDITION_LABEL[c]}
+                            {conditionLabel(locale, c)}
                           </Chip>
                         ))}
                       </ChipGroup>
@@ -775,7 +775,7 @@ function CreateDemandForm() {
                       />
                     </Field>
                     <MoneyInput
-                      label={budgetLabelForType(type)}
+                      label={budgetLabelForType(type, locale)}
                       hint={copy.borrowBudgetHint}
                       value={budget}
                       onChange={setBudget}
@@ -797,7 +797,7 @@ function CreateDemandForm() {
                       />
                     </Field>
                     <MoneyInput
-                      label={budgetLabelForType(type)}
+                      label={budgetLabelForType(type, locale)}
                       value={budget}
                       onChange={setBudget}
                       placeholder="예: 20,000"

@@ -7,11 +7,14 @@ import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
 import { parsePotentialMatchId } from "@/domain/matchLifecycle";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
-import { CONDITION_LABEL, type PublicProfile } from "@/domain/types";
+import type { PublicProfile } from "@/domain/types";
+import { conditionLabel, tradeLabel } from "@/i18n/categories";
+import { useDanLocale } from "@/i18n/locale";
 import { formatWon } from "@/lib/format";
 import "./pages.css";
 
 export function OfferDetailPage() {
+  const locale = useDanLocale();
   const { matchId = "" } = useParams();
   const {
     myMatches,
@@ -113,17 +116,15 @@ export function OfferDetailPage() {
             <strong>{usageValue}</strong>
           </div>
         ) : null}
-        <div><span>상태</span><strong>{CONDITION_LABEL[ownership.condition]}</strong></div>
+        <div><span>상태</span><strong>{conditionLabel(locale, ownership.condition)}</strong></div>
         <div><span>상태 메모</span><strong>{sell.conditionNote || "특이사항 없음"}</strong></div>
         <div><span>구매자 희망</span><strong>{formatFulfillmentSummary(demand.fulfillmentOptions)}</strong></div>
         <div>
           <span>판매자 가능</span>
           <strong>
-            {sell.tradeMethod === "meetup"
-              ? "직거래"
-              : sell.tradeMethod === "shipping"
-                ? "택배"
-                : "직거래 · 택배 모두"}
+            {sell.tradeMethod === "any"
+              ? `${tradeLabel(locale, "meetup")} · ${tradeLabel(locale, "shipping")}`
+              : tradeLabel(locale, sell.tradeMethod)}
           </strong>
         </div>
       </section>

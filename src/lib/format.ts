@@ -30,11 +30,11 @@ export function digitsOnly(raw: string): string {
   return raw.replace(/[^\d]/g, "");
 }
 
-export function formatDigitsGrouped(digits: string): string {
+export function formatDigitsGrouped(digits: string, language: FormatLanguage = "ko"): string {
   if (!digits) return "";
   const n = Number(digits);
   if (!Number.isFinite(n)) return "";
-  return n.toLocaleString("ko-KR");
+  return n.toLocaleString(language === "ja" ? "ja-JP" : "ko-KR");
 }
 
 export function parseMoneyInput(raw: string): number {
@@ -155,7 +155,16 @@ export function formatDurationMinutes(
   return `약 ${h}시간 ${rem}${ko.estimatedDurationUnit}`;
 }
 
-export function budgetLabelForType(type: Demand["type"]): string {
+export function budgetLabelForType(
+  type: Demand["type"],
+  language: FormatLanguage = "ko",
+): string {
+  if (language === "ja") {
+    if (type === "BUY") return "希望価格の上限";
+    if (type === "BORROW") return "レンタル期間全体の予算";
+    if (type === "TASK" || type === "SERVICE") return "謝礼";
+    return "予算・謝礼";
+  }
   if (type === "BUY") return ko.maxPrice;
   if (type === "BORROW") return ko.borrowBudgetTotal;
   if (type === "TASK" || type === "SERVICE") return ko.reward;

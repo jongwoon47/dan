@@ -7,7 +7,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useDanCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
 import type { ItemCondition } from "@/domain/types";
-import { CONDITION_LABEL } from "@/domain/types";
+import { conditionLabel } from "@/i18n/categories";
+import { useDanLocale } from "@/i18n/locale";
 import { clearOwnDraft, loadOwnDraft, saveOwnDraft } from "@/lib/actionDraft";
 import { formatWon } from "@/lib/format";
 import "./pages.css";
@@ -16,6 +17,7 @@ const CONDITIONS: ItemCondition[] = ["sealed", "like_new", "lightly_used"];
 
 export function OwnershipPage() {
   const copy = useDanCopy();
+  const locale = useDanLocale();
   const { productId = "" } = useParams();
   const navigate = useNavigate();
   const { getProduct, getAggregate, createOwnership } = useDan();
@@ -135,7 +137,7 @@ export function OwnershipPage() {
                 selected={condition === c}
                 onClick={() => pickCondition(c)}
               >
-                {CONDITION_LABEL[c]}
+                {conditionLabel(locale, c)}
               </Chip>
             ))}
           </ChipGroup>

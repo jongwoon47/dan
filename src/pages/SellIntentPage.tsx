@@ -6,6 +6,7 @@ import { Field, TextInput } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
+import { useDanLocale } from "@/i18n/locale";
 import {
   digitsOnly,
   formatDigitsGrouped,
@@ -24,6 +25,7 @@ function fileToDataUrl(file: File): Promise<string> {
 }
 
 export function SellIntentPage() {
+  const locale = useDanLocale();
   const { ownershipId = "" } = useParams();
   const navigate = useNavigate();
   const { myOwnerships, getProduct, getAggregate, createSellIntent } = useDan();
@@ -120,7 +122,7 @@ export function SellIntentPage() {
         <Field label="희망 판매가" hint="구매자가 먼저 가격을 확인합니다.">
           <TextInput
             inputMode="numeric"
-            value={formatDigitsGrouped(price)}
+            value={formatDigitsGrouped(price, locale)}
             onChange={(e) => setPrice(digitsOnly(e.target.value))}
             placeholder="예: 2,130,000"
           />
@@ -130,7 +132,7 @@ export function SellIntentPage() {
           <Field label="대략적인 컷수" hint="상대가 제안을 선택하면 자세한 상품 정보를 확인해요.">
             <TextInput
               inputMode="numeric"
-              value={formatDigitsGrouped(usageCount)}
+              value={formatDigitsGrouped(usageCount, locale)}
               onChange={(e) => setUsageCount(digitsOnly(e.target.value))}
               placeholder="예: 2,400"
             />

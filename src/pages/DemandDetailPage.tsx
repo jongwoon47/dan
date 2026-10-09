@@ -7,12 +7,15 @@ import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDanCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
-import { CONDITION_LABEL, isBuyDemand, type BuyDemand } from "@/domain/types";
+import { isBuyDemand, type BuyDemand } from "@/domain/types";
+import { conditionLabel } from "@/i18n/categories";
+import { useDanLocale } from "@/i18n/locale";
 import { formatWon } from "@/lib/format";
 import "./pages.css";
 
 export function DemandDetailPage() {
   const copy = useDanCopy();
+  const locale = useDanLocale();
   const { productId = "" } = useParams();
   const { getProduct, getAggregate, myOwnerships, myDemands, currentUser, state } = useDan();
   const [shareStatus, setShareStatus] = useState("");
@@ -137,7 +140,7 @@ export function DemandDetailPage() {
                   <span>구매수요 {index + 1}</span>
                   <strong>최대 {formatWon(demand.details.maxPrice)}</strong>
                   <small>
-                    {CONDITION_LABEL[demand.details.conditionPreference]} · {formatFulfillmentSummary(demand.fulfillmentOptions)}
+                    {conditionLabel(locale, demand.details.conditionPreference)} · {formatFulfillmentSummary(demand.fulfillmentOptions)}
                   </small>
                 </div>
                 <Button

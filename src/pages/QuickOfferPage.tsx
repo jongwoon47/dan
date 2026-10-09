@@ -7,7 +7,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
 import type { ItemCondition, Ownership, TradeMethod } from "@/domain/types";
-import { CONDITION_LABEL } from "@/domain/types";
+import { conditionLabel, tradeLabel } from "@/i18n/categories";
+import { useDanLocale } from "@/i18n/locale";
 import {
   digitsOnly,
   formatDigitsGrouped,
@@ -18,11 +19,6 @@ import "./pages.css";
 
 const CONDITIONS: ItemCondition[] = ["sealed", "like_new", "lightly_used"];
 const SELLER_TRADE_METHODS: TradeMethod[] = ["meetup", "shipping", "any"];
-const SELLER_TRADE_LABEL: Record<TradeMethod, string> = {
-  meetup: "직거래",
-  shipping: "택배",
-  any: "둘 다 가능",
-};
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -35,6 +31,7 @@ function fileToDataUrl(file: File): Promise<string> {
 }
 
 export function QuickOfferPage() {
+  const locale = useDanLocale();
   const { productId = "" } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -191,7 +188,7 @@ export function QuickOfferPage() {
         <Field label="희망 판매가" hint="구매자는 가격을 가장 먼저 비교해요.">
           <TextInput
             inputMode="numeric"
-            value={formatDigitsGrouped(price)}
+            value={formatDigitsGrouped(price, locale)}
             onChange={(event) => setPrice(digitsOnly(event.target.value))}
             placeholder="예: 2,130,000"
           />
@@ -206,7 +203,7 @@ export function QuickOfferPage() {
                 selected={condition === item}
                 onClick={() => setCondition(item)}
               >
-                {CONDITION_LABEL[item]}
+                {conditionLabel(locale, item)}
               </Chip>
             ))}
           </ChipGroup>
@@ -221,7 +218,9 @@ export function QuickOfferPage() {
                 selected={tradeMethod === item}
                 onClick={() => setTradeMethod(item)}
               >
-                {SELLER_TRADE_LABEL[item]}
+                {item === "any"
+                  ? locale === "ja" ? "どちらも可" : "둘 다 가능"
+                  : tradeLabel(locale, item)}
               </Chip>
             ))}
           </ChipGroup>
@@ -243,7 +242,7 @@ export function QuickOfferPage() {
               >
                 <TextInput
                   inputMode="numeric"
-                  value={formatDigitsGrouped(usageCount)}
+                  value={formatDigitsGrouped(usageCount, locale)}
                   onChange={(event) =>
                     setUsageCount(digitsOnly(event.target.value))
                   }
