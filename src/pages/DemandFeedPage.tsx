@@ -19,6 +19,7 @@ import {
   rankEligibleRequests,
   type PhysicalDiscoverySort,
 } from "@/domain/requestRanking";
+import { rankRouteCandidatesSync } from "@/domain/routeCandidates";
 import { clearViewerGeo, type ViewerGeo } from "@/lib/geoDistance";
 import { requestViewerGeo } from "@/lib/requestViewerGeo";
 import { externalRouteUrl } from "@/lib/mapLinks";
@@ -30,6 +31,7 @@ import {
   writeStoredMarketCountry,
   type MarketCountry,
 } from "@/lib/marketPrefs";
+import { listPilotRegions, type PilotRegion } from "@/lib/pilotRegions";
 import {
   filterAndSortLiveDemand,
   liveDemandCategoryCounts,
@@ -141,6 +143,7 @@ export function DemandFeedPage() {
   const [remoteReady, setRemoteReady] = useState(false);
   const [remoteError, setRemoteError] = useState<string | null>(null);
   const [discoveryRetry, setDiscoveryRetry] = useState(0);
+  const [pilotRegions, setPilotRegions] = useState<PilotRegion[]>([]);
   const productionDiscovery = getDataMode() === "supabase";
   const includesBuy = areaCountry === "KR" && (requestType === "all" || requestType === "BUY");
 
@@ -156,6 +159,20 @@ export function DemandFeedPage() {
     setAreaQuery(urlArea);
     setLocationMode("area");
   }, [urlArea, urlCountry]);
+
+  useEffect(() => {
+    if (areaCountry !== "JP" || !productionDiscovery || !currentUser) {
+      setPilotRegions([]);
+      return;
+    }
+    let cancelled = false;
+    void listPilotRegions("JP").then((rows) => {
+      if (!cancelled) setPilotRegions(rows);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [areaCountry, productionDiscovery, currentUser?.id]);
 
   function selectMarket(next: MarketCountry) {
     setAreaCountry(next);
@@ -313,6 +330,30 @@ export function DemandFeedPage() {
     const sourceRows = locationMode === "nearby"
       ? nearbyRows.filter((item) => matchesIndividualQuery(item, query))
       : individualRows.filter((item) => matchesIndividualQuery(item, query));
+    const byId = new Map(sourceRows.map((item) => [item.demand.id, item]));
+
+    // Route mode: design searchRouteCandidates — label specificity, no invented ETA.
+    if (locationMode === "route") {
+      const marketRows = sourceRows.filter(
+        (item) =>
+          (item.demand.countryCode ?? "KR") === areaCountry &&
+          item.demand.status === "ACTIVE" &&
+          (requestType === "all" || item.demand.type === requestType),
+      );
+      let ranked = rankRouteCandidatesSync(
+        marketRows.map((item) => item.demand),
+        { routeFrom, routeTo },
+      );
+      if (physicalSort === "newest") {
+        ranked = [...ranked].sort((a, b) =>
+          b.demand.createdAt.localeCompare(a.demand.createdAt),
+        );
+      }
+      return ranked
+        .map((candidate) => byId.get(candidate.demand.id))
+        .filter((item): item is Extract<FeedItem, { kind: "individual" }> => Boolean(item));
+    }
+
     const locationFilter = {
       mode: locationMode,
       radiusKm,
@@ -322,7 +363,7 @@ export function DemandFeedPage() {
       approximateMetersById: distanceMap,
     } as const;
     const sortMode: PhysicalDiscoverySort =
-      locationMode === "nearby" || locationMode === "route" || locationMode === "area"
+      locationMode === "nearby" || locationMode === "area"
         ? physicalSort
         : "newest";
     const ranked = rankEligibleRequests(
@@ -335,7 +376,6 @@ export function DemandFeedPage() {
         location: locationFilter,
       },
     );
-    const byId = new Map(sourceRows.map((item) => [item.demand.id, item]));
     return ranked
       .map((demand) => byId.get(demand.id))
       .filter((item): item is Extract<FeedItem, { kind: "individual" }> => Boolean(item));
@@ -539,6 +579,18 @@ export function DemandFeedPage() {
             </select>
           </label>
           <p className="location-discovery__note">{areaCountry === "JP" ? t("marketPilot") : t("marketHint")}</p>
+          {areaCountry === "JP" ? (
+            <div className="location-discovery__note" role="note">
+              <p>{t("pilotRegionNote")}</p>
+              {pilotRegions.length > 0 ? (
+                <p>
+                  {pilotRegions.map((region) => region.regionKey).join(" · ")}
+                </p>
+              ) : (
+                <p>{t("pilotRegionEmpty")}</p>
+              )}
+            </div>
+          ) : null}
           <div className="location-discovery__modes" role="group" aria-label="지역 필터">
             {LOCATION_MODES.map((option) => (
               <button
@@ -605,6 +657,7 @@ export function DemandFeedPage() {
                 <input value={routeTo} onChange={(event) => setRouteTo(event.target.value)} placeholder={t("areaExample")} aria-label={t("routeTo")} />
               </label>
               <p>{t("routeHint")}</p>
+              <p>{t("routeMetricsUnavailable")}</p>
               {externalRouteUrl("google", routeFrom, routeTo) && externalRouteUrl("apple", routeFrom, routeTo) ? (
                 <div className="location-discovery__maps">
                   <a href={externalRouteUrl("google", routeFrom, routeTo)!} target="_blank" rel="noopener noreferrer">{t("googleMap")}</a>
