@@ -2,7 +2,8 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Chip, ChipGroup, DatetimeLocalInput, Field, TextInput } from "@/components/ui/Input";
-import { ko } from "@/copy/ko";
+import { useDanCopy } from "@/copy/useDanCopy";
+import { useDanLocale } from "@/i18n/locale";
 import { useDan } from "@/domain/danContext";
 import {
   areFulfillmentOptionsValid,
@@ -39,6 +40,12 @@ import "./pages.css";
 import "@/components/feedCards.css";
 
 const TYPES: DemandType[] = ["BUY", "BORROW", "TASK", "SERVICE"];
+const JP_TYPE_META: Record<DemandType, { label: string; desc: string }> = {
+  BUY: { label: "買いたい", desc: "購入したい物があります" },
+  BORROW: { label: "借りたい", desc: "少しの間、借りたいです" },
+  TASK: { label: "おつかい", desc: "誰かにお願いしたいことがあります" },
+  SERVICE: { label: "お手伝い", desc: "誰かの力を借りたいです" },
+};
 
 const TYPE_META: Record<DemandType, { label: string; desc: string }> = {
   BUY: { label: "구매", desc: "사고 싶은 물건이 있어요" },
@@ -127,6 +134,8 @@ function MoneyInput({
 }
 
 export function CreateDemandPage() {
+  const copy = useDanCopy();
+  const locale = useDanLocale();
   const { products, createDemand, ensureProduct, currentUser, isLoggedIn } = useDan();
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -224,7 +233,7 @@ export function CreateDemandPage() {
 
   function selectType(next: DemandType) {
     if (next === type) return;
-    if (hasWritableContent() && !window.confirm(ko.typeSwitchConfirm)) return;
+    if (hasWritableContent() && !window.confirm(copy.typeSwitchConfirm)) return;
     setType(next);
     setPhase(1);
     setScheduleTouched(false);
@@ -260,13 +269,13 @@ export function CreateDemandPage() {
   function phase2Title(demandType: DemandType) {
     switch (demandType) {
       case "BUY":
-        return ko.phase2Buy;
+        return copy.phase2Buy;
       case "BORROW":
-        return ko.phase2Borrow;
+        return copy.phase2Borrow;
       case "TASK":
-        return ko.phase2Task;
+        return copy.phase2Task;
       case "SERVICE":
-        return ko.phase2Service;
+        return copy.phase2Service;
     }
   }
 
@@ -408,24 +417,24 @@ export function CreateDemandPage() {
 
   const scheduleError = useMemo(() => {
     if (type === "BORROW") {
-      if (!borrowStart.trim() || !borrowEnd.trim()) return ko.timeRequiredError;
-      if (!isBorrowRangeValid(borrowStart, borrowEnd)) return ko.borrowRangeError;
+      if (!borrowStart.trim() || !borrowEnd.trim()) return copy.timeRequiredError;
+      if (!isBorrowRangeValid(borrowStart, borrowEnd)) return copy.borrowRangeError;
       if (
         !isDatetimeLocalNotPast(borrowStart) ||
         !isDatetimeLocalNotPast(borrowEnd)
       ) {
-        return ko.timePastError;
+        return copy.timePastError;
       }
       return null;
     }
     if (type === "TASK") {
-      if (!dueAt.trim()) return ko.timeRequiredError;
-      if (!isDatetimeLocalNotPast(dueAt)) return ko.timePastError;
+      if (!dueAt.trim()) return copy.timeRequiredError;
+      if (!isDatetimeLocalNotPast(dueAt)) return copy.timePastError;
       return null;
     }
     if (type === "SERVICE") {
-      if (!preferredAt.trim()) return ko.timeRequiredError;
-      if (!isDatetimeLocalNotPast(preferredAt)) return ko.timePastError;
+      if (!preferredAt.trim()) return copy.timeRequiredError;
+      if (!isDatetimeLocalNotPast(preferredAt)) return copy.timePastError;
       return null;
     }
     return null;
@@ -484,7 +493,7 @@ export function CreateDemandPage() {
         if (!pid) {
           const createdProduct = await ensureProduct(rawName);
           if (!createdProduct) {
-            setFormError(ko.genericError);
+            setFormError(copy.genericError);
             return;
           }
           pid = createdProduct.id;
@@ -502,7 +511,7 @@ export function CreateDemandPage() {
           clearCreateDraft();
           navigate(`/demand/item/${created.id}`);
         } else {
-          setFormError(ko.genericError);
+          setFormError(copy.genericError);
         }
         return;
       }
@@ -521,7 +530,7 @@ export function CreateDemandPage() {
           clearCreateDraft();
           navigate(`/demand/item/${created.id}`);
         } else {
-          setFormError(ko.genericError);
+          setFormError(copy.genericError);
         }
         return;
       }
@@ -539,7 +548,7 @@ export function CreateDemandPage() {
           clearCreateDraft();
           navigate(`/demand/item/${created.id}`);
         } else {
-          setFormError(ko.genericError);
+          setFormError(copy.genericError);
         }
         return;
       }
@@ -564,7 +573,7 @@ export function CreateDemandPage() {
         clearCreateDraft();
         navigate(`/demand/item/${created.id}`);
       } else {
-        setFormError(ko.genericError);
+        setFormError(copy.genericError);
       }
     } finally {
       setSubmitting(false);
@@ -580,7 +589,7 @@ export function CreateDemandPage() {
           </p>
           <h2 className="section-title">
             {!type
-              ? ko.whatNeeded
+              ? copy.whatNeeded
               : phase === 1
                 ? phase1Title(type)
                 : phase2Title(type)}
@@ -601,13 +610,13 @@ export function CreateDemandPage() {
                 >
                   <span className="request-type-card__icon" aria-hidden><RequestTypeIcon type={t} /></span>
                   <span className="request-type-card__copy">
-                    <strong>{TYPE_META[t].label}</strong>
-                    <small>{TYPE_META[t].desc}</small>
+                    <strong>{(locale === "ja" ? JP_TYPE_META : TYPE_META)[t].label}</strong>
+                    <small>{(locale === "ja" ? JP_TYPE_META : TYPE_META)[t].desc}</small>
                   </span>
                 </button>
               ))}
             </div>
-            <p className="section-desc">{ko.pickDemandType}</p>
+            <p className="section-desc">{copy.pickDemandType}</p>
           </>
         ) : (
           <>
@@ -623,7 +632,7 @@ export function CreateDemandPage() {
             >
               <span className="request-type-current__icon" aria-hidden><RequestTypeIcon type={type} /></span>
               <span>
-                <strong>{TYPE_META[type].label}</strong>
+                <strong>{(locale === "ja" ? JP_TYPE_META : TYPE_META)[type].label}</strong>
                 <small>요청 유형 변경</small>
               </span>
               <span className="request-type-current__chevron" aria-hidden>›</span>
@@ -647,7 +656,7 @@ export function CreateDemandPage() {
                           : "product-suggest"
                       }
                     >
-                      <Field label={ko.productSearch} hint={ko.productSearchHint}>
+                      <Field label={copy.productSearch} hint={copy.productSearchHint}>
                         <TextInput
                           value={productQuery}
                           onChange={(e) => {
@@ -661,7 +670,7 @@ export function CreateDemandPage() {
                           onBlur={() => {
                             window.setTimeout(() => setSuggestOpen(false), 120);
                           }}
-                          placeholder={ko.productSearchPh}
+                          placeholder={copy.productSearchPh}
                           autoComplete="off"
                         />
                       </Field>
@@ -692,15 +701,15 @@ export function CreateDemandPage() {
                       ) : null}
                     </div>
                     <MoneyInput
-                      label={ko.maxPrice}
-                      hint={ko.maxPriceHint}
+                      label={copy.maxPrice}
+                      hint={copy.maxPriceHint}
                       value={maxPrice}
                       onChange={setMaxPrice}
                       placeholder="예: 800,000"
                       kind="buy"
                     />
                     <div>
-                      <p className="field-inline-label">{ko.condition}</p>
+                      <p className="field-inline-label">{copy.condition}</p>
                       <ChipGroup>
                         {CONDITIONS.map((c) => (
                           <Chip
@@ -718,7 +727,7 @@ export function CreateDemandPage() {
 
                 {type === "BORROW" ? (
                   <>
-                    <Field label={ko.itemName}>
+                    <Field label={copy.itemName}>
                       <TextInput
                         value={itemName}
                         onChange={(e) => setItemName(e.target.value)}
@@ -727,7 +736,7 @@ export function CreateDemandPage() {
                     </Field>
                     <MoneyInput
                       label={budgetLabelForType(type)}
-                      hint={ko.borrowBudgetHint}
+                      hint={copy.borrowBudgetHint}
                       value={budget}
                       onChange={setBudget}
                       placeholder="예: 30,000"
@@ -738,7 +747,7 @@ export function CreateDemandPage() {
 
                 {type === "TASK" ? (
                   <>
-                    <Field label={ko.descLabel}>
+                    <Field label={copy.descLabel}>
                       <textarea
                         className="dan-input dan-textarea"
                         value={detail}
@@ -759,23 +768,23 @@ export function CreateDemandPage() {
 
                 {type === "SERVICE" ? (
                   <>
-                    <Field label={ko.serviceTaskLabel}>
+                    <Field label={copy.serviceTaskLabel}>
                       <TextInput
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder={ko.serviceTaskPh}
+                        placeholder={copy.serviceTaskPh}
                       />
                     </Field>
                     <MoneyInput
-                      label={ko.reward}
+                      label={copy.reward}
                       value={budget}
                       onChange={setBudget}
                       placeholder="예: 1,000"
                       kind="reward"
                     />
                     <Field
-                      label={ko.estimatedDuration}
-                      hint={ko.estimatedDurationHint}
+                      label={copy.estimatedDuration}
+                      hint={copy.estimatedDurationHint}
                     >
                       <TextInput
                         inputMode="numeric"
@@ -783,15 +792,15 @@ export function CreateDemandPage() {
                         onChange={(e) =>
                           setEstimatedDuration(digitsOnly(e.target.value))
                         }
-                        placeholder={ko.estimatedDurationPh}
+                        placeholder={copy.estimatedDurationPh}
                       />
                     </Field>
-                    <Field label={ko.serviceExtraLabel}>
+                    <Field label={copy.serviceExtraLabel}>
                       <textarea
                         className="dan-input dan-textarea"
                         value={detail}
                         onChange={(e) => setDetail(e.target.value)}
-                        placeholder={ko.serviceExtraPh}
+                        placeholder={copy.serviceExtraPh}
                         rows={2}
                       />
                     </Field>
@@ -805,28 +814,28 @@ export function CreateDemandPage() {
                 {type === "BUY" ? (
                   <>
                     <div>
-                      <p className="field-inline-label">{ko.tradeMethod}</p>
+                      <p className="field-inline-label">{copy.tradeMethod}</p>
                       <ChipGroup>
                         <Chip
                           selected={buyShipping}
                           onClick={() => setBuyShipping((v) => !v)}
                         >
-                          {ko.buyShippingOpt}
+                          {copy.buyShippingOpt}
                         </Chip>
                         <Chip
                           selected={buyMeetup}
                           onClick={() => setBuyMeetup((v) => !v)}
                         >
-                          {ko.buyMeetupOpt}
+                          {copy.buyMeetupOpt}
                         </Chip>
                       </ChipGroup>
                     </div>
                     {buyMeetup ? (
-                      <Field label={ko.buyMeetupWhere}>
+                      <Field label={copy.buyMeetupWhere}>
                         <TextInput
                           value={meetupPlace}
                           onChange={(e) => setMeetupPlace(e.target.value)}
-                          placeholder={ko.locationPh}
+                          placeholder={copy.locationPh}
                         />
                       </Field>
                     ) : null}
@@ -835,26 +844,26 @@ export function CreateDemandPage() {
 
                 {type === "BORROW" ? (
                   <>
-                    <Field label={ko.borrowWhere}>
+                    <Field label={copy.borrowWhere}>
                       <TextInput
                         value={borrowPlace}
                         onChange={(e) => setBorrowPlace(e.target.value)}
-                        placeholder={ko.locationPh}
+                        placeholder={copy.locationPh}
                       />
                     </Field>
-                    <Field label={ko.borrowStart}>
+                    <Field label={copy.borrowStart}>
                       <DatetimeLocalInput
                         value={borrowStart}
                         onChange={setBorrowStart}
                       />
                     </Field>
-                    <Field label={ko.borrowEnd}>
+                    <Field label={copy.borrowEnd}>
                       <DatetimeLocalInput
                         value={borrowEnd}
                         onChange={setBorrowEnd}
                       />
                     </Field>
-                    <Field label={ko.descLabel}>
+                    <Field label={copy.descLabel}>
                       <TextInput
                         value={detail}
                         onChange={(e) => setDetail(e.target.value)}
@@ -866,51 +875,51 @@ export function CreateDemandPage() {
                 {type === "TASK" ? (
                   <div className="section-stack">
                     <div>
-                      <p className="field-inline-label">{ko.taskHow}</p>
+                      <p className="field-inline-label">{copy.taskHow}</p>
                       <ChipGroup>
                         <Chip
                           selected={taskMode === "onsite"}
                           onClick={() => setTaskMode("onsite")}
                         >
-                          {ko.taskModeOnsite}
+                          {copy.taskModeOnsite}
                         </Chip>
                         <Chip
                           selected={taskMode === "pickup"}
                           onClick={() => setTaskMode("pickup")}
                         >
-                          {ko.taskModePickup}
+                          {copy.taskModePickup}
                         </Chip>
                         <Chip
                           selected={taskMode === "route"}
                           onClick={() => setTaskMode("route")}
                         >
-                          {ko.taskModeRoute}
+                          {copy.taskModeRoute}
                         </Chip>
                         <Chip
                           selected={taskMode === "remote"}
                           onClick={() => setTaskMode("remote")}
                         >
-                          {ko.taskModeRemote}
+                          {copy.taskModeRemote}
                         </Chip>
                       </ChipGroup>
                     </div>
                     {taskMode === "route" ? (
                       <div className="route-fields">
-                        <Field label={ko.taskRouteFrom}>
+                        <Field label={copy.taskRouteFrom}>
                           <TextInput
                             value={routeFrom}
                             onChange={(e) => setRouteFrom(e.target.value)}
-                            placeholder={ko.placePh}
+                            placeholder={copy.placePh}
                           />
                         </Field>
                         <span className="route-arrow" aria-hidden>
-                          {ko.routeArrow}
+                          {copy.routeArrow}
                         </span>
-                        <Field label={ko.taskRouteTo}>
+                        <Field label={copy.taskRouteTo}>
                           <TextInput
                             value={routeTo}
                             onChange={(e) => setRouteTo(e.target.value)}
-                            placeholder={ko.placePh}
+                            placeholder={copy.placePh}
                           />
                         </Field>
                       </div>
@@ -918,17 +927,17 @@ export function CreateDemandPage() {
                     {taskMode === "onsite" || taskMode === "pickup" ? (
                       <Field
                         label={
-                          taskMode === "pickup" ? ko.taskPickupPlace : ko.taskPlace
+                          taskMode === "pickup" ? copy.taskPickupPlace : copy.taskPlace
                         }
                       >
                         <TextInput
                           value={taskPlace}
                           onChange={(e) => setTaskPlace(e.target.value)}
-                          placeholder={ko.locationPh}
+                          placeholder={copy.locationPh}
                         />
                       </Field>
                     ) : null}
-                    <Field label={ko.dueAt}>
+                    <Field label={copy.dueAt}>
                       <DatetimeLocalInput value={dueAt} onChange={setDueAt} />
                     </Field>
                   </div>
@@ -937,26 +946,26 @@ export function CreateDemandPage() {
                 {type === "SERVICE" ? (
                   <div className="section-stack">
                     <div>
-                      <p className="field-inline-label">{ko.fulfillHow}</p>
+                      <p className="field-inline-label">{copy.fulfillHow}</p>
                       <ChipGroup>
                         <Chip
                           selected={serviceMode === "onsite"}
                           onClick={() => setServiceMode("onsite")}
                         >
-                          {ko.serviceOnsite}
+                          {copy.serviceOnsite}
                         </Chip>
                         <Chip
                           selected={serviceMode === "remote"}
                           onClick={() => setServiceMode("remote")}
                         >
-                          {ko.serviceRemote}
+                          {copy.serviceRemote}
                         </Chip>
                       </ChipGroup>
                     </div>
                     {serviceMode === "onsite" ? (
                       <>
                         <div>
-                          <p className="field-inline-label">{ko.whereNeeded}</p>
+                          <p className="field-inline-label">{copy.whereNeeded}</p>
                           <div className="action-row action-row--split">
                             <Button
                               type="button"
@@ -972,8 +981,8 @@ export function CreateDemandPage() {
                                     if (!result.ok) {
                                       setGeoError(
                                         result.reason === "denied"
-                                          ? ko.geoDenied
-                                          : ko.geoFailed,
+                                          ? copy.geoDenied
+                                          : copy.geoFailed,
                                       );
                                       return;
                                     }
@@ -986,7 +995,7 @@ export function CreateDemandPage() {
                                 );
                               }}
                             >
-                              {geoBusy ? ko.geoLocating : ko.useCurrentLocation}
+                              {geoBusy ? copy.geoLocating : copy.useCurrentLocation}
                             </Button>
                             <Button
                               type="button"
@@ -997,33 +1006,33 @@ export function CreateDemandPage() {
                                 setGeoError(null);
                               }}
                             >
-                              {ko.enterPlaceManually}
+                              {copy.enterPlaceManually}
                             </Button>
                           </div>
                           {geoError ? (
                             <p className="form-error">{geoError}</p>
                           ) : null}
                         </div>
-                        <Field label={ko.placeAreaLabel}>
+                        <Field label={copy.placeAreaLabel}>
                           <TextInput
                             value={servicePlace}
                             onChange={(e) => {
                               setServicePlace(e.target.value);
                               setServiceGeoPlace(null);
                             }}
-                            placeholder={ko.locationPh}
+                            placeholder={copy.locationPh}
                           />
                         </Field>
-                        <Field label={ko.placeNoteLabel}>
+                        <Field label={copy.placeNoteLabel}>
                           <TextInput
                             value={servicePlaceNote}
                             onChange={(e) => setServicePlaceNote(e.target.value)}
-                            placeholder={ko.placeNotePh}
+                            placeholder={copy.placeNotePh}
                           />
                         </Field>
                       </>
                     ) : null}
-                    <Field label={ko.preferredAt}>
+                    <Field label={copy.preferredAt}>
                       <DatetimeLocalInput
                         value={preferredAt}
                         onChange={setPreferredAt}
@@ -1045,12 +1054,12 @@ export function CreateDemandPage() {
         <div className="create-page__footer">
           {phase === 1 ? (
             <Button fullWidth size="lg" disabled={!canCore} onClick={() => setPhase(2)}>
-              {ko.stepNext}
+              {copy.stepNext}
             </Button>
           ) : (
             <div className="action-row create-page__actions">
               <Button variant="secondary" fullWidth onClick={() => setPhase(1)}>
-                {ko.stepPrev}
+                {copy.stepPrev}
               </Button>
               <Button
                 fullWidth
@@ -1059,10 +1068,10 @@ export function CreateDemandPage() {
                 disabled={!canSubmit || submitting}
               >
                 {submitting
-                  ? ko.saving
+                  ? copy.saving
                   : isLoggedIn
-                    ? ko.submitDemand
-                    : ko.submitNeedLogin}
+                    ? copy.submitDemand
+                    : copy.submitNeedLogin}
               </Button>
             </div>
           )}
