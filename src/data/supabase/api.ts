@@ -545,6 +545,7 @@ async function upsertDemandExactGeoRemote(
 export async function searchNearbyDemandDistancesRemote(
   viewer: { lat: number; lng: number },
   radiusKm: 1 | 3 | 5 | 10,
+  marketCountry: "KR" | "JP",
 ): Promise<Array<{ id: string; meters: number }>> {
   if (
     !Number.isFinite(viewer.lat) || !Number.isFinite(viewer.lng) ||
@@ -553,7 +554,8 @@ export async function searchNearbyDemandDistancesRemote(
   ) {
     throw new Error("invalid proximity request");
   }
-  const { data, error } = await getSupabase().rpc("search_nearby_demands", {
+  const { data, error } = await getSupabase().rpc("search_nearby_demands_market", {
+    p_country_code: marketCountry,
     p_lat: viewer.lat,
     p_lng: viewer.lng,
     p_radius_m: radiusKm * 1000,
