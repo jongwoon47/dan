@@ -140,7 +140,35 @@ function MoneyInput({
   );
 }
 
+/** Do not silently save a Japan-market request as a Korean KRW trade.
+ * The JP authoring flow opens only after true JPY handling and legal review.
+ */
 export function CreateDemandPage() {
+  const [marketParams] = useSearchParams();
+  const locale = useDanLocale();
+  if (marketParams.get("country") === "JP") {
+    return (
+      <div className="page-stack page-narrow">
+        <section className="settings-section" aria-labelledby="japan-market-not-ready">
+          <h1 id="japan-market-not-ready">
+            {locale === "ja" ? "日本向けの依頼は準備中です" : "일본 거래 작성은 준비 중이에요"}
+          </h1>
+          <p className="section-desc">
+            {locale === "ja"
+              ? "現在は韓国ウォン（KRW）の韓国取引のみ投稿できます。日本の依頼を韓国の取引として保存せず、円（JPY）と利用条件の対応後に公開します。"
+              : "현재 작성 가능한 거래는 한국·원화(KRW) 기준이에요. 일본 요청을 한국 거래로 잘못 저장하지 않도록 일본 엔화(JPY)와 현지 이용 조건이 준비될 때까지 작성 기능을 제한합니다."}
+          </p>
+          <Button to="/feed?country=KR" variant="secondary">
+            {locale === "ja" ? "韓国の依頼を探す" : "한국 거래 탐색으로 이동"}
+          </Button>
+        </section>
+      </div>
+    );
+  }
+  return <CreateDemandForm />;
+}
+
+function CreateDemandForm() {
   const copy = useDanCopy();
   const locale = useDanLocale();
   const { products, createDemand, ensureProduct, currentUser, isLoggedIn } = useDan();
