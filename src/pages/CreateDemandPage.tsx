@@ -295,13 +295,13 @@ function CreateDemandForm() {
   function phase1Title(demandType: DemandType) {
     switch (demandType) {
       case "BUY":
-        return "어떤 물건을 찾고 있나요?";
+        return locale === "ja" ? "どんな物を探していますか？" : "어떤 물건을 찾고 있나요?";
       case "BORROW":
-        return "어떤 물건을 빌리고 싶나요?";
+        return locale === "ja" ? "どんな物を借りたいですか？" : "어떤 물건을 빌리고 싶나요?";
       case "TASK":
-        return "어떤 일을 부탁하고 싶나요?";
+        return locale === "ja" ? "どんな用事をお願いしますか？" : "어떤 일을 부탁하고 싶나요?";
       case "SERVICE":
-        return "어떤 도움이 필요하세요?";
+        return locale === "ja" ? "どんな手助けが必要ですか？" : "어떤 도움이 필요하세요?";
     }
   }
 
@@ -625,7 +625,11 @@ function CreateDemandForm() {
       <section className="create-page__body section-stack">
         <div className="create-page__prompt">
           <p className="create-page__kicker">
-            {type ? `${phase} / 2` : "요청 유형"}
+            {type
+              ? `${phase} / 2`
+              : locale === "ja"
+                ? "依頼の種類"
+                : "요청 유형"}
           </p>
           <h2 className="section-title">
             {!type
@@ -638,7 +642,11 @@ function CreateDemandForm() {
 
         {!type ? (
           <>
-            <div className="request-type-grid" role="radiogroup" aria-label="요청 유형">
+            <div
+              className="request-type-grid"
+              role="radiogroup"
+              aria-label={locale === "ja" ? "依頼の種類" : "요청 유형"}
+            >
               {TYPES.map((t) => (
                 <button
                   key={t}
@@ -663,7 +671,7 @@ function CreateDemandForm() {
             <button
               type="button"
               className="request-type-current"
-              aria-label="요청 유형 변경"
+              aria-label={locale === "ja" ? "依頼の種類を変更" : "요청 유형 변경"}
               onClick={() => {
                 setType(null);
                 setPhase(1);
@@ -677,7 +685,10 @@ function CreateDemandForm() {
               </span>
               <span className="request-type-current__chevron" aria-hidden>›</span>
             </button>
-            <div className="create-progress" aria-label="작성 단계">
+            <div
+              className="create-progress"
+              aria-label={locale === "ja" ? "作成ステップ" : "작성 단계"}
+            >
               <div className="create-progress__track"><span style={{ width: phase === 1 ? "50%" : "100%" }} /></div>
               <div className="create-progress__labels">
                 <span className={phase === 1 ? "is-active" : ""}>
