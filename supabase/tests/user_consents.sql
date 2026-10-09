@@ -1,5 +1,8 @@
 -- pgTAP-style expectations for user_consents RLS (run in Supabase SQL test harness).
 
+begin;
+select plan(4);
+
 select has_table('public', 'user_consents', 'user_consents exists');
 select col_is_pk('public', 'user_consents', 'user_id', 'one consent row per user');
 select ok(
@@ -14,3 +17,6 @@ select ok(
   and not has_table_privilege('anon', 'public.user_consents', 'select'),
   'authenticated can read/write own table; anon cannot select'
 );
+
+select * from finish();
+rollback;
