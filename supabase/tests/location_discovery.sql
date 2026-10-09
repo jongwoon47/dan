@@ -1,5 +1,5 @@
 begin;
-select plan(6);
+select plan(7);
 
 select ok(
   to_regprocedure('public.search_nearby_demands(double precision,double precision,integer,integer)') is not null,
@@ -25,6 +25,11 @@ select ok(
 select ok(
   not has_table_privilege('anon', 'public.demand_exact_geo', 'select'),
   'anonymous users cannot read exact coordinates'
+);
+
+select ok(
+  not has_function_privilege('authenticated', 'public.approx_demand_distances(double precision,double precision,uuid[])', 'execute'),
+  'authenticated clients cannot invoke the retired arbitrary-target distance oracle'
 );
 
 select * from finish();
