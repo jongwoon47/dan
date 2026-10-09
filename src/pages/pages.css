@@ -2825,3 +2825,8 @@
 .location-discovery__market { display:flex; align-items:center; gap:12px; flex-wrap:wrap; font-size:.85rem; font-weight:600; }
 .location-discovery__market select { min-width: 150px; max-width:100%; padding:9px 12px; border: 1px solid var(--dan-border); border-radius:10px; background:var(--dan-surface); color:var(--dan-ink); font:inherit; }
 .location-discovery__market span { flex-shrink:0; }
+
+.location-discovery__maps { display:flex; align-items:center; gap:9px; flex-wrap:wrap; padding-top:8px; }
+.location-discovery__maps a { display:inline-flex; border:1px solid var(--dan-border); background:var(--dan-surface); color:var(--dan-ink); border-radius:10px; padding:9px 12px; font-size:.84rem; text-decoration:none; font-weight:600; }
+.location-discovery__maps a:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
+.location-discovery__maps p { flex-basis:100%; margin:0; font-size:.78rem; color:var(--dan-ink-secondary); line-height:1.6; }
