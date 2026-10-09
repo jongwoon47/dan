@@ -6,19 +6,23 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
 import type { DealSnapshot, PublicProfile } from "@/domain/types";
-import { formatWon } from "@/lib/format";
+import { useDanLocale } from "@/i18n/locale";
+import { formatStoredMoney } from "@/lib/format";
 import "./pages.css";
 
 export function TradeCompletePage() {
   const { matchId = "" } = useParams();
+  const locale = useDanLocale();
   const {
     myMatches,
     currentUser,
     getProduct,
+    getDemand,
     getDealSnapshot,
     getPublicProfile,
   } = useDan();
   const match = myMatches.find((row) => row.id === matchId);
+  const demand = match ? getDemand(match.demandId) : undefined;
   const product = match?.productId ? getProduct(match.productId) : undefined;
   const [snapshot, setSnapshot] = useState<DealSnapshot | null>(null);
   const [peer, setPeer] = useState<PublicProfile | null>(null);
@@ -67,7 +71,13 @@ export function TradeCompletePage() {
         <div>
           <strong>{product.name}</strong>
           <span>
-            {snapshot ? formatWon(snapshot.agreedPrice) : "거래 완료"}
+            {snapshot
+              ? formatStoredMoney(
+                  snapshot.agreedPrice,
+                  snapshot.currencyCode ?? demand?.currencyCode ?? "KRW",
+                  locale,
+                )
+              : "거래 완료"}
           </span>
         </div>
       </section>
@@ -79,7 +89,15 @@ export function TradeCompletePage() {
         </div>
         <div className="snapshot-section">
           <span>최종 거래 금액</span>
-          <strong>{snapshot ? formatWon(snapshot.agreedPrice) : "확인 중"}</strong>
+          <strong>
+            {snapshot
+              ? formatStoredMoney(
+                  snapshot.agreedPrice,
+                  snapshot.currencyCode ?? demand?.currencyCode ?? "KRW",
+                  locale,
+                )
+              : "확인 중"}
+          </strong>
         </div>
         <div className="snapshot-section">
           <span>거래 상대</span>

@@ -4,7 +4,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
 import type { DealDispute, DealDisputeReason, DealSnapshot } from "@/domain/types";
-import { formatWon } from "@/lib/format";
+import { useDanLocale } from "@/i18n/locale";
+import { formatStoredMoney } from "@/lib/format";
 import { useNavigate, useParams } from "react-router-dom";
 import "./pages.css";
 
@@ -34,6 +35,7 @@ function snapshotString(
 export function HandoffPage() {
   const { matchId = "" } = useParams();
   const navigate = useNavigate();
+  const locale = useDanLocale();
   const {
     myMatches,
     currentUser,
@@ -95,7 +97,14 @@ export function HandoffPage() {
     const usage = snapshotString(payload, ["evidence", "usageCount"]);
     const rows: string[][] = [
       ["제품", snapshotString(payload, ["product", "name"]) || product?.name || ""],
-      ["가격", formatWon(snapshot.agreedPrice)],
+      [
+        "가격",
+        formatStoredMoney(
+          snapshot.agreedPrice,
+          snapshot.currencyCode ?? demand?.currencyCode ?? "KRW",
+          locale,
+        ),
+      ],
     ];
     if (usage) {
       rows.push([
@@ -112,7 +121,7 @@ export function HandoffPage() {
       ["거래 방식", snapshotString(payload, ["handoff", "method"]) || "직거래"],
     );
     return rows;
-  }, [product?.category, product?.name, snapshot]);
+  }, [demand?.currencyCode, locale, product?.category, product?.name, snapshot]);
 
   if (!match || !currentUser || !demand || demand.type !== "BUY" || !product) {
     return (

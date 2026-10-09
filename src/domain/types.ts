@@ -255,6 +255,8 @@ export interface DealSnapshot {
   buyerId: string;
   sellerId: string;
   agreedPrice: number;
+  /** Stored settlement currency; never inferred from UI language. */
+  currencyCode?: MoneyCurrency;
   snapshot: Record<string, unknown>;
   buyerConfirmedAt?: string;
   sellerConfirmedAt?: string;

@@ -193,11 +193,14 @@ export async function ensureProductRemote(
   return mapProduct(data as DbProduct);
 }
 
-export async function listActiveDemands(): Promise<Demand[]> {
+export async function listActiveDemands(
+  marketCountry: "KR" | "JP" = "KR",
+): Promise<Demand[]> {
   const { data, error } = await getSupabase()
     .from("demands")
     .select("*")
     .eq("status", "ACTIVE")
+    .eq("country_code", marketCountry)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return ((data ?? []) as DbDemand[])
@@ -374,7 +377,14 @@ export async function searchLiveDemandRemote(input: {
   sort?: "popular" | "growing" | "price";
   limit?: number;
   offset?: number;
+  /** BUY aggregation is KR-only during the Japan pilot. */
+  countryCode?: "KR" | "JP";
 }): Promise<{ rows: RemoteLiveDemandRow[]; total: number }> {
+  const market = input.countryCode ?? "KR";
+  // Fail closed: JP storefront must not receive KR BUY aggregates.
+  if (market !== "KR") {
+    return { rows: [], total: 0 };
+  }
   const { data, error } = await getSupabase().rpc("search_live_demand", {
     p_query: input.query?.trim() ?? "",
     p_category:
@@ -382,6 +392,7 @@ export async function searchLiveDemandRemote(input: {
     p_sort: input.sort ?? "popular",
     p_limit: input.limit ?? 24,
     p_offset: input.offset ?? 0,
+    p_country_code: "KR",
   });
   if (error) throw error;
 
@@ -474,6 +485,9 @@ export async function createDemandRemote(input: CreateDemandInput): Promise<Dema
     fulfillment_options: publicOptions,
     status: "ACTIVE",
     expires_at: defaultExpiresAtIso(input.type, scheduleIso),
+    // Explicit pilot market; server trigger also rejects non-KR/KRW writes.
+    country_code: "KR",
+    currency_code: "KRW",
   };
   const row =
     input.type === "BORROW"
@@ -546,11 +560,13 @@ export async function searchNearbyDemandDistancesRemote(
   viewer: { lat: number; lng: number },
   radiusKm: 1 | 3 | 5 | 10,
   marketCountry: "KR" | "JP",
+  offset = 0,
 ): Promise<Array<{ id: string; meters: number }>> {
   if (
     !Number.isFinite(viewer.lat) || !Number.isFinite(viewer.lng) ||
     Math.abs(viewer.lat) > 90 || Math.abs(viewer.lng) > 180 ||
-    !([1, 3, 5, 10] as number[]).includes(radiusKm)
+    !([1, 3, 5, 10] as number[]).includes(radiusKm) ||
+    !Number.isInteger(offset) || offset < 0 || offset > 400
   ) {
     throw new Error("invalid proximity request");
   }
@@ -560,6 +576,7 @@ export async function searchNearbyDemandDistancesRemote(
     p_lng: viewer.lng,
     p_radius_m: radiusKm * 1000,
     p_limit: 40,
+    p_offset: offset,
   });
   if (error) throw new Error("nearby discovery unavailable");
   if (!Array.isArray(data)) throw new Error("invalid nearby result");
@@ -573,24 +590,6 @@ export async function searchNearbyDemandDistancesRemote(
     if (seen.has(row.id)) continue;
     seen.add(row.id);
     out.push({ id: row.id, meters: row.meters });
-  }
-  return out;
-}
-
-export async function fetchApproxDistancesRemote(
-  demandIds: string[],
-  viewer: { lat: number; lng: number },
-): Promise<Record<string, number>> {
-  if (demandIds.length === 0) return {};
-  const { data, error } = await getSupabase().rpc("approx_demand_distances", {
-    p_lat: viewer.lat,
-    p_lng: viewer.lng,
-    p_demand_ids: demandIds,
-  });
-  if (error) return {};
-  const out: Record<string, number> = {};
-  for (const row of (data ?? []) as Array<{ id: string; meters: number }>) {
-    if (row?.id && Number.isFinite(row.meters)) out[row.id] = row.meters;
   }
   return out;
 }

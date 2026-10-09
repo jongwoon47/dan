@@ -7,7 +7,8 @@ import { ko } from "@/copy/ko";
 import { useDan } from "@/domain/danContext";
 import type { ActivityEvent, Demand } from "@/domain/types";
 import { getDataMode } from "@/data/mode";
-import { formatRelativeTime, formatWon } from "@/lib/format";
+import { useDanLocale } from "@/i18n/locale";
+import { formatRelativeTime, formatStoredMoney } from "@/lib/format";
 import "./pages.css";
 
 function kindVerb(kind: ActivityEvent["kind"]) {
@@ -52,6 +53,7 @@ function hrefFor(ev: ActivityEvent, demand?: Demand) {
 }
 
 export function ActivityPage() {
+  const locale = useDanLocale();
   const {
     isLoggedIn,
     login,
@@ -160,9 +162,9 @@ export function ActivityPage() {
             const bits = [
               demand?.title,
               response?.offeredPrice != null && response.offeredPrice > 0
-                ? formatWon(response.offeredPrice)
+                ? formatStoredMoney(response.offeredPrice, demand?.currencyCode ?? "KRW", locale)
                 : demand?.type === "BUY" && demand.budget > 0
-                  ? formatWon(demand.budget)
+                  ? formatStoredMoney(demand.budget, demand.currencyCode ?? "KRW", locale)
                   : null,
               response?.availabilityText,
             ].filter(Boolean);

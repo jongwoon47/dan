@@ -5,6 +5,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { legalDocumentHref } from "@/auth/consentVersions";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { setDanLocale, translate, useDanLocale } from "@/i18n/locale";
+import { readStoredMarketCountry } from "@/lib/marketPrefs";
 import { addSavedArea, removeSavedArea, useSavedAreas, type SavedArea } from "@/lib/savedAreas";
 
 export function SettingsPage() {
@@ -13,7 +14,8 @@ export function SettingsPage() {
   const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
   const savedAreas = useSavedAreas();
   const [areaText, setAreaText] = useState("");
-  const [country, setCountry] = useState<SavedArea["country"]>(locale === "ja" ? "JP" : "KR");
+  // Market country is independent of UI language (never infer JP from Japanese locale).
+  const [country, setCountry] = useState<SavedArea["country"]>(() => readStoredMarketCountry());
   const [saveMessage, setSaveMessage] = useState("");
   useDeepHeader({ title: t("settings") });
 

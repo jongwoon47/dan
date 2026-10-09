@@ -13,4 +13,10 @@ describe("stored marketplace currencies", () => {
     expect(displayed).toContain("12,000");
     expect(displayed).toMatch(/¥|￥/);
   });
+
+  it("does not attach won suffix to JPY under Korean UI language", () => {
+    const displayed = formatStoredMoney(3500, "JPY", "ko");
+    expect(displayed).not.toContain("원");
+    expect(displayed).toMatch(/¥|￥|JPY/);
+  });
 });

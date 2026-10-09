@@ -7,27 +7,33 @@ import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
 import type { DealSnapshot } from "@/domain/types";
-import { formatWon } from "@/lib/format";
+import { useDanLocale } from "@/i18n/locale";
+import { formatStoredMoney } from "@/lib/format";
 import "./pages.css";
 
 export function SafePaymentPage() {
   const { matchId = "" } = useParams();
   const navigate = useNavigate();
+  const locale = useDanLocale();
   const {
     myMatches,
     currentUser,
     getProduct,
+    getDemand,
     getDealSnapshot,
     simulateSafePaymentDemo,
     busy,
   } = useDan();
   const match = myMatches.find((row) => row.id === matchId);
+  const demand = match ? getDemand(match.demandId) : undefined;
   const product = match?.productId ? getProduct(match.productId) : undefined;
   const [snapshot, setSnapshot] = useState<DealSnapshot | null>(null);
   const [method, setMethod] = useState<"card" | "bank">("card");
   const [error, setError] = useState("");
   const isDemo = getDataMode() === "demo";
   const isBuyer = Boolean(match && currentUser?.id === match.buyerId);
+  const moneyCurrency = snapshot?.currencyCode ?? demand?.currencyCode ?? "KRW";
+  const money = (value: number) => formatStoredMoney(value, moneyCurrency, locale);
 
   useDeepHeader({ title: "결제" });
 
@@ -77,15 +83,15 @@ export function SafePaymentPage() {
         <ProductVisual product={product} size="sm" />
         <div>
           <span>결제 금액</span>
-          <h1>{formatWon(snapshot.agreedPrice)}</h1>
+          <h1>{money(snapshot.agreedPrice)}</h1>
           <p>{product.name}</p>
         </div>
       </section>
 
       <section className="payment-breakdown">
-        <div><span>상품 금액</span><strong>{formatWon(snapshot.agreedPrice)}</strong></div>
-        <div><span>수수료</span><strong>0원</strong></div>
-        <div className="is-total"><span>총 결제 금액</span><strong>{formatWon(snapshot.agreedPrice)}</strong></div>
+        <div><span>상품 금액</span><strong>{money(snapshot.agreedPrice)}</strong></div>
+        <div><span>수수료</span><strong>{money(0)}</strong></div>
+        <div className="is-total"><span>총 결제 금액</span><strong>{money(snapshot.agreedPrice)}</strong></div>
       </section>
 
       {isBuyer && isDemo ? (
@@ -129,7 +135,7 @@ export function SafePaymentPage() {
       {isBuyer && isDemo ? (
         <>
           <Button fullWidth size="lg" disabled={busy} onClick={() => void pay()}>
-            {busy ? "결제 확인 중…" : formatWon(snapshot.agreedPrice) + " 결제하기"}
+            {busy ? "결제 확인 중…" : money(snapshot.agreedPrice) + " 결제하기"}
           </Button>
         </>
       ) : !isBuyer ? (

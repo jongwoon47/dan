@@ -9,7 +9,8 @@ import { useDan } from "@/domain/danContext";
 import { effectiveDemandStatus } from "@/domain/demandLifecycle";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
 import { DEMAND_TYPE_LABEL, isBuyDemand } from "@/domain/types";
-import { formatWon } from "@/lib/format";
+import { useDanLocale } from "@/i18n/locale";
+import { formatStoredMoney } from "@/lib/format";
 import "./pages.css";
 
 type MyTab = "active" | "requests" | "completed";
@@ -27,6 +28,7 @@ function requestStatusLabel(status: string): string {
 }
 
 export function MyDanPage() {
+  const locale = useDanLocale();
   const {
     isLoggedIn,
     login,
@@ -173,7 +175,8 @@ export function MyDanPage() {
                         <span>{requestStatusLabel(status)}</span>
                       </div>
                       <p>
-                        {DEMAND_TYPE_LABEL[demand.type]} · {formatWon(demand.budget)}
+                        {DEMAND_TYPE_LABEL[demand.type]} ·{" "}
+                        {formatStoredMoney(demand.budget, demand.currencyCode ?? "KRW", locale)}
                       </p>
                       <small>{formatFulfillmentSummary(demand.fulfillmentOptions)}</small>
                     </div>

@@ -24,6 +24,11 @@ import { translate, useDanLocale } from "@/i18n/locale";
 import { categoryLabel } from "@/i18n/categories";
 import { addSavedArea, useSavedAreas } from "@/lib/savedAreas";
 import {
+  resolveMarketCountry,
+  writeStoredMarketCountry,
+  type MarketCountry,
+} from "@/lib/marketPrefs";
+import {
   filterAndSortLiveDemand,
   liveDemandCategoryCounts,
   type LiveDemandCategory,
@@ -94,7 +99,7 @@ export function DemandFeedPage() {
   const t = (key: Parameters<typeof translate>[1], vars: Record<string, string | number> = {}) => translate(locale, key, vars);
   const savedAreas = useSavedAreas();
   const { demandFeed, currentUser } = useDan();
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const urlQuery = params.get("q")?.trim() ?? "";
   const urlArea = params.get("area")?.trim() ?? "";
   const urlCountry = params.get("country");
@@ -102,7 +107,7 @@ export function DemandFeedPage() {
   const [requestType, setRequestType] = useState<RequestTypeFilter>("all");
   const [locationMode, setLocationMode] = useState<LocationDiscoveryMode>(urlArea ? "area" : "all");
   const [areaQuery, setAreaQuery] = useState(urlArea);
-  const [areaCountry, setAreaCountry] = useState<"KR" | "JP">(urlCountry === "JP" ? "JP" : "KR");
+  const [areaCountry, setAreaCountry] = useState<MarketCountry>(() => resolveMarketCountry(urlCountry));
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const [routeFrom, setRouteFrom] = useState("");
   const [routeTo, setRouteTo] = useState("");
@@ -128,11 +133,21 @@ export function DemandFeedPage() {
     setPage(0);
   }, [urlQuery]);
   useEffect(() => {
+    const market = resolveMarketCountry(urlCountry);
+    setAreaCountry(market);
+    writeStoredMarketCountry(market);
     if (!urlArea) return;
     setAreaQuery(urlArea);
     setLocationMode("area");
-    setAreaCountry(urlCountry === "JP" ? "JP" : "KR");
   }, [urlArea, urlCountry]);
+
+  function selectMarket(next: MarketCountry) {
+    setAreaCountry(next);
+    writeStoredMarketCountry(next);
+    const nextParams = new URLSearchParams(params);
+    nextParams.set("country", next);
+    setParams(nextParams, { replace: true });
+  }
 
   const categoryRows = useMemo(
     () => areaCountry === "KR" ? liveDemandCategoryCounts(demandFeed) : [],
@@ -230,6 +245,7 @@ export function DemandFeedPage() {
         sort,
         limit: PAGE_SIZE,
         offset: page * PAGE_SIZE,
+        countryCode: areaCountry,
       })
         .then((result) => {
           if (cancelled) return;
@@ -255,7 +271,7 @@ export function DemandFeedPage() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [category, includesBuy, page, productionDiscovery, query, sort]);
+  }, [areaCountry, category, includesBuy, page, productionDiscovery, query, sort]);
 
   const buyRows =
     includesBuy
@@ -428,7 +444,11 @@ export function DemandFeedPage() {
           </div>
           <label className="location-discovery__market">
             <span>{t("chooseCountry")}</span>
-            <select value={areaCountry} onChange={(event) => setAreaCountry(event.target.value === "JP" ? "JP" : "KR")} aria-label={t("chooseCountry")}>
+            <select
+              value={areaCountry}
+              onChange={(event) => selectMarket(event.target.value === "JP" ? "JP" : "KR")}
+              aria-label={t("chooseCountry")}
+            >
               <option value="KR">{t("countryKr")}</option>
               <option value="JP">{t("countryJp")}</option>
             </select>

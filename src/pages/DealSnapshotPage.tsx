@@ -8,7 +8,8 @@ import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
 import type { DealEvidence, DealSnapshot } from "@/domain/types";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
-import { formatWon } from "@/lib/format";
+import { useDanLocale } from "@/i18n/locale";
+import { formatStoredMoney } from "@/lib/format";
 import "./pages.css";
 
 function snapshotText(
@@ -24,6 +25,7 @@ function snapshotText(
 
 export function DealSnapshotPage() {
   const { matchId = "" } = useParams();
+  const locale = useDanLocale();
   const {
     myMatches,
     state,
@@ -152,7 +154,7 @@ export function DealSnapshotPage() {
       <h1 className="page-title">종료된 거래 기록</h1>
       <p>회원탈퇴로 개인 작성 내용과 상품 확인 정보가 삭제됐어요.</p>
       <p>거래 상태: {match.status === 'COMPLETED' ? '완료' : '종료'}</p>
-      <p>합의 금액: {formatWon(snapshot.agreedPrice)}</p>
+      <p>합의 금액: {formatStoredMoney(snapshot.agreedPrice, snapshot.currencyCode ?? demand?.currencyCode ?? "KRW", locale)}</p>
       <Button to="/my?tab=completed" variant="secondary">완료된 거래</Button>
     </div>;
   }
@@ -179,7 +181,7 @@ export function DealSnapshotPage() {
           <ProductVisual product={product} size="sm" />
           <div>
             <h1 className="page-title">{product.name}</h1>
-            <strong className="deal-price">{formatWon(sell.minimumPrice)}</strong>
+            <strong className="deal-price">{formatStoredMoney(sell.minimumPrice, demand?.currencyCode ?? "KRW", locale)}</strong>
           </div>
         </div>
       </section>
@@ -189,7 +191,7 @@ export function DealSnapshotPage() {
           <div>
             <h2>거래 조건을 확인해 주세요</h2>
           </div>
-          <strong>{formatWon(sell.minimumPrice)}</strong>
+          <strong>{formatStoredMoney(sell.minimumPrice, demand?.currencyCode ?? "KRW", locale)}</strong>
         </div>
 
         {evidence.usageCount != null ? (

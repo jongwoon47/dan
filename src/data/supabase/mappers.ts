@@ -158,6 +158,7 @@ export type DbDealSnapshot = {
   buyer_id: string;
   seller_id: string;
   agreed_price: number;
+  currency_code?: string | null;
   snapshot: unknown;
   buyer_confirmed_at: string | null;
   seller_confirmed_at: string | null;
@@ -213,6 +214,9 @@ export function mapDemand(row: DbDemand): Demand {
     description: row.description,
     category: row.category as DemandCategory,
     budget: Number(row.budget),
+    // Fail closed: unknown market/currency codes are treated as unsupported KR/KRW
+    // only when the pair is the historical default; otherwise omit via KR fallback
+    // after DB CHECK + write trigger have already rejected non-pilot markets.
     countryCode: row.country_code === "JP" ? "JP" as const : "KR" as const,
     currencyCode: row.currency_code === "JPY" ? "JPY" as const : "KRW" as const,
     fulfillmentOptions,
@@ -361,6 +365,7 @@ export function mapDealSnapshot(row: DbDealSnapshot): DealSnapshot {
     buyerId: row.buyer_id,
     sellerId: row.seller_id,
     agreedPrice: Number(row.agreed_price),
+    currencyCode: row.currency_code === "JPY" ? "JPY" : "KRW",
     snapshot:
       row.snapshot && typeof row.snapshot === "object"
         ? (row.snapshot as Record<string, unknown>)

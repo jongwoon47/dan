@@ -7,7 +7,8 @@ import { useDan } from "@/domain/danContext";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
 import { CONDITION_LABEL, type Match } from "@/domain/types";
 import { isBuyDemand } from "@/domain/types";
-import { formatWon } from "@/lib/format";
+import { useDanLocale } from "@/i18n/locale";
+import { formatStoredMoney } from "@/lib/format";
 import "./matchCard.css";
 
 function formatOfferTime(iso: string): string {
@@ -41,6 +42,7 @@ function matchHref(match: Match): string {
 }
 
 export function MatchCard({ match }: { match: Match }) {
+  const locale = useDanLocale();
   const { currentUser, getProduct, state, connectAsSeller } = useDan();
   const [busy, setBusy] = useState(false);
 
@@ -68,6 +70,8 @@ export function MatchCard({ match }: { match: Match }) {
   const isBuyer = match.buyerId === currentUser.id;
   const isSeller = match.sellerId === currentUser.id;
   const status = matchStatusLabel(match);
+  const currency = demand.currencyCode ?? "KRW";
+  const money = (value: number) => formatStoredMoney(value, currency, locale);
 
   if (!sell || !ownership || !product) {
     return (
@@ -79,7 +83,7 @@ export function MatchCard({ match }: { match: Match }) {
               <strong>{demand.title}</strong>
               <span>{status}</span>
             </div>
-            <p>{formatWon(demand.budget)}</p>
+            <p>{money(demand.budget)}</p>
             <small>{formatFulfillmentSummary(demand.fulfillmentOptions)}</small>
           </div>
           <span className="trade-row-card__chevron" aria-hidden>›</span>
@@ -115,15 +119,15 @@ export function MatchCard({ match }: { match: Match }) {
               <strong>{product.name}</strong>
               <span>{status}</span>
             </div>
-            <p className="trade-row-card__price">{formatWon(sell.minimumPrice)}</p>
+            <p className="trade-row-card__price">{money(sell.minimumPrice)}</p>
             <small>
               {CONDITION_LABEL[ownership.condition]}
               {sell.conditionNote ? ` · ${sell.conditionNote}` : ""}
             </small>
             <small className={delta >= 0 ? "trade-row-card__delta is-good" : "trade-row-card__delta"}>
               {delta >= 0
-                ? `내 최대가보다 ${formatWon(delta)} 낮아요`
-                : `내 최대가보다 ${formatWon(Math.abs(delta))} 높아요`}
+                ? `내 최대가보다 ${money(delta)} 낮아요`
+                : `내 최대가보다 ${money(Math.abs(delta))} 높아요`}
             </small>
           </div>
           <div className="trade-row-card__trail">
@@ -144,8 +148,8 @@ export function MatchCard({ match }: { match: Match }) {
             <strong>{product.name}</strong>
             <span>{status}</span>
           </div>
-          <p className="trade-row-card__price">{formatWon(sell.minimumPrice)}</p>
-          <small>구매자 최대 {formatWon(buyMax)} · {formatFulfillmentSummary(demand.fulfillmentOptions)}</small>
+          <p className="trade-row-card__price">{money(sell.minimumPrice)}</p>
+          <small>구매자 최대 {money(buyMax)} · {formatFulfillmentSummary(demand.fulfillmentOptions)}</small>
         </div>
         <span className="trade-row-card__chevron" aria-hidden>›</span>
       </Link>
