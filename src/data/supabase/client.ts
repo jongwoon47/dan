@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { Capacitor } from "@capacitor/core";
 import { getSupabaseEnv, isSupabaseConfigured } from "../mode";
 
 let client: SupabaseClient | null = null;
@@ -13,7 +14,8 @@ export function getSupabase(): SupabaseClient {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: true,
+        detectSessionInUrl: !Capacitor.isNativePlatform(),
+        flowType: Capacitor.isNativePlatform() ? "pkce" : "implicit",
       },
     });
   }

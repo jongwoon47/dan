@@ -31,6 +31,15 @@ function initialOf(name: string) {
   return (name.trim().slice(0, 1) || "?").toUpperCase();
 }
 
+function chatStageLabel(match: Match): string {
+  if (match.status === "CLOSED") return "거래 종료";
+  if (match.status === "COMPLETED") return "거래 완료";
+  if (match.dealStage === "HANDOFF_READY" || match.paymentStatus === "PAID") return "인계 확인";
+  if (match.dealStage === "PAYMENT_PENDING" || match.dealStage === "DEAL_LOCKED") return "결제";
+  if (match.dealStage === "EVIDENCE_READY" || match.dealStage === "DEAL_REVIEW") return "조건 확인";
+  return "채팅 중";
+}
+
 type Preview = {
   match: Match;
   peerId: string;
@@ -169,7 +178,10 @@ export function ConversationsPage() {
                     </time>
                   ) : null}
                 </span>
-                <span className="chat-list__demand">{row.demandTitle}</span>
+                <span className="chat-list__demand">
+                  <span className="chat-list__title">{row.demandTitle}</span>
+                  <em className="chat-list__stage">{chatStageLabel(row.match)}</em>
+                </span>
                 <span className="chat-list__preview">{row.lastMessage}</span>
               </span>
             </Link>

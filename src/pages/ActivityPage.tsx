@@ -19,7 +19,7 @@ function kindVerb(kind: ActivityEvent["kind"]) {
     case "RESPONSE_DECLINED":
       return "응답이 거절됐어요";
     case "BUYER_INTEREST":
-      return "구매 관심을 표시했어요";
+      return "제안을 선택했어요";
     case "MATCH_CONNECTED":
       return "연결됐어요";
     case "MATCH_COMPLETED":
@@ -29,7 +29,7 @@ function kindVerb(kind: ActivityEvent["kind"]) {
     case "NEW_MESSAGE":
       return "메시지를 보냈어요";
     case "DEMAND_CLOSED":
-      return "글이 마감됐어요";
+      return "요청이 마감됐어요";
     default:
       return "알림이 있어요";
   }
@@ -132,7 +132,11 @@ export function ActivityPage() {
         </div>
       ) : null}
       {activities.length === 0 ? (
-        <EmptyState title={ko.activityEmpty} />
+        <EmptyState
+          title={ko.activityEmpty}
+          body="새 응답, 거래 진행, 메시지 알림이 이곳에 모여요."
+          action={<Button to="/feed" variant="secondary">요청 둘러보기</Button>}
+        />
       ) : (
         <ul className="activity-list">
           {activities.map((ev) => {

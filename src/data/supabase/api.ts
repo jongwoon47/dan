@@ -17,23 +17,36 @@ import {
   productMatchKey,
 } from "@/domain/productName";
 import type {
+  ChatMessage,
   Demand,
   DemandAggregate,
+  DealDispute,
+  DealEvidence,
+  DealEvidenceChallenge,
+  DealSnapshot,
   Match,
   Ownership,
   Product,
+  ProductCategory,
   Response,
   SellIntent,
   User,
+  UserVerificationStatus,
 } from "@/domain/types";
 import { getSupabase } from "./client";
 import {
+  mapDealDispute,
+  mapDealEvidence,
+  mapDealSnapshot,
   mapDemand,
   mapMatch,
   mapOwnership,
   mapProduct,
   mapResponse,
   mapSellIntent,
+  type DbDealDispute,
+  type DbDealEvidence,
+  type DbDealSnapshot,
   type DbDemand,
   type DbMatch,
   type DbOwnership,
@@ -41,6 +54,82 @@ import {
   type DbResponse,
   type DbSellIntent,
 } from "./mappers";
+
+const EVIDENCE_BUCKET = "dan-v1-evidence";
+const STORAGE_PREFIX = `storage://${EVIDENCE_BUCKET}/`;
+
+function decodeImageDataUrl(value: string): {
+  blob: Blob;
+  extension: "jpg" | "png" | "webp";
+} | null {
+  const match = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/i.exec(value);
+  if (!match) return null;
+  const mime = match[1]!.toLowerCase();
+  const bytes = Uint8Array.from(atob(match[2]!), (ch) => ch.charCodeAt(0));
+  const extension = mime === "image/jpeg" ? "jpg" : mime === "image/png" ? "png" : "webp";
+  return { blob: new Blob([bytes], { type: mime }), extension };
+}
+
+async function persistPrivateEvidenceImage(
+  value: string | undefined,
+  scope: "quick-offers" | "deal-evidence",
+): Promise<string | undefined> {
+  const trimmed = value?.trim();
+  if (!trimmed) return undefined;
+  if (trimmed.startsWith(STORAGE_PREFIX)) return trimmed;
+  const decoded = decodeImageDataUrl(trimmed);
+  if (!decoded) return trimmed;
+
+  const sb = getSupabase();
+  const { data: auth } = await sb.auth.getUser();
+  if (!auth.user) throw new Error("login required");
+
+  const fileId =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const objectPath = `${auth.user.id}/${scope}/${fileId}.${decoded.extension}`;
+
+  const { error } = await sb.storage
+    .from(EVIDENCE_BUCKET)
+    .upload(objectPath, decoded.blob, {
+      contentType: decoded.blob.type,
+      upsert: false,
+    });
+  if (error) throw error;
+  return `${STORAGE_PREFIX}${objectPath}`;
+}
+
+async function resolvePrivateEvidenceImage(
+  value: string | undefined,
+): Promise<string | undefined> {
+  const trimmed = value?.trim();
+  if (!trimmed || !trimmed.startsWith(STORAGE_PREFIX)) return trimmed || undefined;
+  const objectPath = trimmed.slice(STORAGE_PREFIX.length);
+  const { data, error } = await getSupabase().storage
+    .from(EVIDENCE_BUCKET)
+    .createSignedUrl(objectPath, 15 * 60);
+  if (error) return undefined;
+  return data.signedUrl;
+}
+
+async function hydrateDealEvidencePhoto(
+  evidence: DealEvidence,
+): Promise<DealEvidence> {
+  return {
+    ...evidence,
+    possessionPhotoUrl: await resolvePrivateEvidenceImage(evidence.possessionPhotoUrl),
+  };
+}
+
+async function hydrateSellIntentPhoto(
+  sellIntent: SellIntent,
+): Promise<SellIntent> {
+  return {
+    ...sellIntent,
+    quickPhotoUrl: await resolvePrivateEvidenceImage(sellIntent.quickPhotoUrl),
+  };
+}
 
 export async function fetchSessionUser(): Promise<User | null> {
   const sb = getSupabase();
@@ -59,41 +148,48 @@ export async function fetchSessionUser(): Promise<User | null> {
   };
 }
 
+export async function getMyVerificationRemote(): Promise<UserVerificationStatus> {
+  const { data, error } = await getSupabase().rpc("get_my_verification");
+  if (error) throw error;
+  const row = (data ?? {}) as Record<string, unknown>;
+  return {
+    phoneVerified: Boolean(row.phoneVerified),
+    identityVerified: Boolean(row.identityVerified),
+    payoutVerified: Boolean(row.payoutVerified),
+    sellerType:
+      row.sellerType === "INDIVIDUAL" || row.sellerType === "BUSINESS"
+        ? row.sellerType
+        : undefined,
+  };
+}
+
 export async function listProducts(): Promise<Product[]> {
   const { data, error } = await getSupabase().from("products").select("*").order("canonical_name");
   if (error) throw error;
   return ((data ?? []) as DbProduct[]).map(mapProduct);
 }
 
-/** Find or create a catalog product by display name (BUY custom requests). */
-export async function ensureProductRemote(name: string): Promise<Product> {
+/** Find or atomically create a canonical catalog product. */
+export async function ensureProductRemote(
+  name: string,
+  category: Product["category"] = "other",
+): Promise<Product> {
   const display = displayProductName(name);
   const key = productMatchKey(display);
   if (!key) throw new Error("product name required");
 
+  // Fast client-side reuse keeps search responsive; the RPC below remains the
+  // source of truth and serializes concurrent creation for the same key.
   const catalog = await listProducts();
   const matched = findProductByMatchKey(catalog, display);
   if (matched) return matched;
 
-  const sb = getSupabase();
-  const hue = 180 + ((key.length * 17) % 160);
-  const { data, error } = await sb
-    .from("products")
-    .insert({
-      canonical_name: display,
-      brand: null,
-      model: display,
-      category: "other",
-      image_hue: hue,
-    })
-    .select("*")
-    .single();
-  if (error) {
-    const again = await listProducts();
-    const recovered = findProductByMatchKey(again, display);
-    if (recovered) return recovered;
-    throw error;
-  }
+  const { data, error } = await getSupabase().rpc("ensure_product", {
+    p_name: display,
+    p_category: category,
+  });
+  if (error) throw error;
+  if (!data) throw new Error("product create failed");
   return mapProduct(data as DbProduct);
 }
 
@@ -115,6 +211,17 @@ export async function listMyDemands(userId: string): Promise<Demand[]> {
     .select("*")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
+  if (error) throw error;
+  return ((data ?? []) as DbDemand[]).map(mapDemand);
+}
+
+/** Hydrate non-active demands referenced by the current user's matches. */
+export async function listDemandsByIds(ids: string[]): Promise<Demand[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await getSupabase()
+    .from("demands")
+    .select("*")
+    .in("id", ids);
   if (error) throw error;
   return ((data ?? []) as DbDemand[]).map(mapDemand);
 }
@@ -174,7 +281,11 @@ export async function listOpenSellIntents(): Promise<SellIntent[]> {
     .select("*")
     .eq("status", "OPEN");
   if (error) throw error;
-  return ((data ?? []) as DbSellIntent[]).map(mapSellIntent);
+  return Promise.all(
+    ((data ?? []) as DbSellIntent[]).map((row) =>
+      hydrateSellIntentPhoto(mapSellIntent(row)),
+    ),
+  );
 }
 
 export async function listMySellIntents(userId: string): Promise<SellIntent[]> {
@@ -183,7 +294,25 @@ export async function listMySellIntents(userId: string): Promise<SellIntent[]> {
     .select("*")
     .eq("user_id", userId);
   if (error) throw error;
-  return ((data ?? []) as DbSellIntent[]).map(mapSellIntent);
+  return Promise.all(
+    ((data ?? []) as DbSellIntent[]).map((row) =>
+      hydrateSellIntentPhoto(mapSellIntent(row)),
+    ),
+  );
+}
+
+export async function listSellIntentsByIds(ids: string[]): Promise<SellIntent[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await getSupabase()
+    .from("sell_intents")
+    .select("*")
+    .in("id", ids);
+  if (error) throw error;
+  return Promise.all(
+    ((data ?? []) as DbSellIntent[]).map((row) =>
+      hydrateSellIntentPhoto(mapSellIntent(row)),
+    ),
+  );
 }
 
 export async function listMyResponses(userId: string): Promise<Response[]> {
@@ -231,6 +360,63 @@ export async function listBuyAggregates(): Promise<
     highestIntentPrice: Number(row.highest_intent_price),
     priceBuckets: [],
   }));
+}
+
+export type RemoteLiveDemandRow = {
+  product: Product;
+  aggregate: DemandAggregate;
+  latestDemandAt: string;
+};
+
+export async function searchLiveDemandRemote(input: {
+  query?: string;
+  category?: ProductCategory | "all";
+  sort?: "popular" | "growing" | "price";
+  limit?: number;
+  offset?: number;
+}): Promise<{ rows: RemoteLiveDemandRow[]; total: number }> {
+  const { data, error } = await getSupabase().rpc("search_live_demand", {
+    p_query: input.query?.trim() ?? "",
+    p_category:
+      !input.category || input.category === "all" ? null : input.category,
+    p_sort: input.sort ?? "popular",
+    p_limit: input.limit ?? 24,
+    p_offset: input.offset ?? 0,
+  });
+  if (error) throw error;
+
+  const rawRows = (data ?? []) as Array<Record<string, unknown>>;
+  const rows: RemoteLiveDemandRow[] = rawRows.map((row) => ({
+    product: {
+      id: String(row.product_id),
+      name: String(row.canonical_name),
+      brand: String(row.brand ?? ""),
+      model: String(row.model ?? ""),
+      category: String(row.category) as ProductCategory,
+      imageHue: Number(row.image_hue ?? 220),
+      createdAt: String(row.product_created_at),
+    },
+    aggregate: {
+      productId: String(row.product_id),
+      seekerCount: Number(row.seeker_count ?? 0),
+      minPrice: Number(row.min_price ?? 0),
+      maxPrice: Number(row.max_price ?? 0),
+      avgPrice: Number(row.avg_price ?? 0),
+      recent7dDelta: Number(row.recent_7d_delta ?? 0),
+      highestIntentPrice: Number(row.highest_intent_price ?? 0),
+      priceBuckets: [],
+      fulfillmentSummary:
+        typeof row.fulfillment_summary === "string"
+          ? row.fulfillment_summary
+          : undefined,
+    },
+    latestDemandAt: String(row.latest_demand_at ?? row.product_created_at),
+  }));
+
+  return {
+    rows,
+    total: rawRows.length ? Number(rawRows[0]?.total_count ?? rawRows.length) : 0,
+  };
 }
 
 export async function createDemandRemote(input: CreateDemandInput): Promise<Demand> {
@@ -374,29 +560,10 @@ export async function createOwnershipRemote(input: {
   productId: string;
   condition: Ownership["condition"];
 }): Promise<Ownership> {
-  const sb = getSupabase();
-  const { data: auth } = await sb.auth.getUser();
-  if (!auth.user) throw new Error("login required");
-
-  const existing = await sb
-    .from("ownerships")
-    .select("*")
-    .eq("user_id", auth.user.id)
-    .eq("product_id", input.productId)
-    .eq("status", "OWNED")
-    .maybeSingle();
-  if (existing.data) return mapOwnership(existing.data as DbOwnership);
-
-  const { data, error } = await sb
-    .from("ownerships")
-    .insert({
-      user_id: auth.user.id,
-      product_id: input.productId,
-      condition: input.condition,
-      status: "OWNED",
-    })
-    .select("*")
-    .single();
+  const { data, error } = await getSupabase().rpc("ensure_ownership", {
+    p_product_id: input.productId,
+    p_condition: input.condition,
+  });
   if (error) throw error;
   return mapOwnership(data as DbOwnership);
 }
@@ -404,50 +571,28 @@ export async function createOwnershipRemote(input: {
 export async function upsertSellIntentRemote(input: {
   ownershipId: string;
   minimumPrice: number;
+  targetDemandId?: string;
+  tradeMethod?: import("@/domain/types").TradeMethod;
+  approxUsageCount?: number;
+  conditionNote?: string;
+  quickPhotoUrl?: string;
 }): Promise<SellIntent> {
-  const sb = getSupabase();
-  const { data: auth } = await sb.auth.getUser();
-  if (!auth.user) throw new Error("login required");
+  const storedQuickPhoto = await persistPrivateEvidenceImage(
+    input.quickPhotoUrl,
+    "quick-offers",
+  );
 
-  const { data: ownership, error: ownErr } = await sb
-    .from("ownerships")
-    .select("*")
-    .eq("id", input.ownershipId)
-    .single();
-  if (ownErr) throw ownErr;
-  if (ownership.user_id !== auth.user.id) throw new Error("forbidden");
-
-  const { data: open } = await sb
-    .from("sell_intents")
-    .select("*")
-    .eq("ownership_id", input.ownershipId)
-    .eq("status", "OPEN")
-    .maybeSingle();
-
-  if (open) {
-    const { data, error } = await sb
-      .from("sell_intents")
-      .update({ minimum_price: input.minimumPrice })
-      .eq("id", open.id)
-      .select("*")
-      .single();
-    if (error) throw error;
-    return mapSellIntent(data as DbSellIntent);
-  }
-
-  const { data, error } = await sb
-    .from("sell_intents")
-    .insert({
-      ownership_id: input.ownershipId,
-      user_id: auth.user.id,
-      product_id: ownership.product_id,
-      minimum_price: input.minimumPrice,
-      status: "OPEN",
-    })
-    .select("*")
-    .single();
+  const { data, error } = await getSupabase().rpc("upsert_quick_offer", {
+    p_ownership_id: input.ownershipId,
+    p_minimum_price: input.minimumPrice,
+    p_target_demand_id: input.targetDemandId ?? null,
+    p_trade_method: input.tradeMethod ?? "any",
+    p_approx_usage_count: input.approxUsageCount ?? null,
+    p_condition_note: input.conditionNote?.trim() ?? "",
+    p_quick_photo_url: storedQuickPhoto ?? null,
+  });
   if (error) throw error;
-  return mapSellIntent(data as DbSellIntent);
+  return hydrateSellIntentPhoto(mapSellIntent(data as DbSellIntent));
 }
 
 export async function createResponseRemote(input: {
@@ -538,28 +683,63 @@ export async function updateDemandRemote(input: {
   return demand;
 }
 
-export async function listMessagesRemote(matchId: string) {
-  const { data, error } = await getSupabase()
-    .from("messages")
-    .select("*")
-    .eq("match_id", matchId)
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []).map((row: {
-    id: string;
-    match_id: string;
-    sender_id: string;
-    body: string;
-    created_at: string;
-    read_at: string | null;
-  }) => ({
+type DbChatMessageRow = {
+  id: string;
+  match_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+  read_at: string | null;
+};
+
+function mapChatMessage(row: DbChatMessageRow): ChatMessage {
+  return {
     id: row.id,
     matchId: row.match_id,
     senderId: row.sender_id,
     body: row.body,
     createdAt: row.created_at,
     readAt: row.read_at ?? undefined,
-  }));
+  };
+}
+
+export async function listMessagesRemote(matchId: string): Promise<ChatMessage[]> {
+  const { data, error } = await getSupabase()
+    .from("messages")
+    .select("*")
+    .eq("match_id", matchId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return ((data ?? []) as DbChatMessageRow[]).map(mapChatMessage);
+}
+
+export function subscribeMessagesRemote(
+  matchId: string,
+  onMessage: (message: ChatMessage) => void,
+  onStatus?: (status: string) => void,
+): () => void {
+  const sb = getSupabase();
+  const channel = sb
+    .channel(`dan-match-${matchId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "messages",
+        filter: `match_id=eq.${matchId}`,
+      },
+      (payload) => {
+        const row = payload.new as unknown as DbChatMessageRow;
+        if (!row?.id || row.match_id !== matchId) return;
+        onMessage(mapChatMessage(row));
+      },
+    )
+    .subscribe((status) => onStatus?.(status));
+
+  return () => {
+    void sb.removeChannel(channel);
+  };
 }
 
 export async function sendMessageRemote(matchId: string, body: string) {
@@ -643,10 +823,11 @@ export async function fetchPublicProfile(userId: string) {
     else if (provider === "email") authLabel = "이메일로 가입";
   }
 
-  const { data: trustRaw, error: trustError } = await sb.rpc(
-    "get_public_profile_trust",
-    { p_user_id: userId },
-  );
+  const [{ data: trustRaw, error: trustError }, { data: verificationRaw }] =
+    await Promise.all([
+      sb.rpc("get_public_profile_trust", { p_user_id: userId }),
+      sb.rpc("get_public_verification_badges", { p_user_id: userId }),
+    ]);
   // Migration 0011 may not be applied yet — still show the trust card shell.
   const trust = (
     trustError ? {} : ((trustRaw ?? {}) as Record<string, unknown>)
@@ -654,6 +835,10 @@ export async function fetchPublicProfile(userId: string) {
     completedDemandCount?: number;
     responseConnectionCount?: number;
     connectionCount?: number;
+    buyerFaultCancellationCount?: number;
+    sellerFaultCancellationCount?: number;
+    unresolvedDisputeCount?: number;
+    confirmedMismatchCount?: number;
     recentActivity?: Array<{
       id: string;
       type: string;
@@ -671,6 +856,7 @@ export async function fetchPublicProfile(userId: string) {
   };
 
   const isSelf = trust.viewerIsSelf ?? viewerIsSelf;
+  const verification = (verificationRaw ?? {}) as Record<string, unknown>;
 
   return {
     id: profile.id as string,
@@ -684,6 +870,11 @@ export async function fetchPublicProfile(userId: string) {
     connectionCount: trust.connectionCount ?? 0,
     completedDemandCount: trust.completedDemandCount ?? 0,
     responseConnectionCount: trust.responseConnectionCount ?? 0,
+    buyerFaultCancellationCount: trust.buyerFaultCancellationCount ?? 0,
+    sellerFaultCancellationCount: trust.sellerFaultCancellationCount ?? 0,
+    unresolvedDisputeCount: trust.unresolvedDisputeCount ?? 0,
+    confirmedMismatchCount: trust.confirmedMismatchCount ?? 0,
+    identityVerified: Boolean(verification.identityVerified),
     authLabel,
     recentActivity: (trust.recentActivity ?? []).map((row) => {
       const statusKo =
@@ -744,25 +935,16 @@ export async function updateMyProfileRemote(input: {
 }
 
 export async function blockUserRemote(blockedId: string) {
-  const sb = getSupabase();
-  const { data: auth } = await sb.auth.getUser();
-  if (!auth.user) throw new Error("login required");
-  const { error } = await sb.from("blocks").insert({
-    blocker_id: auth.user.id,
-    blocked_id: blockedId,
+  const { error } = await getSupabase().rpc("block_user", {
+    p_blocked_id: blockedId,
   });
   if (error) throw error;
 }
 
 export async function unblockUserRemote(blockedId: string) {
-  const sb = getSupabase();
-  const { data: auth } = await sb.auth.getUser();
-  if (!auth.user) throw new Error("login required");
-  const { error } = await sb
-    .from("blocks")
-    .delete()
-    .eq("blocker_id", auth.user.id)
-    .eq("blocked_id", blockedId);
+  const { error } = await getSupabase().rpc("unblock_user", {
+    p_blocked_id: blockedId,
+  });
   if (error) throw error;
 }
 
@@ -783,14 +965,10 @@ export async function reportUserRemote(input: {
   reason: "spam" | "fraud" | "abuse" | "other";
   detail?: string;
 }) {
-  const sb = getSupabase();
-  const { data: auth } = await sb.auth.getUser();
-  if (!auth.user) throw new Error("login required");
-  const { error } = await sb.from("reports").insert({
-    reporter_id: auth.user.id,
-    target_user_id: input.targetUserId,
-    reason: input.reason,
-    detail: input.detail ?? null,
+  const { error } = await getSupabase().rpc("submit_user_report", {
+    p_target_user_id: input.targetUserId,
+    p_reason: input.reason,
+    p_detail: input.detail ?? "",
   });
   if (error) throw error;
 }
@@ -813,6 +991,131 @@ export async function expressBuyerInterestRemote(
   });
   if (error) throw error;
   return mapMatch(data as DbMatch);
+}
+
+export async function listDealDisputesRemote(
+  matchId: string,
+): Promise<DealDispute[]> {
+  const { data, error } = await getSupabase()
+    .from("deal_disputes")
+    .select("*")
+    .eq("match_id", matchId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return ((data ?? []) as DbDealDispute[]).map(mapDealDispute);
+}
+
+export async function openDealDisputeRemote(input: {
+  matchId: string;
+  reason: DealDispute["reason"];
+  detail?: string;
+}): Promise<DealDispute> {
+  const { data, error } = await getSupabase().rpc("open_deal_dispute", {
+    p_match_id: input.matchId,
+    p_reason: input.reason,
+    p_detail: input.detail ?? "",
+  });
+  if (error) throw error;
+  return mapDealDispute(data as DbDealDispute);
+}
+
+export async function issueDealEvidenceChallengeRemote(
+  matchId: string,
+): Promise<DealEvidenceChallenge> {
+  const { data, error } = await getSupabase().rpc("issue_deal_evidence_challenge", {
+    p_match_id: matchId,
+  });
+  if (error) throw error;
+  const row = data as Record<string, unknown>;
+  return {
+    id: String(row.id),
+    matchId: String(row.match_id),
+    sellerId: String(row.seller_id),
+    challengeCode: String(row.challenge_code),
+    expiresAt: String(row.expires_at),
+    consumedAt: row.consumed_at ? String(row.consumed_at) : undefined,
+    createdAt: String(row.created_at),
+  };
+}
+
+export async function getDealEvidenceRemote(
+  matchId: string,
+): Promise<DealEvidence | null> {
+  const { data, error } = await getSupabase()
+    .from("deal_evidence")
+    .select("*")
+    .eq("match_id", matchId)
+    .maybeSingle();
+  if (error) throw error;
+  return data
+    ? hydrateDealEvidencePhoto(mapDealEvidence(data as DbDealEvidence))
+    : null;
+}
+
+export async function upsertDealEvidenceRemote(input: {
+  matchId: string;
+  challengeCode: string;
+  possessionPhotoUrl?: string;
+  serialLast4?: string;
+  usageCount?: number;
+  purchaseDate?: string;
+  warrantyUntil?: string;
+  components?: string[];
+  cosmeticNotes?: string;
+  knownIssues?: string;
+  repairHistory?: string;
+  waterDamageStatement?: string;
+  evidenceMeta?: Record<string, unknown>;
+}): Promise<DealEvidence> {
+  const storedPossessionPhoto = await persistPrivateEvidenceImage(
+    input.possessionPhotoUrl,
+    "deal-evidence",
+  );
+  const { data, error } = await getSupabase().rpc("upsert_deal_evidence", {
+    p_match_id: input.matchId,
+    p_payload: {
+      possessionPhotoUrl: storedPossessionPhoto ?? "",
+      challengeCode: input.challengeCode,
+      serialLast4: input.serialLast4 ?? "",
+      usageCount: input.usageCount ?? null,
+      purchaseDate: input.purchaseDate ?? "",
+      warrantyUntil: input.warrantyUntil ?? "",
+      components: input.components ?? [],
+      cosmeticNotes: input.cosmeticNotes ?? "",
+      knownIssues: input.knownIssues ?? "",
+      repairHistory: input.repairHistory ?? "",
+      waterDamageStatement: input.waterDamageStatement ?? "",
+      evidenceMeta: input.evidenceMeta ?? {},
+    },
+  });
+  if (error) throw error;
+  return hydrateDealEvidencePhoto(mapDealEvidence(data as DbDealEvidence));
+}
+
+export async function getDealSnapshotRemote(
+  matchId: string,
+): Promise<DealSnapshot | null> {
+  const { data, error } = await getSupabase()
+    .from("deal_snapshots")
+    .select("*")
+    .eq("match_id", matchId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? mapDealSnapshot(data as DbDealSnapshot) : null;
+}
+
+export async function confirmDealSnapshotRemote(input: {
+  matchId: string;
+  agreedPrice: number;
+  snapshot: Record<string, unknown>;
+}): Promise<DealSnapshot> {
+  const { data, error } = await getSupabase().rpc("confirm_deal_snapshot", {
+    p_match_id: input.matchId,
+    p_agreed_price: input.agreedPrice,
+    p_snapshot: input.snapshot,
+  });
+  if (error) throw error;
+  return mapDealSnapshot(data as DbDealSnapshot);
 }
 
 export async function sellerConnectRemote(matchId: string): Promise<Match> {
@@ -841,6 +1144,18 @@ export async function closeMatchRemote(matchId: string): Promise<Match> {
   return mapMatch(data as DbMatch);
 }
 
+export async function cancelDealRemote(input: {
+  matchId: string;
+  reason: import("@/domain/types").CancelReason;
+}): Promise<Match> {
+  const { data, error } = await getSupabase().rpc("cancel_deal", {
+    p_match_id: input.matchId,
+    p_reason: input.reason,
+  });
+  if (error) throw error;
+  return mapMatch(data as DbMatch);
+}
+
 export async function reopenDemandAfterTradeCloseRemote(
   matchId: string,
 ): Promise<Demand> {
@@ -850,6 +1165,66 @@ export async function reopenDemandAfterTradeCloseRemote(
   );
   if (error) throw error;
   return mapDemand(data as DbDemand);
+}
+
+export async function isDanAdminRemote(): Promise<boolean> {
+  const { data, error } = await getSupabase().rpc("is_dan_admin");
+  if (error) return false;
+  return Boolean(data);
+}
+
+export async function listAdminRiskFlagsRemote() {
+  const { data, error } = await getSupabase()
+    .from("risk_flags")
+    .select("id,user_id,match_id,sell_intent_id,kind,severity,status,detail,created_at,resolved_at")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function listAdminDisputesRemote() {
+  const { data, error } = await getSupabase()
+    .from("deal_disputes")
+    .select("id,match_id,opened_by,reason,detail,status,attributed_fault,resolution_note,created_at,resolved_at")
+    .in("status", ["OPEN", "REVIEWING"])
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function listAdminDealsRemote() {
+  const { data, error } = await getSupabase()
+    .from("matches")
+    .select("id,demand_id,product_id,buyer_id,seller_id,status,deal_stage,payment_status,payment_due_at,cancel_reason,created_at,completed_at")
+    .in("status", ["CONNECTED", "COMPLETED", "CLOSED"])
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function listAdminAuditRemote() {
+  const { data, error } = await getSupabase()
+    .from("admin_audit_log")
+    .select("id,actor_id,action,target_type,target_id,detail,created_at")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function updateAdminRiskFlagRemote(
+  flagId: string,
+  status: "OPEN" | "REVIEWING" | "RESOLVED" | "DISMISSED",
+) {
+  const { data, error } = await getSupabase().rpc("admin_update_risk_flag", {
+    p_flag_id: flagId,
+    p_status: status,
+  });
+  if (error) throw error;
+  return data;
 }
 
 export async function signUp(email: string, password: string, displayName: string) {

@@ -1,157 +1,372 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AggregatedDemandCard } from "@/components/AggregatedDemandCard";
 import { IndividualDemandCard } from "@/components/IndividualDemandCard";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { Chip, TextInput } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { ko } from "@/copy/ko";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { TextInput } from "@/components/ui/Input";
+import {
+  searchLiveDemandRemote,
+  type RemoteLiveDemandRow,
+} from "@/data/supabase/api";
+import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
-import { buildFeedItems } from "@/domain/feed";
-import type { FeedAreaFilter } from "@/domain/fulfillment";
-import { formatFulfillmentCardLine } from "@/domain/fulfillment";
-import type { DemandType } from "@/domain/types";
-import { DEMAND_TYPE_LABEL } from "@/domain/types";
+import {
+  filterAndSortLiveDemand,
+  liveDemandCategoryCounts,
+  type LiveDemandCategory,
+  type LiveDemandRow,
+  type LiveDemandSort,
+} from "@/domain/liveDemandDiscovery";
+import {
+  CATEGORY_LABEL,
+  DEMAND_TYPE_LABEL,
+  type DemandType,
+  type FeedItem,
+} from "@/domain/types";
 import "./pages.css";
 import "@/components/feedCards.css";
 
-type Filter = "all" | DemandType;
+const PAGE_SIZE = 24;
+
+const SORT_OPTIONS: Array<{ value: LiveDemandSort; label: string }> = [
+  { value: "popular", label: "인기" },
+  { value: "growing", label: "급상승" },
+  { value: "price", label: "가격" },
+];
+
+type RequestTypeFilter = "all" | DemandType;
+
+const REQUEST_TYPES: Array<{ value: RequestTypeFilter; label: string }> = [
+  { value: "all", label: "전체" },
+  { value: "BUY", label: "구매" },
+  { value: "BORROW", label: "빌리기" },
+  { value: "TASK", label: "심부름" },
+  { value: "SERVICE", label: "서비스" },
+];
+
+function toFeedRow(row: RemoteLiveDemandRow): LiveDemandRow {
+  return {
+    kind: "aggregated",
+    id: `remote:${row.product.id}`,
+    product: row.product,
+    aggregate: row.aggregate,
+    sortAt: row.latestDemandAt,
+  };
+}
+
+function matchesIndividualQuery(item: Extract<FeedItem, { kind: "individual" }>, raw: string) {
+  const query = raw.trim().toLocaleLowerCase("ko-KR");
+  if (!query) return true;
+  const demand = item.demand;
+  const hay = [
+    demand.title,
+    demand.description,
+    DEMAND_TYPE_LABEL[demand.type],
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLocaleLowerCase("ko-KR");
+  return hay.includes(query);
+}
 
 export function DemandFeedPage() {
-  const { state, currentUser, demandFeed, products } = useDan();
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<Filter>("all");
-  const [areaFilter, setAreaFilter] = useState<FeedAreaFilter>("all");
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const { demandFeed } = useDan();
+  const [params] = useSearchParams();
+  const urlQuery = params.get("q")?.trim() ?? "";
+  const [query, setQuery] = useState(urlQuery);
+  const [requestType, setRequestType] = useState<RequestTypeFilter>("all");
+  const [category, setCategory] = useState<LiveDemandCategory>("all");
+  const [sort, setSort] = useState<LiveDemandSort>("popular");
+  const [page, setPage] = useState(0);
+  const [remoteRows, setRemoteRows] = useState<LiveDemandRow[]>([]);
+  const [remoteTotal, setRemoteTotal] = useState(0);
+  const [remoteLoading, setRemoteLoading] = useState(false);
+  const [remoteReady, setRemoteReady] = useState(false);
+  const productionDiscovery = getDataMode() === "supabase";
+  const includesBuy = requestType === "all" || requestType === "BUY";
 
-  const hasArea = Boolean(currentUser?.defaultArea?.trim());
+  useEffect(() => {
+    setQuery(urlQuery);
+    setPage(0);
+  }, [urlQuery]);
 
-  const areaFeed = useMemo(
-    () =>
-      buildFeedItems(products, state.demands, {
-        areaFilter,
-        viewerDefaultArea: currentUser?.defaultArea ?? "",
-      }),
-    [products, state.demands, areaFilter, currentUser?.defaultArea],
+  const categoryRows = useMemo(
+    () => liveDemandCategoryCounts(demandFeed),
+    [demandFeed],
   );
 
-  const source = areaFilter === "all" ? demandFeed : areaFeed;
+  const localBuyRows = useMemo(
+    () =>
+      filterAndSortLiveDemand(demandFeed, {
+        query,
+        category,
+        sort,
+      }),
+    [category, demandFeed, query, sort],
+  );
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return source.filter((item) => {
-      if (filter !== "all") {
-        if (item.kind === "aggregated" && filter !== "BUY") return false;
-        if (item.kind === "individual" && item.demand.type !== filter) return false;
-      }
-      if (!q) return true;
-      if (item.kind === "aggregated") {
-        return (
-          item.product.name.toLowerCase().includes(q) ||
-          item.product.brand.toLowerCase().includes(q) ||
-          (item.aggregate.fulfillmentSummary ?? "").toLowerCase().includes(q)
-        );
-      }
-      return (
-        item.demand.title.toLowerCase().includes(q) ||
-        formatFulfillmentCardLine(item.demand.fulfillmentOptions)
-          .toLowerCase()
-          .includes(q) ||
-        item.demand.description.toLowerCase().includes(q)
-      );
-    });
-  }, [source, filter, query]);
+  const individualRows = useMemo(
+    () =>
+      demandFeed
+        .filter(
+          (item): item is Extract<FeedItem, { kind: "individual" }> =>
+            item.kind === "individual" &&
+            (requestType === "all" || item.demand.type === requestType) &&
+            matchesIndividualQuery(item, query),
+        )
+        .sort((a, b) => b.sortAt.localeCompare(a.sortAt)),
+    [demandFeed, query, requestType],
+  );
+
+  useEffect(() => {
+    if (!productionDiscovery || !includesBuy) {
+      setRemoteRows([]);
+      setRemoteTotal(0);
+      setRemoteReady(false);
+      setRemoteLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      setRemoteLoading(true);
+      void searchLiveDemandRemote({
+        query,
+        category,
+        sort,
+        limit: PAGE_SIZE,
+        offset: page * PAGE_SIZE,
+      })
+        .then((result) => {
+          if (cancelled) return;
+          const next = result.rows.map(toFeedRow);
+          setRemoteRows((prev) => {
+            if (page === 0) return next;
+            const map = new Map(prev.map((row) => [row.product.id, row]));
+            for (const row of next) map.set(row.product.id, row);
+            return [...map.values()];
+          });
+          setRemoteTotal(result.total);
+          setRemoteReady(true);
+        })
+        .catch(() => {
+          if (!cancelled) setRemoteReady(false);
+        })
+        .finally(() => {
+          if (!cancelled) setRemoteLoading(false);
+        });
+    }, 180);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [category, includesBuy, page, productionDiscovery, query, sort]);
+
+  const buyRows =
+    includesBuy
+      ? productionDiscovery && remoteReady
+        ? remoteRows
+        : localBuyRows
+      : [];
+
+  const visibleFeed = useMemo<FeedItem[]>(() => {
+    if (requestType === "BUY") return buyRows;
+    if (requestType !== "all") return individualRows;
+    return [...buyRows, ...individualRows].sort(
+      (a, b) => b.sortAt.localeCompare(a.sortAt),
+    );
+  }, [buyRows, individualRows, requestType]);
+
+  const hasMore =
+    requestType === "BUY" &&
+    productionDiscovery &&
+    remoteReady &&
+    remoteRows.length < remoteTotal;
+
+  const demandHref = query.trim()
+    ? `/create?type=BUY&q=${encodeURIComponent(query.trim())}`
+    : "/create";
+
+  function resetRemoteDiscovery() {
+    setRemoteRows([]);
+    setRemoteTotal(0);
+    setRemoteReady(false);
+  }
+
+  function updateQuery(value: string) {
+    resetRemoteDiscovery();
+    setQuery(value);
+    setPage(0);
+  }
+
+  function updateCategory(value: LiveDemandCategory) {
+    resetRemoteDiscovery();
+    setCategory(value);
+    setPage(0);
+  }
+
+  function updateSort(value: LiveDemandSort) {
+    resetRemoteDiscovery();
+    setSort(value);
+    setPage(0);
+  }
+
+  function updateType(value: RequestTypeFilter) {
+    resetRemoteDiscovery();
+    setRequestType(value);
+    setPage(0);
+    if (value !== "BUY") setCategory("all");
+  }
 
   return (
-    <div className="page-stack">
-      <header className="page-header">
-        <h1 className="page-title">{ko.feedTitle}</h1>
-        <p className="section-desc">{ko.feedDesc}</p>
+    <div className="page-stack discovery-page discovery-page--v3">
+      <header className="page-header discovery-header">
+        <span className="eyebrow">탐색</span>
+        <h1 className="page-title">지금 올라온 요청</h1>
+        <p className="section-desc">
+          물건 구매부터 빌리기, 심부름, 서비스까지 올라온 요청을 둘러보세요.
+        </p>
       </header>
 
-      <TextInput
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder={ko.searchPh}
-        aria-label={ko.searchPh}
-      />
+      <section className="discovery-panel" aria-label="요청 탐색">
+        <div className="discovery-search">
+          <span className="discovery-search__icon" aria-hidden>
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="10.5" cy="10.5" r="5.75" stroke="currentColor" strokeWidth="1.8" />
+              <path d="m15 15 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </span>
+          <TextInput
+            value={query}
+            onChange={(e) => updateQuery(e.target.value)}
+            placeholder="물건, 심부름, 서비스 검색"
+            aria-label="요청 검색"
+            autoComplete="off"
+          />
+          {query ? (
+            <button
+              type="button"
+              className="discovery-search__clear"
+              aria-label="검색어 지우기"
+              onClick={() => updateQuery("")}
+            >
+              ×
+            </button>
+          ) : null}
+        </div>
 
-      <div className="feed-filter-bar">
-        <div className="feed-filter-scroll" role="toolbar" aria-label="유형 필터">
-          <Chip selected={filter === "all"} onClick={() => setFilter("all")}>
-            {ko.all}
-          </Chip>
-          {(["BUY", "BORROW", "TASK", "SERVICE"] as DemandType[]).map((t) => (
-            <Chip key={t} selected={filter === t} onClick={() => setFilter(t)}>
-              {DEMAND_TYPE_LABEL[t]}
-            </Chip>
+        <div className="request-type-filter" aria-label="요청 유형">
+          {REQUEST_TYPES.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              className={requestType === option.value ? "is-active" : ""}
+              onClick={() => updateType(option.value)}
+            >
+              {option.label}
+            </button>
           ))}
         </div>
-        <button
-          type="button"
-          className={
-            filtersOpen || areaFilter !== "all"
-              ? "feed-filter-toggle is-active"
-              : "feed-filter-toggle"
-          }
-          onClick={() => setFiltersOpen((v) => !v)}
-        >
-          {ko.filterMore}
-        </button>
-      </div>
 
-          {filtersOpen ? (
-            <div className="feed-filter-scroll" role="toolbar" aria-label="지역 필터">
-              <Chip selected={areaFilter === "all"} onClick={() => setAreaFilter("all")}>
-                {ko.all}
-              </Chip>
-              <Chip
-                selected={areaFilter === "nearby"}
-                disabled={!hasArea}
-                title={!hasArea ? ko.setAreaForNearby : undefined}
-                onClick={() => {
-                  if (!hasArea) return;
-                  setAreaFilter("nearby");
-                }}
+        {requestType === "BUY" ? (
+          <>
+            <div className="discovery-filter-scroll" aria-label="제품 카테고리">
+              <button
+                type="button"
+                className={category === "all" ? "discovery-chip is-active" : "discovery-chip"}
+                onClick={() => updateCategory("all")}
               >
-                {ko.filterNearby}
-              </Chip>
-              <Chip
-                selected={areaFilter === "online"}
-                onClick={() => setAreaFilter("online")}
-              >
-                {ko.filterOnline}
-              </Chip>
+                전체
+              </button>
+              {categoryRows.map(([itemCategory, count]) => (
+                <button
+                  key={itemCategory}
+                  type="button"
+                  className={category === itemCategory ? "discovery-chip is-active" : "discovery-chip"}
+                  onClick={() => updateCategory(itemCategory)}
+                >
+                  {CATEGORY_LABEL[itemCategory]} <span>{count}</span>
+                </button>
+              ))}
             </div>
-          ) : null}
-          {filtersOpen && !hasArea ? (
-            <p className="section-desc">{ko.setAreaForNearby}</p>
-          ) : null}
 
-      {filtered.length === 0 ? (
+            <div className="discovery-toolbar">
+              <p className="discovery-summary">
+                <strong>{buyRows.length}</strong>개 제품
+              </p>
+              <div className="discovery-sort" aria-label="정렬">
+                {SORT_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={sort === option.value ? "is-active" : ""}
+                    aria-pressed={sort === option.value}
+                    onClick={() => updateSort(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="discovery-toolbar discovery-toolbar--simple">
+            <p className="discovery-summary" aria-live="polite">
+              <strong>{visibleFeed.length}</strong>개 요청
+            </p>
+          </div>
+        )}
+      </section>
+
+      {visibleFeed.length === 0 && !remoteLoading ? (
         <EmptyState
-          title={ko.noSearch}
-          body={ko.noSearchBody}
-          action={
-            <Button to="/create" variant="secondary">
-              {ko.ctaCreate}
-            </Button>
-          }
+          title={query.trim() ? `‘${query.trim()}’ 요청이 아직 없어요` : "조건에 맞는 요청이 없어요"}
+          body="필요한 것을 먼저 요청하면 다른 사람이 제안할 수 있어요."
+          action={<Button to={demandHref}>요청 올리기</Button>}
         />
       ) : (
-        <div className="feed-list">
-          {filtered.map((item) =>
-            item.kind === "aggregated" ? (
-              <AggregatedDemandCard
-                key={item.id}
-                product={item.product}
-                aggregate={item.aggregate}
-              />
-            ) : (
-              <IndividualDemandCard key={item.id} demand={item.demand} />
-            ),
-          )}
-        </div>
+        <>
+          <div className="mixed-demand-list" aria-busy={remoteLoading}>
+            {visibleFeed.map((item) =>
+              item.kind === "aggregated" ? (
+                <AggregatedDemandCard
+                  key={item.id}
+                  product={item.product}
+                  aggregate={item.aggregate}
+                />
+              ) : (
+                <IndividualDemandCard key={item.id} demand={item.demand} />
+              ),
+            )}
+          </div>
+
+          {remoteLoading ? (
+            <p className="discovery-loading" role="status">요청 불러오는 중…</p>
+          ) : null}
+
+          {hasMore ? (
+            <Button
+              variant="secondary"
+              fullWidth
+              onClick={() => setPage((value) => value + 1)}
+            >
+              더 보기
+            </Button>
+          ) : null}
+        </>
       )}
+
+      <section className="discovery-create-banner">
+        <div>
+          <span>원하는 요청이 없나요?</span>
+          <strong>구매, 빌리기, 심부름, 서비스 중 필요한 요청을 먼저 올려보세요.</strong>
+        </div>
+        <Button to="/create" variant="secondary">
+          요청 올리기
+        </Button>
+      </section>
     </div>
   );
 }

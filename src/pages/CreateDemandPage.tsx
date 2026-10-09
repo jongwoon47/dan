@@ -14,7 +14,7 @@ import type {
   ConditionPreference,
   DemandType,
 } from "@/domain/types";
-import { CONDITION_LABEL, DEMAND_TYPE_LABEL } from "@/domain/types";
+import { CONDITION_LABEL } from "@/domain/types";
 import {
   clearCreateDraft,
   loadCreateDraft,
@@ -39,6 +39,45 @@ import "./pages.css";
 import "@/components/feedCards.css";
 
 const TYPES: DemandType[] = ["BUY", "BORROW", "TASK", "SERVICE"];
+
+const TYPE_META: Record<DemandType, { label: string; desc: string }> = {
+  BUY: { label: "구매", desc: "사고 싶은 물건이 있어요" },
+  BORROW: { label: "빌리기", desc: "잠깐 빌리고 싶어요" },
+  TASK: { label: "심부름", desc: "대신 해줄 일을 찾고 있어요" },
+  SERVICE: { label: "서비스", desc: "전문가의 도움이 필요해요" },
+};
+
+function RequestTypeIcon({ type }: { type: DemandType }) {
+  if (type === "BUY") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M6.5 8.5h11l-1 10h-9l-1-10Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+        <path d="M9 9V7.5a3 3 0 0 1 6 0V9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (type === "BORROW") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M5 8h12.5M15 5.5 17.5 8 15 10.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M19 16H6.5M9 13.5 6.5 16 9 18.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (type === "TASK") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M7 5.5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-10a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="1.8" />
+        <path d="m8.5 12 2 2 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M14.8 6.2a4.2 4.2 0 0 0-5.4 5.4L5.2 15.8a1.8 1.8 0 1 0 2.6 2.6l4.2-4.2a4.2 4.2 0 0 0 5.4-5.4l-2.5 2.5-2.2-2.2 2.1-2.9Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 const CONDITIONS: ConditionPreference[] = ["sealed", "like_new", "lightly_used", "any"];
 
 type TaskMode = "onsite" | "pickup" | "route" | "remote";
@@ -93,13 +132,14 @@ export function CreateDemandPage() {
   const [params] = useSearchParams();
   const draft = loadCreateDraft();
   const paramType = parseType(params.get("type"));
+  const paramQuery = params.get("q")?.trim() ?? "";
 
   const [type, setType] = useState<DemandType | null>(
     paramType ?? draft?.type ?? null,
   );
   const [title, setTitle] = useState(draft?.title ?? "");
   const [productId, setProductId] = useState(draft?.productId ?? "");
-  const [productQuery, setProductQuery] = useState(draft?.productQuery ?? "");
+  const [productQuery, setProductQuery] = useState(paramQuery || draft?.productQuery || "");
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [maxPrice, setMaxPrice] = useState(
     draft?.maxPrice && draft.maxPrice !== "1000000" ? draft.maxPrice : "",
@@ -202,6 +242,19 @@ export function CreateDemandPage() {
     setServicePlaceNote("");
     setServiceGeoPlace(null);
     setGeoError(null);
+  }
+
+  function phase1Title(demandType: DemandType) {
+    switch (demandType) {
+      case "BUY":
+        return "어떤 물건을 찾고 있나요?";
+      case "BORROW":
+        return "어떤 물건을 빌리고 싶나요?";
+      case "TASK":
+        return "어떤 일을 부탁하고 싶나요?";
+      case "SERVICE":
+        return "어떤 도움이 필요하세요?";
+    }
   }
 
   function phase2Title(demandType: DemandType) {
@@ -381,9 +434,9 @@ export function CreateDemandPage() {
   const canCore = useMemo(() => {
     if (!type || !Number.isFinite(price) || price <= 0) return false;
     if (type === "BUY") return Boolean(productQuery.trim());
-    if (type === "BORROW") return Boolean(title.trim() || itemName.trim());
+    if (type === "BORROW") return Boolean(itemName.trim());
     if (type === "SERVICE") return Boolean(title.trim());
-    return Boolean(title.trim() || detail.trim());
+    return Boolean(detail.trim());
   }, [type, price, productQuery, title, itemName, detail]);
 
   const canSubmit = useMemo(() => {
@@ -456,8 +509,8 @@ export function CreateDemandPage() {
       if (type === "BORROW") {
         const created = await createDemand({
           type: "BORROW",
-          title: title.trim() || itemName.trim(),
-          itemName: itemName.trim() || title.trim(),
+          title: itemName.trim(),
+          itemName: itemName.trim(),
           budget: price,
           fulfillmentOptions,
           description: detail,
@@ -473,10 +526,11 @@ export function CreateDemandPage() {
         return;
       }
       if (type === "TASK") {
+        const taskTitle = detail.trim().split("\n")[0].slice(0, 60);
         const created = await createDemand({
           type: "TASK",
-          title: title.trim() || detail.trim(),
-          taskDescription: detail.trim() || title.trim(),
+          title: taskTitle,
+          taskDescription: detail.trim(),
           budget: price,
           fulfillmentOptions,
           dueAt: fromDatetimeLocalValue(dueAt),
@@ -520,50 +574,70 @@ export function CreateDemandPage() {
   return (
     <div className="page-stack page-narrow create-page">
       <section className="create-page__body section-stack">
-        <h2 className="section-title">
-          {phase === 1
-            ? ko.whatNeeded
-            : type
-              ? phase2Title(type)
-              : ko.phase2Task}
-        </h2>
-
-        <div className="type-segment" role="radiogroup" aria-label="글 유형">
-          {TYPES.map((t) => (
-            <button
-              key={t}
-              type="button"
-              role="radio"
-              aria-checked={type === t}
-              className={type === t ? "type-segment__btn is-selected" : "type-segment__btn"}
-              onClick={() => selectType(t)}
-            >
-              {DEMAND_TYPE_LABEL[t]}
-            </button>
-          ))}
+        <div className="create-page__prompt">
+          <p className="create-page__kicker">
+            {type ? `${phase} / 2` : "요청 유형"}
+          </p>
+          <h2 className="section-title">
+            {!type
+              ? ko.whatNeeded
+              : phase === 1
+                ? phase1Title(type)
+                : phase2Title(type)}
+          </h2>
         </div>
 
         {!type ? (
-          <p className="section-desc">{ko.pickDemandType}</p>
+          <>
+            <div className="request-type-grid" role="radiogroup" aria-label="요청 유형">
+              {TYPES.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  role="radio"
+                  aria-checked={type === t}
+                  className="request-type-card"
+                  onClick={() => selectType(t)}
+                >
+                  <span className="request-type-card__icon" aria-hidden><RequestTypeIcon type={t} /></span>
+                  <span className="request-type-card__copy">
+                    <strong>{TYPE_META[t].label}</strong>
+                    <small>{TYPE_META[t].desc}</small>
+                  </span>
+                </button>
+              ))}
+            </div>
+            <p className="section-desc">{ko.pickDemandType}</p>
+          </>
         ) : (
           <>
-            <div className="create-steps" aria-label="작성 단계">
-              <span className={phase === 1 ? "is-active" : ""}>1. {ko.stepWhat}</span>
-              <span className={phase === 2 ? "is-active" : ""}>2. {ko.stepWhereWhen}</span>
+            <button
+              type="button"
+              className="request-type-current"
+              aria-label="요청 유형 변경"
+              onClick={() => {
+                setType(null);
+                setPhase(1);
+                setFormError(null);
+              }}
+            >
+              <span className="request-type-current__icon" aria-hidden><RequestTypeIcon type={type} /></span>
+              <span>
+                <strong>{TYPE_META[type].label}</strong>
+                <small>요청 유형 변경</small>
+              </span>
+              <span className="request-type-current__chevron" aria-hidden>›</span>
+            </button>
+            <div className="create-progress" aria-label="작성 단계">
+              <div className="create-progress__track"><span style={{ width: phase === 1 ? "50%" : "100%" }} /></div>
+              <div className="create-progress__labels">
+                <span className={phase === 1 ? "is-active" : ""}>무엇을</span>
+                <span className={phase === 2 ? "is-active" : ""}>어디서 · 언제</span>
+              </div>
             </div>
 
             {phase === 1 ? (
               <>
-                {type !== "BUY" && type !== "SERVICE" ? (
-                  <Field label={ko.titleLabel}>
-                    <TextInput
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder={ko.composerPlaceholder}
-                    />
-                  </Field>
-                ) : null}
-
                 {type === "BUY" ? (
                   <>
                     <div

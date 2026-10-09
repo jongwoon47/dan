@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dan-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - name: Check account deletion Edge Function
+        run: npx --yes deno@2.9.6 check supabase/functions/delete-account/index.ts
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+
+  supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.119.0
+      - run: npm ci
+      - run: supabase start
+      - run: supabase db reset
+      - run: supabase test db
+      - name: Run local two-user trade E2E
+        run: |
+          eval "$(supabase status -o env)"
+          VITE_SUPABASE_URL="$API_URL" \
+          VITE_SUPABASE_ANON_KEY="$ANON_KEY" \
+          SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+          npm run test:e2e:local
+      - run: npx playwright install --with-deps chromium
+      - name: Run Supabase browser smoke
+        run: |
+          eval "$(supabase status -o env)"
+          VITE_SUPABASE_URL="$API_URL" \
+          VITE_SUPABASE_ANON_KEY="$ANON_KEY" \
+          SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+          npx playwright test --config=playwright.supabase.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dan-supabase-browser-smoke
+          path: qa-screenshots
+          if-no-files-found: warn
+      - if: always()
+        run: command -v supabase >/dev/null 2>&1 && supabase stop --no-backup || true
+
+  visual:
+    needs: [verify, supabase]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test e2e/visual --config=playwright.visual.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dan-v3-visual-qa
+          path: qa-screenshots
+          if-no-files-found: warn

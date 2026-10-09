@@ -1,6 +1,6 @@
 import type { Demand, DemandStatus } from "@/domain/types";
 
-export const BUY_TTL_MS = 30 * 86400000;
+export const BUY_TTL_MS = 7 * 86400000;
 
 /**
  * If the user picked a calendar date without a real time (local midnight),
@@ -37,7 +37,7 @@ export function defaultExpiresAtIso(
   return new Date(nowMs + BUY_TTL_MS).toISOString();
 }
 
-/** BUY only: user-confirmed +30d — never auto-repost. */
+/** BUY only: user-confirmed +7d — keeps Live Demand fresh. */
 export function extendBuyExpiresAt(nowMs: number = Date.now()): string {
   return new Date(nowMs + BUY_TTL_MS).toISOString();
 }

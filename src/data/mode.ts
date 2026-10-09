@@ -1,17 +1,99 @@
+import {
+  PRODUCTION_SUPABASE_PROJECT_REFS,
+  STAGING_SUPABASE_PROJECT_REF,
+  containsProductionSupabaseRef,
+  extractSupabaseProjectRef,
+} from "@/release/environmentSeparation";
+
+export type DataMode = "supabase" | "demo";
+
+export type DataModeInput = {
+  url?: string;
+  anonKey?: string;
+  forced?: string;
+  runtime?: string;
+};
+
+const DEPLOYED_RUNTIMES = new Set(["staging", "production"]);
+const KNOWN_RUNTIMES = new Set([
+  "",
+  "local",
+  "development",
+  "test",
+  "staging",
+  "production",
+]);
+
+export function resolveDataMode(input: DataModeInput): DataMode {
+  const url = input.url?.trim() ?? "";
+  const anonKey = input.anonKey?.trim() ?? "";
+  const forced = input.forced?.trim().toLowerCase() ?? "";
+  const runtime = input.runtime?.trim().toLowerCase() ?? "";
+  const deployed = DEPLOYED_RUNTIMES.has(runtime);
+
+  if (!KNOWN_RUNTIMES.has(runtime)) {
+    throw new Error("Unknown VITE_DAN_ENV. Use local, staging, or production.");
+  }
+  if (forced && forced !== "demo" && forced !== "supabase") {
+    throw new Error("Unknown data mode. Use demo or supabase.");
+  }
+  if (Boolean(url) !== Boolean(anonKey)) {
+    throw new Error(
+      "Supabase configuration is incomplete: URL and anon key must be set together.",
+    );
+  }
+
+  if (forced === "demo") {
+    if (deployed) {
+      throw new Error("Deployed DAN environments cannot run in demo mode.");
+    }
+    return "demo";
+  }
+
+  if (url && anonKey) {
+    if (/service_role|sb_secret/i.test(anonKey)) {
+      throw new Error("Browser Supabase configuration cannot use a secret/service-role key.");
+    }
+    if (runtime === "staging") {
+      const ref = extractSupabaseProjectRef(url);
+      if (ref !== STAGING_SUPABASE_PROJECT_REF) {
+        throw new Error("Staging must use the designated staging Supabase project.");
+      }
+    }
+    if (runtime === "production") {
+      if (PRODUCTION_SUPABASE_PROJECT_REFS.length === 0) {
+        throw new Error("Production Supabase project is not configured.");
+      }
+      if (!containsProductionSupabaseRef(url)) {
+        throw new Error("Production must use the configured production Supabase project.");
+      }
+    }
+    return "supabase";
+  }
+
+  if (forced === "supabase" || deployed) {
+    throw new Error(
+      `DAN ${runtime || "supabase"} requires VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.`,
+    );
+  }
+
+  return "demo";
+}
+
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const anon = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-/** Prefer VITE_DATA_MODE; keep VITE_DAN_DATA_MODE as alias. */
+/** Prefer VITE_DATA_MODE; keep VITE_DAN_DATA_MODE as alias for local compatibility. */
 const forced =
   (import.meta.env.VITE_DATA_MODE as string | undefined) ??
   (import.meta.env.VITE_DAN_DATA_MODE as string | undefined);
+const runtime = import.meta.env.VITE_DAN_ENV as string | undefined;
 
-export function isSupabaseConfigured(): boolean {
-  if (forced === "demo") return false;
-  return Boolean(url?.trim() && anon?.trim());
+export function getDataMode(): DataMode {
+  return resolveDataMode({ url, anonKey: anon, forced, runtime });
 }
 
-export function getDataMode(): "supabase" | "demo" {
-  return isSupabaseConfigured() ? "supabase" : "demo";
+export function isSupabaseConfigured(): boolean {
+  return getDataMode() === "supabase";
 }
 
 export function getSupabaseEnv() {
