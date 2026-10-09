@@ -549,7 +549,7 @@ export function DemandFeedPage() {
           ) : null}
         </div>
 
-        <div className="request-type-filter" aria-label={t("requestSearch")}>
+        <div className="request-type-filter" aria-label={t("requestTypeFilter")}>
           {REQUEST_TYPES.map((option) => (
             <button
               key={option.value}
