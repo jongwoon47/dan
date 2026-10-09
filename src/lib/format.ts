@@ -3,6 +3,15 @@ import { formatWhenShort } from "@/lib/datetime";
 import type { Demand } from "@/domain/types";
 
 /** Until Japan multi-currency accounting ships, all live amounts remain KRW. */
+/** Display actual stored currency, without any conversion. */
+export function formatStoredMoney(value: number, currency: "KRW" | "JPY", language: "ko" | "ja"): string {
+  if (!Number.isFinite(value)) return "";
+  if (currency === "KRW") return formatKRWForLanguage(value, language);
+  return new Intl.NumberFormat(language === "ja" ? "ja-JP" : "ko-KR", {
+    style: "currency", currency: "JPY", maximumFractionDigits: 0,
+  }).format(value);
+}
+
 export function formatKRWForLanguage(value: number, language: "ko" | "ja"): string {
   if (!Number.isFinite(value)) return "";
   return language === "ja"
