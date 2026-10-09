@@ -16,6 +16,9 @@ function sanitizeArea(area: unknown): SavedArea | null {
   if (a.country !== "KR" && a.country !== "JP") return null;
   const label = typeof a.label === "string" ? a.label.trim().replace(/\s+/g, " ") : "";
   if (label.length < 2 || label.length > 60) return null;
+  // Public search areas only. Reject postal codes, house/room numbers,
+  // coordinates and URLs rather than persisting a likely residential address.
+  if (/https?:|〒|(?:\\d{3}-?\\d{4})|(?:\\d{2,}[-–]\\d+)|(?:\\d+\\.\\d+)|(?:번지|호실|号室)/iu.test(label)) return null;
   return { label, country: a.country };
 }
 
