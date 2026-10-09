@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Chip, ChipGroup, DatetimeLocalInput, Field, TextInput } from "@/components/ui/Input";
 import { useDanCopy } from "@/copy/useDanCopy";
+import { useDanLocale } from "@/i18n/locale";
 import { useDan } from "@/domain/danContext";
 import {
   defaultExpiresAtIso,
@@ -74,6 +75,7 @@ function routeOf(options: FulfillmentOption[]): { from: string; to: string } {
 
 export function DemandEditPage() {
   const copy = useDanCopy();
+  const locale = useDanLocale();
   const { demandId = "" } = useParams();
   const navigate = useNavigate();
   const { getDemand, updateDemand, currentUser, busy } = useDan();
@@ -215,10 +217,10 @@ export function DemandEditPage() {
   const price = parseMoneyInput(budget);
   const thought =
     current.type === "BUY"
-      ? formatPriceThought(price, "buy")
+      ? formatPriceThought(price, "buy", locale)
       : current.type === "BORROW"
-        ? formatPriceThought(price, "borrow")
-        : formatPriceThought(price, "reward");
+        ? formatPriceThought(price, "borrow", locale)
+        : formatPriceThought(price, "reward", locale);
 
   async function onSave(e: FormEvent) {
     e.preventDefault();

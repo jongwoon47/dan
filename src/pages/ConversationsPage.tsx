@@ -8,42 +8,8 @@ import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
 import { dedupeConnectedMatches } from "@/domain/matchLifecycle";
 import type { ChatMessage, Match } from "@/domain/types";
+import { formatRelativeTime } from "@/lib/format";
 import "./pages.css";
-
-function formatRelativeChatTime(
-  iso: string,
-  locale: "ko" | "ja",
-  nowMs = Date.now(),
-): string {
-  const t = new Date(iso).getTime();
-  if (!Number.isFinite(t)) return "";
-  const diff = Math.max(0, nowMs - t);
-  const min = Math.floor(diff / 60000);
-  if (locale === "ja") {
-    if (min < 1) return "たった今";
-    if (min < 60) return `${min}分前`;
-    const hr = Math.floor(min / 60);
-    if (hr < 24) return `${hr}時間前`;
-    const day = Math.floor(hr / 24);
-    if (day === 1) return "昨日";
-    if (day < 7) return `${day}日前`;
-    return new Date(iso).toLocaleDateString("ja-JP", {
-      month: "short",
-      day: "numeric",
-    });
-  }
-  if (min < 1) return "방금";
-  if (min < 60) return `${min}분 전`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr}시간 전`;
-  const day = Math.floor(hr / 24);
-  if (day === 1) return "어제";
-  if (day < 7) return `${day}일 전`;
-  return new Date(iso).toLocaleDateString("ko-KR", {
-    month: "short",
-    day: "numeric",
-  });
-}
 
 function initialOf(name: string) {
   return (name.trim().slice(0, 1) || "?").toUpperCase();
@@ -202,7 +168,7 @@ export function ConversationsPage() {
                   <strong className="chat-list__name">{row.peerName}</strong>
                   {row.lastAt ? (
                     <time dateTime={row.lastAt} className="chat-list__time">
-                      {formatRelativeChatTime(row.lastAt, locale)}
+                      {formatRelativeTime(row.lastAt, locale)}
                     </time>
                   ) : null}
                 </span>

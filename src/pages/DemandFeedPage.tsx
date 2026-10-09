@@ -50,10 +50,10 @@ import "@/components/feedCards.css";
 const PAGE_SIZE = 24;
 const NEARBY_PAGE_SIZE = 40;
 
-const SORT_OPTIONS: Array<{ value: LiveDemandSort; label: string }> = [
-  { value: "popular", label: "인기" },
-  { value: "growing", label: "급상승" },
-  { value: "price", label: "가격" },
+const SORT_OPTIONS: Array<{ value: LiveDemandSort; labelKey: "popular" | "growing" | "price" }> = [
+  { value: "popular", labelKey: "popular" },
+  { value: "growing", labelKey: "growing" },
+  { value: "price", labelKey: "price" },
 ];
 
 const PHYSICAL_SORT_OPTIONS: Array<{ value: PhysicalDiscoverySort; labelKey: "sortNearest" | "sortNewest" | "sortRelevance" }> = [
@@ -64,20 +64,20 @@ const PHYSICAL_SORT_OPTIONS: Array<{ value: PhysicalDiscoverySort; labelKey: "so
 
 type RequestTypeFilter = "all" | DemandType;
 
-const LOCATION_MODES: Array<{ value: LocationDiscoveryMode; label: string }> = [
-  { value: "all", label: "전체 지역" },
-  { value: "nearby", label: "내 주변" },
-  { value: "area", label: "지역명" },
-  { value: "online", label: "온라인·택배" },
-  { value: "route", label: "동선 심부름" },
+const LOCATION_MODES: Array<{ value: LocationDiscoveryMode; labelKey: "allAreas" | "nearby" | "byArea" | "online" | "route" }> = [
+  { value: "all", labelKey: "allAreas" },
+  { value: "nearby", labelKey: "nearby" },
+  { value: "area", labelKey: "byArea" },
+  { value: "online", labelKey: "online" },
+  { value: "route", labelKey: "route" },
 ];
 
-const REQUEST_TYPES: Array<{ value: RequestTypeFilter; label: string }> = [
-  { value: "all", label: "전체" },
-  { value: "BUY", label: "구매" },
-  { value: "BORROW", label: "빌리기" },
-  { value: "TASK", label: "심부름" },
-  { value: "SERVICE", label: "서비스" },
+const REQUEST_TYPES: Array<{ value: RequestTypeFilter; labelKey: "all" | "buy" | "borrow" | "task" | "service" }> = [
+  { value: "all", labelKey: "all" },
+  { value: "BUY", labelKey: "buy" },
+  { value: "BORROW", labelKey: "borrow" },
+  { value: "TASK", labelKey: "task" },
+  { value: "SERVICE", labelKey: "service" },
 ];
 
 function toFeedRow(row: RemoteLiveDemandRow): LiveDemandRow {
@@ -549,7 +549,7 @@ export function DemandFeedPage() {
           ) : null}
         </div>
 
-        <div className="request-type-filter" aria-label="요청 유형">
+        <div className="request-type-filter" aria-label={t("requestSearch")}>
           {REQUEST_TYPES.map((option) => (
             <button
               key={option.value}
@@ -557,7 +557,7 @@ export function DemandFeedPage() {
               className={requestType === option.value ? "is-active" : ""}
               onClick={() => updateType(option.value)}
             >
-              {option.value === "all" ? t("all") : option.value === "BUY" ? t("buy") : option.value === "BORROW" ? t("borrow") : option.value === "TASK" ? t("task") : t("service")}
+              {t(option.labelKey)}
             </button>
           ))}
         </div>
@@ -591,7 +591,7 @@ export function DemandFeedPage() {
               )}
             </div>
           ) : null}
-          <div className="location-discovery__modes" role="group" aria-label="지역 필터">
+          <div className="location-discovery__modes" role="group" aria-label={t("selectArea")}>
             {LOCATION_MODES.map((option) => (
               <button
                 key={option.value}
@@ -604,7 +604,7 @@ export function DemandFeedPage() {
                   // Preserve BUY filtering when switching location modes.
                 }}
               >
-                {option.value === "all" ? t("allAreas") : option.value === "nearby" ? t("nearby") : option.value === "area" ? t("byArea") : option.value === "route" ? t("route") : t("online")}
+                {t(option.labelKey)}
               </button>
             ))}
           </div>
@@ -710,7 +710,7 @@ export function DemandFeedPage() {
               <p className="discovery-summary">
                 {t("products", { n: buyRows.length })}
               </p>
-              <div className="discovery-sort" aria-label="정렬">
+              <div className="discovery-sort" aria-label={t("popular")}>
                 {SORT_OPTIONS.map((option) => (
                   <button
                     key={option.value}
@@ -719,7 +719,7 @@ export function DemandFeedPage() {
                     aria-pressed={sort === option.value}
                     onClick={() => updateSort(option.value)}
                   >
-                    {option.value === "popular" ? t("popular") : option.value === "growing" ? t("growing") : t("price")}
+                    {t(option.labelKey)}
                   </button>
                 ))}
               </div>
@@ -775,7 +775,6 @@ export function DemandFeedPage() {
       {remoteError && includesBuy ? (
         <EmptyState
           title={t("discoveryError")}
-          body={t("noRequestsDetail")}
           action={
             <Button
               variant="secondary"
@@ -800,14 +799,16 @@ export function DemandFeedPage() {
         />
       ) : visibleFeed.length === 0 ? (
         <EmptyState
-          title={query.trim() ? t("noMatchingSearch", { q: query.trim() }) : t("noRequests")}
+          title={query.trim() ? t("noMatchingSearch", { q: query.trim() }) : t("noProducts")}
           body={locationMode === "nearby"
             ? t("radiusEmpty")
             : locationMode === "area" && !areaQuery.trim()
               ? t("areaEmpty")
               : locationMode === "route" && (!routeFrom.trim() || !routeTo.trim())
                 ? t("routeMissing")
-                : t("noRequestsDetail")}
+                : query.trim()
+                  ? t("noRequestsDetail")
+                  : t("noProductsDetail")}
           action={<Button to={demandHref}>{t("createRequest")}</Button>}
         />
       ) : (
@@ -871,7 +872,7 @@ export function DemandFeedPage() {
 
       <section className="discovery-create-banner">
         <div>
-          <span>{t("noRequests")}</span>
+          <span>{t("createRequest")}</span>
           <strong>{t("homeLead")}</strong>
         </div>
         <Button to={demandHref} variant="secondary">

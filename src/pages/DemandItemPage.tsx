@@ -263,15 +263,15 @@ export function DemandItemPage() {
         {formatDemandWhen(demand) ? (
           <div className="detail-facts__row">
             <dt>{copy.detailWhen}</dt>
-            <dd>{formatDemandWhen(demand)}</dd>
+            <dd>{formatDemandWhen(demand, locale)}</dd>
           </div>
         ) : null}
         {demand.type === "SERVICE" &&
-        formatDurationMinutes(demand.details.estimatedDurationMinutes) ? (
+        formatDurationMinutes(demand.details.estimatedDurationMinutes, locale) ? (
           <div className="detail-facts__row">
             <dt>{copy.detailDuration}</dt>
             <dd>
-              {formatDurationMinutes(demand.details.estimatedDurationMinutes)}
+              {formatDurationMinutes(demand.details.estimatedDurationMinutes, locale)}
             </dd>
           </div>
         ) : null}

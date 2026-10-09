@@ -212,7 +212,7 @@ export function ActivityPage() {
                         aria-label={locale === "ja" ? "未読" : "안 읽음"}
                       />
                     ) : null}
-                    {formatRelativeTime(ev.createdAt)}
+                    {formatRelativeTime(ev.createdAt, locale)}
                   </span>
                 </Link>
               </li>

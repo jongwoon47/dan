@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { NetworkStatusBanner } from "@/components/system/NetworkStatusBanner";
-import { ko } from "@/copy/ko";
+import { useDanCopy } from "@/copy/useDanCopy";
 import { translate, useDanLocale } from "@/i18n/locale";
 import { useDan } from "@/domain/danContext";
 import { DeepHeader } from "./DeepHeader";
@@ -36,6 +36,7 @@ function formatUnreadBadge(count: number): string { if (count <= 0) return ""; i
 
 function AppShellInner() {
   const locale = useDanLocale();
+  const copy = useDanCopy();
   const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
   useEffect(() => { document.documentElement.lang = locale; }, [locale]);
   const { currentUser, isLoggedIn, login, logout, unreadActivityCount, unreadChatCount, unreadMyDanCount } = useDan();
@@ -46,7 +47,11 @@ function AppShellInner() {
   const chatBadge = formatUnreadBadge(unreadChatCount);
   const myBadge = formatUnreadBadge(unreadMyDanCount);
   const showDeepHeader = mode === "deep" && !header?.hide;
-  const deepTitle = header?.title ?? defaultDeepTitle(pathname);
+  const deepTitle = header?.title ?? defaultDeepTitle(pathname, copy, locale);
+  const navAria = locale === "ja" ? "メインメニュー" : "주요 메뉴";
+  const bottomNavAria = locale === "ja" ? "下部メニュー" : "하단 메뉴";
+  const activityLabel =
+    unreadActivityCount > 0 ? `${copy.navActivity} ${unreadActivityCount}` : copy.navActivity;
 
   return (
     <div className={mode === "root" ? "app-shell app-shell--root" : mode === "deep" ? "app-shell app-shell--deep" : "app-shell app-shell--auth"}>
@@ -55,11 +60,11 @@ function AppShellInner() {
           <div className="top-nav__inner">
             <NavLink to="/" className="brand" aria-label={"DAN " + t("home")}>
               <img className="brand__logo" src={`${import.meta.env.BASE_URL}dan-logo.png`} alt="" width={36} height={36} />
-              <span className="brand__text"><span className="brand__mark">DAN</span><span className="brand__tag">{locale === "ja" ? "探す人から" : ko.brandTag}</span></span>
+              <span className="brand__text"><span className="brand__mark">DAN</span><span className="brand__tag">{copy.brandTag}</span></span>
             </NavLink>
             <div className="top-nav__mobile-actions">
               {isLoggedIn ? (
-                <NavLink to="/activity" className="top-nav__mobile-bell" aria-label={unreadActivityCount > 0 ? `${ko.navActivity} ${unreadActivityCount}` : ko.navActivity}>
+                <NavLink to="/activity" className="top-nav__mobile-bell" aria-label={activityLabel}>
                   {({ isActive }) => <span className="top-nav__bell-wrap"><IconBell active={isActive} />{bellBadge ? <span className="nav-badge nav-badge--float">{bellBadge}</span> : null}</span>}
                 </NavLink>
               ) : null}
@@ -71,23 +76,23 @@ function AppShellInner() {
                 <IconProfile />
               </NavLink>
             </div>
-            <nav className="top-nav__links" aria-label="주요 메뉴">
-              <NavLink to="/" end>{t("home")}</NavLink>
-              <NavLink to="/feed">{t("explore")}</NavLink>
-              <NavLink to="/create">{t("request")}</NavLink>
-              <NavLink to="/chats">{t("chat")}</NavLink>
-              <NavLink to="/my">{t("myTrades")}</NavLink>
+            <nav className="top-nav__links" aria-label={navAria}>
+              <NavLink to="/" end>{copy.navHome}</NavLink>
+              <NavLink to="/feed">{copy.navFeed}</NavLink>
+              <NavLink to="/create">{copy.navCreateShort}</NavLink>
+              <NavLink to="/chats">{copy.navChats}</NavLink>
+              <NavLink to="/my">{copy.navMy}</NavLink>
             </nav>
             <div className="top-nav__auth top-nav__auth--desktop">
               {isLoggedIn && currentUser ? (
                 <>
-                  <NavLink to="/activity" className="top-nav__bell" aria-label={unreadActivityCount > 0 ? `${ko.navActivity} ${unreadActivityCount}` : ko.navActivity}>
+                  <NavLink to="/activity" className="top-nav__bell" aria-label={activityLabel}>
                     {({ isActive }) => <span className="top-nav__bell-wrap"><IconBell active={isActive} />{bellBadge ? <span className="nav-badge nav-badge--float">{bellBadge}</span> : null}</span>}
                   </NavLink>
                   <NavLink to={`/profile/${currentUser.id}`} className="top-nav__user">{currentUser.name}</NavLink>
-                  <Button size="sm" variant="secondary" onClick={logout}>{t("logout")}</Button>
+                  <Button size="sm" variant="secondary" onClick={logout}>{copy.logout}</Button>
                 </>
-              ) : <Button size="sm" onClick={() => login()}>{t("login")}</Button>}
+              ) : <Button size="sm" onClick={() => login()}>{copy.login}</Button>}
             </div>
           </div>
         </header>
@@ -100,12 +105,12 @@ function AppShellInner() {
       <main className="app-main"><Outlet /></main>
 
       {mode === "root" ? (
-        <nav className="bottom-nav bottom-nav--v1" aria-label="하단 메뉴">
-          <NavLink to="/" end>{({ isActive }) => <><IconHome active={isActive} /><span>{t("home")}</span></>}</NavLink>
-          <NavLink to="/feed"><IconSearch /><span>{t("explore")}</span></NavLink>
-          <NavLink to="/create" className="bottom-nav__create" aria-label={t("createRequest")}><span className="bottom-nav__create-circle"><IconPlus /></span><span>{t("request")}</span></NavLink>
-          <NavLink to="/chats">{({ isActive }) => <><span className="bottom-nav__icon-wrap"><IconChat active={isActive} />{chatBadge ? <span className="nav-badge nav-badge--float">{chatBadge}</span> : null}</span><span>{t("chat")}</span></>}</NavLink>
-          <NavLink to="/my">{({ isActive }) => <><span className="bottom-nav__icon-wrap"><IconDemand active={isActive} />{myBadge ? <span className="nav-badge nav-badge--float">{myBadge}</span> : null}</span><span>{t("myTrades")}</span></>}</NavLink>
+        <nav className="bottom-nav bottom-nav--v1" aria-label={bottomNavAria}>
+          <NavLink to="/" end>{({ isActive }) => <><IconHome active={isActive} /><span>{copy.navHome}</span></>}</NavLink>
+          <NavLink to="/feed"><IconSearch /><span>{copy.navFeed}</span></NavLink>
+          <NavLink to="/create" className="bottom-nav__create" aria-label={copy.navCreate}><span className="bottom-nav__create-circle"><IconPlus /></span><span>{copy.navCreateShort}</span></NavLink>
+          <NavLink to="/chats">{({ isActive }) => <><span className="bottom-nav__icon-wrap"><IconChat active={isActive} />{chatBadge ? <span className="nav-badge nav-badge--float">{chatBadge}</span> : null}</span><span>{copy.navChats}</span></>}</NavLink>
+          <NavLink to="/my">{({ isActive }) => <><span className="bottom-nav__icon-wrap"><IconDemand active={isActive} />{myBadge ? <span className="nav-badge nav-badge--float">{myBadge}</span> : null}</span><span>{copy.navMy}</span></>}</NavLink>
         </nav>
       ) : null}
     </div>
