@@ -6,8 +6,8 @@ select ok(
   'server-side nearby search exists'
 );
 select ok(
-  has_function_privilege('authenticated', 'public.search_nearby_demands(double precision,double precision,integer,integer)', 'execute'),
-  'authenticated users can execute the bounded nearby search'
+  not has_function_privilege('authenticated', 'public.search_nearby_demands(double precision,double precision,integer,integer)', 'execute'),
+  'authenticated users cannot execute the retired country-blind nearby search'
 );
 select ok(
   not has_function_privilege('anon', 'public.search_nearby_demands(double precision,double precision,integer,integer)', 'execute'),
