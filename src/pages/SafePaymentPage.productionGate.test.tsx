@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ShellChromeProvider } from "@/components/layout/ShellChrome";
@@ -93,6 +93,7 @@ describe("SafePaymentPage production gate", () => {
   });
 
   afterEach(() => {
+    cleanup();
     setDanLocale("ko");
   });
 
