@@ -28,6 +28,7 @@ import {
   digitsOnly,
   formatDigitsGrouped,
   formatPriceThought,
+  formatKRWForLanguage,
   parseMoneyInput,
 } from "@/lib/format";
 import { requestCurrentPlace } from "@/lib/geolocation";
@@ -119,7 +120,13 @@ function MoneyInput({
   placeholder?: string;
   kind?: "buy" | "borrow" | "reward";
 }) {
-  const thought = formatPriceThought(parseMoneyInput(value), kind);
+  const locale = useDanLocale();
+  const amount = parseMoneyInput(value);
+  const thought = locale === "ja"
+    ? amount > 0
+      ? `金額は韓国ウォン（KRW）: ${formatKRWForLanguage(amount, "ja")}`
+      : "現在はKRWのみ対応しています。"
+    : formatPriceThought(amount, kind);
   return (
     <Field label={label} hint={hint}>
       <TextInput
@@ -582,6 +589,7 @@ export function CreateDemandPage() {
 
   return (
     <div className="page-stack page-narrow create-page">
+      {locale === "ja" ? <p className="section-desc" role="note">試験運用中：表示・入力する金額は韓国ウォン（KRW）です。日本円での取引はまだ利用できません。</p> : null}
       <section className="create-page__body section-stack">
         <div className="create-page__prompt">
           <p className="create-page__kicker">
