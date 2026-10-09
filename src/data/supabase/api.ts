@@ -538,6 +538,43 @@ async function upsertDemandExactGeoRemote(
   }
 }
 
+/**
+ * Server-selected, privacy-coarsened nearby discovery. No arbitrary demand IDs
+ * and no raw demand coordinates are exposed. Requires migration 0047.
+ */
+export async function searchNearbyDemandDistancesRemote(
+  viewer: { lat: number; lng: number },
+  radiusKm: 1 | 3 | 5 | 10,
+): Promise<Array<{ id: string; meters: number }>> {
+  if (
+    !Number.isFinite(viewer.lat) || !Number.isFinite(viewer.lng) ||
+    Math.abs(viewer.lat) > 90 || Math.abs(viewer.lng) > 180 ||
+    !([1, 3, 5, 10] as number[]).includes(radiusKm)
+  ) {
+    throw new Error("invalid proximity request");
+  }
+  const { data, error } = await getSupabase().rpc("search_nearby_demands", {
+    p_lat: viewer.lat,
+    p_lng: viewer.lng,
+    p_radius_m: radiusKm * 1000,
+    p_limit: 40,
+  });
+  if (error) throw new Error("nearby discovery unavailable");
+  if (!Array.isArray(data)) throw new Error("invalid nearby result");
+  const out: Array<{ id: string; meters: number }> = [];
+  const seen = new Set<string>();
+  for (const item of data) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as { id?: unknown; meters?: unknown };
+    if (typeof row.id !== "string" || typeof row.meters !== "number") continue;
+    if (!/^[0-9a-f-]{36}$/i.test(row.id) || !Number.isFinite(row.meters) || row.meters < 1000) continue;
+    if (seen.has(row.id)) continue;
+    seen.add(row.id);
+    out.push({ id: row.id, meters: row.meters });
+  }
+  return out;
+}
+
 export async function fetchApproxDistancesRemote(
   demandIds: string[],
   viewer: { lat: number; lng: number },
