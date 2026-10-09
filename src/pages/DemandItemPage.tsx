@@ -473,20 +473,20 @@ export function DemandItemPage() {
             <>
               <div className="demand-offer-summary">
                 <div>
-                  <span className="demand-offer-summary__label">받은 제안</span>
+                  <span className="demand-offer-summary__label">{copy.receivedOffers}</span>
                   <strong>{buyOfferCount}</strong>
                 </div>
                 <Button
                   to="/my"
                   variant="secondary"
                 >
-                  제안 보기
+                  {copy.viewOffers}
                 </Button>
               </div>
               {buyOfferCount === 0 ? (
-                <p className="section-desc">판매 제안이 도착하면 여기에서 바로 확인할 수 있어요.</p>
+                <p className="section-desc">{copy.buyOffersEmpty}</p>
               ) : (
-                <p className="section-desc">가격과 상태를 비교한 뒤 관심 있는 제안을 선택하세요.</p>
+                <p className="section-desc">{copy.buyOffersHint}</p>
               )}
             </>
           ) : (
