@@ -58,6 +58,8 @@ export type DbDemand = {
   description: string;
   category: string;
   budget: number;
+  country_code?: string | null;
+  currency_code?: string | null;
   location: string;
   fulfillment_options?: unknown;
   status: Demand["status"];
@@ -211,6 +213,8 @@ export function mapDemand(row: DbDemand): Demand {
     description: row.description,
     category: row.category as DemandCategory,
     budget: Number(row.budget),
+    countryCode: row.country_code === "JP" ? "JP" as const : "KR" as const,
+    currencyCode: row.currency_code === "JPY" ? "JPY" as const : "KRW" as const,
     fulfillmentOptions,
     status: row.status,
     createdAt: row.created_at,
