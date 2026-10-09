@@ -1,6 +1,20 @@
-/** Required consent document versions. Bump when terms/privacy materially change. */
-export const CURRENT_TERMS_VERSION = "2026-10-07";
-export const CURRENT_PRIVACY_VERSION = "2026-10-07";
+/**
+ * Fallback document versions used only when the server requirements row is
+ * unavailable in unit tests / demo. Runtime compares against
+ * `get_consent_requirements()` so the database remains authoritative.
+ */
+export const FALLBACK_TERMS_VERSION = "2026-10-07";
+export const FALLBACK_PRIVACY_VERSION = "2026-10-07";
+
+/** @deprecated Prefer server requirements; kept as alias for existing imports/tests. */
+export const CURRENT_TERMS_VERSION = FALLBACK_TERMS_VERSION;
+/** @deprecated Prefer server requirements; kept as alias for existing imports/tests. */
+export const CURRENT_PRIVACY_VERSION = FALLBACK_PRIVACY_VERSION;
+
+export type ConsentRequirements = {
+  termsVersion: string;
+  privacyVersion: string;
+};
 
 export type UserConsentRecord = {
   userId: string;
@@ -12,13 +26,12 @@ export type UserConsentRecord = {
 
 export function isConsentSatisfied(
   record: Pick<UserConsentRecord, "termsVersion" | "privacyVersion"> | null | undefined,
-  termsVersion = CURRENT_TERMS_VERSION,
-  privacyVersion = CURRENT_PRIVACY_VERSION,
+  requirements: ConsentRequirements,
 ): boolean {
   if (!record) return false;
   return (
-    record.termsVersion === termsVersion &&
-    record.privacyVersion === privacyVersion
+    record.termsVersion === requirements.termsVersion &&
+    record.privacyVersion === requirements.privacyVersion
   );
 }
 

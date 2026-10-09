@@ -1,5 +1,6 @@
 -- User terms/privacy consent records for App Store / production release gate.
--- One row per user; versions are compared client-side against CURRENT_* constants.
+-- One row per user. Required versions and writes are hardened in
+-- 20261009000000_consent_server_authority.sql.
 
 create table if not exists public.user_consents (
   user_id uuid primary key references public.profiles (id) on delete cascade,

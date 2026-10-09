@@ -4,18 +4,35 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
-import { acceptCurrentConsents, fetchMyConsent } from "./consentApi";
-import { isConsentSatisfied, type UserConsentRecord } from "./consentVersions";
+import {
+  acceptCurrentConsents,
+  fetchConsentRequirements,
+  fetchMyConsent,
+} from "./consentApi";
+import {
+  FALLBACK_PRIVACY_VERSION,
+  FALLBACK_TERMS_VERSION,
+  isConsentSatisfied,
+  type ConsentRequirements,
+  type UserConsentRecord,
+} from "./consentVersions";
 import { useAuth } from "./AuthProvider";
 
-export type ConsentResolution = "loading" | "required" | "satisfied" | "anonymous";
+export type ConsentResolution =
+  | "loading"
+  | "required"
+  | "satisfied"
+  | "anonymous"
+  | "error";
 
 type ConsentContextValue = {
   resolution: ConsentResolution;
   record: UserConsentRecord | null;
+  requirements: ConsentRequirements | null;
   error: string | null;
   accept: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -23,37 +40,61 @@ type ConsentContextValue = {
 
 const ConsentContext = createContext<ConsentContextValue | null>(null);
 
+const DEMO_REQUIREMENTS: ConsentRequirements = {
+  termsVersion: FALLBACK_TERMS_VERSION,
+  privacyVersion: FALLBACK_PRIVACY_VERSION,
+};
+
 export function ConsentProvider({ children }: { children: ReactNode }) {
   const { mode, status, user } = useAuth();
   const [resolution, setResolution] = useState<ConsentResolution>(() =>
     mode === "demo" ? "satisfied" : status === "anonymous" ? "anonymous" : "loading",
   );
   const [record, setRecord] = useState<UserConsentRecord | null>(null);
+  const [requirements, setRequirements] = useState<ConsentRequirements | null>(
+    mode === "demo" ? DEMO_REQUIREMENTS : null,
+  );
   const [error, setError] = useState<string | null>(null);
+  const resolveRevision = useRef(0);
 
   const resolveForUser = useCallback(async (userId: string) => {
+    const revision = ++resolveRevision.current;
     setResolution("loading");
     setError(null);
     try {
-      const next = await fetchMyConsent();
-      if (next && next.userId !== userId) {
+      const [nextRequirements, nextRecord] = await Promise.all([
+        fetchConsentRequirements(),
+        fetchMyConsent(),
+      ]);
+      if (revision !== resolveRevision.current) return;
+
+      if (nextRecord && nextRecord.userId !== userId) {
+        setRequirements(nextRequirements);
         setRecord(null);
         setResolution("required");
         return;
       }
-      setRecord(next);
-      setResolution(isConsentSatisfied(next) ? "satisfied" : "required");
+
+      setRequirements(nextRequirements);
+      setRecord(nextRecord);
+      setResolution(
+        isConsentSatisfied(nextRecord, nextRequirements) ? "satisfied" : "required",
+      );
     } catch {
-      // Fail closed: do not treat unknown consent as satisfied.
+      if (revision !== resolveRevision.current) return;
+      // Fail closed: never treat unknown consent as satisfied.
       setRecord(null);
-      setError("consent");
-      setResolution("required");
+      setRequirements(null);
+      setError("load");
+      setResolution("error");
     }
   }, []);
 
   useEffect(() => {
     if (mode === "demo") {
+      resolveRevision.current += 1;
       setRecord(null);
+      setRequirements(DEMO_REQUIREMENTS);
       setError(null);
       setResolution("satisfied");
       return;
@@ -63,12 +104,17 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
       return;
     }
     if (status === "anonymous" || !user) {
+      resolveRevision.current += 1;
       setRecord(null);
+      setRequirements(null);
       setError(null);
       setResolution("anonymous");
       return;
     }
     void resolveForUser(user.id);
+    return () => {
+      resolveRevision.current += 1;
+    };
   }, [mode, status, user?.id, resolveForUser]);
 
   const refresh = useCallback(async () => {
@@ -78,18 +124,26 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
 
   const accept = useCallback(async () => {
     if (mode === "demo") {
+      setRequirements(DEMO_REQUIREMENTS);
       setResolution("satisfied");
       return;
     }
     const saved = await acceptCurrentConsents();
+    const nextRequirements = await fetchConsentRequirements();
+    setRequirements(nextRequirements);
     setRecord(saved);
     setError(null);
-    setResolution("satisfied");
+    setResolution(
+      isConsentSatisfied(saved, nextRequirements) ? "satisfied" : "required",
+    );
+    if (!isConsentSatisfied(saved, nextRequirements)) {
+      throw new Error("consent versions not current after save");
+    }
   }, [mode]);
 
   const value = useMemo<ConsentContextValue>(
-    () => ({ resolution, record, error, accept, refresh }),
-    [resolution, record, error, accept, refresh],
+    () => ({ resolution, record, requirements, error, accept, refresh }),
+    [resolution, record, requirements, error, accept, refresh],
   );
 
   return (

@@ -4,7 +4,12 @@ import { afterEach, expect, it, vi } from "vitest";
 import { RequireConsent } from "./RequireConsent";
 
 let authStatus: "loading" | "authenticated" | "anonymous" = "authenticated";
-let resolution: "loading" | "required" | "satisfied" | "anonymous" = "required";
+let resolution:
+  | "loading"
+  | "required"
+  | "satisfied"
+  | "anonymous"
+  | "error" = "required";
 
 vi.mock("./AuthProvider", () => ({
   useAuth: () => ({ mode: "supabase", status: authStatus }),
@@ -18,6 +23,7 @@ vi.mock("./ConsentProvider", async () => {
     useConsent: () => ({
       resolution,
       record: null,
+      requirements: null,
       error: null,
       accept: vi.fn(),
       refresh: vi.fn(),
@@ -48,6 +54,12 @@ it("redirects authenticated users without current consent", () => {
   show("/");
   expect(screen.getByText("consent-screen")).toBeInTheDocument();
   expect(screen.queryByText("app-home")).not.toBeInTheDocument();
+});
+
+it("redirects when consent status cannot be loaded", () => {
+  resolution = "error";
+  show("/");
+  expect(screen.getByText("consent-screen")).toBeInTheDocument();
 });
 
 it("skips consent when versions are satisfied", () => {
