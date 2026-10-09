@@ -58,6 +58,18 @@ describe("location discovery", () => {
     };
     const base = filter("all");
     expect(matchesLocationDiscovery(routeDemand, { ...base, mode: "route", routeFrom: "博多駅", routeTo: "天神駅" })).toBe(true);
+    // Exact station labels still match if region2 is a broader city/ward.
+    const administrativeRoute: LocationDemand = {
+      id: "admin-route",
+      fulfillmentOptions: [{
+        mode: "ROUTE",
+        from: { publicLabel: "福岡市 博多駅", region2: "博多区" },
+        to: { publicLabel: "福岡市 天神駅", region2: "中央区" },
+      }],
+    };
+    expect(matchesLocationDiscovery(administrativeRoute, { ...base, mode: "route", routeFrom: "博多駅", routeTo: "天神駅" })).toBe(true);
+    expect(matchesLocationDiscovery(administrativeRoute, { ...base, mode: "route", routeFrom: "天神駅", routeTo: "博多駅" })).toBe(false);
+
     expect(matchesLocationDiscovery(routeDemand, { ...base, mode: "route", routeFrom: "天神駅", routeTo: "博多駅" })).toBe(false);
     expect(matchesLocationDiscovery(routeDemand, { ...base, mode: "route", routeFrom: "博多駅", routeTo: "" })).toBe(false);
     expect(matchesLocationDiscovery(onsite, { ...base, mode: "route", routeFrom: "博多駅", routeTo: "天神駅" })).toBe(false);
