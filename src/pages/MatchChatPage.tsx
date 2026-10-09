@@ -15,7 +15,7 @@ import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
-import { ko } from "@/copy/ko";
+import { useDanCopy, type LocalizedCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
 import type { ChatMessage, DealSnapshot, Demand, Match } from "@/domain/types";
 import { useDanLocale } from "@/i18n/locale";
@@ -37,19 +37,19 @@ function dayLabel(iso: string, language: "ko" | "ja" = "ko") {
   });
 }
 
-function tradeConfirmBody(demand?: Demand) {
-  if (!demand) return ko.tradeConfirmTitle;
+function tradeConfirmBody(demand: Demand | undefined, copy: LocalizedCopy) {
+  if (!demand) return copy.tradeConfirmTitle;
   switch (demand.type) {
     case "BUY":
-      return ko.tradeConfirmBuy;
+      return copy.tradeConfirmBuy;
     case "BORROW":
-      return ko.tradeConfirmBorrow;
+      return copy.tradeConfirmBorrow;
     case "TASK":
-      return ko.tradeConfirmTask;
+      return copy.tradeConfirmTask;
     case "SERVICE":
-      return ko.tradeConfirmService;
+      return copy.tradeConfirmService;
     default:
-      return ko.tradeConfirmTitle;
+      return copy.tradeConfirmTitle;
   }
 }
 
@@ -78,6 +78,7 @@ export function MatchChatPage() {
   const { matchId = "" } = useParams();
   const navigate = useNavigate();
   const locale = useDanLocale();
+  const copy = useDanCopy();
   const {
     myMatches,
     getDemand,
@@ -150,7 +151,7 @@ export function MatchChatPage() {
       await markMessagesRead(matchId);
       setError(null);
     } catch {
-      setError(ko.genericError);
+      setError(copy.genericError);
     } finally {
       setLoading(false);
     }
@@ -249,7 +250,7 @@ export function MatchChatPage() {
     }
   }, [messages, loading, match?.status, match?.buyerCompletedAt, match?.sellerCompletedAt]);
 
-  const demandTitle = useMemo(() => demand?.title ?? ko.chatTitle, [demand]);
+  const demandTitle = useMemo(() => demand?.title ?? copy.chatTitle, [demand, copy.chatTitle]);
   const displayPeer = peerName || "상대";
   const canSend = match?.status === "CONNECTED";
 
@@ -260,9 +261,9 @@ export function MatchChatPage() {
   if (!match || !CHAT_STATUSES.has(match.status)) {
     return (
       <EmptyState
-        title={ko.chatTitle}
-        body={ko.genericError}
-        action={<Button to="/chats" variant="secondary">{ko.navChats}</Button>}
+        title={copy.chatTitle}
+        body={copy.genericError}
+        action={<Button to="/chats" variant="secondary">{copy.navChats}</Button>}
       />
     );
   }
@@ -275,7 +276,7 @@ export function MatchChatPage() {
     stickToBottomRef.current = true;
     const result = await sendMessage(matchId, text);
     if (!result) {
-      setError(ko.genericError);
+      setError(copy.genericError);
       setBody(text);
       return;
     }
@@ -345,7 +346,7 @@ export function MatchChatPage() {
               to={`/demand/item/${demand.id}`}
               className="chat-page__view-demand"
             >
-              {ko.viewRequest}
+              {copy.viewRequest}
             </Link>
           ) : null}
         </div>
@@ -355,12 +356,12 @@ export function MatchChatPage() {
             onOpenChange={onMenuOpenChange}
             items={[
               {
-                label: ko.block,
+                label: copy.block,
                 danger: true,
                 onSelect: () => setConfirm("block"),
               },
               {
-                label: ko.report,
+                label: copy.report,
                 onSelect: () => setConfirm("report"),
               },
             ]}
@@ -406,34 +407,34 @@ export function MatchChatPage() {
         )}
         {match.status === "COMPLETED" ? (
           <>
-            <p className="trade-status__state">✓ {ko.tradeDoneTitle}</p>
+            <p className="trade-status__state">✓ {copy.tradeDoneTitle}</p>
             {match.completedAt ? (
               <p className="trade-status__meta">
                 {formatCompletedDate(match.completedAt, locale)}
               </p>
             ) : null}
-            <p className="trade-status__hint">{ko.tradeDoneHint}</p>
+            <p className="trade-status__hint">{copy.tradeDoneHint}</p>
           </>
         ) : match.status === "CLOSED" ? (
           <>
-            <p className="trade-status__state">{ko.tradeClosedTitle}</p>
+            <p className="trade-status__state">{copy.tradeClosedTitle}</p>
             {canReopenDemand ? (
               <>
-                <p className="trade-status__hint">{ko.tradeClosedSeekHint}</p>
+                <p className="trade-status__hint">{copy.tradeClosedSeekHint}</p>
                 <div className="trade-status__actions">
                   <Button
                     fullWidth
                     disabled={busy}
                     onClick={() => setConfirm("reopen")}
                   >
-                    {ko.tradeReopenCta}
+                    {copy.tradeReopenCta}
                   </Button>
                 </div>
               </>
             ) : demandAlreadyReopened ? (
-              <p className="trade-status__hint">{ko.tradeReopenedHint}</p>
+              <p className="trade-status__hint">{copy.tradeReopenedHint}</p>
             ) : (
-              <p className="trade-status__hint">{ko.tradePeerClosed}</p>
+              <p className="trade-status__hint">{copy.tradePeerClosed}</p>
             )}
           </>
         ) : isBuyTrade && !buyEvidenceReady ? (
@@ -522,34 +523,34 @@ export function MatchChatPage() {
           </>
         ) : peerDone && !mineDone ? (
           <>
-            <p className="trade-status__state">{ko.tradePeerConfirmed}</p>
-            <p className="trade-status__hint">{ko.tradePeerConfirmedHint}</p>
+            <p className="trade-status__state">{copy.tradePeerConfirmed}</p>
+            <p className="trade-status__hint">{copy.tradePeerConfirmedHint}</p>
             <div className="trade-status__actions">
               <Button
                 fullWidth
                 disabled={busy}
                 onClick={() => setConfirm("complete")}
               >
-                {ko.tradeConfirmPeerCta}
+                {copy.tradeConfirmPeerCta}
               </Button>
             </div>
           </>
         ) : mineDone && !peerDone ? (
           <>
-            <p className="trade-status__state">{ko.tradeInProgress}</p>
-            <p className="trade-status__hint">{ko.tradeWaitingPeer}</p>
+            <p className="trade-status__state">{copy.tradeInProgress}</p>
+            <p className="trade-status__hint">{copy.tradeWaitingPeer}</p>
           </>
         ) : (
           <>
-            <p className="trade-status__state">{ko.tradeInProgress}</p>
-            <p className="trade-status__hint">{ko.tradeInProgressHint}</p>
+            <p className="trade-status__state">{copy.tradeInProgress}</p>
+            <p className="trade-status__hint">{copy.tradeInProgressHint}</p>
             <div className="trade-status__actions">
               <Button
                 fullWidth
                 disabled={busy}
                 onClick={() => setConfirm("complete")}
               >
-                {ko.tradeCompleteCta}
+                {copy.tradeCompleteCta}
               </Button>
               <Button
                 fullWidth
@@ -557,7 +558,7 @@ export function MatchChatPage() {
                 disabled={busy}
                 onClick={() => setConfirm("cancel")}
               >
-                {ko.tradeCancelCta}
+                {copy.tradeCancelCta}
               </Button>
             </div>
           </>
@@ -573,9 +574,9 @@ export function MatchChatPage() {
         aria-live="polite"
         onScroll={onThreadScroll}
       >
-        {loading ? <p className="muted">{ko.loadingChat}</p> : null}
+        {loading ? <p className="muted">{copy.loadingChat}</p> : null}
         {!loading && messages.length === 0 ? (
-          <p className="section-desc">{ko.chatEmpty}</p>
+          <p className="section-desc">{copy.chatEmpty}</p>
         ) : null}
         {messages.map((m) => {
           const mine = m.senderId === currentUser?.id;
@@ -630,12 +631,12 @@ export function MatchChatPage() {
           <input
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            placeholder={ko.chatPlaceholder}
+            placeholder={copy.chatPlaceholder}
             maxLength={2000}
-            aria-label={ko.chatPlaceholder}
+            aria-label={copy.chatPlaceholder}
           />
           <Button type="submit" disabled={busy || !body.trim()}>
-            {ko.chatSend}
+            {copy.chatSend}
           </Button>
         </form>
       ) : (
@@ -648,23 +649,23 @@ export function MatchChatPage() {
 
       <ConfirmSheet
         open={confirm === "complete"}
-        title={ko.tradeConfirmTitle}
-        body={tradeConfirmBody(demand)}
-        confirmLabel={ko.tradeConfirmAction}
+        title={copy.tradeConfirmTitle}
+        body={tradeConfirmBody(demand, copy)}
+        confirmLabel={copy.tradeConfirmAction}
         onCancel={() => setConfirm(null)}
         onConfirm={() => {
           void confirmMatchCompletion(matchId).then((updated) => {
             setConfirm(null);
-            if (!updated) setError(ko.genericError);
+            if (!updated) setError(copy.genericError);
           });
         }}
       />
 
       <ConfirmSheet
         open={confirm === "cancel"}
-        title={ko.tradeCancelTitle}
-        body={ko.tradeCancelBody}
-        confirmLabel={ko.tradeCancelAction}
+        title={copy.tradeCancelTitle}
+        body={copy.tradeCancelBody}
+        confirmLabel={copy.tradeCancelAction}
         danger
         onCancel={() => setConfirm(null)}
         onConfirm={() => {
@@ -680,50 +681,50 @@ export function MatchChatPage() {
               : closeMatch(matchId);
           void action.then((updated) => {
             setConfirm(null);
-            if (!updated) setError(ko.genericError);
+            if (!updated) setError(copy.genericError);
           });
         }}
       />
 
       <ConfirmSheet
         open={confirm === "reopen"}
-        title={ko.tradeClosedSeekHint}
-        body={ko.tradeReopenBody}
-        confirmLabel={ko.tradeReopenCta}
+        title={copy.tradeClosedSeekHint}
+        body={copy.tradeReopenBody}
+        confirmLabel={copy.tradeReopenCta}
         onCancel={() => setConfirm(null)}
         onConfirm={() => {
           void reopenDemandAfterTradeClose(matchId).then((updated) => {
             setConfirm(null);
             if (!updated) {
-              setError(ko.genericError);
+              setError(copy.genericError);
               return;
             }
-            setToast(ko.tradeReopenedToast);
+            setToast(copy.tradeReopenedToast);
           });
         }}
       />
 
       <ConfirmSheet
         open={confirm === "block"}
-        title={ko.block}
-        body={ko.blockConfirm}
-        confirmLabel={ko.block}
+        title={copy.block}
+        body={copy.blockConfirm}
+        confirmLabel={copy.block}
         danger
         onCancel={() => setConfirm(null)}
         onConfirm={() => {
           if (!peerId) return;
           void blockUser(peerId).then((ok) => {
             setConfirm(null);
-            if (ok) setToast(ko.blockedOk);
+            if (ok) setToast(copy.blockedOk);
           });
         }}
       />
 
       <ConfirmSheet
         open={confirm === "report"}
-        title={ko.report}
-        body={ko.reportReason}
-        confirmLabel={ko.reportSubmit}
+        title={copy.report}
+        body={copy.reportReason}
+        confirmLabel={copy.reportSubmit}
         onCancel={() => setConfirm(null)}
         onConfirm={() => {
           if (!peerId) return;
@@ -732,17 +733,17 @@ export function MatchChatPage() {
             reason: reportReason,
           }).then((ok) => {
             setConfirm(null);
-            if (ok) setToast(ko.reportSent);
+            if (ok) setToast(copy.reportSent);
           });
         }}
       >
         <div className="confirm-sheet__choices">
           {(
             [
-              ["spam", ko.reportSpam],
-              ["fraud", ko.reportFraud],
-              ["abuse", ko.reportAbuse],
-              ["other", ko.reportOther],
+              ["spam", copy.reportSpam],
+              ["fraud", copy.reportFraud],
+              ["abuse", copy.reportAbuse],
+              ["other", copy.reportOther],
             ] as const
           ).map(([value, label]) => (
             <button

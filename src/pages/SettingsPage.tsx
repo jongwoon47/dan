@@ -77,6 +77,7 @@ export function SettingsPage() {
             </select>
           </label>
           <p className="location-pref-hint">{t("wonNotice")}</p>
+          <p className="location-pref-hint">{t("marketTimezoneHint")}</p>
         </div>
       </section>
 
