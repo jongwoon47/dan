@@ -7,12 +7,13 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
 import type { ItemCondition, Ownership, TradeMethod } from "@/domain/types";
+import { useDanCopy } from "@/copy/useDanCopy";
 import { conditionLabel, tradeLabel } from "@/i18n/categories";
 import { useDanLocale } from "@/i18n/locale";
 import {
   digitsOnly,
   formatDigitsGrouped,
-  formatWon,
+  formatStoredMoney,
   parseMoneyInput,
 } from "@/lib/format";
 import "./pages.css";
@@ -32,6 +33,7 @@ function fileToDataUrl(file: File): Promise<string> {
 
 export function QuickOfferPage() {
   const locale = useDanLocale();
+  const copy = useDanCopy();
   const { productId = "" } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -45,6 +47,8 @@ export function QuickOfferPage() {
     createSellIntent,
     isLoggedIn,
   } = useDan();
+  const money = (value: number, currency: "KRW" | "JPY" = "KRW") =>
+    formatStoredMoney(value, currency, locale);
 
   const product = getProduct(productId);
   const aggregate = getAggregate(productId);
@@ -166,7 +170,9 @@ export function QuickOfferPage() {
       {targetBuyDemand ? (
         <section className="live-demand-banner">
           <span>선택한 구매수요 · 최대 희망가</span>
-          <strong>{formatWon(targetBuyDemand.details.maxPrice)}</strong>
+          <strong>
+            {money(targetBuyDemand.details.maxPrice, targetBuyDemand.currencyCode ?? "KRW")}
+          </strong>
           <button type="button" onClick={() => setPrice(String(targetBuyDemand.details.maxPrice))}>
             이 가격 사용
           </button>
@@ -174,7 +180,7 @@ export function QuickOfferPage() {
       ) : aggregate?.highestIntentPrice ? (
         <section className="live-demand-banner">
           <span>현재 최고 구매 희망가</span>
-          <strong>{formatWon(aggregate.highestIntentPrice)}</strong>
+          <strong>{money(aggregate.highestIntentPrice)}</strong>
           <button
             type="button"
             onClick={() => setPrice(String(aggregate.highestIntentPrice))}
@@ -218,9 +224,7 @@ export function QuickOfferPage() {
                 selected={tradeMethod === item}
                 onClick={() => setTradeMethod(item)}
               >
-                {item === "any"
-                  ? locale === "ja" ? "どちらも可" : "둘 다 가능"
-                  : tradeLabel(locale, item)}
+                {item === "any" ? copy.tradeBoth : tradeLabel(locale, item)}
               </Chip>
             ))}
           </ChipGroup>

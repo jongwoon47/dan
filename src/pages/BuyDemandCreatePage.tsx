@@ -11,17 +11,16 @@ import {
   productMatchKey,
 } from "@/domain/productName";
 import {
-  CATEGORY_LABEL,
   PRODUCT_CATEGORY_OPTIONS,
   type ConditionPreference,
   type ProductCategory,
   type TradeMethod,
 } from "@/domain/types";
-import { conditionLabel, tradeLabel } from "@/i18n/categories";
+import { categoryLabel, conditionLabel, tradeLabel } from "@/i18n/categories";
 import { useDanLocale } from "@/i18n/locale";
 import {
   formatDigitsGrouped,
-  formatWon,
+  formatStoredMoney,
   digitsOnly,
   parseMoneyInput,
 } from "@/lib/format";
@@ -242,7 +241,7 @@ export function BuyDemandCreatePage() {
           </div>
           <div className="snapshot-section">
             <span>최대 구매 희망가</span>
-            <strong>{formatWon(price)}</strong>
+            <strong>{formatStoredMoney(price, "KRW", locale)}</strong>
           </div>
           <div className="snapshot-section">
             <span>허용 상태</span>
@@ -319,7 +318,7 @@ export function BuyDemandCreatePage() {
                 <ProductVisual product={product} size="sm" />
                 <span>
                   <strong>{product.name}</strong>
-                  <small>{product.brand || CATEGORY_LABEL[product.category]}</small>
+                  <small>{product.brand || categoryLabel(locale, product.category)}</small>
                 </span>
                 <span aria-hidden>›</span>
               </button>
@@ -340,7 +339,7 @@ export function BuyDemandCreatePage() {
             <div>
               <span>선택한 제품</span>
               <strong>{selectedProduct.name}</strong>
-              <small>{CATEGORY_LABEL[selectedProduct.category]}</small>
+              <small>{categoryLabel(locale, selectedProduct.category)}</small>
             </div>
           </div>
         ) : (
@@ -351,7 +350,7 @@ export function BuyDemandCreatePage() {
             >
               {PRODUCT_CATEGORY_OPTIONS.map((item) => (
                 <option key={item} value={item}>
-                  {CATEGORY_LABEL[item]}
+                  {categoryLabel(locale, item)}
                 </option>
               ))}
             </TextSelect>

@@ -4,6 +4,8 @@ import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
+import { useDanCopy } from "@/copy/useDanCopy";
+import { fillCopyTemplate } from "@/copy/dealChain";
 import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
 import type { DealSnapshot } from "@/domain/types";
@@ -15,6 +17,7 @@ export function SafePaymentPage() {
   const { matchId = "" } = useParams();
   const navigate = useNavigate();
   const locale = useDanLocale();
+  const copy = useDanCopy();
   const {
     myMatches,
     currentUser,
@@ -35,7 +38,7 @@ export function SafePaymentPage() {
   const moneyCurrency = snapshot?.currencyCode ?? demand?.currencyCode ?? "KRW";
   const money = (value: number) => formatStoredMoney(value, moneyCurrency, locale);
 
-  useDeepHeader({ title: "결제" });
+  useDeepHeader({ title: copy.paymentTitle });
 
   useEffect(() => {
     if (!matchId) return;
@@ -43,15 +46,22 @@ export function SafePaymentPage() {
   }, [getDealSnapshot, matchId]);
 
   if (!match || !product) {
-    return <EmptyState title="거래 정보를 찾을 수 없어요" action={<Button to="/my">내 거래</Button>} />;
+    return (
+      <EmptyState
+        title={copy.dealMissingTitle}
+        action={<Button to="/my">{copy.dealMyTrades}</Button>}
+      />
+    );
   }
 
   if (!snapshot?.lockedAt) {
     return (
       <EmptyState
-        title="먼저 거래 조건을 확정해 주세요"
-        body="양쪽이 거래 조건을 확인한 뒤 결제할 수 있어요."
-        action={<Button to={"/deal/" + match.id + "/snapshot"}>거래 조건 확인</Button>}
+        title={copy.paymentNeedLockTitle}
+        body={copy.paymentNeedLockBody}
+        action={
+          <Button to={"/deal/" + match.id + "/snapshot"}>{copy.paymentReviewTerms}</Button>
+        }
       />
     );
   }
@@ -59,9 +69,11 @@ export function SafePaymentPage() {
   if (match.paymentStatus === "PAID") {
     return (
       <EmptyState
-        title="결제가 확인됐어요"
-        body="이제 판매자와 물품 인계 방법을 조율하세요."
-        action={<Button to={"/deal/" + match.id + "/handoff"}>인계 진행</Button>}
+        title={copy.paymentAlreadyTitle}
+        body={copy.paymentAlreadyBody}
+        action={
+          <Button to={"/deal/" + match.id + "/handoff"}>{copy.paymentHandoffCta}</Button>
+        }
       />
     );
   }
@@ -71,7 +83,7 @@ export function SafePaymentPage() {
     setError("");
     const ok = await simulateSafePaymentDemo(matchId);
     if (!ok) {
-      setError("결제 상태를 변경하지 못했어요.");
+      setError(copy.paymentStatusFail);
       return;
     }
     navigate("/deal/" + matchId + "/handoff");
@@ -82,64 +94,83 @@ export function SafePaymentPage() {
       <section className="payment-product-card">
         <ProductVisual product={product} size="sm" />
         <div>
-          <span>결제 금액</span>
+          <span>{copy.paymentAmountLabel}</span>
           <h1>{money(snapshot.agreedPrice)}</h1>
           <p>{product.name}</p>
         </div>
       </section>
 
       <section className="payment-breakdown">
-        <div><span>상품 금액</span><strong>{money(snapshot.agreedPrice)}</strong></div>
-        <div><span>수수료</span><strong>{money(0)}</strong></div>
-        <div className="is-total"><span>총 결제 금액</span><strong>{money(snapshot.agreedPrice)}</strong></div>
+        <div>
+          <span>{copy.paymentProductAmount}</span>
+          <strong>{money(snapshot.agreedPrice)}</strong>
+        </div>
+        <div>
+          <span>{copy.paymentFee}</span>
+          <strong>{money(0)}</strong>
+        </div>
+        <div className="is-total">
+          <span>{copy.paymentTotal}</span>
+          <strong>{money(snapshot.agreedPrice)}</strong>
+        </div>
       </section>
 
       {isBuyer && isDemo ? (
         <section className="payment-methods">
           <div className="payment-section-head">
-            <h2>결제 수단</h2>
-            <span>결제 수단 선택</span>
+            <h2>{copy.paymentMethodTitle}</h2>
+            <span>{copy.paymentMethodPick}</span>
           </div>
-          <button type="button" className={method === "card" ? "payment-method is-selected" : "payment-method"} onClick={() => setMethod("card")}>
-            <span>카드 결제</span><strong>{method === "card" ? "✓" : ""}</strong>
+          <button
+            type="button"
+            className={method === "card" ? "payment-method is-selected" : "payment-method"}
+            onClick={() => setMethod("card")}
+          >
+            <span>{copy.paymentCard}</span>
+            <strong>{method === "card" ? "✓" : ""}</strong>
           </button>
-          <button type="button" className={method === "bank" ? "payment-method is-selected" : "payment-method"} onClick={() => setMethod("bank")}>
-            <span>계좌 이체</span><strong>{method === "bank" ? "✓" : ""}</strong>
+          <button
+            type="button"
+            className={method === "bank" ? "payment-method is-selected" : "payment-method"}
+            onClick={() => setMethod("bank")}
+          >
+            <span>{copy.paymentBank}</span>
+            <strong>{method === "bank" ? "✓" : ""}</strong>
           </button>
         </section>
       ) : isBuyer ? (
         <section className="payment-provider-gate">
-          <span className="payment-provider-gate__badge">결제 준비 중</span>
-          <h2>현재는 실제 결제를 받을 수 없어요.</h2>
-          <p>
-            결제 기능이 연결되기 전까지는 거래 조건 확인까지만 진행할 수 있어요.
-          </p>
+          <span className="payment-provider-gate__badge">{copy.paymentGateBadge}</span>
+          <h2>{copy.paymentGateTitle}</h2>
+          <p>{copy.paymentGateBody}</p>
           <Button to={"/deal/" + match.id + "/snapshot"} variant="secondary" fullWidth>
-            거래 조건 다시 보기
+            {copy.paymentGateReview}
           </Button>
         </section>
       ) : (
         <section className="offer-next-state">
-          <strong>구매자 결제를 기다리고 있어요</strong>
-          <p>구매자의 결제가 확인되면 인계 단계가 열려요.</p>
+          <strong>{copy.paymentWaitBuyerTitle}</strong>
+          <p>{copy.paymentWaitBuyerBody}</p>
         </section>
       )}
 
       <div className="payment-safety-note">
-        <strong>결제 확인 후 인계를 진행해요.</strong>
-        <p>결제가 확인되기 전에는 물건을 인도받거나 건네지 마세요.</p>
+        <strong>{copy.paymentSafetyTitle}</strong>
+        <p>{copy.paymentSafetyBody}</p>
       </div>
 
       {error ? <p className="form-error">{error}</p> : null}
 
       {isBuyer && isDemo ? (
-        <>
-          <Button fullWidth size="lg" disabled={busy} onClick={() => void pay()}>
-            {busy ? "결제 확인 중…" : money(snapshot.agreedPrice) + " 결제하기"}
-          </Button>
-        </>
+        <Button fullWidth size="lg" disabled={busy} onClick={() => void pay()}>
+          {busy
+            ? copy.paymentConfirming
+            : fillCopyTemplate(copy.paymentPayAmount, { amount: money(snapshot.agreedPrice) })}
+        </Button>
       ) : !isBuyer ? (
-        <Button to="/my" fullWidth variant="secondary">내 거래로</Button>
+        <Button to="/my" fullWidth variant="secondary">
+          {copy.paymentToMyTrades}
+        </Button>
       ) : null}
     </div>
   );

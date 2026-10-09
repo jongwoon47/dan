@@ -15,6 +15,7 @@ import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
+import { fillCopyTemplate } from "@/copy/dealChain";
 import { useDanCopy, type LocalizedCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
 import type { ChatMessage, DealSnapshot, Demand, Match } from "@/domain/types";
@@ -251,8 +252,9 @@ export function MatchChatPage() {
   }, [messages, loading, match?.status, match?.buyerCompletedAt, match?.sellerCompletedAt]);
 
   const demandTitle = useMemo(() => demand?.title ?? copy.chatTitle, [demand, copy.chatTitle]);
-  const displayPeer = peerName || "상대";
+  const displayPeer = peerName || copy.chatPeerFallback;
   const canSend = match?.status === "CONNECTED";
+  const timeLocale = locale === "ja" ? "ja-JP" : "ko-KR";
 
   function goBack() {
     navigateBack(navigate, "/chats");
@@ -314,7 +316,7 @@ export function MatchChatPage() {
         <button
           type="button"
           className="chat-page__back"
-          aria-label="뒤로가기"
+          aria-label={copy.chatBackAria}
           onClick={goBack}
         >
           ←
@@ -333,12 +335,12 @@ export function MatchChatPage() {
           <p className="chat-page__demand">{demandTitle}</p>
           {realtimeNotice(realtimeStatus) === "live" ? (
             <span className="chat-realtime-status">
-              <i aria-hidden /> 실시간
+              <i aria-hidden /> {copy.chatRealtimeLive}
             </span>
           ) : null}
           {realtimeNotice(realtimeStatus) === "recovering" ? (
             <span className="chat-realtime-status" role="status">
-              실시간 연결이 끊겼어요. 메시지는 자동으로 다시 불러옵니다.
+              {copy.chatRealtimeRecovering}
             </span>
           ) : null}
           {demand ? (
@@ -354,6 +356,7 @@ export function MatchChatPage() {
           <OverflowMenu
             open={menuOpen}
             onOpenChange={onMenuOpenChange}
+            label={copy.moreActions}
             items={[
               {
                 label: copy.block,
@@ -370,25 +373,25 @@ export function MatchChatPage() {
       </header>
 
       {isBuyTrade && match.status !== "CLOSED" ? (
-        <div className="chat-deal-progress" aria-label="거래 진행 단계">
+        <div className="chat-deal-progress" aria-label={copy.chatDealProgressAria}>
           <span className={buyEvidenceReady ? "is-done" : "is-current"}>
             <i aria-hidden>{buyEvidenceReady ? "✓" : "1"}</i>
-            <b>상품</b>
+            <b>{copy.chatStepProduct}</b>
           </span>
           <em aria-hidden />
           <span className={buySnapshotLocked ? "is-done" : buyEvidenceReady ? "is-current" : ""}>
             <i aria-hidden>{buySnapshotLocked ? "✓" : "2"}</i>
-            <b>조건</b>
+            <b>{copy.chatStepTerms}</b>
           </span>
           <em aria-hidden />
           <span className={buyPaid ? "is-done" : buySnapshotLocked ? "is-current" : ""}>
             <i aria-hidden>{buyPaid ? "✓" : "3"}</i>
-            <b>결제</b>
+            <b>{copy.chatStepPay}</b>
           </span>
           <em aria-hidden />
           <span className={buyComplete ? "is-done" : buyPaid ? "is-current" : ""}>
             <i aria-hidden>{buyComplete ? "✓" : "4"}</i>
-            <b>인계</b>
+            <b>{copy.chatStepHandoff}</b>
           </span>
         </div>
       ) : null}
@@ -439,18 +442,16 @@ export function MatchChatPage() {
           </>
         ) : isBuyTrade && !buyEvidenceReady ? (
           <>
-            <p className="trade-status__state">연결됐어요 · 먼저 대화해 보세요</p>
-            <p className="trade-status__hint">
-              거래를 계속하기로 했다면 판매자가 상품 상태와 확인 정보를 등록해요.
-            </p>
+            <p className="trade-status__state">{copy.chatBuyConnectedState}</p>
+            <p className="trade-status__hint">{copy.chatBuyConnectedHint}</p>
             <div className="trade-status__actions">
               {isSeller ? (
                 <Button to={`/deal/${match.id}/evidence`} fullWidth>
-                  상품 정보 등록
+                  {copy.chatRegisterEvidence}
                 </Button>
               ) : (
                 <Button to={`/offer/${match.id}`} fullWidth variant="secondary">
-                  제안 다시 보기
+                  {copy.chatReviewOffer}
                 </Button>
               )}
               <Button
@@ -459,22 +460,20 @@ export function MatchChatPage() {
                 disabled={busy}
                 onClick={() => setConfirm("cancel")}
               >
-                거래 취소
+                {copy.chatCancelDeal}
               </Button>
             </div>
           </>
         ) : isBuyTrade && !buySnapshotLocked ? (
           <>
-            <p className="trade-status__state">상품 정보가 준비됐어요</p>
-            <p className="trade-status__hint">
-              상품 상태와 가격을 확인하고 거래 조건을 확정하세요.
-            </p>
+            <p className="trade-status__state">{copy.chatEvidenceReadyState}</p>
+            <p className="trade-status__hint">{copy.chatEvidenceReadyHint}</p>
             <div className="trade-status__actions">
               <Button to={`/deal/${match.id}/snapshot`} fullWidth>
-                거래 조건 확인
+                {copy.chatConfirmTerms}
               </Button>
               <Button to={`/deal/${match.id}/evidence`} fullWidth variant="secondary">
-                상품 정보 보기
+                {copy.chatViewEvidence}
               </Button>
               <Button
                 fullWidth
@@ -482,22 +481,20 @@ export function MatchChatPage() {
                 disabled={busy}
                 onClick={() => setConfirm("cancel")}
               >
-                거래 취소
+                {copy.chatCancelDeal}
               </Button>
             </div>
           </>
         ) : isBuyTrade && !buyPaid ? (
           <>
-            <p className="trade-status__state">결제를 진행할 차례예요</p>
-            <p className="trade-status__hint">
-              거래 조건은 확정됐어요. 결제가 확인되면 인계 단계로 넘어갑니다.
-            </p>
+            <p className="trade-status__state">{copy.chatPayTurnState}</p>
+            <p className="trade-status__hint">{copy.chatPayTurnHint}</p>
             <div className="trade-status__actions">
               <Button to={`/deal/${match.id}/payment`} fullWidth>
-                결제하기
+                {copy.chatPayNow}
               </Button>
               <Button to={`/deal/${match.id}/snapshot`} fullWidth variant="secondary">
-                확정된 거래 조건 보기
+                {copy.chatViewLockedTerms}
               </Button>
               <Button
                 fullWidth
@@ -505,19 +502,17 @@ export function MatchChatPage() {
                 disabled={busy}
                 onClick={() => setConfirm("cancel")}
               >
-                거래 취소
+                {copy.chatCancelDeal}
               </Button>
             </div>
           </>
         ) : isBuyTrade && buyPaid ? (
           <>
-            <p className="trade-status__state">물품 인계 확인 단계예요</p>
-            <p className="trade-status__hint">
-              실제 물품과 확정한 거래 조건을 다시 확인한 뒤 인계를 완료하세요.
-            </p>
+            <p className="trade-status__state">{copy.chatHandoffState}</p>
+            <p className="trade-status__hint">{copy.chatHandoffHint}</p>
             <div className="trade-status__actions">
               <Button to={`/deal/${match.id}/handoff`} fullWidth>
-                인계 확인
+                {copy.chatHandoffConfirm}
               </Button>
             </div>
           </>
@@ -596,13 +591,13 @@ export function MatchChatPage() {
                 <p>{m.body}</p>
                 <div className="chat-bubble__meta">
                   <time dateTime={m.createdAt}>
-                    {new Date(m.createdAt).toLocaleTimeString("ko-KR", {
+                    {new Date(m.createdAt).toLocaleTimeString(timeLocale, {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
                   </time>
                   {mine ? (
-                    <span>{m.readAt ? "읽음" : "전송됨"}</span>
+                    <span>{m.readAt ? copy.chatMsgRead : copy.chatMsgSent}</span>
                   ) : null}
                 </div>
               </div>
@@ -622,7 +617,7 @@ export function MatchChatPage() {
             setNewMessageCount(0);
           }}
         >
-          새 메시지 {newMessageCount}개 ↓
+          {fillCopyTemplate(copy.chatNewMessages, { n: newMessageCount })}
         </button>
       ) : null}
 
@@ -642,8 +637,8 @@ export function MatchChatPage() {
       ) : (
         <p className="chat-composer chat-composer--closed muted">
           {match.status === "COMPLETED"
-            ? "거래가 완료되어 채팅이 읽기 전용이에요."
-            : "종료된 거래 · 채팅은 읽기 전용이에요."}
+            ? copy.chatReadonlyCompleted
+            : copy.chatReadonlyClosed}
         </p>
       )}
 

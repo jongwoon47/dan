@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { dealChainJa } from "@/copy/dealChain";
 import { ko } from "@/copy/ko";
 import { useDanLocale } from "@/i18n/locale";
 
@@ -9,6 +10,7 @@ import { useDanLocale } from "@/i18n/locale";
  */
 export type LocalizedCopy = { [K in keyof typeof ko]: string };
 export const jaPilotCopy: Partial<LocalizedCopy> = {
+  ...dealChainJa,
   brandTag: "必要な人から",
   navCreate: "依頼する", navCreateShort: "依頼", navFeed: "探す", navChats: "チャット", navHome: "ホーム",
   displayName: "表示名", logout: "ログアウト", login: "ログイン",

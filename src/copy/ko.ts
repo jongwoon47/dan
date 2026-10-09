@@ -1,4 +1,6 @@
-export const ko = {
+import { dealChainKo } from "@/copy/dealChain";
+
+const koBase = {
   "brandTag": "찾는 사람이 먼저",
   "navCreate": "요청하기",
   "navCreateShort": "요청",
@@ -462,3 +464,5 @@ export const ko = {
   "retry": "다시 시도",
   "genericError": "잠시 후 다시 시도해 주세요.",
 } as const;
+
+export const ko = { ...koBase, ...dealChainKo };

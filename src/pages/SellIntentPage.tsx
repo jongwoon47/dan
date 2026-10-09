@@ -10,7 +10,7 @@ import { useDanLocale } from "@/i18n/locale";
 import {
   digitsOnly,
   formatDigitsGrouped,
-  formatWon,
+  formatStoredMoney,
   parseMoneyInput,
 } from "@/lib/format";
 import "./pages.css";
@@ -33,6 +33,7 @@ export function SellIntentPage() {
   const product = ownership ? getProduct(ownership.productId) : undefined;
   const aggregate = ownership ? getAggregate(ownership.productId) : null;
   const suggested = aggregate?.highestIntentPrice ?? 0;
+  const money = (value: number) => formatStoredMoney(value, "KRW", locale);
 
   const [price, setPrice] = useState(suggested ? String(suggested) : "");
   const [usageCount, setUsageCount] = useState("");
@@ -111,7 +112,7 @@ export function SellIntentPage() {
       {suggested > 0 ? (
         <section className="live-demand-banner">
           <span>현재 최고 구매희망가</span>
-          <strong>{formatWon(suggested)}</strong>
+          <strong>{money(suggested)}</strong>
           <button type="button" onClick={() => setPrice(String(suggested))}>
             이 가격 사용
           </button>

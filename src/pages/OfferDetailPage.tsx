@@ -4,17 +4,21 @@ import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
+import { fillCopyTemplate } from "@/copy/dealChain";
+import { useDanCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
 import { parsePotentialMatchId } from "@/domain/matchLifecycle";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
 import type { PublicProfile } from "@/domain/types";
 import { conditionLabel, tradeLabel } from "@/i18n/categories";
 import { useDanLocale } from "@/i18n/locale";
-import { formatWon } from "@/lib/format";
+import { formatStoredMoney } from "@/lib/format";
 import "./pages.css";
 
 export function OfferDetailPage() {
   const locale = useDanLocale();
+  const copy = useDanCopy();
+  const numberLocale = locale === "ja" ? "ja-JP" : "ko-KR";
   const { matchId = "" } = useParams();
   const {
     myMatches,
@@ -75,8 +79,12 @@ export function OfferDetailPage() {
     sell.approxUsageCount == null
       ? null
       : product.category === "camera"
-        ? `약 ${sell.approxUsageCount.toLocaleString("ko-KR")}컷`
-        : sell.approxUsageCount.toLocaleString("ko-KR");
+        ? fillCopyTemplate(copy.dealShutterCountValue, {
+            n: sell.approxUsageCount.toLocaleString(numberLocale),
+          })
+        : sell.approxUsageCount.toLocaleString(numberLocale);
+  const money = (value: number) =>
+    formatStoredMoney(value, demand.currencyCode ?? "KRW", locale);
 
   async function interest() {
     if (busy) return;
@@ -105,18 +113,23 @@ export function OfferDetailPage() {
         <div>
           <p className="eyebrow">판매 제안</p>
           <h1 className="page-title">{product.name}</h1>
-          <strong className="offer-detail-price">{formatWon(sell.minimumPrice)}</strong>
+          <strong className="offer-detail-price">{money(sell.minimumPrice)}</strong>
         </div>
       </section>
 
       <section className="offer-detail-facts">
         {usageValue ? (
           <div>
-            <span>{product.category === "camera" ? "컷수" : "사용량 / 횟수"}</span>
+            <span>
+              {product.category === "camera" ? copy.dealShutterCount : copy.dealUsageCount}
+            </span>
             <strong>{usageValue}</strong>
           </div>
         ) : null}
-        <div><span>상태</span><strong>{conditionLabel(locale, ownership.condition)}</strong></div>
+        <div>
+          <span>{copy.condition}</span>
+          <strong>{conditionLabel(locale, ownership.condition)}</strong>
+        </div>
         <div><span>상태 메모</span><strong>{sell.conditionNote || "특이사항 없음"}</strong></div>
         <div><span>구매자 희망</span><strong>{formatFulfillmentSummary(demand.fulfillmentOptions)}</strong></div>
         <div>
@@ -125,7 +138,7 @@ export function OfferDetailPage() {
             {!sell.tradeMethod
               ? "—"
               : sell.tradeMethod === "any"
-                ? `${tradeLabel(locale, "meetup")} · ${tradeLabel(locale, "shipping")}`
+                ? copy.tradeMeetupOrShipping
                 : tradeLabel(locale, sell.tradeMethod)}
           </strong>
         </div>
