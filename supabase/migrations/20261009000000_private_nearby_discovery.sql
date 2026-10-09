@@ -71,10 +71,10 @@ begin
           d.status = 'ACTIVE'
           and (d.expires_at is null or d.expires_at > now())
           and exists (
-            select 1 from public.profiles owner
-            where owner.id = d.user_id
-              and owner.deleted_at is null
-              and owner.deletion_started_at is null
+            select 1 from public.profiles owner_profile
+            where owner_profile.id = d.user_id
+              and owner_profile.deleted_at is null
+              and owner_profile.deletion_started_at is null
           )
           and not public.interaction_blocked_with(d.user_id)
           and (
