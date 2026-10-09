@@ -1,5 +1,5 @@
 begin;
-select plan(7);
+select plan(8);
 
 select ok(
   to_regprocedure('public.search_nearby_demands(double precision,double precision,integer,integer)') is not null,
@@ -30,6 +30,15 @@ select ok(
 select ok(
   not has_function_privilege('authenticated', 'public.approx_demand_distances(double precision,double precision,uuid[])', 'execute'),
   'authenticated clients cannot invoke the retired arbitrary-target distance oracle'
+);
+
+select ok(
+  position(
+    'require_live_account' in pg_get_functiondef(
+      'public.search_nearby_demands(double precision,double precision,integer,integer)'::regprocedure
+    )
+  ) > 0,
+  'the security-definer proximity function rejects deleted accounts'
 );
 
 select * from finish();
