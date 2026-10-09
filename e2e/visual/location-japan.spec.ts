@@ -21,6 +21,10 @@ test("Japanese location discovery, saved area, and route controls", async ({ pag
   await page.getByRole("textbox", { name: "目的地" }).fill("天神駅");
   await expect(page.getByText(/実際の経路や所要時間の計算はまだ行いません/)).toBeVisible();
 
+  await page.goto("/create?type=TASK");
+  await expect(page.getByText(/韓国ウォン（KRW）/).first()).toBeVisible();
+  await expect(page.getByText(/日本円での取引はまだ利用できません/).first()).toBeVisible();
+
   const overflow = await page.evaluate(() =>
     Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) -
     document.documentElement.clientWidth
