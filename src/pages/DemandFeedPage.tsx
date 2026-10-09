@@ -308,9 +308,11 @@ export function DemandFeedPage() {
     remoteReady &&
     remoteRows.length < remoteTotal;
 
-  const demandHref = query.trim()
-    ? `/create?type=BUY&q=${encodeURIComponent(query.trim())}`
-    : "/create";
+  const demandHref = areaCountry === "JP"
+    ? "/create?country=JP"
+    : query.trim()
+      ? `/create?type=BUY&q=${encodeURIComponent(query.trim())}`
+      : "/create";
 
   function resetRemoteDiscovery() {
     setRemoteRows([]);
