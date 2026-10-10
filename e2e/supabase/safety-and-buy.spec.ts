@@ -216,7 +216,11 @@ test("BUY browser path reaches evidence→snapshot→payment honesty gate (no fa
     await sellerPage.getByRole("link", { name: "상품 정보 등록" }).click();
     await expect(sellerPage).toHaveURL(/\/evidence/);
     await expect(sellerPage.getByText("거래 정보를 찾을 수 없어요")).toHaveCount(0);
-    await expect(sellerPage.getByText(/촬영 코드|현재 보유/)).toBeVisible({
+    await expect(sellerPage.getByText("현재 보유 사진 · 필수")).toBeVisible({
+      timeout: 60_000,
+    });
+    // Wait until challenge issuance finishes and unlocks the photo input.
+    await expect(sellerPage.getByText("촬영 코드 발급 중…")).toHaveCount(0, {
       timeout: 60_000,
     });
     const fileInput = sellerPage.locator('input[type="file"]');
@@ -226,8 +230,8 @@ test("BUY browser path reaches evidence→snapshot→payment honesty gate (no fa
       mimeType: "image/png",
       buffer: TINY_PNG,
     });
-    await sellerPage.getByLabel(/외관/).fill("사용감 적음");
-    await sellerPage.getByLabel(/알려진 기능 이상|기능 이상/).fill("없음");
+    await sellerPage.getByLabel("외관 상태").fill("사용감 적음");
+    await sellerPage.getByLabel("알려진 기능 이상").fill("없음");
     await sellerPage.getByRole("button", { name: "상품 정보 저장하기" }).click();
     await expect(sellerPage).toHaveURL(/\/snapshot/, { timeout: 60_000 });
     await sellerPage.screenshot({
