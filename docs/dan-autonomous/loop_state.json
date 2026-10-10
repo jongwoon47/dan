@@ -5,12 +5,12 @@
   "baseline_branch": "cursor/dan-commercial-complete-e0e7",
   "baseline_sha": "47e456d8d5651dde48d9d8ced056911afb593e5d",
   "running_head": "ff818d76294560998d659d5a845038f529397a69",
-  "last_updated": "2026-10-10T16:05:34Z",
+  "last_updated": "2026-10-10T22:41:22Z",
   "phase": "IMPLEMENTING",
   "autonomy": {
     "mode": "cursor-agent-with-readonly-subagent",
     "independent_review_invoked": true,
-    "review_verification": "VERIFIED",
+    "review_verification": "UNVERIFIED",
     "external_orchestrator": "NOT_CONFIGURED"
   },
   "release": {
@@ -1092,6 +1092,37 @@
         "evidence": "PASS TradeComplete/Activity load failure surfaces"
       },
       "next_action": "Owner: Actions suite=full on tip; remaining work external gates only unless new gaps found"
+    },
+    {
+      "id": "C033",
+      "task_id": "P0-01",
+      "implementation_sha": "5502cfade46dcdd7f3edb5b91edc528f0278eb29",
+      "tests": [
+        {
+          "command": "gh workflow dispatch suite=full",
+          "status": "BLOCKED",
+          "evidence": "403 actions=write required; integration token"
+        },
+        {
+          "command": "npm test && typecheck && build",
+          "status": "PASS",
+          "evidence": "259 unit; tsc; vite dist"
+        },
+        {
+          "command": "supabase start (local full substitute)",
+          "status": "BLOCKED",
+          "evidence": "DbSetupError Realtime init"
+        }
+      ],
+      "review": {
+        "status": "NOT_INVOKED",
+        "reviewer_tool": "",
+        "invocation_ref": "",
+        "reviewed_sha": "",
+        "findings": [],
+        "evidence": "Verification-phase CI investigation only; no product code change"
+      },
+      "next_action": "Owner grants actions:write and/or runs suite=full per OWNER_FULL_CI_UNBLOCK_AND_GATES.md; then staging/iOS checklists"
     }
   ],
   "blockers": [
@@ -1118,24 +1149,25 @@
     },
     {
       "id": "B-004",
-      "status": "MITIGATED",
+      "status": "BLOCKED",
       "scope": "local-supabase",
       "reason": "Local supabase start blocked in agent VM; CI supabase job is authority and is green on tip",
-      "owner_action": "Optional: fix agent VM Docker/Realtime networking"
+      "owner_action": "Optional: fix agent VM Docker/Realtime networking",
+      "attempted_safe_evidence": "2026-10-10 retest: docker OK; supabase_db healthy; Realtime init container fails → DbSetupError (same class as prior mitigation)"
     },
     {
       "id": "B-005",
       "status": "BLOCKED",
       "scope": "github-actions-dispatch",
-      "reason": "workflow_dispatch suite=full returns HTTP 403 for automation integration",
-      "owner_action": "Grant workflow_dispatch to CI token or manually run suite=full on tip",
-      "attempted_safe_evidence": "Local unit 259 PASS @ ff818d7; prior visual 25 PASS @ c51bde9",
-      "risk": "No remote supabase/two-user/visual Actions evidence on tip",
-      "safe_remaining_work": "None requiring agent without Actions permission; optional local visual re-run"
+      "reason": "Cursor GitHub App installation token (ghs_/account cursor) lacks actions:write; POST workflow_dispatch returns 403 Resource not accessible by integration (X-Accepted-Github-Permissions: actions=write). Secondary: .github/workflows/ci.yml is absent from default branch main (only deploy workflows), so Actions UI Run workflow may also be unavailable until ci.yml is registered on main.",
+      "owner_action": "1) Grant Cursor GitHub App Actions Read/Write on jongwoon47/dan. 2) Approve minimal main change to add ci.yml (or manually Run workflow after that). 3) Dispatch suite=full once on automation/dan-autonomous-review-loop-20261010 tip. See docs/dan-autonomous/OWNER_FULL_CI_UNBLOCK_AND_GATES.md",
+      "attempted_safe_evidence": "Reconfirmed 403 on suite=full/verify/checkpoint/main-ref; no workflow_dispatch history; local npm test 259+typecheck+build PASS on tip; supabase start still DbSetupError (Realtime init) so local full substitute BLOCKED",
+      "risk": "No remote verify+supabase+visual evidence on tip since draft-skip; last full PR CI success was older SHA 0d526d2 run 38022874275",
+      "safe_remaining_work": "Owner-only Full CI unblock; prepare staging/iOS checklists (documented); no feature work"
     }
   ],
-  "next_action": "Owner: grant Actions dispatch or manually run suite=full on ff818d7; agent resume only for new gaps. Keep JP writes locked. Draft PR #37.",
-  "last_report": "C027–C032 PASS @ ff818d7 (259 unit). Full CI CI_DISPATCH_BLOCKED. Draft PR #37. CODE_COMPLETE_WITH_EXTERNAL_GATES.",
+  "next_action": "OWNER: grant Cursor App actions:write + ensure ci.yml on main (approved) OR manually Run workflow suite=full on tip; then follow staging/iOS checklists in OWNER_FULL_CI_UNBLOCK_AND_GATES.md. Keep PR #37 Draft.",
+  "last_report": "C033 CI investigation: 403 = GitHub App missing actions:write; ci.yml not on main; local supabase still blocked. Draft #37. Checklist prepared for Full CI → staging → iOS.",
   "screen_audit": {
     "updated": "2026-10-10T16:05:34Z",
     "method": "code + computerUse + local Playwright visual @390/desktop",
@@ -1165,8 +1197,8 @@
       "trade_complete": "IMPROVED_C032"
     },
     "open_gaps": [
-      "GitHub Actions suite=full CI_DISPATCH_BLOCKED (403) on ff818d7",
-      "Local Supabase/pgTAP/two-user E2E (B-004)",
+      "GitHub Actions suite=full CI_DISPATCH_BLOCKED (403 actions:write + ci.yml not on main)",
+      "Local Supabase/pgTAP/two-user E2E (B-004 Realtime init)",
       "Real iOS/TestFlight (B-002)",
       "Staging DB apply (B-001)",
       "JP write unlock + legal (jp_pilot_readiness)"
@@ -1233,12 +1265,19 @@
   "last_full_ci_sha": null,
   "ci_dispatch": {
     "status": "CI_DISPATCH_BLOCKED",
-    "attempted_at": "2026-10-10T16:05:34Z",
+    "attempted_at": "2026-10-10T22:41:22Z",
     "suite": "full",
-    "sha": "ff818d76294560998d659d5a845038f529397a69",
-    "error": "HTTP 403 Resource not accessible by integration on workflow_dispatch",
-    "owner_action": "Grant Actions workflow_dispatch permission to automation token or run suite=full manually on tip ff818d7",
-    "local_substitute": "unit 259 PASS @ ff818d7; prior local visual 25 PASS @ c51bde9 (CSS/touch since — re-run visual at owner CI)"
+    "sha": "5502cfade46dcdd7f3edb5b91edc528f0278eb29",
+    "error": "HTTP 403 Resource not accessible by integration — needs actions:write on Cursor GitHub App; ci.yml also missing from main",
+    "owner_action": "Follow docs/dan-autonomous/OWNER_FULL_CI_UNBLOCK_AND_GATES.md §B",
+    "local_substitute": "unit 259 + typecheck + build PASS @ tip; supabase/E2E/visual Actions not replaceable in this VM (B-004)",
+    "root_cause": {
+      "primary": "github_app_missing_actions_write",
+      "secondary": "ci_yml_not_on_default_branch_main",
+      "workflow_id": 368387807,
+      "workflow_dispatch_runs_ever": 0,
+      "draft_pr_skips_expected": true
+    }
   },
   "code_status": "CODE_COMPLETE_WITH_EXTERNAL_GATES"
 }
