@@ -4,8 +4,8 @@
   "branch": "automation/dan-autonomous-review-loop-20261010",
   "baseline_branch": "cursor/dan-commercial-complete-e0e7",
   "baseline_sha": "47e456d8d5651dde48d9d8ced056911afb593e5d",
-  "running_head": "812d28e4a327568e0e1cef2aa59b1fdf83c2b7bd",
-  "last_updated": "2026-10-10T06:38:49Z",
+  "running_head": "6553a4cb9a22b62c37392537babdb4ca1d6ec639",
+  "last_updated": "2026-10-10T07:00:53Z",
   "phase": "IMPLEMENTING",
   "autonomy": {
     "mode": "cursor-agent-with-readonly-subagent",
@@ -89,7 +89,11 @@
         "Remaining: broader responsive typography across non-chat screens; real-data visual QA at checkpoint.",
         "C017 FINDINGS→C018 PASS: EmptyState headingLevel + Home/My hierarchy @ 20bf56c (bc-89802387-0851-5aa8-b868-6239b2b25cbe).",
         "Remaining P1-01: 390/720/1180 visual responsive QA at suite=full checkpoint; TradeComplete/report/block already covered by earlier cycles + CI smoke history.",
-        "C019 PASS @ 812d28e whole-app commercial UI polish (bc-5f07ba3a-a5f7-5a84-a9da-96ad9eac488c). Browser audit + unit 250."
+        "C019 PASS @ 812d28e whole-app commercial UI polish (bc-5f07ba3a-a5f7-5a84-a9da-96ad9eac488c). Browser audit + unit 250.",
+        "C019 PASS @ 812d28e commercial audit polish (bc-5f07ba3a).",
+        "C020 PASS @ db57c7f login/create copy centralization (bc-845e62fc).",
+        "C021 PASS @ d879bd6 offline/not-found + My touch (bc-0ab94c90).",
+        "C022 PASS @ 6553a4c loading AT announcements (bc-ff6d5a6a)."
       ]
     },
     {
@@ -112,7 +116,8 @@
       "evidence": [
         "jaPilotCopy covers every ko key (jaTradeCoverage.test.ts).",
         "AppErrorBoundary/NetworkStatusBanner/ConsentPage already JA.",
-        "C007: /ja/support draft + Settings locale-aware support link; reviewer PASS bc-aa574a81-eb28-56ff-88d4-ead198b3fa00 @ b9c9543."
+        "C007: /ja/support draft + Settings locale-aware support link; reviewer PASS bc-aa574a81-eb28-56ff-88d4-ead198b3fa00 @ b9c9543.",
+        "C020–C021: Login/NotFound/offline/network JA copy keys + coverage tests."
       ]
     },
     {
@@ -667,6 +672,99 @@
         "evidence": "PASS AC1-AC6 commercial polish"
       },
       "next_action": "Centralize Login auth copy; continue create/detail/trade UX audit"
+    },
+    {
+      "id": "C020",
+      "task_id": "P1-01",
+      "implementation_sha": "db57c7f8758be0792353e152bb212cb03d4cfa41",
+      "tests": [
+        {
+          "command": "npm test -- LoginPage.social CreateDemandPage.ja jaTradeCoverage",
+          "status": "PASS",
+          "evidence": "9"
+        },
+        {
+          "command": "npm test",
+          "status": "PASS",
+          "evidence": "251"
+        },
+        {
+          "command": "full CI",
+          "status": "NOT_RUN",
+          "evidence": "Draft skip"
+        }
+      ],
+      "review": {
+        "status": "PASS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-845e62fc-4750-57e6-ab48-acefa62027e5",
+        "reviewed_sha": "db57c7f8758be0792353e152bb212cb03d4cfa41",
+        "findings": [],
+        "evidence": "PASS login/create KO/JA copy"
+      },
+      "next_action": "C021 offline/not-found"
+    },
+    {
+      "id": "C021",
+      "task_id": "P1-01",
+      "implementation_sha": "d879bd65cd9b1512a554c6c56bd86c781b3c1d39",
+      "tests": [
+        {
+          "command": "npm test -- NotFound NetworkStatusBanner jaTradeCoverage",
+          "status": "PASS",
+          "evidence": "5"
+        },
+        {
+          "command": "npm test",
+          "status": "PASS",
+          "evidence": "252"
+        },
+        {
+          "command": "full CI",
+          "status": "NOT_RUN",
+          "evidence": "Draft skip"
+        }
+      ],
+      "review": {
+        "status": "PASS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-0ab94c90-773a-54c7-bb97-bc8eaf702475",
+        "reviewed_sha": "d879bd65cd9b1512a554c6c56bd86c781b3c1d39",
+        "findings": [],
+        "evidence": "PASS offline/not-found/My touch"
+      },
+      "next_action": "C022 loading AT"
+    },
+    {
+      "id": "C022",
+      "task_id": "P1-01",
+      "implementation_sha": "6553a4cb9a22b62c37392537babdb4ca1d6ec639",
+      "tests": [
+        {
+          "command": "npm test -- Consent Login social jaTradeCoverage RequireConsent",
+          "status": "PASS",
+          "evidence": "13+"
+        },
+        {
+          "command": "npm test",
+          "status": "PASS",
+          "evidence": "252"
+        },
+        {
+          "command": "full CI",
+          "status": "NOT_RUN",
+          "evidence": "Draft skip until trade/detail batch stable"
+        }
+      ],
+      "review": {
+        "status": "PASS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-ff6d5a6a-111a-504f-9ec4-81a3825281b3",
+        "reviewed_sha": "6553a4cb9a22b62c37392537babdb4ca1d6ec639",
+        "findings": [],
+        "evidence": "PASS loading screen AT announcements"
+      },
+      "next_action": "Commercial pass on demand detail + trade chain screens (BUY/BORROW/TASK/SERVICE)"
     }
   ],
   "blockers": [
@@ -699,31 +797,33 @@
       "owner_action": "Optional: fix agent VM Docker/Realtime networking"
     }
   ],
-  "next_action": "Continue whole-app polish: Login copy centralization, create/detail/trade UX, location usefulness.",
-  "last_report": "C019 PASS commercial UI audit fixes @ 812d28e. Screen audit checklist in loop_state.screen_audit. Draft PR #37. Full CI deferred.",
+  "next_action": "Continue whole-app completion: DemandDetail/Offer/Deal chain commercial UX + flow edge cases; keep JP writes locked; Full CI only after stable batch.",
+  "last_report": "C019–C022 whole-app commercial polish @ 6553a4c VERIFIED. Screen audit updated. Draft PR #37. Full CI deferred. Release NOT_APPROVED.",
   "screen_audit": {
-    "updated": "2026-10-10T06:38:49Z",
+    "updated": "2026-10-10T07:00:53Z",
     "method": "code + computerUse browser @390/720",
     "screens": {
       "home": "IMPROVED_C019",
       "feed": "IMPROVED_C019",
-      "create": "NEEDS_REVIEW",
+      "create": "IMPROVED_C020",
       "demand_detail": "NEEDS_REVIEW",
       "trade_chain": "NEEDS_REVIEW",
       "chat": "PRIOR_C013",
       "activity": "IMPROVED_C019",
-      "my": "IMPROVED_C019",
-      "profile": "NEEDS_REVIEW",
+      "my": "IMPROVED_C019_C021",
+      "profile": "IMPROVED_C022",
       "settings": "IMPROVED_C019",
-      "login": "NEEDS_REVIEW",
-      "consent": "PRIOR_OK",
-      "report_block": "PRIOR_C008"
+      "login": "IMPROVED_C020_C022",
+      "consent": "IMPROVED_C022",
+      "report_block": "PRIOR_C008",
+      "not_found": "IMPROVED_C021",
+      "network": "IMPROVED_C021"
     },
     "open_gaps": [
-      "LoginPage hardcoded JA/KO social/auth strings not in copy system",
-      "Create/detail/trade visual polish beyond prior smoke",
-      "Feed card density still medium residual",
-      "Measured nearby query performance (B-001)"
+      "Demand detail / trade chain visual+UX commercial pass",
+      "Feed card density residual",
+      "Measured nearby query performance (B-001)",
+      "Legal/TestFlight/JP write unlock owner-gated"
     ]
   }
 }
