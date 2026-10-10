@@ -33,7 +33,7 @@ const CONDITION_OPTIONS: ConditionPreference[] = [
   "sealed",
 ];
 
-const PREFERENCE_PLACEHOLDER: Partial<Record<ProductCategory, string>> = {
+const PREFERENCE_PLACEHOLDER_KO: Partial<Record<ProductCategory, string>> = {
   electronics: "예: 256GB, 블랙, 배터리 90% 이상",
   computer: "예: RAM 16GB 이상, SSD 512GB, 스페이스 블랙",
   gaming: "예: 정발판, 박스 포함, 추가 패드 포함",
@@ -57,6 +57,32 @@ const PREFERENCE_PLACEHOLDER: Partial<Record<ProductCategory, string>> = {
   tools: "예: 배터리 2개, 충전기 포함",
   auto: "예: 신형, 장착 부품 포함",
   other: "예: 색상, 사이즈, 용량, 구성품",
+};
+
+const PREFERENCE_PLACEHOLDER_JA: Partial<Record<ProductCategory, string>> = {
+  electronics: "例: 256GB、ブラック、バッテリー90%以上",
+  computer: "例: RAM 16GB以上、SSD 512GB、スペースブラック",
+  gaming: "例: 国内版、箱あり、追加パッドあり",
+  audio: "例: ブラック、純正ケーブルあり、パッド良好",
+  camera: "例: ブラック、1万カット以下、フルセット",
+  lens: "例: 純正フードあり、カビ・曇りなし",
+  home_appliance: "例: 2024年以降購入、付属品あり",
+  furniture: "例: Bサイズ、グラファイト、ヘッドレストあり",
+  fashion: "例: Mサイズ、ブラック、タグあり",
+  shoes: "例: 27.0cm、箱あり",
+  watches_accessories: "例: フルセット、余リンクあり",
+  sports: "例: Mサイズ、使用少なめ",
+  outdoor: "例: 2人用、グランドシートあり",
+  camping: "例: 2人用、グランドシートあり",
+  hobby_collectible: "例: 未開封、日本語版",
+  baby_kids: "例: 2025年式、付属品すべて",
+  books_media: "例: 全巻、書き込みなし",
+  musical_instrument: "例: ソフトケースあり、修理歴なし",
+  beauty: "例: 未開封、使用期限1年以上",
+  pet: "例: Mサイズ、洗浄済み",
+  tools: "例: バッテリー2個、充電器あり",
+  auto: "例: 新型、取付部品あり",
+  other: "例: 色、サイズ、容量、付属品",
 };
 
 const TRADE_OPTIONS: TradeMethod[] = ["meetup", "shipping", "any"];
@@ -431,7 +457,12 @@ export function BuyDemandCreatePage() {
           <TextInput
             value={extraCondition}
             onChange={(event) => setExtraCondition(event.target.value)}
-            placeholder={PREFERENCE_PLACEHOLDER[selectedProduct?.category ?? category] ?? PREFERENCE_PLACEHOLDER.other}
+            placeholder={
+              (locale === "ja" ? PREFERENCE_PLACEHOLDER_JA : PREFERENCE_PLACEHOLDER_KO)[
+                selectedProduct?.category ?? category
+              ] ??
+              (locale === "ja" ? PREFERENCE_PLACEHOLDER_JA : PREFERENCE_PLACEHOLDER_KO).other
+            }
           />
         </Field>
       </section>

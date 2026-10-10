@@ -58,14 +58,18 @@ export function LoginPage() {
       .catch(() => { if (!controller.signal.aborted) setProviders([]); });
     const hash = new URLSearchParams(window.location.hash.slice(1));
     if (params.has("error") || hash.has("error")) {
-      setLocalError("간편 로그인을 완료하지 못했어요. 다시 시도해 주세요.");
+      setLocalError(
+        locale === "ja"
+          ? "かんたんログインを完了できませんでした。もう一度お試しください。"
+          : "간편 로그인을 완료하지 못했어요. 다시 시도해 주세요.",
+      );
       const clean = new URL(window.location.href);
       for (const key of ["error", "error_code", "error_description"]) clean.searchParams.delete(key);
       clean.hash = "";
       window.history.replaceState(null, "", clean.pathname + clean.search);
     }
     return () => controller.abort();
-  }, [mode, params]);
+  }, [locale, mode, params]);
 
   async function onSocialLogin(provider: SocialProvider) {
     if (submitLock.current || status === "loading") return;
@@ -76,7 +80,11 @@ export function LoginPage() {
     try {
       await startSocialLogin(provider, next);
     } catch {
-      setLocalError("간편 로그인에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      setLocalError(
+        locale === "ja"
+          ? "かんたんログインに接続できませんでした。しばらくしてからもう一度お試しください。"
+          : "간편 로그인에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.",
+      );
       setSocialBusy(null);
       submitLock.current = false;
     }
@@ -117,7 +125,9 @@ export function LoginPage() {
           setIsSignUp(false);
           setPassword("");
           setNotice(
-            "가입 확인 메일을 보냈어요. 이메일의 링크를 확인한 뒤 로그인해 주세요.",
+            locale === "ja"
+              ? "確認メールを送りました。メールのリンクを確認してからログインしてください。"
+              : "가입 확인 메일을 보냈어요. 이메일의 링크를 확인한 뒤 로그인해 주세요.",
           );
           return;
         }
