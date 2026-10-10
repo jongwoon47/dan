@@ -1,18 +1,24 @@
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { PriceDistribution } from "@/components/PriceDistribution";
-import { ProductVisual, CategoryPill } from "@/components/ProductVisual";
+import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
-import { ko } from "@/copy/ko";
+import { useDanCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
-import { formatRelativeCount, formatWon, formatWonShort } from "@/lib/format";
+import { formatFulfillmentSummary } from "@/domain/fulfillment";
+import { isBuyDemand, type BuyDemand } from "@/domain/types";
+import { conditionLabel } from "@/i18n/categories";
+import { useDanLocale } from "@/i18n/locale";
+import { formatStoredMoney } from "@/lib/format";
 import "./pages.css";
 
 export function DemandDetailPage() {
+  const copy = useDanCopy();
+  const locale = useDanLocale();
   const { productId = "" } = useParams();
-  const { getProduct, getAggregate, myOwnerships, myDemands, currentUser } =
-    useDan();
+  const { getProduct, getAggregate, myOwnerships, myDemands, currentUser, state } = useDan();
+  const [shareStatus, setShareStatus] = useState("");
   const product = getProduct(productId);
   const aggregate = getAggregate(productId);
   const owned = myOwnerships.find((o) => o.productId === productId);
@@ -23,139 +29,181 @@ export function DemandDetailPage() {
       d.userId === currentUser?.id &&
       d.details.productId === productId,
   );
+  const activeBuyerDemands = state.demands
+    .filter(
+      (d): d is BuyDemand =>
+        isBuyDemand(d) &&
+        d.status === "ACTIVE" &&
+        d.details.productId === productId &&
+        d.userId !== currentUser?.id,
+    )
+    .sort((a, b) => b.details.maxPrice - a.details.maxPrice)
+    .slice(0, 12);
+
+  async function shareDemand() {
+    if (!product) return;
+    const shareData = {
+      title: copy.detailShareTitle.replace("{name}", product.name),
+      text: copy.detailShareText
+        .replace("{n}", String(aggregate?.seekerCount ?? 0))
+        .replace("{name}", product.name),
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        setShareStatus(copy.detailShareOk);
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareData.url);
+        setShareStatus(copy.detailShareCopied);
+      } else {
+        setShareStatus(copy.detailShareManual);
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setShareStatus(copy.detailShareFail);
+    }
+  }
 
   useDeepHeader({
-    title: product?.name ?? ko.seekingOnly,
+    title: product?.name ?? copy.seekingOnly,
     hide: !product,
+    right: product ? (
+      <button
+        type="button"
+        className="deep-header-share"
+        onClick={() => void shareDemand()}
+        aria-label={copy.detailShareAria}
+      >
+        {copy.detailShare}
+      </button>
+    ) : undefined,
   });
 
   if (!product || !aggregate) {
     return (
       <EmptyState
-        title={ko.missingDemand}
-        body={ko.detailMissingBody}
-        action={<Button to="/feed" variant="secondary">{ko.navFeed}</Button>}
+        title={copy.missingDemand}
+        body={copy.detailMissingBody}
+        action={<Button to="/feed" variant="secondary">{copy.navFeed}</Button>}
       />
     );
   }
 
-  const showTrend = aggregate.recent7dDelta !== 0;
-  const showHighest = aggregate.highestIntentPrice > 0;
-  const showAvg = aggregate.avgPrice > 0;
+  const money = (value: number) => formatStoredMoney(value, "KRW", locale);
 
   return (
-    <div className="page-stack page-narrow detail-page">
-      <section className="detail-top">
-        <div className="detail-top__identity">
-          <CategoryPill category={product.category} />
-          <h1 className="page-title detail-product-title">{product.name}</h1>
+    <div className="page-stack page-narrow detail-page detail-page--blueprint">
+      <section className="demand-detail-hero">
+        <ProductVisual product={product} size="lg" />
+        <div className="demand-detail-copy">
+          <span className="eyebrow">{copy.detailSeekingEyebrow}</span>
+          <h1>{product.name}</h1>
           <p className="detail-hero__count">
-            {aggregate.seekerCount > 0 ? (
-              <>
-                <strong>
-                  {aggregate.seekerCount}
-                  {ko.myung}
-                </strong>
-                {ko.seekingDetailSuffix.replace(ko.myung, "")}
-              </>
-            ) : (
-              <span className="muted">{ko.emptyFeed}</span>
-            )}
+            <strong>
+              {aggregate.seekerCount}
+              {copy.myung}
+            </strong>
+            {copy.detailSeekingNow}
           </p>
-          <p className="section-desc">{ko.demandFirstLead}</p>
+          <p className="section-desc">{copy.detailBuyLead}</p>
         </div>
-        <ProductVisual product={product} size="md" />
       </section>
 
-      {showHighest || showAvg || showTrend ? (
-        <div className="kpi-strip kpi-strip--compact">
-          {showHighest ? (
-            <div className="kpi-strip__item">
-              <span>{ko.highestHopeShort}</span>
-              <strong>{formatWonShort(aggregate.highestIntentPrice)}</strong>
-            </div>
-          ) : null}
-          {showAvg ? (
-            <div className="kpi-strip__item">
-              <span>{ko.avgHope}</span>
-              <strong>{formatWonShort(aggregate.avgPrice)}</strong>
-            </div>
-          ) : null}
-          {showTrend ? (
-            <div className="kpi-strip__item">
-              <span>{ko.thisWeek}</span>
-              <strong className="demand-card__trend">
-                {formatRelativeCount(aggregate.recent7dDelta)}
-              </strong>
-            </div>
-          ) : null}
+      {shareStatus ? (
+        <p className="share-status" role="status">
+          {shareStatus}
+        </p>
+      ) : null}
+
+      <section className="demand-detail-summary">
+        <div>
+          <span>{copy.suggestPrice}</span>
+          <strong>
+            {aggregate.highestIntentPrice > 0
+              ? money(aggregate.highestIntentPrice)
+              : copy.detailPriceChecking}
+          </strong>
         </div>
-      ) : null}
-
-      {aggregate.fulfillmentSummary ? (
-        <section className="detail-section">
-          <h2 className="section-title">{ko.tradeMethod}</h2>
-          <p className="section-desc">{aggregate.fulfillmentSummary}</p>
-        </section>
-      ) : null}
-
-      <section className="detail-section">
-        <h2 className="section-title">{ko.priceDist}</h2>
-        <PriceDistribution
-          buckets={aggregate.priceBuckets}
-          seekerCount={aggregate.seekerCount}
-        />
+        <div>
+          <span>{copy.detailBuyerFulfillment}</span>
+          <strong>{aggregate.fulfillmentSummary || copy.detailFulfillmentChecking}</strong>
+        </div>
       </section>
 
-      <section className="holder-cta">
-        <h2 className="section-title">{ko.haveItTitle}</h2>
-        <p className="section-desc">{ko.haveItBody}</p>
-        {owned ? (
-          <div className="holder-cta__owned">
-            <p>
-              {ko.alreadyOwnedPrefix}{" "}
-              {aggregate.seekerCount > 0 ? (
-                <>
-                  {ko.seekersLabel}{" "}
+      <section className="detail-section buyer-demand-list">
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">{copy.detailBuyerRequests}</span>
+            <h2>{copy.detailPeopleSeeking}</h2>
+          </div>
+          <span>
+            {activeBuyerDemands.length}
+            {copy.detailCountSuffix}
+          </span>
+        </div>
+        {activeBuyerDemands.length > 0 ? (
+          <div className="buyer-demand-list__rows">
+            {activeBuyerDemands.map((demand, index) => (
+              <div key={demand.id} className="buyer-demand-row">
+                <div className="buyer-demand-row__main">
+                  <span>
+                    {copy.detailBuyerDemandN.replace("{n}", String(index + 1))}
+                  </span>
                   <strong>
-                    {aggregate.seekerCount}
-                    {ko.myung}
+                    {copy.detailMaxPrefix} {money(demand.details.maxPrice)}
                   </strong>
-                  .
-                </>
-              ) : null}
-            </p>
-            <Button to={`/ownership/${owned.id}/sell-intent`} fullWidth>
-              {ko.leaveSellIntent}
-            </Button>
-            <Button to="/my" variant="secondary" fullWidth>
-              {ko.viewInMy}
-            </Button>
+                  <small>
+                    {conditionLabel(locale, demand.details.conditionPreference)} ·{" "}
+                    {formatFulfillmentSummary(demand.fulfillmentOptions, locale)}
+                  </small>
+                </div>
+                <Button
+                  to={`/demand/${product.id}/offer?target=${encodeURIComponent(demand.id)}`}
+                  variant="secondary"
+                  size="sm"
+                >
+                  {copy.detailSendOffer}
+                </Button>
+              </div>
+            ))}
           </div>
         ) : (
-          <Button to={`/demand/${product.id}/own`} fullWidth size="lg">
-            {ko.haveIt}
-          </Button>
+          <p className="section-desc">{copy.detailNoPublicBuyers}</p>
         )}
-        <p className="holder-cta__note">{ko.ownershipNote}</p>
+      </section>
+
+      <section className="seller-action-card">
+        <div>
+          <span>{copy.haveItTitle}</span>
+          <h2>{copy.detailOfferNowTitle}</h2>
+          <p>{copy.detailOfferNowBody}</p>
+        </div>
+        <Button to={`/demand/${product.id}/offer`} fullWidth size="lg">
+          {copy.detailSendOfferCta}
+        </Button>
+        {owned ? <small>{copy.detailReuseOwned}</small> : null}
       </section>
 
       {myBuy ? (
-        <section className="detail-section">
-          <h2 className="section-title">{ko.myBuyManage}</h2>
-          <p className="section-desc">
-            {ko.maxPrice} {formatWon(myBuy.budget)}
-          </p>
+        <section className="detail-section demand-my-request">
+          <div>
+            <span>{copy.myRequests}</span>
+            <strong>
+              {copy.detailMaxPrefix} {money(myBuy.budget)}
+            </strong>
+          </div>
           <Button to={`/demand/item/${myBuy.id}`} fullWidth variant="secondary">
-            {ko.editDemand} / {ko.closeDemand}
+            {copy.myBuyManage}
           </Button>
         </section>
-      ) : null}
-
-      {myBuy ? null : (
+      ) : (
         <p className="detail-foot">
-          {ko.buyerSide}
-          <Link to="/create?type=BUY">{ko.registerSame}</Link>
+          {copy.buyerSide}
+          <Link to={`/create?type=BUY&q=${encodeURIComponent(product.name)}`}>
+            {copy.registerSame}
+          </Link>
         </p>
       )}
     </div>

@@ -57,3 +57,13 @@ qa-screenshots/
 .wrangler-login.out
 .wrangler-login.err
 
+# Generated native web bundle/config and local signing state
+ios/App/App/public/
+ios/App/App/capacitor.config.json
+ios/App/App/config.xml
+ios/**/xcuserdata/
+ios/**/DerivedData/
+*.mobileprovision
+*.ipa
+*.xcarchive/
+

@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
+import { useDanLocale } from "@/i18n/locale";
 import "./confirmSheet.css";
 
 type Props = {
@@ -19,12 +20,14 @@ export function ConfirmSheet({
   title,
   body,
   confirmLabel,
-  cancelLabel = "취소",
+  cancelLabel,
   danger,
   onConfirm,
   onCancel,
   children,
 }: Props) {
+  const locale = useDanLocale();
+  const resolvedCancel = cancelLabel ?? (locale === "ja" ? "キャンセル" : "취소");
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
@@ -98,7 +101,7 @@ export function ConfirmSheet({
             fullWidth
             onClick={() => onCancelRef.current()}
           >
-            {cancelLabel}
+            {resolvedCancel}
           </Button>
           <Button
             fullWidth

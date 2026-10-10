@@ -1,47 +1,78 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
-import { TextInput } from "@/components/ui/Input";
+import { Field, TextInput } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { ko } from "@/copy/ko";
+import { useDeepHeader } from "@/components/layout/ShellChrome";
+import { fillCopyTemplate } from "@/copy/dealChain";
+import { useDanCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
+import { useDanLocale } from "@/i18n/locale";
 import {
   digitsOnly,
   formatDigitsGrouped,
-  formatWon,
+  formatStoredMoney,
   parseMoneyInput,
 } from "@/lib/format";
 import "./pages.css";
 
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error);
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.readAsDataURL(file);
+  });
+}
+
 export function SellIntentPage() {
+  const locale = useDanLocale();
+  const copy = useDanCopy();
   const { ownershipId = "" } = useParams();
   const navigate = useNavigate();
-  const {
-    myOwnerships,
-    getProduct,
-    getAggregate,
-    createSellIntent,
-    myMatches,
-  } = useDan();
+  const { myOwnerships, getProduct, getAggregate, createSellIntent } = useDan();
   const ownership = myOwnerships.find((o) => o.id === ownershipId);
   const product = ownership ? getProduct(ownership.productId) : undefined;
   const aggregate = ownership ? getAggregate(ownership.productId) : null;
-  const productIdForNav = ownership?.productId;
-  const suggested =
-    aggregate && aggregate.highestIntentPrice > 0
-      ? aggregate.highestIntentPrice
-      : 0;
+  const suggested = aggregate?.highestIntentPrice ?? 0;
+  const money = (value: number) => formatStoredMoney(value, "KRW", locale);
+
   const [price, setPrice] = useState(suggested ? String(suggested) : "");
+  const [usageCount, setUsageCount] = useState("");
+  const [conditionNote, setConditionNote] = useState("");
+  const [quickPhotoUrl, setQuickPhotoUrl] = useState("");
+  const [photoError, setPhotoError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  if (!ownership || !product || !productIdForNav) {
+  useDeepHeader({ title: copy.detailSendOfferCta });
+
+  if (!ownership || !product) {
     return (
       <EmptyState
-        title={ko.missingOwn}
-        body={ko.missingOwnBody}
-        action={<Button to="/feed" variant="secondary">{ko.navFeed}</Button>}
+        title={copy.missingOwn}
+        body={copy.missingOwnBody}
+        action={<Button to="/feed" variant="secondary">{copy.viewBuyDemand}</Button>}
       />
     );
+  }
+
+  async function pickPhoto(file?: File) {
+    setPhotoError("");
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setPhotoError(copy.dealImageFileOnly);
+      return;
+    }
+    if (file.size > 700_000) {
+      setPhotoError(copy.dealPhotoTooLarge);
+      return;
+    }
+    try {
+      setQuickPhotoUrl(await fileToDataUrl(file));
+    } catch {
+      setPhotoError(copy.dealPhotoReadFailed);
+    }
   }
 
   async function submit() {
@@ -50,19 +81,14 @@ export function SellIntentPage() {
     if (!Number.isFinite(minimumPrice) || minimumPrice <= 0) return;
     setBusy(true);
     try {
-      const created = await createSellIntent({ ownershipId, minimumPrice });
-      if (created) {
-        const related = myMatches.find(
-          (m) =>
-            m.productId === productIdForNav &&
-            (m.status === "CONNECTED" || m.status === "BUYER_INTERESTED"),
-        );
-        if (related?.status === "CONNECTED") {
-          navigate(`/match/${related.id}`);
-        } else {
-          navigate("/chats");
-        }
-      }
+      const created = await createSellIntent({
+        ownershipId,
+        minimumPrice,
+        approxUsageCount: usageCount ? Number(usageCount) : undefined,
+        conditionNote: conditionNote.trim() || undefined,
+        quickPhotoUrl: quickPhotoUrl || undefined,
+      });
+      if (created) navigate("/my");
     } finally {
       setBusy(false);
     }
@@ -72,67 +98,82 @@ export function SellIntentPage() {
   const seekerCount = aggregate?.seekerCount ?? 0;
 
   return (
-    <div className="page-stack page-narrow">
-      <section className="section-stack sell-summary">
-        <h2 className="section-title">{product.name}</h2>
-        <p className="section-desc">{ko.sellNotListing}</p>
-        {suggested > 0 || seekerCount > 0 ? (
-          <div className="kpi-strip kpi-strip--compact">
-            {suggested > 0 ? (
-              <div className="kpi-strip__item">
-                <span>{ko.currentHighest}</span>
-                <strong>{formatWon(suggested)}</strong>
-              </div>
-            ) : null}
-            {seekerCount > 0 ? (
-              <div className="kpi-strip__item">
-                <span>{ko.seekersLabel}</span>
-                <strong>
-                  {seekerCount}
-                  {ko.myung}
-                </strong>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+    <div className="page-stack page-narrow quick-offer-page">
+      <section className="deal-product-card">
+        <ProductVisual product={product} size="sm" />
+        <div>
+          <p className="eyebrow">{copy.quickOfferEyebrow}</p>
+          <h1 className="page-title">{product.name}</h1>
+          {seekerCount > 0 ? (
+            <p className="quick-offer-signal">
+              {fillCopyTemplate(copy.quickOfferSeeking, { n: seekerCount })}
+            </p>
+          ) : null}
+        </div>
+      </section>
 
-        {suggested > 0 ? (
-          <button
-            type="button"
-            className="text-link"
-            onClick={() => setPrice(String(suggested))}
-          >
-            {ko.suggestPrice}: {formatWon(suggested)}
+      {suggested > 0 ? (
+        <section className="live-demand-banner">
+          <span>{copy.currentBuyHighest}</span>
+          <strong>{money(suggested)}</strong>
+          <button type="button" onClick={() => setPrice(String(suggested))}>
+            {copy.useThisPrice}
           </button>
-        ) : null}
+        </section>
+      ) : null}
 
-        <div className="sell-sentence">
-          <p>{ko.iWould}</p>
+      <section className="section-stack quick-offer-form">
+        <Field label={copy.quickOfferPriceLabel} hint={copy.sellIntentPriceHint}>
           <TextInput
             inputMode="numeric"
-            value={formatDigitsGrouped(price)}
+            value={formatDigitsGrouped(price, locale)}
             onChange={(e) => setPrice(digitsOnly(e.target.value))}
-            aria-label={ko.minPriceLabel}
-            placeholder={suggested > 0 ? formatDigitsGrouped(String(suggested)) : "예: 1,500,000"}
+            placeholder={copy.quickOfferPricePh}
           />
-          <p>{ko.sellSentenceEnd}</p>
-        </div>
+        </Field>
 
-        {typed > 0 && suggested > 0 ? (
-          <p className="section-desc">
-            {formatWon(typed)} {ko.fromSuffix}
-            {" · "}
-            {ko.highestHopeShort} {formatWon(suggested)}
-          </p>
+        {product.category === "camera" ? (
+          <Field label={copy.approxShutter} hint={copy.sellIntentShutterHint}>
+            <TextInput
+              inputMode="numeric"
+              value={formatDigitsGrouped(usageCount, locale)}
+              onChange={(e) => setUsageCount(digitsOnly(e.target.value))}
+              placeholder={copy.approxShutterPh}
+            />
+          </Field>
         ) : null}
 
-        <Button
-          fullWidth
-          size="lg"
-          onClick={() => void submit()}
-          disabled={busy || typed <= 0}
-        >
-          {busy ? ko.saving : ko.sellCta}
+        <Field label={copy.conditionNoteShort}>
+          <TextInput
+            value={conditionNote}
+            onChange={(e) => setConditionNote(e.target.value)}
+            placeholder={copy.conditionNotePh}
+          />
+        </Field>
+
+        <div>
+          <p className="field-inline-label">
+            {copy.photoOneOptional}{" "}
+            <span className="muted">{copy.offerPriceOptional}</span>
+          </p>
+          <label className="evidence-upload evidence-upload--quick">
+            {quickPhotoUrl ? (
+              <img src={quickPhotoUrl} alt={copy.evidencePhotoAlt} />
+            ) : (
+              <span>{copy.photoHelpBuyer}</span>
+            )}
+            <input type="file" accept="image/*" onChange={(e) => void pickPhoto(e.target.files?.[0])} />
+          </label>
+          {photoError ? <p className="form-error">{photoError}</p> : null}
+        </div>
+
+        <div className="quick-offer-note">
+          <strong>{copy.offerLightTitle}</strong>
+          <p>{copy.detailOfferNowBody}</p>
+        </div>
+
+        <Button fullWidth size="lg" onClick={() => void submit()} disabled={busy || typed <= 0}>
+          {busy ? copy.offerSending : copy.detailSendOfferCta}
         </Button>
       </section>
     </div>

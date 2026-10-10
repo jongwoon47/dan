@@ -7,16 +7,23 @@ import type {
   ChatMessage,
   Demand,
   DemandAggregate,
+  CancelReason,
+  DealDispute,
+  DealEvidence,
+  DealEvidenceChallenge,
+  DealSnapshot,
   DemandType,
   FeedItem,
   ItemCondition,
   Match,
   Ownership,
   Product,
+  ProductCategory,
   PublicProfile,
   Response,
   SellIntent,
   User,
+  UserVerificationStatus,
 } from "./types";
 import type { DanState } from "./storeTypes";
 
@@ -29,10 +36,11 @@ export interface DanContextValue {
   users: User[];
   currentUser: User | null;
   isLoggedIn: boolean;
+  getMyVerification: () => Promise<UserVerificationStatus>;
   login: (userId?: string) => void;
   logout: () => void;
   createDemand: (payload: CreateDemandInput) => Promise<Demand | null>;
-  ensureProduct: (name: string) => Promise<Product | null>;
+  ensureProduct: (name: string, category?: ProductCategory) => Promise<Product | null>;
   updateDemand: (payload: {
     demandId: string;
     title: string;
@@ -52,7 +60,7 @@ export interface DanContextValue {
     tradeMethod?: string;
   }) => Promise<Demand | null>;
   closeDemand: (demandId: string) => Promise<Demand | null>;
-  /** BUY only — soft-expired ACTIVE row gets +30d. No auto-repost. */
+  /** BUY only — user-confirmed Live Demand gets +7d. No auto-repost. */
   extendBuyDemand: (demandId: string) => Promise<Demand | null>;
   createOwnership: (payload: {
     productId: string;
@@ -61,7 +69,47 @@ export interface DanContextValue {
   createSellIntent: (payload: {
     ownershipId: string;
     minimumPrice: number;
+    targetDemandId?: string;
+    tradeMethod?: import("@/domain/types").TradeMethod;
+    approxUsageCount?: number;
+    conditionNote?: string;
+    quickPhotoUrl?: string;
   }) => Promise<SellIntent | null>;
+  issueDealEvidenceChallenge: (matchId: string) => Promise<DealEvidenceChallenge | null>;
+  getDealEvidence: (matchId: string) => Promise<DealEvidence | null>;
+  upsertDealEvidence: (payload: {
+    matchId: string;
+    challengeCode: string;
+    possessionPhotoUrl?: string;
+    serialLast4?: string;
+    usageCount?: number;
+    purchaseDate?: string;
+    warrantyUntil?: string;
+    components?: string[];
+    cosmeticNotes?: string;
+    knownIssues?: string;
+    repairHistory?: string;
+    waterDamageStatement?: string;
+    evidenceMeta?: Record<string, unknown>;
+  }) => Promise<DealEvidence | null>;
+  getDealSnapshot: (matchId: string) => Promise<DealSnapshot | null>;
+  confirmDealSnapshot: (payload: {
+    matchId: string;
+    agreedPrice: number;
+    snapshot: Record<string, unknown>;
+  }) => Promise<DealSnapshot | null>;
+  listDealDisputes: (matchId: string) => Promise<DealDispute[]>;
+  openDealDispute: (payload: {
+    matchId: string;
+    reason: DealDispute["reason"];
+    detail?: string;
+  }) => Promise<DealDispute | null>;
+  cancelDeal: (payload: {
+    matchId: string;
+    reason: CancelReason;
+  }) => Promise<Match | null>;
+  /** Demo-only visual QA helper. Supabase mode always returns false. */
+  simulateSafePaymentDemo: (matchId: string) => Promise<boolean>;
   createResponse: (payload: {
     demandId: string;
     message: string;
@@ -78,6 +126,11 @@ export interface DanContextValue {
   /** After CLOSED match: demand owner reactivates MATCHED → ACTIVE. */
   reopenDemandAfterTradeClose: (matchId: string) => Promise<Demand | null>;
   listMessages: (matchId: string) => Promise<ChatMessage[]>;
+  subscribeMessages: (
+    matchId: string,
+    onMessage: (message: ChatMessage) => void,
+    onStatus?: (status: string) => void,
+  ) => () => void;
   sendMessage: (matchId: string, body: string) => Promise<ChatMessage | null>;
   markMessagesRead: (matchId: string) => Promise<void>;
   activities: ActivityEvent[];
@@ -111,6 +164,8 @@ export interface DanContextValue {
   myMatches: Match[];
   busy: boolean;
   loadError: string | null;
+  /** Soft reload of marketplace rows (matches, demands, sells). */
+  refreshData: () => Promise<void>;
   resetDemo: () => void;
 }
 

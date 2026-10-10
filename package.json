@@ -4,25 +4,36 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "ios:staging": "node --experimental-strip-types --env-file-if-exists=.env.local scripts/prepare-ios-staging.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint src",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
     "test:e2e:remote": "node --env-file=.env.local scripts/e2e-two-user.mjs",
+    "test:e2e:local": "node scripts/e2e-two-user-local.mjs",
     "test:e2e:security": "node --env-file=.env.local scripts/e2e-security.mjs",
     "test:e2e:browser": "node --env-file=.env.local scripts/e2e-browser.mjs",
     "test:qa:mobile": "npx playwright test --config=playwright.visual.config.ts",
     "test:watch": "vitest",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "db:seed:staging": "node --experimental-strip-types scripts/seed-staging.ts",
+    "assert:staging-deploy": "node --experimental-strip-types scripts/assert-staging-deploy.ts",
+    "assert:production-deploy": "node --experimental-strip-types scripts/assert-production-deploy.ts",
+    "ios:production": "node --experimental-strip-types --env-file-if-exists=.env.local scripts/prepare-ios-production.mjs"
   },
   "dependencies": {
+    "@capacitor/app": "8.1.2",
+    "@capacitor/browser": "8.0.5",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/ios": "8.5.2",
     "@supabase/supabase-js": "^2.116.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.13.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.4.3",
     "@playwright/test": "^1.63.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

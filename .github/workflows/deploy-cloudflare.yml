@@ -1,17 +1,38 @@
-name: Deploy Cloudflare Pages
-
-# Manual until CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID are set.
-# Target: https://dan.pages.dev (project name: dan)
+name: Deploy Cloudflare Production
 
 on:
   workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type deploy-production to publish DAN production
+        required: true
+        type: string
+
+concurrency:
+  group: cloudflare-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
-  deploy:
+  deploy-production:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      deployments: write
+    environment:
+      name: production
+      url: https://dan.pages.dev
+    env:
+      DAN_ENV: production
+      VITE_DAN_ENV: production
+      VITE_DATA_MODE: supabase
+      VITE_BASE: /
+      PRODUCTION_DEPLOY_CONFIRM: ${{ inputs.confirm }}
+      PRODUCTION_CLOUDFLARE_PROJECT: dan
+      DAN_PRODUCTION_SUPABASE_PROJECT_REF: hcbooyexjgsjzjncpvtk
+      PRODUCTION_VITE_SUPABASE_URL: https://hcbooyexjgsjzjncpvtk.supabase.co
+      # Publishable browser key, not a service-role/secret key.
+      PRODUCTION_VITE_SUPABASE_ANON_KEY: sb_publishable_S_rPcZDrwXl9JBEe0-zWfw_BISr12xd
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,12 +40,17 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Build
+
+      - name: Assert exact production targets
+        run: npm run assert:production-deploy
+
+      - name: Build production bundle
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_URL: ${{ env.PRODUCTION_VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ env.PRODUCTION_VITE_SUPABASE_ANON_KEY }}
         run: npm run build
-      - name: Publish to Cloudflare Pages
+
+      - name: Publish Cloudflare Pages project dan
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
