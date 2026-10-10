@@ -4,8 +4,8 @@
   "branch": "automation/dan-autonomous-review-loop-20261010",
   "baseline_branch": "cursor/dan-commercial-complete-e0e7",
   "baseline_sha": "47e456d8d5651dde48d9d8ced056911afb593e5d",
-  "running_head": "37d9d32cc65b8e4258e168df1d1977f05c601528",
-  "last_updated": "2026-10-10T03:44:00Z",
+  "running_head": "df2c3254753eb7f3245ec0e9194fcd970e9121cb",
+  "last_updated": "2026-10-10T03:50:00Z",
   "phase": "IMPLEMENTING",
   "autonomy": {
     "mode": "cursor-agent-with-readonly-subagent",
@@ -40,10 +40,10 @@
       "id": "P0-01",
       "priority": "P0",
       "title": "Recheck latest HEAD CI and local validations; repair genuine failures",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
-        "C001 PASS on 5b9996c (TradeComplete render-loop fix).",
-        "Follow-up: Handoff snapshot/disputes effect deps stabilized (F-001); awaiting C002 review on new HEAD.",
+        "C001 PASS bc-e1432805… on 5b9996c (TradeComplete render-loop).",
+        "C002 PASS bc-fcc68965… on df2c325 (Handoff F-001 + ledger).",
         "Local typecheck/lint/unit/build/visual PASS; local supabase BLOCKED (B-004).",
         "Draft PR #37 → cursor/dan-commercial-complete-e0e7."
       ]
@@ -52,7 +52,7 @@
       "id": "P0-02",
       "priority": "P0",
       "title": "Audit RLS, SECURITY DEFINER, market/write gates, consent, location privacy",
-      "status": "TODO",
+      "status": "IN_PROGRESS",
       "evidence": []
     },
     {
@@ -107,12 +107,12 @@
         {
           "command": "npm run typecheck",
           "status": "PASS",
-          "evidence": "/tmp/dan-typecheck2.log exit 0"
+          "evidence": "tsc exit 0"
         },
         {
           "command": "npm run lint",
           "status": "PASS",
-          "evidence": "/tmp/dan-lint.log exit 0 (warnings only)"
+          "evidence": "oxlint exit 0 (warnings only)"
         },
         {
           "command": "npm test",
@@ -127,12 +127,12 @@
         {
           "command": "npx playwright test e2e/visual --config=playwright.visual.config.ts --project=390px --project=desktop",
           "status": "PASS",
-          "evidence": "/tmp/dan-visual-full.log 25 passed / 9 skipped / 0 failed; no Maximum update depth"
+          "evidence": "25 passed / 9 skipped / 0 failed; no Maximum update depth"
         },
         {
           "command": "npx supabase start",
           "status": "BLOCKED",
-          "evidence": "B-004 Realtime→Postgres TCP timeout during schema init"
+          "evidence": "B-004 Realtime→Postgres TCP timeout"
         }
       ],
       "review": {
@@ -141,9 +141,45 @@
         "invocation_ref": "bc-e1432805-4eb6-5efb-82b4-83b9bc1655fb",
         "reviewed_sha": "5b9996c756142f22315dadc8016e3c74938ec072",
         "findings": [],
-        "evidence": "Separate Task subagent returned verdict PASS for AC1–AC5; optional F-001 Handoff snapshot deps noted for follow-up (not blocking)."
+        "evidence": "Verdict PASS AC1–AC5; optional F-001 noted and fixed in 37d9d32."
       },
-      "next_action": "Apply optional F-001 Handoff snapshot effect dep hardening; re-review new HEAD as C002."
+      "next_action": "Apply F-001; C002 review."
+    },
+    {
+      "id": "C002",
+      "task_id": "P0-01",
+      "implementation_sha": "df2c3254753eb7f3245ec0e9194fcd970e9121cb",
+      "tests": [
+        {
+          "command": "npm run typecheck",
+          "status": "PASS",
+          "evidence": "reviewer /tmp/dan-review-c002-typecheck.log"
+        },
+        {
+          "command": "npm run lint",
+          "status": "PASS",
+          "evidence": "reviewer /tmp/dan-review-c002-lint.log"
+        },
+        {
+          "command": "npm test",
+          "status": "PASS",
+          "evidence": "reviewer 63/235 passed"
+        },
+        {
+          "command": "node scripts/validate-dan-loop-state.mjs",
+          "status": "PASS",
+          "evidence": "format/invariants PASS"
+        }
+      ],
+      "review": {
+        "status": "PASS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-fcc68965-ee6c-54e7-b39e-26b192f13ecc",
+        "reviewed_sha": "df2c3254753eb7f3245ec0e9194fcd970e9121cb",
+        "findings": [],
+        "evidence": "PASS AC1–AC4 on tip df2c325 including Handoff F-001 and C001 ledger."
+      },
+      "next_action": "Begin P0-02 RLS/SECURITY DEFINER/market/consent/location audit."
     }
   ],
   "blockers": [
@@ -172,10 +208,10 @@
       "id": "B-004",
       "status": "BLOCKED",
       "scope": "local-supabase",
-      "reason": "supabase start fails during schema init: Realtime container cannot TCP-connect to local Postgres (queue timeout ~15s) even after CLI 2.120.0 upgrade; exclude flags still run Realtime migrate",
-      "owner_action": "None required for app code; CI supabase job remains source of truth for local DB/E2E until this host networking is fixed"
+      "reason": "supabase start fails during schema init: Realtime container cannot TCP-connect to local Postgres (queue timeout ~15s)",
+      "owner_action": "None required for app code; CI supabase job remains source of truth for local DB/E2E until host networking is fixed"
     }
   ],
-  "next_action": "Invoke independent reviewer C002 on 37d9d32; then begin P0-02.",
-  "last_report": "BRANCH automation/dan-autonomous-review-loop-20261010 HEAD 5b9996c PR #37. C001 independent review PASS (bc-e1432805…). Visual/unit/typecheck/build PASS. Local supabase BLOCKED. Applying F-001 then C002."
+  "next_action": "P0-02: audit SECURITY DEFINER RPCs, market write gates, consent, location privacy; add failing tests for any gaps; fix; C003 review.",
+  "last_report": "BRANCH automation/dan-autonomous-review-loop-20261010 HEAD df2c325 PR https://github.com/jongwoon47/dan/pull/37. P0-01 DONE (C001+C002 PASS). review_verification UNVERIFIED until ledger commit re-aligned. Local supabase BLOCKED. Next: P0-02."
 }
