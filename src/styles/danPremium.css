@@ -2993,8 +2993,8 @@ body {
 }
 
 .camera-demand-create--blueprint .dan-chip {
-  min-height: 40px;
-  padding: 8px 12px;
+  min-height: 44px;
+  padding: 10px 12px;
   border: 0;
   background: #f3f3f6;
   color: #555966;
@@ -3758,7 +3758,8 @@ body {
 }
 
 .camera-demand-create--blueprint .dan-chip {
-  min-height: 38px !important;
+  min-height: 44px !important;
+  padding: 10px 12px !important;
   border: 1px solid #e0e1e6 !important;
   background: #f8f8fa !important;
   color: #62656e !important;

@@ -104,6 +104,7 @@ export function DealEvidencePage() {
   const [existing, setExisting] = useState<DealEvidence | null>(null);
   const [challenge, setChallenge] = useState<DealEvidenceChallenge | null>(null);
   const [challengeError, setChallengeError] = useState("");
+  const [verificationError, setVerificationError] = useState("");
   const [sellerVerificationLoaded, setSellerVerificationLoaded] = useState(false);
   const [sellerVerifiedForDeal, setSellerVerifiedForDeal] = useState(false);
   const [usageCount, setUsageCount] = useState("");
@@ -133,6 +134,7 @@ export function DealEvidencePage() {
     void getMyVerification()
       .then((status) => {
         if (cancelled) return;
+        setVerificationError("");
         setSellerVerifiedForDeal(
           status.phoneVerified &&
             status.identityVerified &&
@@ -145,7 +147,7 @@ export function DealEvidencePage() {
         if (cancelled) return;
         setSellerVerifiedForDeal(false);
         setSellerVerificationLoaded(true);
-        setChallengeError(copy.genericError);
+        setVerificationError(copy.genericError);
       });
     return () => {
       cancelled = true;
@@ -361,6 +363,12 @@ export function DealEvidencePage() {
             {copy.evidenceReviewSnapshot}
           </Button>
         </section>
+      ) : null}
+
+      {verificationError ? (
+        <p className="form-error" role="alert">
+          {verificationError}
+        </p>
       ) : null}
 
       {isSeller && sellerVerificationLoaded && !sellerVerifiedForDeal ? (
