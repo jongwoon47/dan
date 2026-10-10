@@ -1,5 +1,6 @@
 import type { Product, ProductCategory } from "@/domain/types";
-import { CATEGORY_LABEL } from "@/domain/types";
+import { categoryLabel } from "@/i18n/categories";
+import { useDanLocale } from "@/i18n/locale";
 import "./productVisual.css";
 
 function CameraGlyph({ brand }: { brand?: string | null }) {
@@ -272,6 +273,7 @@ export function ProductVisual({
   product: Product;
   size?: "sm" | "md" | "lg";
 }) {
+  const locale = useDanLocale();
   const isCamera = product.category === "camera";
   const hasNamedArt = hasNamedProductArt(product);
   return (
@@ -294,7 +296,7 @@ export function ProductVisual({
       )}
       {size !== "sm" ? (
         <span className="product-visual__caption">
-          {product.brand || CATEGORY_LABEL[product.category]}
+          {product.brand || categoryLabel(locale, product.category)}
         </span>
       ) : null}
     </div>
@@ -302,6 +304,7 @@ export function ProductVisual({
 }
 
 export function CategoryPill({ category }: { category: ProductCategory }) {
+  const locale = useDanLocale();
   if (category === "other") return null;
-  return <span className="category-pill">{CATEGORY_LABEL[category]}</span>;
+  return <span className="category-pill">{categoryLabel(locale, category)}</span>;
 }

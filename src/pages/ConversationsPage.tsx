@@ -15,19 +15,19 @@ function initialOf(name: string) {
   return (name.trim().slice(0, 1) || "?").toUpperCase();
 }
 
-function chatStageLabel(match: Match, copy: ReturnType<typeof useDanCopy>, locale: "ko" | "ja"): string {
+function chatStageLabel(match: Match, copy: ReturnType<typeof useDanCopy>): string {
   if (match.status === "CLOSED") return copy.tradeClosedTitle;
   if (match.status === "COMPLETED") return copy.matchStatusCompleted;
   if (match.dealStage === "HANDOFF_READY" || match.paymentStatus === "PAID") {
-    return locale === "ja" ? "受け渡し確認" : "인계 확인";
+    return copy.matchStageHandoff;
   }
   if (match.dealStage === "PAYMENT_PENDING" || match.dealStage === "DEAL_LOCKED") {
-    return locale === "ja" ? "支払い" : "결제";
+    return copy.matchStagePaymentNeeded;
   }
   if (match.dealStage === "EVIDENCE_READY" || match.dealStage === "DEAL_REVIEW") {
-    return locale === "ja" ? "条件確認" : "조건 확인";
+    return copy.matchStageDealReview;
   }
-  return locale === "ja" ? "チャット中" : "채팅 중";
+  return copy.matchStageChatting;
 }
 
 type Preview = {
@@ -87,7 +87,7 @@ export function ConversationsPage() {
           return {
             match,
             peerId,
-            peerName: profile?.displayName?.trim() || (locale === "ja" ? "お相手" : "상대"),
+            peerName: profile?.displayName?.trim() || copy.chatPeerFallback,
             demandTitle: demand?.title?.trim() || copy.chatTitle,
             lastMessage: last?.body?.trim() || copy.chatsStartHint,
             lastAt: last?.createdAt ?? match.createdAt,
@@ -174,7 +174,7 @@ export function ConversationsPage() {
                 </span>
                 <span className="chat-list__demand">
                   <span className="chat-list__title">{row.demandTitle}</span>
-                  <em className="chat-list__stage">{chatStageLabel(row.match, copy, locale)}</em>
+                  <em className="chat-list__stage">{chatStageLabel(row.match, copy)}</em>
                 </span>
                 <span className="chat-list__preview">{row.lastMessage}</span>
               </span>

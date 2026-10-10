@@ -1,3 +1,6 @@
+import { demandTypeLabel } from "@/copy/demandTypeLabel";
+import { ko } from "@/copy/ko";
+import { jaPilotCopy } from "@/copy/useDanCopy";
 import type { CreateDemandInput } from "@/domain/danContext";
 import {
   defaultExpiresAtIso,
@@ -16,6 +19,7 @@ import {
   findProductByMatchKey,
   productMatchKey,
 } from "@/domain/productName";
+import { getLocale } from "@/i18n/locale";
 import type {
   ChatMessage,
   Demand,
@@ -841,6 +845,15 @@ export async function markActivityReadRemote(activityId?: string) {
 }
 
 export async function fetchPublicProfile(userId: string) {
+  const locale = getLocale();
+  const copy = locale === "ja" ? { ...ko, ...jaPilotCopy } : ko;
+  const typeCopy = {
+    typeBuy: copy.typeBuy,
+    typeBorrow: copy.typeBorrow,
+    typeTask: copy.typeTask,
+    typeService: copy.typeService,
+  };
+
   const sb = getSupabase();
   const { data: profile, error } = await sb
     .from("profiles")
@@ -857,8 +870,8 @@ export async function fetchPublicProfile(userId: string) {
     const provider =
       (auth.user.app_metadata?.provider as string | undefined) ||
       auth.user.identities?.[0]?.provider;
-    if (provider === "google") authLabel = "Google로 가입";
-    else if (provider === "email") authLabel = "이메일로 가입";
+    if (provider === "google") authLabel = copy.authGoogle;
+    else if (provider === "email") authLabel = copy.authEmail;
   }
 
   const [{ data: trustRaw, error: trustError }, { data: verificationRaw }] =
@@ -886,13 +899,6 @@ export async function fetchPublicProfile(userId: string) {
     viewerIsSelf?: boolean;
   };
 
-  const typeLabel: Record<string, string> = {
-    BUY: "물건 구매",
-    BORROW: "빌리기",
-    TASK: "심부름",
-    SERVICE: "서비스",
-  };
-
   const isSelf = trust.viewerIsSelf ?? viewerIsSelf;
   const verification = (verificationRaw ?? {}) as Record<string, unknown>;
 
@@ -915,21 +921,28 @@ export async function fetchPublicProfile(userId: string) {
     identityVerified: Boolean(verification.identityVerified),
     authLabel,
     recentActivity: (trust.recentActivity ?? []).map((row) => {
-      const statusKo =
+      const statusLabel =
         row.status === "COMPLETED"
-          ? "거래 완료"
+          ? copy.profileCompleted
           : row.status === "MATCHED"
-            ? "연결됨"
+            ? copy.matchStatusConnected
             : row.status === "CLOSED"
-              ? "마감"
+              ? copy.statusClosed
               : row.status;
       const title = row.title?.trim();
+      const demandType =
+        row.type === "BUY" ||
+        row.type === "BORROW" ||
+        row.type === "TASK" ||
+        row.type === "SERVICE"
+          ? demandTypeLabel(row.type, typeCopy)
+          : row.type;
       return {
         id: row.id,
         label:
           isSelf && title
-            ? `${title} · ${statusKo}`
-            : `${typeLabel[row.type] ?? row.type} · ${statusKo}`,
+            ? `${title} · ${statusLabel}`
+            : `${demandType} · ${statusLabel}`,
         href:
           row.status === "COMPLETED"
             ? `/match/${row.id}`

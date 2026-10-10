@@ -9,11 +9,12 @@ vi.mock("./client", () => ({ getSupabase }));
 import {
   blockUserRemote,
   cancelDealRemote,
+  openDealDisputeRemote,
   reportUserRemote,
   unblockUserRemote,
 } from "./api";
 
-describe("report / block / cancel RPC wrappers", () => {
+describe("report / block / cancel / dispute RPC wrappers", () => {
   beforeEach(() => {
     getSupabase.mockReset();
   });
@@ -107,7 +108,42 @@ describe("report / block / cancel RPC wrappers", () => {
     });
   });
 
-  it("surfaces RPC errors from block / report / cancel", async () => {
+  it("openDealDisputeRemote calls open_deal_dispute and maps row", async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: {
+        id: "dispute-1",
+        match_id: "match-1",
+        opened_by: "buyer-1",
+        reason: "SNAPSHOT_MISMATCH",
+        detail: "condition differs",
+        status: "OPEN",
+        attributed_fault: null,
+        resolution_note: "",
+        created_at: "2026-10-01T00:00:00.000Z",
+        resolved_at: null,
+      },
+      error: null,
+    });
+    getSupabase.mockReturnValue({ rpc });
+    const dispute = await openDealDisputeRemote({
+      matchId: "match-1",
+      reason: "SNAPSHOT_MISMATCH",
+      detail: "condition differs",
+    });
+    expect(rpc).toHaveBeenCalledWith("open_deal_dispute", {
+      p_match_id: "match-1",
+      p_reason: "SNAPSHOT_MISMATCH",
+      p_detail: "condition differs",
+    });
+    expect(dispute).toMatchObject({
+      id: "dispute-1",
+      matchId: "match-1",
+      reason: "SNAPSHOT_MISMATCH",
+      status: "OPEN",
+    });
+  });
+
+  it("surfaces RPC errors from block / report / cancel / dispute", async () => {
     const boom = { message: "not authenticated" };
     const rpc = vi.fn().mockResolvedValue({ data: null, error: boom });
     getSupabase.mockReturnValue({ rpc });
@@ -117,6 +153,9 @@ describe("report / block / cancel RPC wrappers", () => {
     ).rejects.toEqual(boom);
     await expect(
       cancelDealRemote({ matchId: "m", reason: "MUTUAL_CANCEL" }),
+    ).rejects.toEqual(boom);
+    await expect(
+      openDealDisputeRemote({ matchId: "m", reason: "WRONG_ITEM" }),
     ).rejects.toEqual(boom);
   });
 });
