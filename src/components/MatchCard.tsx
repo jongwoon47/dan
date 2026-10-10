@@ -13,22 +13,22 @@ import { useDanLocale } from "@/i18n/locale";
 import { formatRelativeTime, formatStoredMoney } from "@/lib/format";
 import "./matchCard.css";
 
-function matchStatusLabel(match: Match, copy: ReturnType<typeof useDanCopy>, locale: "ko" | "ja"): string {
+function matchStatusLabel(match: Match, copy: ReturnType<typeof useDanCopy>): string {
   if (match.status === "COMPLETED") return copy.matchStatusCompleted;
   if (match.status === "CONNECTED") {
-    if (match.dealStage === "PAYMENT_PENDING") return locale === "ja" ? "支払いが必要" : "결제 필요";
+    if (match.dealStage === "PAYMENT_PENDING") return copy.matchStagePaymentNeeded;
     if (match.dealStage === "PAID" || match.dealStage === "HANDOFF_READY") {
-      return locale === "ja" ? "受け渡し確認" : "인계 확인";
+      return copy.matchStageHandoff;
     }
-    if (match.dealStage === "DEAL_LOCKED") return locale === "ja" ? "取引条件確定" : "거래 조건 확정";
+    if (match.dealStage === "DEAL_LOCKED") return copy.matchStageDealLocked;
     if (match.dealStage === "EVIDENCE_READY" || match.dealStage === "DEAL_REVIEW") {
-      return locale === "ja" ? "取引条件の確認" : "거래 조건 확인";
+      return copy.matchStageDealReview;
     }
-    return locale === "ja" ? "チャット中" : "채팅 중";
+    return copy.matchStageChatting;
   }
-  if (match.status === "BUYER_INTERESTED") return locale === "ja" ? "相手の承認待ち" : "상대 수락 대기";
-  if (match.status === "SELLER_ACCEPTED") return locale === "ja" ? "接続準備" : "연결 준비";
-  return locale === "ja" ? "新しい提案" : "새 제안";
+  if (match.status === "BUYER_INTERESTED") return copy.matchStatusWaitingAccept;
+  if (match.status === "SELLER_ACCEPTED") return copy.matchStatusConnectReady;
+  return copy.matchStatusNewOffer;
 }
 
 function matchHref(match: Match): string {
@@ -66,10 +66,10 @@ export function MatchCard({ match }: { match: Match }) {
 
   const isBuyer = match.buyerId === currentUser.id;
   const isSeller = match.sellerId === currentUser.id;
-  const status = matchStatusLabel(match, copy, locale);
+  const status = matchStatusLabel(match, copy);
   const currency = demand.currencyCode ?? "KRW";
   const money = (value: number) => formatStoredMoney(value, currency, locale);
-  const connecting = busy ? (locale === "ja" ? "接続中…" : "연결 중…") : copy.connect;
+  const connecting = busy ? copy.matchConnectingBusy : copy.connect;
 
   if (!sell || !ownership || !product) {
     return (
