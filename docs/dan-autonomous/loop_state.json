@@ -4,8 +4,8 @@
   "branch": "automation/dan-autonomous-review-loop-20261010",
   "baseline_branch": "cursor/dan-commercial-complete-e0e7",
   "baseline_sha": "47e456d8d5651dde48d9d8ced056911afb593e5d",
-  "running_head": "8c18aec9fb3607c4615fad983d414ac71e333ec4",
-  "last_updated": "2026-10-10T05:22:19Z",
+  "running_head": "bb53f08d5db44f23d802d1d7188ca2b2300ab69a",
+  "last_updated": "2026-10-10T05:26:09Z",
   "phase": "IMPLEMENTING",
   "autonomy": {
     "mode": "cursor-agent-with-readonly-subagent",
@@ -93,8 +93,13 @@
       "id": "P1-02",
       "priority": "P1",
       "title": "Verify useful safe nearby, region, route candidates and query performance",
-      "status": "TODO",
-      "evidence": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "C014 PASS @ c226cb6: locale-aware nearby fallbacks + deny without Nominatim (bc-8535dc47-4d38-58c2-be9f-1f9c51b716d4).",
+        "C015 PASS @ bb53f08: shared nearbyFallbackLabel (bc-d29f3c80-9c0d-52c7-8582-bd3c68a602d4).",
+        "Existing locationDiscovery/routeCandidates/NearbyBandMap unit suites green (15+ tests).",
+        "Remaining: measured query performance, live staging nearby probe (B-001)."
+      ]
     },
     {
       "id": "P2-01",
@@ -466,6 +471,63 @@
         "evidence": "PASS F1 closed; EmptyState/MatchChat a11y retained"
       },
       "next_action": "Begin P1-02 nearby/region/route privacy and relevance checks"
+    },
+    {
+      "id": "C014",
+      "task_id": "P1-02",
+      "implementation_sha": "c226cb6d8847fb9238c870f0a64fda7066f5e07f",
+      "tests": [
+        {
+          "command": "npm test -- geolocation.test.ts demandLifecycle.test.ts locationDiscovery routeCandidates",
+          "status": "PASS",
+          "evidence": "28 targeted"
+        },
+        {
+          "command": "npm test",
+          "status": "PASS",
+          "evidence": "245"
+        },
+        {
+          "command": "full CI suite=full",
+          "status": "NOT_RUN",
+          "evidence": "Draft skip"
+        }
+      ],
+      "review": {
+        "status": "PASS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-8535dc47-4d38-58c2-be9f-1f9c51b716d4",
+        "reviewed_sha": "c226cb6d8847fb9238c870f0a64fda7066f5e07f",
+        "findings": [],
+        "evidence": "PASS AC1-AC5 locale nearby + deny without reverse-geocode"
+      },
+      "next_action": "Deduplicate fallback helper; C015"
+    },
+    {
+      "id": "C015",
+      "task_id": "P1-02",
+      "implementation_sha": "bb53f08d5db44f23d802d1d7188ca2b2300ab69a",
+      "tests": [
+        {
+          "command": "npm test -- geolocation.test.ts demandLifecycle.test.ts",
+          "status": "PASS",
+          "evidence": "14/14"
+        },
+        {
+          "command": "full CI suite=full",
+          "status": "NOT_RUN",
+          "evidence": "Draft skip"
+        }
+      ],
+      "review": {
+        "status": "PASS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-d29f3c80-9c0d-52c7-8582-bd3c68a602d4",
+        "reviewed_sha": "bb53f08d5db44f23d802d1d7188ca2b2300ab69a",
+        "findings": [],
+        "evidence": "PASS shared nearbyFallbackLabel; no behavior regression"
+      },
+      "next_action": "Continue P2-02 JP gate/currency separation verification without unlocking writes"
     }
   ],
   "blockers": [
@@ -498,6 +560,6 @@
       "owner_action": "Optional: fix agent VM Docker/Realtime networking"
     }
   ],
-  "next_action": "P1-02: verify nearby/region/route deny privacy and candidate usefulness; keep P1-01 residual responsive polish for later.",
-  "last_report": "C013 PASS @ 8c18aec chat a11y. P1-01 IN_PROGRESS (chat slice advanced). Next P1-02 location/discovery. Draft PR. Release NOT_APPROVED."
+  "next_action": "P2-02: verify JP create/write gates and locale≠market/currency separation with tests; keep JP writes disabled.",
+  "last_report": "C013 chat a11y PASS; C014/C015 P1-02 geo locale/deny PASS @ bb53f08. P1-01/P1-02 IN_PROGRESS. Next P2-02 JP readiness verification (no unlock). Draft PR #37. Release NOT_APPROVED."
 }
