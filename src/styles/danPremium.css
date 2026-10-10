@@ -1486,15 +1486,19 @@ body {
 
 
 .deep-header-share {
-  min-height: 34px;
-  padding: 6px 10px;
-  border: 1px solid #dfdbea;
-  border-radius: 11px;
-  background: rgba(255,255,255,.88);
-  color: #5b46d3;
-  font-size: .75rem;
-  font-weight: 850;
-  box-shadow: 0 4px 12px rgba(43,35,66,.04);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--dan-border, #dfdbea);
+  border-radius: 12px;
+  background: var(--dan-surface, rgba(255,255,255,.88));
+  color: var(--dan-accent-text, #0f766e);
+  font-size: 0.875rem;
+  font-weight: 700;
+  box-shadow: none;
 }
 
 .deep-header-share:active {

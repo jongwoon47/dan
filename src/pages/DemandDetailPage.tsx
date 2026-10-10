@@ -86,7 +86,7 @@ export function DemandDetailPage() {
       <EmptyState
         title={copy.missingDemand}
         body={copy.detailMissingBody}
-        action={<Button to="/feed" variant="secondary">{copy.navFeed}</Button>}
+        action={<Button to="/feed">{copy.navFeed}</Button>}
       />
     );
   }

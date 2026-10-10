@@ -333,7 +333,11 @@ export function DemandItemPage() {
         </div>
       ) : null}
 
-      {localError ? <p className="form-error">{localError}</p> : null}
+      {localError ? (
+        <p className="form-error" role="alert">
+          {localError}
+        </p>
+      ) : null}
 
       {!isOwner && demandOpen && demand.type === "BUY" ? (
         <div className="section-stack">
