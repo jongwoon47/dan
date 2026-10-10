@@ -4,8 +4,8 @@
   "branch": "automation/dan-autonomous-review-loop-20261010",
   "baseline_branch": "cursor/dan-commercial-complete-e0e7",
   "baseline_sha": "47e456d8d5651dde48d9d8ced056911afb593e5d",
-  "running_head": "003c584bfeb6dec19ee74e1761121d05c3f36a58",
-  "last_updated": "2026-10-10T04:23:18Z",
+  "running_head": "6add2dfa9b08ae4efd76543a1e1c30f4e865cf0b",
+  "last_updated": "2026-10-10T04:32:55Z",
   "phase": "IMPLEMENTING",
   "autonomy": {
     "mode": "cursor-agent-with-readonly-subagent",
@@ -265,6 +265,78 @@
         "evidence": "PASS AC1-AC6 report/block ConfirmSheet a11y"
       },
       "next_action": "Process CI optimization follow-up; continue P1-01 UI polish at next checkpoint"
+    },
+    {
+      "id": "C009",
+      "task_id": "P1-01",
+      "implementation_sha": "d192447c3ef7b3fcde01a4ab65c79252c55afb1d",
+      "tests": [
+        {
+          "command": "npm run validate:ci-policy",
+          "status": "PASS",
+          "evidence": "invariants PASS (later tightened in C010)"
+        },
+        {
+          "command": "gh run 38024161895 draft PR",
+          "status": "PASS",
+          "evidence": "conclusion skipped — draft gate burns no runner minutes"
+        }
+      ],
+      "review": {
+        "status": "FINDINGS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-15a419e2-560f-5514-a7f2-94896f4c4fb9",
+        "reviewed_sha": "d192447c3ef7b3fcde01a4ab65c79252c55afb1d",
+        "findings": [
+          {
+            "severity": "medium",
+            "file": "scripts/validate-dan-ci-policy.mjs",
+            "symbol_or_line": "bare non-draft guard",
+            "reproduction": "Rewrite supabase if to draft==false alone; old validator still PASS",
+            "expected_fix": "Per-job if parsing must fail bare non-draft heavy gates"
+          },
+          {
+            "severity": "low",
+            "file": ".github/workflows/ci.yml",
+            "symbol_or_line": "header comment",
+            "reproduction": "Header omitted ci-checkpoint label trigger",
+            "expected_fix": "Document ci-checkpoint in header"
+          }
+        ],
+        "evidence": "FINDINGS F1/F2 on CI policy validator/docs"
+      },
+      "next_action": "Fix validator + header; re-review as C010"
+    },
+    {
+      "id": "C010",
+      "task_id": "P1-01",
+      "implementation_sha": "6add2dfa9b08ae4efd76543a1e1c30f4e865cf0b",
+      "tests": [
+        {
+          "command": "npm run validate:ci-policy",
+          "status": "PASS",
+          "evidence": "PASS; bare-non-draft supabase fixture fails validator"
+        },
+        {
+          "command": "gh run 38024299272 draft PR",
+          "status": "PASS",
+          "evidence": "conclusion skipped @ 6add2df"
+        },
+        {
+          "command": "full CI suite=full",
+          "status": "NOT_RUN",
+          "evidence": "Deferred; use scripts/dan-ci-checkpoint.sh full at milestone"
+        }
+      ],
+      "review": {
+        "status": "PASS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-100e27fd-8cab-5302-97b6-ead063f0ccd3",
+        "reviewed_sha": "6add2dfa9b08ae4efd76543a1e1c30f4e865cf0b",
+        "findings": [],
+        "evidence": "PASS; F1/F2 closed; draft skip + cancel-in-progress false + heavy gates verified"
+      },
+      "next_action": "Resume P1-01 commercial UI/chat polish under draft CI skip policy"
     }
   ],
   "blockers": [
@@ -297,6 +369,6 @@
       "owner_action": "Optional: fix agent VM Docker/Realtime networking"
     }
   ],
-  "next_action": "Implement CI trigger optimization per queued owner follow-up; then continue P1-01 UI polish without per-commit full CI.",
-  "last_report": "C008 PASS @ 003c584: report/block ConfirmSheet a11y. P2-01 DONE. P1-01 IN_PROGRESS. Full CI NOT_RUN on tip (deferred). Queued: CI policy optimization. Release NOT_APPROVED."
+  "next_action": "Continue P1-01 commercial UI/chat polish locally under draft CI skip; dispatch suite=full only at next security/UI milestone.",
+  "last_report": "C010 PASS @ 6add2df: CI cost policy — draft skip, cancel-in-progress false, ready-PR sync verify-only, heavy via ready_for_review/main/[ci-full]/ci-checkpoint/suite=full. Draft runs skipped. Resume P1-01. Release NOT_APPROVED."
 }
