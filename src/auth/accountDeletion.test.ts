@@ -11,19 +11,26 @@ it('loads blockers from the authenticated server, without sending a user ID', as
 });
 it('requires a session and never submits an arbitrary user ID', async () => {
   getSession.mockResolvedValue({ data: { session: null } });
-  await expect(deleteAccount()).rejects.toThrow('다시 로그인');
-  getSession.mockResolvedValue({ data: { session: { access_token: 'test-token' } } });
-  const fetcher = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ code: 'DELETED' }) });
-  vi.stubGlobal('fetch', fetcher); await deleteAccount();
+  await expect(deleteAccount()).rejects.toThrow("DAN_DELETE_RELOGIN");
+  getSession.mockResolvedValue({ data: { session: { access_token: "test-token" } } });
+  const fetcher = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ code: "DELETED" }) });
+  vi.stubGlobal("fetch", fetcher);
+  await deleteAccount();
   expect(JSON.parse(fetcher.mock.calls[0]![1].body)).toEqual({ confirm: true });
 });
-it('handles active transactions and retry errors without reporting success', async () => {
-  getSession.mockResolvedValue({ data: { session: { access_token: 'test-token' } } });
-  const fetcher = vi.fn().mockResolvedValue({ ok: false, json: async () => ({ code: 'ACTIVE_TRANSACTIONS' }) });
-  vi.stubGlobal('fetch', fetcher);
-  await expect(deleteAccount()).rejects.toThrow('먼저 완료하거나 취소');
-  fetcher.mockResolvedValue({ ok: false, json: async () => ({ code: 'DELETE_RETRY_REQUIRED' }) });
-  await expect(deleteAccount()).rejects.toThrow('삭제를 완료하지 못');
+it("handles active transactions and retry errors without reporting success", async () => {
+  getSession.mockResolvedValue({ data: { session: { access_token: "test-token" } } });
+  const fetcher = vi.fn().mockResolvedValue({
+    ok: false,
+    json: async () => ({ code: "ACTIVE_TRANSACTIONS" }),
+  });
+  vi.stubGlobal("fetch", fetcher);
+  await expect(deleteAccount()).rejects.toThrow("DAN_DELETE_ACTIVE");
+  fetcher.mockResolvedValue({
+    ok: false,
+    json: async () => ({ code: "DELETE_RETRY_REQUIRED" }),
+  });
+  await expect(deleteAccount()).rejects.toThrow("DAN_DELETE_FAIL_PENDING");
 });
 it('clears DAN drafts and its Supabase session but preserves unrelated keys', () => {
   localStorage.setItem('dan-v1-store', 'private'); sessionStorage.setItem('dan-create-draft', 'private');
