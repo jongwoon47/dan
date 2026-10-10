@@ -178,7 +178,7 @@ export const dealChainKo = {
   handoffDisputePausedTitle: "거래가 분쟁 검토 상태예요",
   handoffDisputePausedBody: "분쟁이 해결되기 전에는 거래 완료 처리를 진행하지 않습니다.",
   handoffDoneTitle: "거래가 완료됐어요",
-  handoffDoneBody: "양쪽의 확인이 끝났습니다. 완료된 거래는 거래 이력에 기록돼요.",
+  handoffDoneBody: "양쪽의 확인이 끝났습니다. 완료된 거래는 거래 내역에 기록돼요.",
   handoffViewMyTrades: "내 거래 보기",
   handoffBuyerFinal: "구매자 최종 확인",
   handoffSellerFinal: "판매자 최종 확인",

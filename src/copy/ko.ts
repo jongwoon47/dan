@@ -550,7 +550,7 @@ const koBase = {
   "identityVerified": "본인인증 완료",
   "completedTradesLabel": "거래 완료",
   "issueTradesLabel": "문제 거래",
-  "viewTradeHistory": "거래 이력 보기",
+  "viewTradeHistory": "거래 내역 보기",
   "selectThisOffer": "이 제안 선택하기",
   "processing": "처리 중…",
   "offerSelectedTitle": "제안을 선택했어요",
