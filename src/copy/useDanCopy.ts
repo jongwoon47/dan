@@ -400,7 +400,7 @@ export const jaPilotCopy: Partial<LocalizedCopy> = {
   heroTitle: "必要な人から始まるマーケット",
   heroBody1: "出品を待つ必要はありません。",
   heroBody2: "希望価格を残すと所持者が確認します。",
-  detailMissingBody: "依頼が見つかりません。",
+  detailMissingBody: "依頼が削除されたか、アドレスが間違っている可能性があります。一覧からもう一度探してください。",
   avgHope: "平均希望価格",
   priceDist: "希望価格の分布",
   alreadyOwnedPrefix: "すでに持ち物として登録されています。",

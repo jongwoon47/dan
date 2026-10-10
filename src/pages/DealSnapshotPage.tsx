@@ -54,21 +54,33 @@ export function DealSnapshotPage() {
   const [handoffPlace, setHandoffPlace] = useState("");
   const [handoffAt, setHandoffAt] = useState("");
   const [error, setError] = useState("");
+  const [loadingDeal, setLoadingDeal] = useState(Boolean(matchId));
 
   useDeepHeader({ title: copy.snapshotTitle });
 
   useEffect(() => {
-    if (!matchId) return;
-    void Promise.all([getDealEvidence(matchId), getDealSnapshot(matchId)]).then(
-      ([e, d]) => {
+    if (!matchId) {
+      setLoadingDeal(false);
+      return;
+    }
+    let cancelled = false;
+    setLoadingDeal(true);
+    void Promise.all([getDealEvidence(matchId), getDealSnapshot(matchId)])
+      .then(([e, d]) => {
+        if (cancelled) return;
         setEvidence(e);
         setSnapshot(d);
         if (d) {
           setHandoffPlace(snapshotText(d.snapshot, "handoff", "place"));
           setHandoffAt(snapshotText(d.snapshot, "handoff", "at"));
         }
-      },
-    );
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingDeal(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [getDealEvidence, getDealSnapshot, matchId]);
 
   const meetupRequired = Boolean(
@@ -119,15 +131,21 @@ export function DealSnapshotPage() {
     handoffAt,
   ]);
 
+  if (loadingDeal) {
+    return (
+      <div className="page-stack page-narrow" role="status" aria-busy="true">
+        <span className="sr-only">{copy.loadingScreen}</span>
+        <div className="skeleton-line skeleton-line--lg" />
+        <div className="skeleton-line" />
+      </div>
+    );
+  }
+
   if (!match || !demand || !product || !sell || !currentUser) {
     return (
       <EmptyState
         title={copy.dealMissingTitle}
-        action={
-          <Button to="/my" variant="secondary">
-            {copy.dealMyTrades}
-          </Button>
-        }
+        action={<Button to="/my">{copy.dealMyTrades}</Button>}
       />
     );
   }
@@ -386,9 +404,15 @@ export function DealSnapshotPage() {
       ) : (
         <>
           {meetupRequired && !appointmentReady ? (
-            <p className="form-error">{copy.snapshotNeedAppointment}</p>
+            <p className="form-error" role="alert">
+              {copy.snapshotNeedAppointment}
+            </p>
           ) : null}
-          {error ? <p className="form-error">{error}</p> : null}
+          {error ? (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          ) : null}
           <Button
             fullWidth
             size="lg"

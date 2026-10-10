@@ -31,6 +31,7 @@ export function OfferDetailPage() {
   } = useDan();
   const [sellerProfile, setSellerProfile] = useState<PublicProfile | null>(null);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
 
   const pair = parsePotentialMatchId(matchId);
   const match = myMatches.find((row) => row.id === matchId) ??
@@ -65,7 +66,7 @@ export function OfferDetailPage() {
       <EmptyState
         title={copy.offerMissingTitle}
         body={copy.offerMissingBody}
-        action={<Button to="/my" variant="secondary">{copy.receivedOffers}</Button>}
+        action={<Button to="/my">{copy.receivedOffers}</Button>}
       />
     );
   }
@@ -91,8 +92,14 @@ export function OfferDetailPage() {
     const activeMatch = match;
     if (!activeMatch) return;
     setBusy(true);
+    setError("");
     try {
-      await expressBuyerInterest(activeMatch.id);
+      const updated = await expressBuyerInterest(activeMatch.id);
+      if (!updated) {
+        setError(copy.genericError);
+      }
+    } catch {
+      setError(copy.genericError);
     } finally {
       setBusy(false);
     }
@@ -174,6 +181,12 @@ export function OfferDetailPage() {
           {copy.viewTradeHistory}
         </Button>
       </section>
+
+      {error ? (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
 
       {match.status === "POTENTIAL" ? (
         <Button fullWidth size="lg" disabled={busy} onClick={() => void interest()}>

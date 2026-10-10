@@ -8,6 +8,7 @@ import { useDanCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
 import { isBuyDemand, type DealSnapshot, type PublicProfile } from "@/domain/types";
 import { useDanLocale } from "@/i18n/locale";
+import { formatInstantInMarket } from "@/lib/jpAddress";
 import { formatStoredMoney } from "@/lib/format";
 import "./pages.css";
 
@@ -142,16 +143,11 @@ export function TradeCompletePage() {
           <span>{copy.tradeCompletedAtLabel}</span>
           <strong>
             {match.completedAt
-              ? new Date(match.completedAt).toLocaleString(
-                  locale === "ja" ? "ja-JP" : "ko-KR",
-                  {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  },
-                )
+              ? formatInstantInMarket(
+                  match.completedAt,
+                  demand?.countryCode === "JP" ? "JP" : "KR",
+                  locale,
+                ) || copy.matchStatusCompleted
               : copy.matchStatusCompleted}
           </strong>
         </div>

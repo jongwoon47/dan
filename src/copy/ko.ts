@@ -401,7 +401,7 @@ const koBase = {
   "heroTitle": "찾는 사람이 먼저 올리는 마켓",
   "heroBody1": "판매글을 기다리지 마세요.",
   "heroBody2": "원하는 가격을 남기면 보유자가 확인합니다.",
-  "detailMissingBody": "요청을 찾을 수 없어요.",
+  "detailMissingBody": "요청이 삭제됐거나 주소가 잘못된 것 같아요. 목록에서 다시 찾아보세요.",
   "avgHope": "평균 희망가",
   "priceDist": "희망가 분포",
   "alreadyOwnedPrefix": "이미 내 물건으로 등록되어 있어요.",
