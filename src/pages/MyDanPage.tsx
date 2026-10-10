@@ -199,7 +199,6 @@ export function MyDanPage() {
             </div>
           ) : (
             <EmptyState
-              headingLevel={3}
               title={copy.emptyMyRequests}
               body={copy.emptyMyRequestsBody}
               action={<Button to="/create">{copy.ctaCreate}</Button>}
