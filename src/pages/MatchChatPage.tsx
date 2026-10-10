@@ -319,8 +319,6 @@ export function MatchChatPage() {
   const buyPaid = match.paymentStatus === "PAID";
   const buyComplete = match.status === "COMPLETED";
 
-  let lastDay = "";
-
   return (
     <div className="chat-page page-narrow">
       <header className="chat-page__header">
@@ -584,11 +582,11 @@ export function MatchChatPage() {
         {!loading && messages.length === 0 ? (
           <p className="section-desc">{copy.chatEmpty}</p>
         ) : null}
-        {messages.map((m) => {
+        {messages.map((m, index) => {
           const mine = m.senderId === currentUser?.id;
           const key = dayKey(m.createdAt);
-          const showSep = key !== lastDay;
-          lastDay = key;
+          const prevKey = index > 0 ? dayKey(messages[index - 1]!.createdAt) : "";
+          const showSep = key !== prevKey;
           return (
             <div key={m.id} className="chat-thread__item">
               {showSep ? (
