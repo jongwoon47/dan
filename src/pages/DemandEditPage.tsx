@@ -296,45 +296,49 @@ export function DemandEditPage() {
         ? undefined
         : defaultExpiresAtIso(current.type, scheduleIso);
 
-    const result = await updateDemand({
-      demandId: current.id,
-      title: nextTitle,
-      description: description.trim(),
-      budget: price,
-      fulfillmentOptions: stripGeoFromFulfillmentOptions(fulfillmentOptions),
-      expiresAt,
-      maxPrice: current.type === "BUY" ? price : undefined,
-      itemName:
-        current.type === "BORROW" ? itemName.trim() : undefined,
-      taskDescription:
-        current.type === "TASK" ? description.trim() : undefined,
-      serviceDescription:
-        current.type === "SERVICE"
-          ? description.trim() || current.details.serviceDescription
-          : undefined,
-      startAt:
-        current.type === "BORROW"
-          ? fromDatetimeLocalValue(borrowStart)
-          : undefined,
-      endAt: current.type === "BORROW" ? scheduleIso ?? undefined : undefined,
-      dueAt: current.type === "TASK" ? scheduleIso ?? undefined : undefined,
-      preferredAt:
-        current.type === "SERVICE" ? scheduleIso ?? undefined : undefined,
-      conditionPreference: current.type === "BUY" ? condition : undefined,
-      tradeMethod:
-        current.type === "BUY"
-          ? buyShipping && buyMeetup
-            ? "any"
-            : buyShipping
-              ? "shipping"
-              : "meetup"
-          : undefined,
-    });
-    if (!result) {
+    try {
+      const result = await updateDemand({
+        demandId: current.id,
+        title: nextTitle,
+        description: description.trim(),
+        budget: price,
+        fulfillmentOptions: stripGeoFromFulfillmentOptions(fulfillmentOptions),
+        expiresAt,
+        maxPrice: current.type === "BUY" ? price : undefined,
+        itemName:
+          current.type === "BORROW" ? itemName.trim() : undefined,
+        taskDescription:
+          current.type === "TASK" ? description.trim() : undefined,
+        serviceDescription:
+          current.type === "SERVICE"
+            ? description.trim() || current.details.serviceDescription
+            : undefined,
+        startAt:
+          current.type === "BORROW"
+            ? fromDatetimeLocalValue(borrowStart)
+            : undefined,
+        endAt: current.type === "BORROW" ? scheduleIso ?? undefined : undefined,
+        dueAt: current.type === "TASK" ? scheduleIso ?? undefined : undefined,
+        preferredAt:
+          current.type === "SERVICE" ? scheduleIso ?? undefined : undefined,
+        conditionPreference: current.type === "BUY" ? condition : undefined,
+        tradeMethod:
+          current.type === "BUY"
+            ? buyShipping && buyMeetup
+              ? "any"
+              : buyShipping
+                ? "shipping"
+                : "meetup"
+            : undefined,
+      });
+      if (!result) {
+        setError(copy.genericError);
+        return;
+      }
+      navigate(`/demand/item/${current.id}`);
+    } catch {
       setError(copy.genericError);
-      return;
     }
-    navigate(`/demand/item/${current.id}`);
   }
 
   return (

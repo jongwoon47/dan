@@ -250,6 +250,8 @@ export function BuyDemandCreatePage() {
         return;
       }
       navigate("/my?tab=demands");
+    } catch {
+      setError(copy.buyDemandCreateFail);
     } finally {
       setSubmitting(false);
     }

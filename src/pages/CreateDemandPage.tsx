@@ -613,6 +613,8 @@ function CreateDemandForm() {
       } else {
         setFormError(copy.genericError);
       }
+    } catch {
+      setFormError(copy.genericError);
     } finally {
       setSubmitting(false);
     }
