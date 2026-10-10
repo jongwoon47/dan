@@ -899,6 +899,13 @@
   background: #eef7f6;
   border-radius: 16px 16px 16px 4px;
   padding: 10px 12px;
+  overflow-wrap: anywhere;
+}
+
+.chat-bubble p {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.45;
 }
 
 .chat-bubble--mine {
@@ -927,8 +934,10 @@
 .chat-composer input {
   border: 1px solid var(--dan-border);
   border-radius: 999px;
+  min-height: 44px;
   padding: 12px 16px;
   font: inherit;
+  font-size: 1rem;
 }
 
 .nav-badge {
@@ -952,6 +961,9 @@
 
 .form-error {
   color: #b42318;
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
 }
 
 .product-suggest {
@@ -1324,6 +1336,7 @@
   display: flex;
   gap: var(--space-md);
   align-items: flex-start;
+  min-height: 72px;
   padding: var(--space-md) 0;
   border-bottom: 1px solid color-mix(in srgb, var(--dan-border) 80%, transparent);
   text-decoration: none;
@@ -1424,6 +1437,13 @@
   border: 1px solid var(--dan-border);
   border-radius: 16px 16px 16px 4px;
   padding: 10px 12px;
+  overflow-wrap: anywhere;
+}
+
+.chat-bubble p {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.45;
 }
 
 .chat-bubble--mine {

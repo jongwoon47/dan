@@ -569,16 +569,29 @@ export function MatchChatPage() {
         )}
       </section>
 
-      {error ? <p className="form-error">{error}</p> : null}
-      {toast ? <p className="section-desc">{toast}</p> : null}
+      {error ? (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {toast ? (
+        <p className="section-desc" role="status" aria-live="polite">
+          {toast}
+        </p>
+      ) : null}
 
       <div
         className="chat-thread"
         ref={threadRef}
         aria-live="polite"
+        aria-busy={loading}
         onScroll={onThreadScroll}
       >
-        {loading ? <p className="muted">{copy.loadingChat}</p> : null}
+        {loading ? (
+          <p className="muted discovery-loading" role="status">
+            {copy.loadingChat}
+          </p>
+        ) : null}
         {!loading && messages.length === 0 ? (
           <p className="section-desc">{copy.chatEmpty}</p>
         ) : null}

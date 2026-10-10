@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import "./ui.css";
 
 type Props = {
@@ -8,9 +8,17 @@ type Props = {
 };
 
 export function EmptyState({ title, body, action }: Props) {
+  const titleId = useId();
   return (
-    <div className="dan-empty">
-      <h3 className="dan-empty__title">{title}</h3>
+    <div
+      className="dan-empty"
+      role="status"
+      aria-live="polite"
+      aria-labelledby={titleId}
+    >
+      <h2 id={titleId} className="dan-empty__title">
+        {title}
+      </h2>
       {body ? <p className="dan-empty__body">{body}</p> : null}
       {action ? <div className="dan-empty__action">{action}</div> : null}
     </div>

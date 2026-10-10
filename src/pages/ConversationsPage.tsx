@@ -141,7 +141,9 @@ export function ConversationsPage() {
       </header>
 
       {loading ? (
-        <p className="muted">{copy.loading}</p>
+        <p className="muted discovery-loading" role="status" aria-live="polite" aria-busy="true">
+          {copy.loading}
+        </p>
       ) : previews.length === 0 ? (
         <EmptyState
           title={copy.chatsEmpty}
@@ -153,12 +155,14 @@ export function ConversationsPage() {
           }
         />
       ) : (
-        <div className="chat-list">
+        <div className="chat-list" role="list" aria-label={copy.chatsTitle}>
           {previews.map((row) => (
             <Link
               key={row.match.id}
               to={`/match/${row.match.id}`}
               className="chat-list__row"
+              role="listitem"
+              aria-label={`${row.peerName}. ${row.demandTitle}. ${chatStageLabel(row.match, copy)}. ${row.lastMessage}`}
             >
               <span className="avatar-initial" aria-hidden>
                 {initialOf(row.peerName)}
