@@ -4,8 +4,8 @@
   "branch": "automation/dan-autonomous-review-loop-20261010",
   "baseline_branch": "cursor/dan-commercial-complete-e0e7",
   "baseline_sha": "47e456d8d5651dde48d9d8ced056911afb593e5d",
-  "running_head": "3c98df454d5d0534028b8d7b0fbd82d5524ed185",
-  "last_updated": "2026-10-10T05:28:53Z",
+  "running_head": "20bf56c4b62de762a017066d1176318c614d30ac",
+  "last_updated": "2026-10-10T05:31:40Z",
   "phase": "IMPLEMENTING",
   "autonomy": {
     "mode": "cursor-agent-with-readonly-subagent",
@@ -86,7 +86,9 @@
         "Remaining: broader responsive/chat polish beyond report/block sheets.",
         "C011: MatchChat day separator without render mutation @ 602a526; reviewer PASS bc-23036f93-0715-5657-a985-293ed842d92b.",
         "C012 FINDINGS→C013 PASS: chat EmptyState/loading/error a11y + ul/li list links @ 8c18aec (bc-ae2b16cf-3e84-5110-bbac-4a4e20e8587d).",
-        "Remaining: broader responsive typography across non-chat screens; real-data visual QA at checkpoint."
+        "Remaining: broader responsive typography across non-chat screens; real-data visual QA at checkpoint.",
+        "C017 FINDINGS→C018 PASS: EmptyState headingLevel + Home/My hierarchy @ 20bf56c (bc-89802387-0851-5aa8-b868-6239b2b25cbe).",
+        "Remaining P1-01: 390/720/1180 visual responsive QA at suite=full checkpoint; TradeComplete/report/block already covered by earlier cycles + CI smoke history."
       ]
     },
     {
@@ -563,6 +565,71 @@
         "evidence": "PASS AC1-AC5 tests-only JP gate lock; no write unlock"
       },
       "next_action": "P1-01 residual non-chat responsive polish OR stop if only external blockers remain for P2-02 unlock"
+    },
+    {
+      "id": "C017",
+      "task_id": "P1-01",
+      "implementation_sha": "6b3b62e4be25d1bb001a24c07199b74b67cf6b56",
+      "tests": [
+        {
+          "command": "npm test -- EmptyState.test.tsx HomePage.test.tsx",
+          "status": "PASS",
+          "evidence": "3/3"
+        },
+        {
+          "command": "npm test",
+          "status": "PASS",
+          "evidence": "249"
+        },
+        {
+          "command": "full CI suite=full",
+          "status": "NOT_RUN",
+          "evidence": "Draft skip"
+        }
+      ],
+      "review": {
+        "status": "FINDINGS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-b4a93e12-9f3b-54d9-8a05-0e481b4ab36b",
+        "reviewed_sha": "6b3b62e4be25d1bb001a24c07199b74b67cf6b56",
+        "findings": [
+          {
+            "severity": "medium",
+            "file": "src/pages/MyDanPage.tsx",
+            "symbol_or_line": "emptyMyRequests headingLevel=3",
+            "reproduction": "requests tab has no section h2; h1→h3 skip",
+            "expected_fix": "default headingLevel 2 for requests empty"
+          }
+        ],
+        "evidence": "FINDINGS F1 MyDan requests heading skip"
+      },
+      "next_action": "Fix F1; C018"
+    },
+    {
+      "id": "C018",
+      "task_id": "P1-01",
+      "implementation_sha": "20bf56c4b62de762a017066d1176318c614d30ac",
+      "tests": [
+        {
+          "command": "npm test -- EmptyState.test.tsx HomePage.test.tsx",
+          "status": "PASS",
+          "evidence": "3/3"
+        },
+        {
+          "command": "full CI suite=full",
+          "status": "NOT_RUN",
+          "evidence": "Draft skip"
+        }
+      ],
+      "review": {
+        "status": "PASS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-89802387-0851-5aa8-b868-6239b2b25cbe",
+        "reviewed_sha": "20bf56c4b62de762a017066d1176318c614d30ac",
+        "findings": [],
+        "evidence": "PASS AC3 fixed; requests empty default h2"
+      },
+      "next_action": "Optional suite=full visual checkpoint when owner wants; else continue non-chat typography or stop on external blockers"
     }
   ],
   "blockers": [
@@ -595,6 +662,6 @@
       "owner_action": "Optional: fix agent VM Docker/Realtime networking"
     }
   ],
-  "next_action": "Continue P1-01 residual responsive/typography polish on non-chat surfaces; P2-02 unlock/legal/iOS remain owner-gated.",
-  "last_report": "Session: C012-C013 chat a11y; C014-C015 geo locale/deny; C016 JP gate tests @ 3c98df4. P0-04/B-001/B-002 blocked. Draft PR #37. Release NOT_APPROVED."
+  "next_action": "Next session: optional CI suite=full visual/responsive checkpoint on tip (draft→manual dispatch only); remaining P1-01 non-chat typography polish; P0-04/B-002/JP unlock still owner-gated.",
+  "last_report": "C012–C018 advanced P1-01 a11y, P1-02 geo locale/deny, P2-02 JP gate tests. Tip 20bf56c VERIFIED. Draft PR #37. Full CI NOT_RUN (cost policy). Release NOT_APPROVED."
 }
