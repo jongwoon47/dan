@@ -216,6 +216,7 @@ const koBase = {
   "createTypeAria": "요청 유형",
   "createStepAria": "작성 단계",
   "networkOffline": "오프라인이에요. 연결이 돌아오면 DAN이 자동으로 다시 동기화합니다.",
+  "loadingScreen": "불러오는 중",
   "notFoundTitle": "페이지를 찾을 수 없어요",
   "notFoundBody": "주소가 잘못됐거나 더 이상 사용할 수 없는 화면이에요.",
   "notFoundHome": "홈으로",

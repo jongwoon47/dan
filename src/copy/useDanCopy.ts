@@ -121,6 +121,7 @@ export const jaPilotCopy: Partial<LocalizedCopy> = {
   createTypeAria: "依頼の種類",
   createStepAria: "作成ステップ",
   networkOffline: "オフラインです。接続が戻るとDANが自動で再同期します。",
+  loadingScreen: "読み込み中",
   notFoundTitle: "ページが見つかりません",
   notFoundBody: "アドレスが間違っているか、利用できない画面です。",
   notFoundHome: "ホームへ",

@@ -155,7 +155,8 @@ export function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="page-stack page-narrow">
+      <div className="page-stack page-narrow" role="status" aria-busy="true">
+        <span className="sr-only">{copy.loadingScreen}</span>
         <div className="skeleton-line skeleton-line--lg" />
         <div className="skeleton-line" />
       </div>
