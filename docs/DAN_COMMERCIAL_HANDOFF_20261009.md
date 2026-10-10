@@ -32,10 +32,10 @@
 
 | Area | Status |
 |---|---|
-| BUY browser complete (CI local) | IMPLEMENTED — tip CI |
-| BUY dispute pause (CI local) | IMPLEMENTED — tip CI |
-| Report/block/cancel TASK UI | IMPLEMENTED — tip CI |
-| BORROW/TASK/SERVICE browser complete | VERIFIED (prior green CI) |
+| BUY browser complete (CI local) | VERIFIED on #36 `fc515c8`; evidence-save retry on `e3ebd6a` for launch-plan flake |
+| BUY dispute pause (CI local) | VERIFIED on #36 `fc515c8` |
+| Report/block/cancel TASK UI | VERIFIED on #36 `fc515c8` (block error race fixed) |
+| BORROW/TASK/SERVICE browser complete | VERIFIED |
 | JA demand type / profile / category labels | IMPLEMENTED |
 | Staging DB apply | BLOCKED |
 | JP write unlock / legal / device QA | BLOCKED |
