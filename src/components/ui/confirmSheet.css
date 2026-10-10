@@ -50,6 +50,7 @@
   border: 1px solid var(--dan-border);
   border-radius: 12px;
   padding: 12px 14px;
+  min-height: 44px;
   background: #fff;
   font: inherit;
 }

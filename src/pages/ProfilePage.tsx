@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
+import { ReportReasonChoices } from "@/components/ui/ReportReasonChoices";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDanCopy } from "@/copy/useDanCopy";
 import { useDanLocale } from "@/i18n/locale";
@@ -448,29 +449,11 @@ export function ProfilePage() {
           });
         }}
       >
-        <div className="confirm-sheet__choices">
-          {(
-            [
-              ["spam", copy.reportSpam],
-              ["fraud", copy.reportFraud],
-              ["abuse", copy.reportAbuse],
-              ["other", copy.reportOther],
-            ] as const
-          ).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              className={
-                reportReason === value
-                  ? "confirm-sheet__choice is-selected"
-                  : "confirm-sheet__choice"
-              }
-              onClick={() => setReportReason(value)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <ReportReasonChoices
+          value={reportReason}
+          onChange={setReportReason}
+          copy={copy}
+        />
       </ConfirmSheet>
     </div>
   );
