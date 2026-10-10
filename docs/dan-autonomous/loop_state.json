@@ -1,0 +1,122 @@
+{
+  "schema_version": "dan.autonomy.loop.v1",
+  "repository": "jongwoon47/dan",
+  "branch": "automation/dan-autonomous-review-loop-20261010",
+  "baseline_branch": "cursor/dan-commercial-complete-e0e7",
+  "baseline_sha": null,
+  "running_head": null,
+  "last_updated": "2026-10-10",
+  "phase": "SETUP",
+  "autonomy": {
+    "mode": "cursor-agent-with-readonly-subagent",
+    "independent_review_invoked": false,
+    "review_verification": "UNVERIFIED",
+    "external_orchestrator": "NOT_CONFIGURED"
+  },
+  "release": {
+    "status": "NOT_APPROVED",
+    "merge_to_main": "APPROVAL_REQUIRED",
+    "staging_db_writes": "APPROVAL_REQUIRED",
+    "production_writes": "APPROVAL_REQUIRED",
+    "app_store": "APPROVAL_REQUIRED",
+    "jp_market_writes": "DISABLED_PENDING_APPROVAL",
+    "paid_services": "APPROVAL_REQUIRED"
+  },
+  "latest_tests": {
+    "typecheck": "NOT_RUN",
+    "lint": "NOT_RUN",
+    "unit": "NOT_RUN",
+    "build": "NOT_RUN",
+    "local_db": "NOT_RUN",
+    "pgtap": "NOT_RUN",
+    "two_user_e2e": "NOT_RUN",
+    "browser_smoke": "NOT_RUN",
+    "visual": "NOT_RUN",
+    "ios_device": "NOT_RUN",
+    "ci": "NOT_RUN"
+  },
+  "backlog": [
+    {
+      "id": "P0-01",
+      "priority": "P0",
+      "title": "Recheck latest HEAD CI and local validations; repair genuine failures",
+      "status": "TODO",
+      "evidence": []
+    },
+    {
+      "id": "P0-02",
+      "priority": "P0",
+      "title": "Audit RLS, SECURITY DEFINER, market/write gates, consent, location privacy",
+      "status": "TODO",
+      "evidence": []
+    },
+    {
+      "id": "P0-03",
+      "priority": "P0",
+      "title": "Validate all KR trade types with two users including safety, payment, error paths",
+      "status": "TODO",
+      "evidence": []
+    },
+    {
+      "id": "P0-04",
+      "priority": "P0",
+      "title": "Reconcile remote staging migration drift read-only, propose owner-gated apply",
+      "status": "TODO",
+      "evidence": []
+    },
+    {
+      "id": "P1-01",
+      "priority": "P1",
+      "title": "Complete commercial-grade real-data responsive UI, chat and report/block UX",
+      "status": "TODO",
+      "evidence": []
+    },
+    {
+      "id": "P1-02",
+      "priority": "P1",
+      "title": "Verify useful safe nearby, region, route candidates and query performance",
+      "status": "TODO",
+      "evidence": []
+    },
+    {
+      "id": "P2-01",
+      "priority": "P2",
+      "title": "Close Japanese locale gaps and error/consent/support copy QA",
+      "status": "TODO",
+      "evidence": []
+    },
+    {
+      "id": "P2-02",
+      "priority": "P2",
+      "title": "Prepare guarded JP pilot legal, location, currency and TestFlight readiness",
+      "status": "TODO",
+      "evidence": []
+    }
+  ],
+  "cycles": [],
+  "blockers": [
+    {
+      "id": "B-001",
+      "status": "BLOCKED",
+      "scope": "remote-staging-db",
+      "reason": "Staging migration not approved; credentials unavailable in last recorded audit",
+      "owner_action": "Approve staging-only application after read-only ledger reconciliation and secure staging credentials, if desired"
+    },
+    {
+      "id": "B-002",
+      "status": "BLOCKED",
+      "scope": "real-ios-device",
+      "reason": "Native iOS validation needs actual build and compatible device/Mac; not established in this execution environment",
+      "owner_action": "Provide real iOS TestFlight/device verification evidence before release claims"
+    },
+    {
+      "id": "B-003",
+      "status": "NOT_CONFIGURED",
+      "scope": "unattended-controller",
+      "reason": "No independently tested always-on Cursor/Codex API dispatcher or cost controls",
+      "owner_action": "Authorize API setup and usage budget only if unattended cross-session execution is required"
+    }
+  ],
+  "next_action": "Open Cursor on this execution branch; read START_AUTONOMOUS_RUN.md, inspect latest HEAD/CI, then begin P0-01.",
+  "last_report": null
+}
