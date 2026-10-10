@@ -29,17 +29,18 @@ Set autonomy.independent_review_invoked true only after a genuine call. Set auto
 
 Update backlog entries with status (TODO, IN_PROGRESS, DONE, BLOCKED or DEFERRED), evidence, and blockers. DONE needs real evidence. Never mark blocked/deferred as done simply to inflate completion.
 
-## Minimum testing matrix per relevant patch
+## Evidence and test cadence: targeted → checkpoint → full
 
-1. npm run typecheck, npm run lint, npm test, npm run build.
-2. supabase start, supabase db reset, supabase test db (local only).
-3. npm run test:e2e:local and Playwright Supabase browser smoke on isolated local test users.
-4. npx playwright test e2e/visual --config=playwright.visual.config.ts.
-5. Staging DB ledger and app flow: read-only verification only unless owner explicitly authorizes writes; otherwise BLOCKED.
-6. Real iOS/TestFlight device verification: BLOCKED unless actually performed on supported device/build.
-7. Current GitHub Actions checks: use same HEAD SHA and disclose whether GitHub billing or workflows prevent execution.
+Read `docs/dan-autonomous/CI_COST_POLICY.md`. Full GitHub Actions on every draft commit is **not required** and is discouraged.
 
-Test failures must be fixed, not hidden. Unsupported environment should be recorded as BLOCKED, not PASS.
+1. **Patch cycle:** relevant local unit/component or DB tests and readonly independent review on a frozen SHA; no remote full CI automatically.
+2. **Feature checkpoint:** local npm typecheck/lint/unit/build as relevant; optional manually dispatched `verify` GitHub Actions suite.
+3. **Risk checkpoint:** isolated Supabase migrations and pgTAP, local real two-user E2E/browser smoke and visual Playwright when applicable. If no local Docker, use manually dispatched `full` GitHub Actions on a stable milestone and preserve the link. Security, migrations, RLS, auth, payments and release validation MUST obtain the full evidence before completion claims.
+4. **Staging:** read-only migration ledger probes only absent separate owner approval for any write.
+5. **iOS/TestFlight:** actual device evidence only, never inferred from browser tests.
+6. **Release:** GitHub Actions `verify`, `supabase`, and `visual` must all PASS against the **exact proposed final HEAD**. An older CI PASS or a skipped DRAFT check is NOT_RUN/STALE, not PASS for that HEAD.
+
+Review PASS is limited to the code scope inspected. It does not supersede mandatory future full checks. If tests fail, fix rather than skip. Report tools unavailable as BLOCKED; ensure no fabricated evidence.
 
 ## Resume and stopping
 
