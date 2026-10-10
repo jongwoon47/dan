@@ -39,6 +39,7 @@ import {
   type LiveDemandRow,
   type LiveDemandSort,
 } from "@/domain/liveDemandDiscovery";
+import { jaPilotCopy } from "@/copy/useDanCopy";
 import {
   DEMAND_TYPE_LABEL,
   type DemandType,
@@ -46,6 +47,13 @@ import {
 } from "@/domain/types";
 import "./pages.css";
 import "@/components/feedCards.css";
+
+const JA_TYPE_LABEL: Record<DemandType, string> = {
+  BUY: jaPilotCopy.typeBuy ?? DEMAND_TYPE_LABEL.BUY,
+  BORROW: jaPilotCopy.typeBorrow ?? DEMAND_TYPE_LABEL.BORROW,
+  TASK: jaPilotCopy.typeTask ?? DEMAND_TYPE_LABEL.TASK,
+  SERVICE: jaPilotCopy.typeService ?? DEMAND_TYPE_LABEL.SERVICE,
+};
 
 const PAGE_SIZE = 24;
 const NEARBY_PAGE_SIZE = 40;
@@ -98,6 +106,7 @@ function matchesIndividualQuery(item: Extract<FeedItem, { kind: "individual" }>,
     demand.title,
     demand.description,
     DEMAND_TYPE_LABEL[demand.type],
+    JA_TYPE_LABEL[demand.type],
   ]
     .filter(Boolean)
     .join(" ")

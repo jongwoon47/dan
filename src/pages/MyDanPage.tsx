@@ -4,12 +4,13 @@ import { MatchList } from "@/components/MatchCard";
 import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { demandTypeLabel } from "@/copy/demandTypeLabel";
 import { useDanCopy, type LocalizedCopy } from "@/copy/useDanCopy";
 import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
 import { effectiveDemandStatus } from "@/domain/demandLifecycle";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
-import { isBuyDemand, type DemandType } from "@/domain/types";
+import { isBuyDemand } from "@/domain/types";
 import { useDanLocale } from "@/i18n/locale";
 import { formatStoredMoney } from "@/lib/format";
 import "./pages.css";
@@ -19,13 +20,6 @@ type MyTab = "active" | "requests" | "completed";
 function normalizeTab(value: string | null): MyTab {
   if (value === "requests" || value === "completed") return value;
   return "active";
-}
-
-function demandTypeLabel(type: DemandType, copy: LocalizedCopy): string {
-  if (type === "BUY") return copy.typeBuy;
-  if (type === "BORROW") return copy.typeBorrow;
-  if (type === "TASK") return copy.typeTask;
-  return copy.typeService;
 }
 
 function requestStatusLabel(status: string, copy: LocalizedCopy): string {

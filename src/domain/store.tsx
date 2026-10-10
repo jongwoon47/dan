@@ -36,6 +36,7 @@ import { buildPublicProfileStats } from "./profileTrust";
 import { canRespondToDemand, upsertOpenResponse } from "./responses";
 import { stripGeoFromFulfillmentOptions } from "./fulfillment";
 import { upsertOpenSellIntent } from "./sellIntents";
+import { getLocale } from "@/i18n/locale";
 import {
   displayProductName,
   findProductByMatchKey,
@@ -1264,6 +1265,7 @@ export function DanProvider({ children }: { children: ReactNode }) {
           viewerIsSelf: state.currentUserId === userId,
           identityVerified: true,
           authLabel: null,
+          locale: getLocale(),
         });
       },
       updateMyProfile: async () => currentUser,

@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
+import { demandTypeLabel } from "@/copy/demandTypeLabel";
 import { useDanCopy } from "@/copy/useDanCopy";
 import { primaryPublicPlace } from "@/domain/fulfillment";
 import type { Demand } from "@/domain/types";
-import { DEMAND_TYPE_LABEL } from "@/domain/types";
 import { formatDemandWhen, formatStoredMoney } from "@/lib/format";
 import { translate, useDanLocale } from "@/i18n/locale";
 import {
@@ -42,16 +42,7 @@ export function IndividualDemandCard({ demand, approxMeters }: { demand: Demand;
       : demand.type === "BORROW"
         ? t("borrowBudget")
         : t("budget");
-  const typeLabel =
-    locale === "ja"
-      ? demand.type === "BUY"
-        ? t("buy")
-        : demand.type === "BORROW"
-          ? t("borrow")
-          : demand.type === "TASK"
-            ? t("task")
-            : t("service")
-      : DEMAND_TYPE_LABEL[demand.type];
+  const typeLabel = demandTypeLabel(demand.type, copy);
 
   return (
     <Link to={`/demand/item/${demand.id}`} className="feed-row feed-row--ind">

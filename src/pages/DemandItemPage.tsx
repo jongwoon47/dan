@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
+import { demandTypeLabel } from "@/copy/demandTypeLabel";
 import { useDanCopy, type LocalizedCopy } from "@/copy/useDanCopy";
 import { useDanLocale } from "@/i18n/locale";
 import { useDan } from "@/domain/danContext";
@@ -12,7 +13,6 @@ import {
   formatFulfillmentModes,
   primaryPublicPlace,
 } from "@/domain/fulfillment";
-import { DEMAND_TYPE_LABEL } from "@/domain/types";
 import {
   clearResponseDraft,
   loadResponseDraft,
@@ -57,7 +57,7 @@ export function DemandItemPage() {
   } = useDan();
   const demand = getDemand(demandId);
   useDeepHeader({
-    title: demand ? (locale === "ja" ? (demand.type === "BUY" ? copy.typeBuy : demand.type === "BORROW" ? copy.typeBorrow : demand.type === "TASK" ? copy.typeTask : copy.typeService) : DEMAND_TYPE_LABEL[demand.type]) : copy.viewDemand,
+    title: demand ? demandTypeLabel(demand.type, copy) : copy.viewDemand,
   });
   const restored = loadResponseDraft(demandId);
   const [composerOpen, setComposerOpen] = useState(Boolean(restored));
@@ -201,7 +201,7 @@ export function DemandItemPage() {
     <div className="page-stack page-narrow demand-item">
       <header className="demand-item__header">
         <div className="demand-item__badges">
-          <span className="demand-chip">{DEMAND_TYPE_LABEL[demand.type]}</span>
+          <span className="demand-chip">{demandTypeLabel(demand.type, copy)}</span>
           {viewStatus !== "ACTIVE" ? (
             <span
               className={
