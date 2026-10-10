@@ -412,7 +412,9 @@ export function DemandItemPage() {
                   onChange={(e) => setOfferPrice(e.target.value)}
                   placeholder={
                     demand.budget > 0
-                      ? `희망 ${demand.budget.toLocaleString("ko-KR")}원`
+                      ? locale === "ja"
+                        ? `希望 ${formatStoredMoney(demand.budget, demand.currencyCode ?? "KRW", locale)}`
+                        : `희망 ${demand.budget.toLocaleString("ko-KR")}원`
                       : copy.offerPriceOptional
                   }
                 />
@@ -509,7 +511,7 @@ export function DemandItemPage() {
                       to={`/profile/${r.userId}`}
                       className="text-link muted"
                     >
-                      상대
+                      {locale === "ja" ? "相手" : "상대"}
                     </Link>
                   )}
                   <span className="muted">{responseStatusLabel(r.status, copy)}</span>

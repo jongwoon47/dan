@@ -341,25 +341,35 @@ export function DemandEditPage() {
     <div className="page-stack page-narrow">
       <form className="section-stack create-page__body request-edit-form" onSubmit={(e) => void onSave(e)}>
         <div className="create-page__prompt">
-          <p className="create-page__kicker">요청 수정</p>
+          <p className="create-page__kicker">
+            {locale === "ja" ? "依頼を編集" : "요청 수정"}
+          </p>
           <h1 className="section-title">
             {current.type === "BUY"
-              ? "찾는 물건의 조건을 수정할까요?"
+              ? locale === "ja"
+                ? "探している物の条件を変更しますか？"
+                : "찾는 물건의 조건을 수정할까요?"
               : current.type === "BORROW"
-                ? "빌릴 물건의 조건을 수정할까요?"
+                ? locale === "ja"
+                  ? "借りる物の条件を変更しますか？"
+                  : "빌릴 물건의 조건을 수정할까요?"
                 : current.type === "TASK"
-                  ? "부탁할 내용을 수정할까요?"
-                  : "필요한 서비스 조건을 수정할까요?"}
+                  ? locale === "ja"
+                    ? "お願い内容を変更しますか？"
+                    : "부탁할 내용을 수정할까요?"
+                  : locale === "ja"
+                    ? "サービスの条件を変更しますか？"
+                    : "필요한 서비스 조건을 수정할까요?"}
           </h1>
         </div>
 
         {current.type === "BUY" ? (
           <div className="request-edit-primary">
-            <span>제품</span>
+            <span>{locale === "ja" ? "商品" : "제품"}</span>
             <strong>{title}</strong>
           </div>
         ) : current.type === "BORROW" ? (
-          <Field label="빌릴 물건">
+          <Field label={locale === "ja" ? "借りたい物" : "빌릴 물건"}>
             <TextInput
               value={itemName}
               onChange={(e) => setItemName(e.target.value)}
@@ -367,7 +377,7 @@ export function DemandEditPage() {
             />
           </Field>
         ) : current.type === "TASK" ? (
-          <Field label="부탁할 일">
+          <Field label={locale === "ja" ? "お願いしたい内容" : "부탁할 일"}>
             <textarea
               className="dan-input dan-textarea"
               value={description}
@@ -377,7 +387,7 @@ export function DemandEditPage() {
             />
           </Field>
         ) : (
-          <Field label="필요한 서비스">
+          <Field label={locale === "ja" ? "必要なサービス" : "필요한 서비스"}>
             <TextInput
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -387,13 +397,25 @@ export function DemandEditPage() {
         )}
 
         {current.type !== "TASK" ? (
-          <Field label={current.type === "SERVICE" ? "추가 설명" : "추가 조건"}>
+          <Field
+            label={
+              current.type === "SERVICE"
+                ? locale === "ja"
+                  ? "追加説明"
+                  : "추가 설명"
+                : locale === "ja"
+                  ? "追加条件"
+                  : "추가 조건"
+            }
+          >
             <textarea
               className="dan-input dan-textarea"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              placeholder="선택 사항을 적어주세요"
+              placeholder={
+                locale === "ja" ? "任意事項を記入してください" : "선택 사항을 적어주세요"
+              }
             />
           </Field>
         ) : null}
