@@ -487,18 +487,17 @@ function CreateDemandForm() {
     return Boolean(detail.trim());
   }, [type, price, productQuery, title, itemName, detail]);
 
-  const canSubmit = useMemo(() => {
+  /** Core/mode/fulfillment ready — schedule errors stay clickable so alerts can announce. */
+  const canAttemptSubmit = useMemo(() => {
     if (!canCore) return false;
     if (type === "TASK" && !taskMode) return false;
     if (type === "SERVICE" && !serviceMode) return false;
     if (!areFulfillmentOptionsValid(fulfillmentOptions)) return false;
-    if (scheduleError) return false;
     if (type === "BUY") return buyShipping || buyMeetup;
     return true;
   }, [
     canCore,
     fulfillmentOptions,
-    scheduleError,
     type,
     buyShipping,
     buyMeetup,
@@ -508,7 +507,7 @@ function CreateDemandForm() {
 
   async function submit() {
     setScheduleTouched(true);
-    if (!canSubmit || submitting || !type) return;
+    if (submitting || !type || !canAttemptSubmit) return;
     if (scheduleError) {
       setFormError(scheduleError);
       return;
@@ -1065,7 +1064,9 @@ function CreateDemandForm() {
                             </Button>
                           </div>
                           {geoError ? (
-                            <p className="form-error">{geoError}</p>
+                            <p className="form-error" role="alert">
+                              {geoError}
+                            </p>
                           ) : null}
                         </div>
                         <Field label={copy.placeAreaLabel}>
@@ -1097,7 +1098,9 @@ function CreateDemandForm() {
                 ) : null}
 
                 {formError || (scheduleTouched && scheduleError) ? (
-                  <p className="form-error">{formError ?? scheduleError}</p>
+                  <p className="form-error" role="alert">
+                    {formError ?? scheduleError}
+                  </p>
                 ) : null}
               </>
             ) : null}
@@ -1120,7 +1123,7 @@ function CreateDemandForm() {
                 fullWidth
                 size="lg"
                 onClick={() => void submit()}
-                disabled={!canSubmit || submitting}
+                disabled={!canAttemptSubmit || submitting}
               >
                 {submitting
                   ? copy.saving

@@ -28,6 +28,7 @@ export function OwnershipPage() {
   );
   const [doneId, setDoneId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (!product) {
     return (
@@ -40,6 +41,7 @@ export function OwnershipPage() {
 
   function pickCondition(next: ItemCondition) {
     setCondition(next);
+    setError(null);
     saveOwnDraft({ productId, condition: next });
   }
 
@@ -47,12 +49,17 @@ export function OwnershipPage() {
     if (busy || !condition) return;
     saveOwnDraft({ productId, condition });
     setBusy(true);
+    setError(null);
     try {
       const ownership = await createOwnership({ productId, condition });
       if (ownership) {
         clearOwnDraft();
         setDoneId(ownership.id);
+      } else {
+        setError(copy.genericError);
       }
+    } catch {
+      setError(copy.genericError);
     } finally {
       setBusy(false);
     }
@@ -142,6 +149,11 @@ export function OwnershipPage() {
             ))}
           </ChipGroup>
         </div>
+        {error ? (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        ) : null}
         <Button
           fullWidth
           size="lg"

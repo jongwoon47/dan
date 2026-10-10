@@ -300,7 +300,11 @@ export function BuyDemandCreatePage() {
           <p>{copy.buyDemandLiveRuleBody}</p>
         </div>
 
-        {error ? <p className="form-error">{error}</p> : null}
+        {error ? (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        ) : null}
         <div className="create-review-actions">
           <Button fullWidth size="lg" disabled={submitting} onClick={() => void submit()}>
             {submitting ? copy.buyDemandSubmitting : copy.buyDemandSubmitCta}
@@ -478,7 +482,11 @@ export function BuyDemandCreatePage() {
         </div>
       ) : null}
 
-      {error ? <p className="form-error">{error}</p> : null}
+      {error ? (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
       <div className="create-sticky-action">
         <Button
           fullWidth

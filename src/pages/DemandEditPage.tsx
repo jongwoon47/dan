@@ -617,7 +617,11 @@ export function DemandEditPage() {
           </>
         ) : null}
 
-        {error ? <p className="form-error">{error}</p> : null}
+        {error ? (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        ) : null}
         <Button type="submit" fullWidth size="lg" disabled={busy}>
           {busy ? copy.saving : copy.saveDemand}
         </Button>

@@ -43,6 +43,7 @@ export function SellIntentPage() {
   const [conditionNote, setConditionNote] = useState("");
   const [quickPhotoUrl, setQuickPhotoUrl] = useState("");
   const [photoError, setPhotoError] = useState("");
+  const [submitError, setSubmitError] = useState("");
   const [busy, setBusy] = useState(false);
 
   useDeepHeader({ title: copy.detailSendOfferCta });
@@ -80,6 +81,7 @@ export function SellIntentPage() {
     const minimumPrice = parseMoneyInput(price);
     if (!Number.isFinite(minimumPrice) || minimumPrice <= 0) return;
     setBusy(true);
+    setSubmitError("");
     try {
       const created = await createSellIntent({
         ownershipId,
@@ -88,7 +90,13 @@ export function SellIntentPage() {
         conditionNote: conditionNote.trim() || undefined,
         quickPhotoUrl: quickPhotoUrl || undefined,
       });
-      if (created) navigate("/my");
+      if (created) {
+        navigate("/my");
+      } else {
+        setSubmitError(copy.genericError);
+      }
+    } catch {
+      setSubmitError(copy.genericError);
     } finally {
       setBusy(false);
     }
@@ -176,6 +184,11 @@ export function SellIntentPage() {
           <p>{copy.detailOfferNowBody}</p>
         </div>
 
+        {submitError ? (
+          <p className="form-error" role="alert">
+            {submitError}
+          </p>
+        ) : null}
         <Button fullWidth size="lg" onClick={() => void submit()} disabled={busy || typed <= 0}>
           {busy ? copy.offerSending : copy.detailSendOfferCta}
         </Button>
