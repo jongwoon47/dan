@@ -3,10 +3,10 @@
   "repository": "jongwoon47/dan",
   "branch": "automation/dan-autonomous-review-loop-20261010",
   "baseline_branch": "cursor/dan-commercial-complete-e0e7",
-  "baseline_sha": null,
+  "baseline_sha": "47e456d8d5651dde48d9d8ced056911afb593e5d",
   "running_head": null,
-  "last_updated": "2026-10-10",
-  "phase": "SETUP",
+  "last_updated": "2026-10-10T03:38:00Z",
+  "phase": "IMPLEMENTING",
   "autonomy": {
     "mode": "cursor-agent-with-readonly-subagent",
     "independent_review_invoked": false,
@@ -23,15 +23,15 @@
     "paid_services": "APPROVAL_REQUIRED"
   },
   "latest_tests": {
-    "typecheck": "NOT_RUN",
-    "lint": "NOT_RUN",
-    "unit": "NOT_RUN",
-    "build": "NOT_RUN",
-    "local_db": "NOT_RUN",
-    "pgtap": "NOT_RUN",
-    "two_user_e2e": "NOT_RUN",
-    "browser_smoke": "NOT_RUN",
-    "visual": "NOT_RUN",
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "unit": "PASS",
+    "build": "PASS",
+    "local_db": "BLOCKED",
+    "pgtap": "BLOCKED",
+    "two_user_e2e": "BLOCKED",
+    "browser_smoke": "BLOCKED",
+    "visual": "PASS",
     "ios_device": "NOT_RUN",
     "ci": "NOT_RUN"
   },
@@ -40,8 +40,10 @@
       "id": "P0-01",
       "priority": "P0",
       "title": "Recheck latest HEAD CI and local validations; repair genuine failures",
-      "status": "TODO",
-      "evidence": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "Merged baseline 47e456d; fixed TradeCompletePage refreshData effect loop (Maximum update depth); DemandFeed empty-array identity hardening; Handoff poll deps; visual 390px+desktop 25 passed / 0 failed; local supabase start BLOCKED (Realtime→DB TCP timeout in this environment)."
+      ]
     },
     {
       "id": "P0-02",
@@ -115,8 +117,15 @@
       "scope": "unattended-controller",
       "reason": "No independently tested always-on Cursor/Codex API dispatcher or cost controls",
       "owner_action": "Authorize API setup and usage budget only if unattended cross-session execution is required"
+    },
+    {
+      "id": "B-004",
+      "status": "BLOCKED",
+      "scope": "local-supabase",
+      "reason": "supabase start fails during schema init: Realtime container cannot TCP-connect to local Postgres (queue timeout ~15s) even after CLI 2.120.0 upgrade; exclude flags still run Realtime migrate",
+      "owner_action": "None required for app code; CI supabase job remains source of truth for local DB/E2E until this host networking is fixed"
     }
   ],
-  "next_action": "Open Cursor on this execution branch; read START_AUTONOMOUS_RUN.md, inspect latest HEAD/CI, then begin P0-01.",
-  "last_report": null
+  "next_action": "Commit P0-01 render-loop fixes; push; draft PR; invoke dan-independent-reviewer on HEAD; record C001.",
+  "last_report": "P0-01: typecheck/lint/unit/build PASS; visual 390+desktop PASS without Maximum update depth; TradeComplete refreshData loop fixed; local supabase BLOCKED (B-004)."
 }

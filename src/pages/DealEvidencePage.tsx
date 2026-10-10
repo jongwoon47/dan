@@ -125,8 +125,8 @@ export function DealEvidencePage() {
 
   useEffect(() => {
     if (!isSeller) {
-      setSellerVerificationLoaded(false);
-      setSellerVerifiedForDeal(false);
+      setSellerVerificationLoaded((prev) => (prev ? false : prev));
+      setSellerVerifiedForDeal((prev) => (prev ? false : prev));
       return;
     }
     let cancelled = false;

@@ -36,15 +36,26 @@ export function TradeCompletePage() {
 
   useDeepHeader({ title: copy.matchStatusCompleted });
 
+  const buyerId = match?.buyerId;
+  const sellerId = match?.sellerId;
+  const matchStatus = match?.status;
+  const currentUserId = currentUser?.id;
+
+  // Refresh once per match so completion writes from the other party are visible.
+  // Do not put refreshData in a deps list with store method identities — HYDRATE
+  // recreates context functions and would retrigger forever.
   useEffect(() => {
-    if (!matchId || !match || !currentUser) return;
-    const peerId =
-      currentUser.id === match.buyerId ? match.sellerId : match.buyerId;
+    if (!matchId) return;
+    void refreshData().catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot refresh by matchId
+  }, [matchId]);
+
+  useEffect(() => {
+    if (!matchId || !matchStatus || !currentUserId || !buyerId || !sellerId) return;
+    const peerId = currentUserId === buyerId ? sellerId : buyerId;
     let cancelled = false;
 
     const load = async () => {
-      await refreshData().catch(() => undefined);
-      if (cancelled) return;
       for (let attempt = 0; attempt < 4; attempt += 1) {
         const [dealSnapshot, publicProfile] = await Promise.all([
           getDealSnapshot(matchId),
@@ -64,14 +75,9 @@ export function TradeCompletePage() {
     return () => {
       cancelled = true;
     };
-  }, [
-    currentUser,
-    getDealSnapshot,
-    getPublicProfile,
-    match,
-    matchId,
-    refreshData,
-  ]);
+    // Store getters are recreated on every DanProvider refresh; key on match fields.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable load by match/peer ids
+  }, [buyerId, currentUserId, matchId, matchStatus, sellerId]);
 
   if (!match || !product || !currentUser) {
     return (

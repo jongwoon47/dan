@@ -82,8 +82,9 @@ export function HandoffPage() {
 
   // Ops/provider settlement updates payment_status out-of-band; poll so the
   // handoff confirm UI opens without requiring a full app reload.
+  const paymentStatus = match?.paymentStatus;
   useEffect(() => {
-    if (!matchId || !match || match.paymentStatus === "PAID") return;
+    if (!matchId || paymentStatus === "PAID" || !paymentStatus) return;
     if (!snapshot?.lockedAt) return;
     let cancelled = false;
     const tick = () => {
@@ -96,7 +97,9 @@ export function HandoffPage() {
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [match, matchId, refreshData, snapshot?.lockedAt]);
+    // refreshData identity changes after every HYDRATE; key on payment fields only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable poll by match payment state
+  }, [matchId, paymentStatus, snapshot?.lockedAt]);
 
   const openDispute = disputes.find(
     (x) => x.status === "OPEN" || x.status === "REVIEWING",

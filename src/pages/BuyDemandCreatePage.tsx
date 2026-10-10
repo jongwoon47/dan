@@ -138,8 +138,8 @@ export function BuyDemandCreatePage() {
 
   useEffect(() => {
     if (!isLoggedIn) {
-      setVerificationLoaded(false);
-      setPhoneVerified(false);
+      setVerificationLoaded((prev) => (prev ? false : prev));
+      setPhoneVerified((prev) => (prev ? false : prev));
       return;
     }
     let cancelled = false;

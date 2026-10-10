@@ -62,6 +62,10 @@ const JA_TYPE_COPY = {
 
 const PAGE_SIZE = 24;
 const NEARBY_PAGE_SIZE = 40;
+const EMPTY_LIVE_ROWS: LiveDemandRow[] = [];
+const EMPTY_DISTANCE_MAP: Record<string, number> = {};
+const EMPTY_NEARBY_ROWS: Array<Extract<FeedItem, { kind: "individual" }>> = [];
+const EMPTY_CATEGORY_COUNTS: ReturnType<typeof liveDemandCategoryCounts> = [];
 
 const SORT_OPTIONS: Array<{ value: LiveDemandSort; labelKey: "popular" | "growing" | "price" }> = [
   { value: "popular", labelKey: "popular" },
@@ -197,7 +201,7 @@ export function DemandFeedPage() {
   }
 
   const categoryRows = useMemo(
-    () => areaCountry === "KR" ? liveDemandCategoryCounts(demandFeed) : [],
+    () => areaCountry === "KR" ? liveDemandCategoryCounts(demandFeed) : EMPTY_CATEGORY_COUNTS,
     [demandFeed, areaCountry],
   );
 
@@ -226,16 +230,16 @@ export function DemandFeedPage() {
 
   useEffect(() => {
     if (locationMode !== "nearby" || !viewerGeo || !productionDiscovery || !currentUser) {
-      setDistanceMap({});
-      setNearbyRows([]);
-      setNearbyOffset(0);
-      setNearbyHasMore(false);
-      setDistanceReady(false);
+      setDistanceMap((prev) => (Object.keys(prev).length === 0 ? prev : EMPTY_DISTANCE_MAP));
+      setNearbyRows((prev) => (prev.length === 0 ? prev : EMPTY_NEARBY_ROWS));
+      setNearbyOffset((prev) => (prev === 0 ? prev : 0));
+      setNearbyHasMore((prev) => (prev ? false : prev));
+      setDistanceReady((prev) => (prev ? false : prev));
       return;
     }
     let cancelled = false;
-    setDistanceMap({});
-    setNearbyRows([]);
+    setDistanceMap(EMPTY_DISTANCE_MAP);
+    setNearbyRows(EMPTY_NEARBY_ROWS);
     setNearbyOffset(0);
     setNearbyHasMore(false);
     setDistanceReady(false);
@@ -283,11 +287,11 @@ export function DemandFeedPage() {
 
   useEffect(() => {
     if (!productionDiscovery || !includesBuy) {
-      setRemoteRows([]);
-      setRemoteTotal(0);
-      setRemoteReady(false);
-      setRemoteLoading(false);
-      setRemoteError(null);
+      setRemoteRows((prev) => (prev.length === 0 ? prev : EMPTY_LIVE_ROWS));
+      setRemoteTotal((prev) => (prev === 0 ? prev : 0));
+      setRemoteReady((prev) => (prev ? false : prev));
+      setRemoteLoading((prev) => (prev ? false : prev));
+      setRemoteError((prev) => (prev == null ? prev : null));
       return;
     }
 
@@ -338,7 +342,7 @@ export function DemandFeedPage() {
       ? productionDiscovery && remoteReady
         ? remoteRows
         : localBuyRows
-      : [];
+      : EMPTY_LIVE_ROWS;
 
   const locationFilteredIndividualRows = useMemo(() => {
     const sourceRows = locationMode === "nearby"
