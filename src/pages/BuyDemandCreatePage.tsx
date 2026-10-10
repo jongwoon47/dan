@@ -4,6 +4,7 @@ import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
 import { Chip, ChipGroup, Field, TextInput, TextSelect } from "@/components/ui/Input";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
+import { useDanCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
 import { placeFromLabel } from "@/domain/fulfillment";
 import {
@@ -89,6 +90,7 @@ const TRADE_OPTIONS: TradeMethod[] = ["meetup", "shipping", "any"];
 
 export function BuyDemandCreatePage() {
   const locale = useDanLocale();
+  const copy = useDanCopy();
   const {
     products,
     createDemand,
@@ -107,7 +109,9 @@ export function BuyDemandCreatePage() {
   const [maxPrice, setMaxPrice] = useState("");
   const [condition, setCondition] = useState<ConditionPreference>("any");
   const [tradeMethod, setTradeMethod] = useState<TradeMethod>("meetup");
-  const [area, setArea] = useState(currentUser?.defaultArea || "서울");
+  const [area, setArea] = useState(
+    currentUser?.defaultArea || copy.defaultAreaSeoul,
+  );
   const [extraCondition, setExtraCondition] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [verificationLoaded, setVerificationLoaded] = useState(false);
@@ -116,7 +120,7 @@ export function BuyDemandCreatePage() {
   const [reviewing, setReviewing] = useState(false);
 
   useDeepHeader({
-    title: "구매수요 등록",
+    title: copy.buyDemandTitle,
     onBack: reviewing ? () => setReviewing(false) : undefined,
     backKey: reviewing,
   });
@@ -196,7 +200,7 @@ export function BuyDemandCreatePage() {
       return;
     }
     if (!phoneVerified) {
-      setError("Live Demand를 공개하려면 휴대폰 본인확인이 필요해요.");
+      setError(copy.buyDemandPhoneRequired);
       return;
     }
 
@@ -210,7 +214,7 @@ export function BuyDemandCreatePage() {
             (await ensureProduct(productQuery.trim(), category));
 
       if (!product) {
-        setError("제품을 등록하지 못했어요. 잠시 후 다시 시도해 주세요.");
+        setError(copy.buyDemandProductCreateFail);
         return;
       }
 
@@ -227,13 +231,13 @@ export function BuyDemandCreatePage() {
               ];
 
       const preferenceText = extraCondition.trim()
-        ? ` · 추가 조건: ${extraCondition.trim()}`
+        ? `${copy.buyDemandExtraPrefix}${extraCondition.trim()}`
         : "";
 
       const created = await createDemand({
         type: "BUY",
         title: product.name,
-        description: `${product.name} 구매수요${preferenceText}`,
+        description: `${product.name} ${copy.buyDemandDescSuffix}${preferenceText}`,
         productId: product.id,
         maxPrice: price,
         conditionPreference: condition,
@@ -242,7 +246,7 @@ export function BuyDemandCreatePage() {
       });
 
       if (!created) {
-        setError("구매수요를 등록하지 못했어요.");
+        setError(copy.buyDemandCreateFail);
         return;
       }
       navigate("/my?tab=demands");
@@ -255,54 +259,54 @@ export function BuyDemandCreatePage() {
     return (
       <div className="page-stack page-narrow camera-demand-create camera-demand-create--blueprint">
         <section className="create-v1-intro">
-          <span className="eyebrow">2 / 2 · 확인</span>
-          <h1 className="page-title">이 조건으로 구매수요를 올릴게요.</h1>
-          <p>공개할 조건만 확인해 주세요.</p>
+          <span className="eyebrow">{copy.buyDemandStepReview}</span>
+          <h1 className="page-title">{copy.buyDemandReviewTitle}</h1>
+          <p>{copy.buyDemandReviewBody}</p>
         </section>
 
         <section className="deal-snapshot-card demand-create-review">
           <div className="snapshot-section">
-            <span>제품</span>
+            <span>{copy.product}</span>
             <strong>{productQuery.trim()}</strong>
           </div>
           <div className="snapshot-section">
-            <span>최대 구매 희망가</span>
+            <span>{copy.buyDemandMaxPrice}</span>
             <strong>{formatStoredMoney(price, "KRW", locale)}</strong>
           </div>
           <div className="snapshot-section">
-            <span>허용 상태</span>
+            <span>{copy.buyDemandAllowedCondition}</span>
             <strong>{conditionLabel(locale, condition)}</strong>
           </div>
           <div className="snapshot-section">
-            <span>거래 방식</span>
+            <span>{copy.tradeMethod}</span>
             <strong>{tradeLabel(locale, tradeMethod)}</strong>
           </div>
           {meetupNeeded ? (
             <div className="snapshot-section">
-              <span>직거래 지역</span>
+              <span>{copy.buyDemandMeetupArea}</span>
               <strong>{area.trim()}</strong>
             </div>
           ) : null}
           {extraCondition.trim() ? (
             <div className="snapshot-section">
-              <span>추가 조건</span>
+              <span>{copy.buyDemandExtraShort}</span>
               <strong>{extraCondition.trim()}</strong>
             </div>
           ) : null}
         </section>
 
         <div className="live-demand-rule">
-          <strong>Live Demand에는 실제 구매 의사가 있는 조건만 올려주세요.</strong>
-          <p>7일마다 다시 확인하고, My DAN에서 언제든 관리할 수 있어요.</p>
+          <strong>{copy.buyDemandLiveRuleTitle}</strong>
+          <p>{copy.buyDemandLiveRuleBody}</p>
         </div>
 
         {error ? <p className="form-error">{error}</p> : null}
         <div className="create-review-actions">
           <Button fullWidth size="lg" disabled={submitting} onClick={() => void submit()}>
-            {submitting ? "등록 중…" : "이 조건으로 구매수요 등록"}
+            {submitting ? copy.buyDemandSubmitting : copy.buyDemandSubmitCta}
           </Button>
           <Button fullWidth variant="secondary" disabled={submitting} onClick={() => setReviewing(false)}>
-            조건 수정
+            {copy.buyDemandEditConditions}
           </Button>
         </div>
       </div>
@@ -312,28 +316,27 @@ export function BuyDemandCreatePage() {
   return (
     <div className="page-stack page-narrow camera-demand-create camera-demand-create--blueprint">
       <section className="create-v1-intro">
-        <span className="eyebrow">1 / 2 · 조건 입력</span>
-        <h1 className="page-title">어떤 물건을 찾고 있나요?</h1>
-        <p>
-          찾는 물건과 조건만 적어주세요. 가진 사람이 판매를 제안해요.
-        </p>
+        <span className="eyebrow">{copy.buyDemandStepInput}</span>
+        <h1 className="page-title">{copy.buyDemandLeadTitle}</h1>
+        <p>{copy.buyDemandLeadBody}</p>
       </section>
 
       <section className="product-search-section commerce-panel commerce-panel--product">
-        <Field
-          label="찾는 제품"
-          hint="없으면 새 제품으로 등록할 수 있어요."
-        >
+        <Field label={copy.productSearch} hint={copy.buyDemandProductHint}>
           <TextInput
             value={productQuery}
             onChange={(event) => changeQuery(event.target.value)}
-            placeholder="예: iPhone 15 Pro, 에어론 체어, Switch OLED"
+            placeholder={copy.buyDemandProductPh}
             autoComplete="off"
           />
         </Field>
 
         {productQuery.trim() && suggestions.length > 0 && !queryMatchesSelected ? (
-          <div className="product-suggestion-list" role="listbox" aria-label="제품 검색 결과">
+          <div
+            className="product-suggestion-list"
+            role="listbox"
+            aria-label={copy.buyDemandSuggestAria}
+          >
             {suggestions.map((product) => (
               <button
                 key={product.id}
@@ -354,8 +357,10 @@ export function BuyDemandCreatePage() {
 
         {productQuery.trim().length >= 2 && !exactCatalogMatch && !queryMatchesSelected ? (
           <div className="new-product-hint">
-            <span>검색 결과에 없어도 괜찮아요.</span>
-            <strong>‘{productQuery.trim()}’로 새 제품 수요를 만들 수 있어요.</strong>
+            <span>{copy.buyDemandNewProductHint}</span>
+            <strong>
+              {copy.buyDemandNewProductMake.replace("{name}", productQuery.trim())}
+            </strong>
           </div>
         ) : null}
 
@@ -363,13 +368,13 @@ export function BuyDemandCreatePage() {
           <div className="selected-product-card">
             <ProductVisual product={selectedProduct} size="sm" />
             <div>
-              <span>선택한 제품</span>
+              <span>{copy.buyDemandSelectedProduct}</span>
               <strong>{selectedProduct.name}</strong>
               <small>{categoryLabel(locale, selectedProduct.category)}</small>
             </div>
           </div>
         ) : (
-          <Field label="제품 카테고리" hint="새 제품일 때 필요한 분류예요.">
+          <Field label={copy.buyDemandCategory} hint={copy.buyDemandCategoryHint}>
             <TextSelect
               value={category}
               onChange={(event) => setCategory(event.target.value as ProductCategory)}
@@ -385,27 +390,24 @@ export function BuyDemandCreatePage() {
       </section>
 
       <section className="commerce-panel commerce-panel--price">
-        <Field
-          label="최대 구매 희망가"
-          hint="최대 금액만 입력해 주세요."
-        >
+        <Field label={copy.buyDemandMaxPrice} hint={copy.buyDemandMaxPriceHint}>
           <TextInput
             inputMode="numeric"
             value={formatDigitsGrouped(maxPrice, locale)}
             onChange={(event) => setMaxPrice(digitsOnly(event.target.value))}
-            placeholder="예: 850,000"
+            placeholder={copy.buyDemandMaxPricePh}
           />
         </Field>
       </section>
 
       <section className="demand-condition-section commerce-panel">
         <div className="demand-condition-heading">
-          <h2>필수 조건</h2>
-          <span>거래 가능한 범위</span>
+          <h2>{copy.buyDemandRequiredTitle}</h2>
+          <span>{copy.buyDemandRequiredSub}</span>
         </div>
 
         <div>
-          <p className="field-inline-label">물품 상태</p>
+          <p className="field-inline-label">{copy.buyDemandItemCondition}</p>
           <ChipGroup>
             {CONDITION_OPTIONS.map((item) => (
               <Chip
@@ -420,7 +422,7 @@ export function BuyDemandCreatePage() {
         </div>
 
         <div>
-          <p className="field-inline-label">거래 방식</p>
+          <p className="field-inline-label">{copy.tradeMethod}</p>
           <ChipGroup>
             {TRADE_OPTIONS.map((item) => (
               <Chip
@@ -435,11 +437,11 @@ export function BuyDemandCreatePage() {
         </div>
 
         {meetupNeeded ? (
-          <Field label="직거래 지역">
+          <Field label={copy.buyDemandMeetupArea}>
             <TextInput
               value={area}
               onChange={(event) => setArea(event.target.value)}
-              placeholder="예: 서울 강남"
+              placeholder={copy.buyDemandMeetupAreaPh}
             />
           </Field>
         ) : null}
@@ -447,13 +449,10 @@ export function BuyDemandCreatePage() {
 
       <section className="demand-condition-section commerce-panel commerce-panel--optional">
         <div className="demand-condition-heading">
-          <h2>선호 조건</h2>
-          <span>선택 입력</span>
+          <h2>{copy.buyDemandPrefTitle}</h2>
+          <span>{copy.buyDemandPrefSub}</span>
         </div>
-        <Field
-          label="추가로 원하는 조건"
-          hint="꼭 필요한 조건만 적어주세요."
-        >
+        <Field label={copy.buyDemandExtraLabel} hint={copy.buyDemandExtraHint}>
           <TextInput
             value={extraCondition}
             onChange={(event) => setExtraCondition(event.target.value)}
@@ -468,16 +467,14 @@ export function BuyDemandCreatePage() {
       </section>
 
       <div className="live-demand-rule">
-        <strong>수요는 7일마다 확인해요.</strong>
-        <p>오래된 수요는 자동으로 정리돼요.</p>
+        <strong>{copy.buyDemandRefreshRuleTitle}</strong>
+        <p>{copy.buyDemandRefreshRuleBody}</p>
       </div>
 
       {isLoggedIn && verificationLoaded && !phoneVerified ? (
         <div className="verification-gate">
-          <strong>휴대폰 본인확인이 필요해요</strong>
-          <p>
-            본인확인 후 구매수요가 공개돼요.
-          </p>
+          <strong>{copy.buyDemandPhoneGateTitle}</strong>
+          <p>{copy.buyDemandPhoneGateBody}</p>
         </div>
       ) : null}
 
@@ -496,7 +493,7 @@ export function BuyDemandCreatePage() {
             setReviewing(true);
           }}
         >
-          다음 · 조건 확인
+          {copy.buyDemandNextReview}
         </Button>
       </div>
     </div>
