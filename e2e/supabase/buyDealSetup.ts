@@ -146,8 +146,45 @@ export async function prepareBuyPaidDeal(
   if (await componentChip.count()) {
     await componentChip.click().catch(() => undefined);
   }
-  await sellerPage.getByRole("button", { name: "상품 정보 저장하기" }).click();
-  await expect(sellerPage).toHaveURL(/\/snapshot/, { timeout: 60_000 });
+
+  // Save can race mutation lock / challenge refresh — wait for enabled and
+  // retry instead of a single click that no-ops while busy.
+  const saveEvidence = sellerPage.getByRole("button", {
+    name: "상품 정보 저장하기",
+  });
+  let reachedSnapshot = false;
+  for (let saveAttempt = 0; saveAttempt < 4; saveAttempt += 1) {
+    await expect(saveEvidence).toBeEnabled({ timeout: 30_000 });
+    await saveEvidence.click();
+    try {
+      await expect(sellerPage).toHaveURL(/\/snapshot/, { timeout: 45_000 });
+      reachedSnapshot = true;
+      break;
+    } catch {
+      const saveFail = sellerPage.getByText(
+        "상품 정보를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.",
+      );
+      if (await saveFail.isVisible().catch(() => false)) {
+        const retryCode = sellerPage.getByRole("button", { name: "새 코드 받기" });
+        if (await retryCode.isVisible().catch(() => false)) {
+          await retryCode.click();
+          await expect(
+            sellerPage.locator(".evidence-challenge-code strong"),
+          ).toBeVisible({ timeout: 30_000 });
+        }
+        await fileInput.setInputFiles({
+          name: "evidence.png",
+          mimeType: "image/png",
+          buffer: TINY_PNG,
+        });
+        continue;
+      }
+      if (!/\/evidence/.test(sellerPage.url())) throw new Error(
+        `expected evidence or snapshot, got ${sellerPage.url()}`,
+      );
+    }
+  }
+  expect(reachedSnapshot, "evidence save did not reach snapshot").toBe(true);
   await sellerPage.screenshot({
     path: path.join(outDir, "01-evidence-to-snapshot.png"),
     fullPage: true,
