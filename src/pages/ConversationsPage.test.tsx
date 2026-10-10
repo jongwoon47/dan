@@ -46,8 +46,9 @@ describe("ConversationsPage", () => {
     );
 
     expect(await screen.findByRole("list", { name: "대화" })).toBeInTheDocument();
+    expect(await screen.findByRole("listitem")).toBeInTheDocument();
     expect(
-      await screen.findByRole("listitem", {
+      await screen.findByRole("link", {
         name: /Mina\. 캠핑 의자/,
       }),
     ).toBeInTheDocument();

@@ -155,36 +155,36 @@ export function ConversationsPage() {
           }
         />
       ) : (
-        <div className="chat-list" role="list" aria-label={copy.chatsTitle}>
+        <ul className="chat-list" aria-label={copy.chatsTitle}>
           {previews.map((row) => (
-            <Link
-              key={row.match.id}
-              to={`/match/${row.match.id}`}
-              className="chat-list__row"
-              role="listitem"
-              aria-label={`${row.peerName}. ${row.demandTitle}. ${chatStageLabel(row.match, copy)}. ${row.lastMessage}`}
-            >
-              <span className="avatar-initial" aria-hidden>
-                {initialOf(row.peerName)}
-              </span>
-              <span className="chat-list__body">
-                <span className="chat-list__top">
-                  <strong className="chat-list__name">{row.peerName}</strong>
-                  {row.lastAt ? (
-                    <time dateTime={row.lastAt} className="chat-list__time">
-                      {formatRelativeTime(row.lastAt, locale)}
-                    </time>
-                  ) : null}
+            <li key={row.match.id} className="chat-list__item">
+              <Link
+                to={`/match/${row.match.id}`}
+                className="chat-list__row"
+                aria-label={`${row.peerName}. ${row.demandTitle}. ${chatStageLabel(row.match, copy)}. ${row.lastMessage}`}
+              >
+                <span className="avatar-initial" aria-hidden>
+                  {initialOf(row.peerName)}
                 </span>
-                <span className="chat-list__demand">
-                  <span className="chat-list__title">{row.demandTitle}</span>
-                  <em className="chat-list__stage">{chatStageLabel(row.match, copy)}</em>
+                <span className="chat-list__body">
+                  <span className="chat-list__top">
+                    <strong className="chat-list__name">{row.peerName}</strong>
+                    {row.lastAt ? (
+                      <time dateTime={row.lastAt} className="chat-list__time">
+                        {formatRelativeTime(row.lastAt, locale)}
+                      </time>
+                    ) : null}
+                  </span>
+                  <span className="chat-list__demand">
+                    <span className="chat-list__title">{row.demandTitle}</span>
+                    <em className="chat-list__stage">{chatStageLabel(row.match, copy)}</em>
+                  </span>
+                  <span className="chat-list__preview">{row.lastMessage}</span>
                 </span>
-                <span className="chat-list__preview">{row.lastMessage}</span>
-              </span>
-            </Link>
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );
