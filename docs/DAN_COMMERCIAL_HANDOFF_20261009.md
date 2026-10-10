@@ -7,7 +7,7 @@
 | BRANCH | `cursor/dan-commercial-complete-e0e7` |
 | Base for PR #36 | `feature/dan-v3-real-app-ui` |
 | Also tracks | ff history toward `feature/dan-location-jp-launch-plan-20261009` |
-| Tip | run `git rev-parse HEAD` / see latest push |
+| Tip | `2224216` (or newer — always `git rev-parse HEAD`) |
 | PR | https://github.com/jongwoon47/dan/pull/36 |
 | Ready | **NO** (no JP store Ready; no staging/prod write; no main merge) |
 
