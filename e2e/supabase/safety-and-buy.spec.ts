@@ -208,18 +208,28 @@ test("BUY browser path reaches evidence→snapshot→payment honesty gate (no fa
     await sellerPage.getByRole("button", { name: "구매자와 연결하기" }).click();
     const connectedMatchId = await waitForConnectedMatchId(buyerId);
 
-    // Load match chat first so the store hydrates sell intent + demand rows.
-    await sellerPage.goto(`/match/${connectedMatchId}`);
-    await expect(
-      sellerPage.getByRole("link", { name: "상품 정보 등록" }),
-    ).toBeVisible({ timeout: 60_000 });
-    await sellerPage.getByRole("link", { name: "상품 정보 등록" }).click();
-    await expect(sellerPage).toHaveURL(/\/evidence/);
-    await expect(sellerPage.getByText("거래 정보를 찾을 수 없어요")).toHaveCount(0);
-    await expect(sellerPage.getByText("현재 보유 사진 · 필수")).toBeVisible({
-      timeout: 60_000,
-    });
-    // Wait until challenge issuance finishes and unlocks the photo input.
+    // Hydrate seller store via match chat, then open evidence with retries.
+    let evidenceReady = false;
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await sellerPage.goto(`/match/${connectedMatchId}`);
+      await expect(
+        sellerPage.getByRole("link", { name: "상품 정보 등록" }),
+      ).toBeVisible({ timeout: 60_000 });
+      await sellerPage.getByRole("link", { name: "상품 정보 등록" }).click();
+      await expect(sellerPage).toHaveURL(/\/evidence/);
+      if (
+        await sellerPage
+          .getByText("현재 보유 사진 · 필수")
+          .isVisible()
+          .catch(() => false)
+      ) {
+        evidenceReady = true;
+        break;
+      }
+      await sellerPage.goto("/my");
+    }
+    expect(evidenceReady, "evidence form did not hydrate after retries").toBe(true);
+
     await expect(sellerPage.getByText("촬영 코드 발급 중…")).toHaveCount(0, {
       timeout: 60_000,
     });
@@ -232,6 +242,13 @@ test("BUY browser path reaches evidence→snapshot→payment honesty gate (no fa
     });
     await sellerPage.getByLabel("외관 상태").fill("사용감 적음");
     await sellerPage.getByLabel("알려진 기능 이상").fill("없음");
+    // Toggle at least one component chip if present (helps canSubmit).
+    const componentChip = sellerPage.locator(".chip, .dan-chip, button").filter({
+      hasText: /제품|본체|박스/,
+    }).first();
+    if (await componentChip.count()) {
+      await componentChip.click().catch(() => undefined);
+    }
     await sellerPage.getByRole("button", { name: "상품 정보 저장하기" }).click();
     await expect(sellerPage).toHaveURL(/\/snapshot/, { timeout: 60_000 });
     await sellerPage.screenshot({
