@@ -197,7 +197,7 @@ export function MyDanPage() {
                         {DEMAND_TYPE_LABEL[demand.type]} ·{" "}
                         {formatStoredMoney(demand.budget, demand.currencyCode ?? "KRW", locale)}
                       </p>
-                      <small>{formatFulfillmentSummary(demand.fulfillmentOptions)}</small>
+                      <small>{formatFulfillmentSummary(demand.fulfillmentOptions, locale)}</small>
                     </div>
                     <span className="my-demand-card__chevron" aria-hidden>›</span>
                   </Link>

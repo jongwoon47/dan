@@ -82,7 +82,7 @@ export function MatchCard({ match }: { match: Match }) {
               <span>{status}</span>
             </div>
             <p>{money(demand.budget)}</p>
-            <small>{formatFulfillmentSummary(demand.fulfillmentOptions)}</small>
+            <small>{formatFulfillmentSummary(demand.fulfillmentOptions, locale)}</small>
           </div>
           <span className="trade-row-card__chevron" aria-hidden>›</span>
         </Link>
@@ -112,8 +112,8 @@ export function MatchCard({ match }: { match: Match }) {
         : `내 최대가보다 ${money(Math.abs(delta))} 높아요`;
   const buyerMaxLine =
     locale === "ja"
-      ? `購入者の上限 ${money(buyMax)} · ${formatFulfillmentSummary(demand.fulfillmentOptions)}`
-      : `구매자 최대 ${money(buyMax)} · ${formatFulfillmentSummary(demand.fulfillmentOptions)}`;
+      ? `購入者の上限 ${money(buyMax)} · ${formatFulfillmentSummary(demand.fulfillmentOptions, locale)}`
+      : `구매자 최대 ${money(buyMax)} · ${formatFulfillmentSummary(demand.fulfillmentOptions, locale)}`;
   const connectBuyer =
     busy
       ? locale === "ja"

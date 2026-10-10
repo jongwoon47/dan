@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ProductVisual } from "@/components/ProductVisual";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { fillCopyTemplate } from "@/copy/dealChain";
+import { formatStoredComponents } from "@/copy/evidenceComponents";
 import { useDanCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
 import type { DealEvidence, DealSnapshot } from "@/domain/types";
@@ -100,7 +101,9 @@ export function DealSnapshotPage() {
         waterDamageStatement: evidence.waterDamageStatement,
       },
       handoff: {
-        method: formatFulfillmentSummary(demand.fulfillmentOptions),
+        // Persist mode codes — never a KO/JA display string — so Handoff can
+        // localize from demand.fulfillmentOptions (or fall back to modes).
+        method: demand.fulfillmentOptions.map((option) => option.mode).join("|"),
         place: meetupRequired ? handoffPlace.trim() : "",
         at: meetupRequired ? handoffAt : "",
       },
@@ -248,7 +251,9 @@ export function DealSnapshotPage() {
         </div>
         <div className="snapshot-section snapshot-section--key">
           <span>{copy.dealTradeMethod}</span>
-          <strong>{formatFulfillmentSummary(demand.fulfillmentOptions)}</strong>
+          <strong>
+            {formatFulfillmentSummary(demand.fulfillmentOptions, locale)}
+          </strong>
         </div>
 
         <details className="snapshot-details">
@@ -282,7 +287,9 @@ export function DealSnapshotPage() {
             </div>
             <div className="snapshot-section">
               <span>{copy.dealComponents}</span>
-              <strong>{evidence.components.join(", ") || copy.dealNone}</strong>
+              <strong>
+                {formatStoredComponents(evidence.components, copy) || copy.dealNone}
+              </strong>
             </div>
             <div className="snapshot-section">
               <span>{copy.snapshotRepair}</span>

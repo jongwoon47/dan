@@ -246,7 +246,7 @@ export function DemandItemPage() {
                   ? copy.whereLabelService
                   : copy.whereLabelTask}
           </dt>
-          <dd>{formatFulfillmentModes(demand.fulfillmentOptions)}</dd>
+          <dd>{formatFulfillmentModes(demand.fulfillmentOptions, locale)}</dd>
         </div>
         {primaryPublicPlace(demand.fulfillmentOptions) ? (
           <div className="detail-facts__row">
@@ -436,9 +436,9 @@ export function DemandItemPage() {
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder={
                     demand.type === "BORROW"
-                      ? `예: ${copy.respondBorrow}`
+                      ? `${locale === "ja" ? "例：" : "예: "}${copy.respondBorrow}`
                       : demand.type === "SERVICE"
-                        ? `예: ${copy.respondService}`
+                        ? `${locale === "ja" ? "例：" : "예: "}${copy.respondService}`
                         : copy.responseMessagePh
                   }
                   rows={3}

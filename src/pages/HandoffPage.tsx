@@ -3,8 +3,10 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { fillCopyTemplate } from "@/copy/dealChain";
+import { formatStoredComponents } from "@/copy/evidenceComponents";
 import { useDanCopy, type LocalizedCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
+import { formatFulfillmentSummary } from "@/domain/fulfillment";
 import type { DealDispute, DealDisputeReason, DealSnapshot } from "@/domain/types";
 import { useDanLocale } from "@/i18n/locale";
 import { formatStoredMoney } from "@/lib/format";
@@ -145,10 +147,15 @@ export function HandoffPage() {
           : Number(usage).toLocaleString(numberLocale),
       ]);
     }
+    const componentsRaw = snapshotString(payload, ["evidence", "components"]);
+    const tradeMethod =
+      demand && demand.fulfillmentOptions.length > 0
+        ? formatFulfillmentSummary(demand.fulfillmentOptions, locale)
+        : snapshotString(payload, ["handoff", "method"]) || copy.meetup;
     rows.push(
       [
         copy.dealComponents,
-        snapshotString(payload, ["evidence", "components"]) || copy.dealNone,
+        formatStoredComponents(componentsRaw, copy) || copy.dealNone,
       ],
       [
         copy.dealAppearance,
@@ -158,15 +165,12 @@ export function HandoffPage() {
         copy.dealKnownIssues,
         snapshotString(payload, ["evidence", "knownIssues"]) || copy.dealNotSubmitted,
       ],
-      [
-        copy.dealTradeMethod,
-        snapshotString(payload, ["handoff", "method"]) || copy.meetup,
-      ],
+      [copy.dealTradeMethod, tradeMethod],
     );
     return rows;
   }, [
     copy,
-    demand?.currencyCode,
+    demand,
     locale,
     numberLocale,
     product?.category,
