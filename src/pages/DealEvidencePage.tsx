@@ -104,6 +104,7 @@ export function DealEvidencePage() {
   const [existing, setExisting] = useState<DealEvidence | null>(null);
   const [challenge, setChallenge] = useState<DealEvidenceChallenge | null>(null);
   const [challengeError, setChallengeError] = useState("");
+  const [verificationError, setVerificationError] = useState("");
   const [sellerVerificationLoaded, setSellerVerificationLoaded] = useState(false);
   const [sellerVerifiedForDeal, setSellerVerifiedForDeal] = useState(false);
   const [usageCount, setUsageCount] = useState("");
@@ -125,25 +126,33 @@ export function DealEvidencePage() {
 
   useEffect(() => {
     if (!isSeller) {
-      setSellerVerificationLoaded(false);
-      setSellerVerifiedForDeal(false);
+      setSellerVerificationLoaded((prev) => (prev ? false : prev));
+      setSellerVerifiedForDeal((prev) => (prev ? false : prev));
       return;
     }
     let cancelled = false;
-    void getMyVerification().then((status) => {
-      if (cancelled) return;
-      setSellerVerifiedForDeal(
-        status.phoneVerified &&
-          status.identityVerified &&
-          status.payoutVerified &&
-          Boolean(status.sellerType),
-      );
-      setSellerVerificationLoaded(true);
-    });
+    void getMyVerification()
+      .then((status) => {
+        if (cancelled) return;
+        setVerificationError("");
+        setSellerVerifiedForDeal(
+          status.phoneVerified &&
+            status.identityVerified &&
+            status.payoutVerified &&
+            Boolean(status.sellerType),
+        );
+        setSellerVerificationLoaded(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSellerVerifiedForDeal(false);
+        setSellerVerificationLoaded(true);
+        setVerificationError(copy.genericError);
+      });
     return () => {
       cancelled = true;
     };
-  }, [getMyVerification, isSeller]);
+  }, [copy.genericError, getMyVerification, isSeller]);
 
   useEffect(() => {
     if (!matchId || !isSeller || match?.status !== "CONNECTED") return;
@@ -356,6 +365,12 @@ export function DealEvidencePage() {
         </section>
       ) : null}
 
+      {verificationError ? (
+        <p className="form-error" role="alert">
+          {verificationError}
+        </p>
+      ) : null}
+
       {isSeller && sellerVerificationLoaded && !sellerVerifiedForDeal ? (
         <section className="verification-gate">
           <strong>{copy.evidenceVerifyTitle}</strong>
@@ -377,7 +392,11 @@ export function DealEvidencePage() {
                 <small>{copy.evidenceChallengeTtl}</small>
               </div>
             ) : (
-              <div className="evidence-challenge-code evidence-challenge-code--loading">
+              <div
+                className="evidence-challenge-code evidence-challenge-code--loading"
+                role={challengeError ? "alert" : "status"}
+                aria-live={challengeError ? "assertive" : "polite"}
+              >
                 <span>{challengeError || copy.evidenceChallengeLoading}</span>
                 {challengeError ? (
                   <Button
@@ -419,7 +438,11 @@ export function DealEvidencePage() {
                 onChange={(e) => void pickPhoto(e.target.files?.[0])}
               />
             </label>
-            {photoError ? <p className="form-error">{photoError}</p> : null}
+            {photoError ? (
+              <p className="form-error" role="alert">
+                {photoError}
+              </p>
+            ) : null}
           </div>
 
           <div className="evidence-form-divider">
@@ -527,7 +550,11 @@ export function DealEvidencePage() {
             />
           </Field>
 
-          {submitError ? <p className="form-error">{submitError}</p> : null}
+          {submitError ? (
+            <p className="form-error" role="alert">
+              {submitError}
+            </p>
+          ) : null}
           <Button fullWidth size="lg" disabled={!canSubmit || busy} onClick={() => void submit()}>
             {busy ? copy.saving : copy.evidenceSave}
           </Button>

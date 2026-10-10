@@ -9,6 +9,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint src",
     "typecheck": "tsc -b --pretty false",
+    "validate:ci-policy": "node scripts/validate-dan-ci-policy.mjs",
     "test": "vitest run",
     "test:e2e:remote": "node --env-file=.env.local scripts/e2e-two-user.mjs",
     "test:e2e:local": "node scripts/e2e-two-user-local.mjs",

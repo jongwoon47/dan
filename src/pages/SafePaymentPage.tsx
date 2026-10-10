@@ -33,6 +33,7 @@ export function SafePaymentPage() {
   const [snapshot, setSnapshot] = useState<DealSnapshot | null>(null);
   const [method, setMethod] = useState<"card" | "bank">("card");
   const [error, setError] = useState("");
+  const [loadingDeal, setLoadingDeal] = useState(Boolean(matchId));
   const isDemo = getDataMode() === "demo";
   const isBuyer = Boolean(match && currentUser?.id === match.buyerId);
   const moneyCurrency = snapshot?.currencyCode ?? demand?.currencyCode ?? "KRW";
@@ -41,9 +42,33 @@ export function SafePaymentPage() {
   useDeepHeader({ title: copy.paymentTitle });
 
   useEffect(() => {
-    if (!matchId) return;
-    void getDealSnapshot(matchId).then(setSnapshot);
+    if (!matchId) {
+      setLoadingDeal(false);
+      return;
+    }
+    let cancelled = false;
+    setLoadingDeal(true);
+    void getDealSnapshot(matchId)
+      .then((row) => {
+        if (!cancelled) setSnapshot(row);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingDeal(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [getDealSnapshot, matchId]);
+
+  if (loadingDeal) {
+    return (
+      <div className="page-stack page-narrow" role="status" aria-busy="true">
+        <span className="sr-only">{copy.loadingScreen}</span>
+        <div className="skeleton-line skeleton-line--lg" />
+        <div className="skeleton-line" />
+      </div>
+    );
+  }
 
   if (!match || !product) {
     return (
@@ -159,7 +184,11 @@ export function SafePaymentPage() {
         <p>{copy.paymentSafetyBody}</p>
       </div>
 
-      {error ? <p className="form-error">{error}</p> : null}
+      {error ? (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
 
       {isBuyer && isDemo ? (
         <Button fullWidth size="lg" disabled={busy} onClick={() => void pay()}>

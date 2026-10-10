@@ -90,12 +90,11 @@ export function MyDanPage() {
     <div className="page-stack my-dan my-dan--v3">
       <header className="my-dan__header my-dan__header--v1">
         <div>
-          <p className="eyebrow">DAN</p>
           <h1 className="page-title">{copy.dealMyTrades}</h1>
         </div>
         <div className="my-dan__actions">
           <Link to={"/profile/" + currentUser?.id} className="my-dan__name">
-            {copy.profileTitle} <span aria-hidden>›</span>
+            {copy.profileTitle}
           </Link>
           <Link
             to="/settings"
@@ -146,10 +145,11 @@ export function MyDanPage() {
             <MatchList matches={activeMatches} emptyWhenZero={false} />
           ) : (
             <EmptyState
+              headingLevel={3}
               title={copy.myActiveEmptyTitle}
               body={copy.myActiveEmptyBody}
               action={
-                <Button to="/feed" variant="secondary">
+                <Button to="/feed">
                   {copy.ctaBrowse}
                 </Button>
               }
@@ -222,6 +222,7 @@ export function MyDanPage() {
             <MatchList matches={completedMatches} emptyWhenZero={false} />
           ) : (
             <EmptyState
+              headingLevel={3}
               title={copy.myCompletedEmptyTitle}
               body={copy.myCompletedEmptyBody}
             />

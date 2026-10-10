@@ -234,14 +234,19 @@
 }
 
 .dan-empty__title {
+  margin: 0;
   font-family: var(--font-display);
-  font-size: 1.125rem;
+  font-size: clamp(1.125rem, 3.6vw, 1.35rem);
   font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
 }
 
 .dan-empty__body {
-  margin-top: var(--space-sm);
+  margin: var(--space-sm) 0 0;
   color: var(--dan-ink-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.5;
 }
 
 .dan-empty__action {

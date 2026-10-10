@@ -30,7 +30,11 @@ export function ConsentPage() {
 
   if (mode === "demo") return <Navigate to={next} replace />;
   if (status === "loading" || resolution === "loading") {
-    return <div className="auth-screen auth-screen--resolving" aria-busy="true" />;
+    return (
+      <div className="auth-screen auth-screen--resolving" role="status" aria-busy="true">
+        <span className="sr-only">{t("loadingScreen")}</span>
+      </div>
+    );
   }
   if (status === "anonymous" || resolution === "anonymous") {
     return <Navigate to={`/login?next=${encodeURIComponent(next)}`} replace />;

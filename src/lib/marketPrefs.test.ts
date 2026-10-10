@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { setDanLocale } from "@/i18n/locale";
 import {
   parseMarketCountry,
   readStoredMarketCountry,
@@ -9,6 +10,7 @@ import {
 describe("marketPrefs", () => {
   afterEach(() => {
     localStorage.clear();
+    setDanLocale("ko");
   });
 
   it("parses only KR/JP", () => {
@@ -28,5 +30,13 @@ describe("marketPrefs", () => {
     writeStoredMarketCountry("JP");
     expect(resolveMarketCountry("KR")).toBe("KR");
     expect(resolveMarketCountry(null)).toBe("JP");
+  });
+
+  it("does not infer JP market from Japanese UI locale alone", () => {
+    setDanLocale("ja");
+    expect(readStoredMarketCountry()).toBe("KR");
+    expect(resolveMarketCountry(null)).toBe("KR");
+    expect(resolveMarketCountry("ja")).toBe("KR");
+    expect(parseMarketCountry(navigator.language)).toBeNull();
   });
 });

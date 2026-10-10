@@ -88,14 +88,29 @@ export function ActivityPage() {
   } = useDan();
   const dataMode = getDataMode();
   const [names, setNames] = useState<Record<string, string>>({});
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useDeepHeader({
     title: copy.activityTitle,
   });
 
   useEffect(() => {
-    if (isLoggedIn) void refreshActivities();
-  }, [isLoggedIn, refreshActivities]);
+    if (!isLoggedIn) return;
+    let cancelled = false;
+    setLoading(true);
+    setLoadError(null);
+    void Promise.resolve(refreshActivities())
+      .catch(() => {
+        if (!cancelled) setLoadError(copy.genericError);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [copy.genericError, isLoggedIn, refreshActivities]);
 
   const actorKey = useMemo(
     () =>
@@ -143,6 +158,16 @@ export function ActivityPage() {
 
   return (
     <div className="page-stack page-narrow">
+      {loading ? (
+        <p className="section-desc" role="status" aria-live="polite">
+          {copy.loadingScreen}
+        </p>
+      ) : null}
+      {loadError ? (
+        <p className="form-error" role="alert">
+          {loadError}
+        </p>
+      ) : null}
       {unreadActivityCount > 0 ? (
         <div className="section-toolbar">
           <button
@@ -154,21 +179,17 @@ export function ActivityPage() {
           </button>
         </div>
       ) : null}
-      {activities.length === 0 ? (
+      {!loading && !loadError && activities.length === 0 ? (
         <EmptyState
           title={copy.activityEmpty}
-          body={
-            locale === "ja"
-              ? "新しい返答、取引の進行、メッセージのお知らせがここに集まります。"
-              : "새 응답, 거래 진행, 메시지 알림이 이곳에 모여요."
-          }
+          body={copy.activityEmptyBody}
           action={
-            <Button to="/feed" variant="secondary">
+            <Button to="/feed">
               {copy.ctaBrowse}
             </Button>
           }
         />
-      ) : (
+      ) : activities.length > 0 ? (
         <ul className="activity-list">
           {activities.map((ev) => {
             const demand = ev.demandId ? getDemand(ev.demandId) : undefined;
@@ -219,7 +240,7 @@ export function ActivityPage() {
             );
           })}
         </ul>
-      )}
+      ) : null}
     </div>
   );
 }

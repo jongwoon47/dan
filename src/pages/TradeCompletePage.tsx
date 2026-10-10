@@ -8,6 +8,7 @@ import { useDanCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
 import { isBuyDemand, type DealSnapshot, type PublicProfile } from "@/domain/types";
 import { useDanLocale } from "@/i18n/locale";
+import { formatInstantInMarket } from "@/lib/jpAddress";
 import { formatStoredMoney } from "@/lib/format";
 import "./pages.css";
 
@@ -33,30 +34,52 @@ export function TradeCompletePage() {
     : undefined;
   const [snapshot, setSnapshot] = useState<DealSnapshot | null>(null);
   const [peer, setPeer] = useState<PublicProfile | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadingReceipt, setLoadingReceipt] = useState(false);
 
   useDeepHeader({ title: copy.matchStatusCompleted });
 
+  const buyerId = match?.buyerId;
+  const sellerId = match?.sellerId;
+  const matchStatus = match?.status;
+  const currentUserId = currentUser?.id;
+
+  // Refresh once per match so completion writes from the other party are visible.
+  // Do not put refreshData in a deps list with store method identities — HYDRATE
+  // recreates context functions and would retrigger forever.
   useEffect(() => {
-    if (!matchId || !match || !currentUser) return;
-    const peerId =
-      currentUser.id === match.buyerId ? match.sellerId : match.buyerId;
+    if (!matchId) return;
+    void refreshData().catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot refresh by matchId
+  }, [matchId]);
+
+  useEffect(() => {
+    if (!matchId || !matchStatus || !currentUserId || !buyerId || !sellerId) return;
+    const peerId = currentUserId === buyerId ? sellerId : buyerId;
     let cancelled = false;
 
     const load = async () => {
-      await refreshData().catch(() => undefined);
-      if (cancelled) return;
-      for (let attempt = 0; attempt < 4; attempt += 1) {
-        const [dealSnapshot, publicProfile] = await Promise.all([
-          getDealSnapshot(matchId),
-          getPublicProfile(peerId),
-        ]);
-        if (cancelled) return;
-        if (publicProfile) setPeer(publicProfile);
-        if (dealSnapshot) {
-          setSnapshot(dealSnapshot);
-          return;
+      setLoadingReceipt(true);
+      setLoadError(null);
+      try {
+        for (let attempt = 0; attempt < 4; attempt += 1) {
+          const [dealSnapshot, publicProfile] = await Promise.all([
+            getDealSnapshot(matchId),
+            getPublicProfile(peerId),
+          ]);
+          if (cancelled) return;
+          if (publicProfile) setPeer(publicProfile);
+          if (dealSnapshot) {
+            setSnapshot(dealSnapshot);
+            return;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
         }
-        await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
+        if (!cancelled) setLoadError(copy.genericError);
+      } catch {
+        if (!cancelled) setLoadError(copy.genericError);
+      } finally {
+        if (!cancelled) setLoadingReceipt(false);
       }
     };
 
@@ -64,14 +87,9 @@ export function TradeCompletePage() {
     return () => {
       cancelled = true;
     };
-  }, [
-    currentUser,
-    getDealSnapshot,
-    getPublicProfile,
-    match,
-    matchId,
-    refreshData,
-  ]);
+    // Store getters are recreated on every DanProvider refresh; key on match fields.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable load by match/peer ids
+  }, [buyerId, currentUserId, matchId, matchStatus, sellerId]);
 
   if (!match || !product || !currentUser) {
     return (
@@ -119,6 +137,12 @@ export function TradeCompletePage() {
         </div>
       </section>
 
+      {loadError ? (
+        <p className="form-error" role="alert">
+          {loadError}
+        </p>
+      ) : null}
+
       <section className="deal-snapshot-card trade-receipt">
         <div className="snapshot-section">
           <span>{copy.tradeStatusLabel}</span>
@@ -126,7 +150,12 @@ export function TradeCompletePage() {
         </div>
         <div className="snapshot-section">
           <span>{copy.tradeFinalAmountLabel}</span>
-          <strong>{moneyLabel ?? copy.amountConfirming}</strong>
+          <strong
+            role={!moneyLabel || loadingReceipt ? "status" : undefined}
+            aria-live={!moneyLabel || loadingReceipt ? "polite" : undefined}
+          >
+            {moneyLabel ?? copy.amountConfirming}
+          </strong>
         </div>
         <div className="snapshot-section">
           <span>{copy.dealPeer}</span>
@@ -136,16 +165,11 @@ export function TradeCompletePage() {
           <span>{copy.tradeCompletedAtLabel}</span>
           <strong>
             {match.completedAt
-              ? new Date(match.completedAt).toLocaleString(
-                  locale === "ja" ? "ja-JP" : "ko-KR",
-                  {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  },
-                )
+              ? formatInstantInMarket(
+                  match.completedAt,
+                  demand?.countryCode === "JP" ? "JP" : "KR",
+                  locale,
+                ) || copy.matchStatusCompleted
               : copy.matchStatusCompleted}
           </strong>
         </div>

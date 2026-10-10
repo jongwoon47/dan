@@ -899,6 +899,13 @@
   background: #eef7f6;
   border-radius: 16px 16px 16px 4px;
   padding: 10px 12px;
+  overflow-wrap: anywhere;
+}
+
+.chat-bubble p {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.45;
 }
 
 .chat-bubble--mine {
@@ -927,8 +934,10 @@
 .chat-composer input {
   border: 1px solid var(--dan-border);
   border-radius: 999px;
+  min-height: 44px;
   padding: 12px 16px;
   font: inherit;
+  font-size: 1rem;
 }
 
 .nav-badge {
@@ -952,6 +961,9 @@
 
 .form-error {
   color: #b42318;
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
 }
 
 .product-suggest {
@@ -1318,12 +1330,21 @@
 .chat-list {
   display: flex;
   flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chat-list__item {
+  margin: 0;
+  padding: 0;
 }
 
 .chat-list__row {
   display: flex;
   gap: var(--space-md);
   align-items: flex-start;
+  min-height: 72px;
   padding: var(--space-md) 0;
   border-bottom: 1px solid color-mix(in srgb, var(--dan-border) 80%, transparent);
   text-decoration: none;
@@ -1424,6 +1445,13 @@
   border: 1px solid var(--dan-border);
   border-radius: 16px 16px 16px 4px;
   padding: 10px 12px;
+  overflow-wrap: anywhere;
+}
+
+.chat-bubble p {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.45;
 }
 
 .chat-bubble--mine {
@@ -2048,7 +2076,8 @@
 .live-demand-banner button {
   grid-column: 1 / -1;
   justify-self: start;
-  padding: 0;
+  min-height: 44px;
+  padding: 8px 4px;
   border: 0;
   background: transparent;
   color: var(--dan-accent-text);
@@ -2529,29 +2558,40 @@
 .my-dan__header.my-dan__header--v1 {
   display: flex;
   flex-direction: row;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
 }
 
-.my-dan__header--v1 .my-dan__name {
-  display: inline-flex;
+.my-dan__actions {
+  display: flex;
   align-items: center;
-  gap: 4px;
-  min-height: 34px;
-  padding: 7px 11px;
-  border: 1px solid var(--dan-border);
-  border-radius: 999px;
-  background: rgba(255,255,255,.76);
-  color: var(--dan-ink-secondary);
-  font-size: .75rem;
-  font-weight: 800;
-  box-shadow: 0 5px 16px rgba(42,35,66,.04);
+  gap: 8px;
+  margin-left: auto;
 }
 
-.my-dan__header--v1 .my-dan__name span {
-  color: var(--dan-accent-text);
-  font-size: .9rem;
+.my-dan__header--v1 .my-dan__name,
+.my-dan__settings {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--dan-border);
+  border-radius: 12px;
+  background: var(--dan-surface);
+  color: var(--dan-ink-secondary);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: none;
+}
+
+.my-dan__header--v1 .my-dan__name:hover,
+.my-dan__settings:hover {
+  color: var(--dan-ink);
+  border-color: var(--dan-border-strong);
 }
 
 .offer-detail-product--catalog {
@@ -2735,6 +2775,9 @@
   gap: 12px;
   padding: 14px 0 6px;
   border-top: 1px solid var(--dan-border);
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 .location-discovery__heading {
   display: flex;
@@ -2782,20 +2825,34 @@
 }
 
 .location-discovery__modes {
+  position: relative;
+  z-index: 2;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.location-discovery__modes::-webkit-scrollbar {
+  display: none;
 }
 .location-discovery__modes button,
 .location-discovery__action {
+  flex: 0 0 auto;
   cursor: pointer;
   border-radius: 100px;
   border: 1px solid var(--dan-border);
-  padding: 8px 12px;
+  min-height: 44px;
+  padding: 10px 14px;
   background: var(--dan-surface);
   color: var(--dan-ink);
   font: inherit;
-  font-size: 0.86rem;
+  font-size: 0.875rem;
   font-weight: 600;
 }
 .location-discovery__modes button.is-active {
@@ -2852,7 +2909,16 @@
 .location-pref-form > button, .location-pref-form > p { grid-column: 1 / -1; }
 .location-pref-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 4px; border-bottom: 1px solid var(--dan-border); }
 .location-pref-row a { color: var(--dan-ink); flex: 1; min-width: 0; overflow-wrap: anywhere; }
-.location-pref-row button { background: transparent; border: 0; cursor: pointer; color: var(--dan-ink-secondary); font: inherit; }
+.location-pref-row button {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--dan-ink-secondary);
+  font: inherit;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 10px;
+}
 .location-discovery__saved { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .location-discovery__saved > span { font-size: .8rem; color: var(--dan-ink-secondary); }
 .location-discovery__saved > button { border: 1px solid var(--dan-border); border-radius: 999px; padding: 7px 10px; background: var(--dan-surface); color: var(--dan-ink); font: inherit; font-size: .82rem; cursor: pointer; }

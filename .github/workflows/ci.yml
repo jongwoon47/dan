@@ -1,23 +1,58 @@
 name: CI
 
+# Cost policy: docs/dan-autonomous/CI_COST_POLICY.md
+# - Draft PR sync: no runner jobs (autonomous iteration stays draft).
+# - Ready PR synchronize: verify only (typecheck/lint/unit/build).
+# - Full supabase/E2E/visual: ready_for_review, base main, title [ci-full],
+#   label ci-checkpoint (pull_request labeled), or workflow_dispatch suite=full.
+# - cancel-in-progress false: do not discard an in-flight heavy suite on the next push.
+# Job names verify / supabase / visual preserved for branch protection.
+
 on:
   pull_request:
-    # main keeps release gating; feature/dan-* lets commercialization PRs
-    # (e.g. into the location/JP launch branch) run the same verify+supabase+visual suite.
+    types: [opened, reopened, synchronize, ready_for_review, labeled]
     branches:
       - main
       - "feature/dan-**"
+      - "cursor/dan-**"
+      - "automation/**"
   workflow_dispatch:
+    inputs:
+      suite:
+        description: "checkpoint = ledger only; verify = typecheck/lint/unit/build; full = all"
+        required: true
+        type: choice
+        options:
+          - full
+          - verify
+          - checkpoint
+        default: full
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: dan-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
+  checkpoint:
+    # PAN-style low-cost manual checkpoint: no npm ci, Docker or browsers.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.suite == 'checkpoint' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/validate-dan-loop-state.mjs
+      - run: node scripts/validate-dan-ci-policy.mjs
+
   verify:
+    # Ready PRs + manual verify/full. Skipped draft jobs are not PASS evidence.
+    if: ${{ (github.event_name == 'workflow_dispatch' && inputs.suite != 'checkpoint') || (github.event_name == 'pull_request' && github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,6 +61,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run validate:ci-policy
       - run: npm run typecheck
       - name: Check account deletion Edge Function
         run: npx --yes deno@2.9.6 check supabase/functions/delete-account/index.ts
@@ -33,8 +69,9 @@ jobs:
       - run: npm test
       - run: npm run build
 
-
   supabase:
+    # Heavy DB/E2E only at explicit full checkpoints (not every ready-PR push).
+    if: "${{ (github.event_name == 'workflow_dispatch' && inputs.suite == 'full') || (github.event_name == 'pull_request' && github.event.pull_request.draft == false && (github.base_ref == 'main' || github.event.action == 'ready_for_review' || contains(github.event.pull_request.title, '[ci-full]') || contains(join(github.event.pull_request.labels.*.name, ','), 'ci-checkpoint'))) }}"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -74,7 +111,8 @@ jobs:
         run: command -v supabase >/dev/null 2>&1 && supabase stop --no-backup || true
 
   visual:
-    # Visual QA runs in isolated demo mode and must not be blocked by local DB startup.
+    # Visual only with full checkpoints; ready-PR synchronize alone stays verify-only.
+    if: "${{ (github.event_name == 'workflow_dispatch' && inputs.suite == 'full') || (github.event_name == 'pull_request' && github.event.pull_request.draft == false && (github.base_ref == 'main' || github.event.action == 'ready_for_review' || contains(github.event.pull_request.title, '[ci-full]') || contains(join(github.event.pull_request.labels.*.name, ','), 'ci-checkpoint'))) }}"
     needs: [verify]
     runs-on: ubuntu-latest
     steps:

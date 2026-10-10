@@ -148,6 +148,8 @@ export function QuickOfferPage() {
         return;
       }
       navigate("/my");
+    } catch {
+      setError(copy.offerSendFail);
     } finally {
       setBusy(false);
     }
@@ -283,7 +285,11 @@ export function QuickOfferPage() {
                   onChange={(event) => void pickPhoto(event.target.files?.[0])}
                 />
               </label>
-              {photoError ? <p className="form-error">{photoError}</p> : null}
+              {photoError ? (
+                <p className="form-error" role="alert">
+                  {photoError}
+                </p>
+              ) : null}
             </div>
           </div>
         </details>
@@ -292,7 +298,11 @@ export function QuickOfferPage() {
           {copy.quickOfferHelper}
         </p>
 
-        {error ? <p className="form-error">{error}</p> : null}
+        {error ? (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        ) : null}
         <Button
           fullWidth
           size="lg"

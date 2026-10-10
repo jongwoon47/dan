@@ -1,10 +1,13 @@
 import type { Place } from "@/domain/fulfillment";
 import { placeFromLabel } from "@/domain/fulfillment";
-import { saveViewerGeo } from "@/lib/geoDistance";
+import { nearbyFallbackLabel, saveViewerGeo } from "@/lib/geoDistance";
+import type { FormatLanguage } from "@/lib/format";
 
 export type GeoLocateResult =
   | { ok: true; place: Place }
   | { ok: false; reason: "unsupported" | "denied" | "unavailable" | "timeout" };
+
+export { nearbyFallbackLabel };
 
 function mapGeoError(
   err: GeolocationPositionError,
@@ -15,17 +18,25 @@ function mapGeoError(
 }
 
 /** Reverse-geocode to an approximate public label — never expose raw coords in UI. */
-async function approximateLabel(lat: number, lng: number): Promise<{
+async function approximateLabel(
+  lat: number,
+  lng: number,
+  language: FormatLanguage,
+): Promise<{
   publicLabel: string;
   region1?: string;
   region2?: string;
 }> {
+  const fallback = nearbyFallbackLabel(language);
   try {
     const url =
       `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}` +
       `&zoom=12&addressdetails=1`;
     const res = await fetch(url, {
-      headers: { Accept: "application/json" },
+      headers: {
+        Accept: "application/json",
+        "Accept-Language": language === "ja" ? "ja" : "ko",
+      },
     });
     if (!res.ok) throw new Error("reverse failed");
     const data = (await res.json()) as {
@@ -35,15 +46,16 @@ async function approximateLabel(lat: number, lng: number): Promise<{
     const region2 =
       a.city || a.town || a.county || a.borough || a.municipality || undefined;
     const region1 = a.state || a.province || undefined;
-    const publicLabel = [region2, region1].filter(Boolean).join(" · ") || "내 주변";
+    const publicLabel = [region2, region1].filter(Boolean).join(" · ") || fallback;
     return { publicLabel, region1, region2 };
   } catch {
-    return { publicLabel: "내 주변" };
+    return { publicLabel: fallback };
   }
 }
 
 export function requestCurrentPlace(
   placeNote?: string,
+  language: FormatLanguage = "ko",
 ): Promise<GeoLocateResult> {
   if (typeof navigator === "undefined" || !navigator.geolocation) {
     return Promise.resolve({ ok: false, reason: "unsupported" });
@@ -55,7 +67,7 @@ export function requestCurrentPlace(
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
         void (async () => {
-          const approx = await approximateLabel(lat, lng);
+          const approx = await approximateLabel(lat, lng, language);
           const note = placeNote?.trim();
           const publicLabel = note
             ? `${approx.region2 ?? approx.publicLabel} · ${note}`

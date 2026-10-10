@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isConsentSatisfied } from "./consentVersions";
+import { isConsentSatisfied, legalDocumentHref } from "./consentVersions";
 
 const current = { termsVersion: "2026-10-07", privacyVersion: "2026-10-07" };
 
@@ -24,5 +24,16 @@ describe("isConsentSatisfied", () => {
         current,
       ),
     ).toBe(false);
+  });
+});
+
+describe("legalDocumentHref", () => {
+  it("routes JA locale to /ja/ drafts including support", () => {
+    expect(legalDocumentHref("terms", "ko")).toContain("/terms/");
+    expect(legalDocumentHref("privacy", "ko")).toContain("/privacy/");
+    expect(legalDocumentHref("support", "ko")).toContain("/support/");
+    expect(legalDocumentHref("terms", "ja")).toContain("/ja/terms/");
+    expect(legalDocumentHref("privacy", "ja")).toContain("/ja/privacy/");
+    expect(legalDocumentHref("support", "ja")).toContain("/ja/support/");
   });
 });

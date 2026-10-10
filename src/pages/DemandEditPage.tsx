@@ -296,45 +296,49 @@ export function DemandEditPage() {
         ? undefined
         : defaultExpiresAtIso(current.type, scheduleIso);
 
-    const result = await updateDemand({
-      demandId: current.id,
-      title: nextTitle,
-      description: description.trim(),
-      budget: price,
-      fulfillmentOptions: stripGeoFromFulfillmentOptions(fulfillmentOptions),
-      expiresAt,
-      maxPrice: current.type === "BUY" ? price : undefined,
-      itemName:
-        current.type === "BORROW" ? itemName.trim() : undefined,
-      taskDescription:
-        current.type === "TASK" ? description.trim() : undefined,
-      serviceDescription:
-        current.type === "SERVICE"
-          ? description.trim() || current.details.serviceDescription
-          : undefined,
-      startAt:
-        current.type === "BORROW"
-          ? fromDatetimeLocalValue(borrowStart)
-          : undefined,
-      endAt: current.type === "BORROW" ? scheduleIso ?? undefined : undefined,
-      dueAt: current.type === "TASK" ? scheduleIso ?? undefined : undefined,
-      preferredAt:
-        current.type === "SERVICE" ? scheduleIso ?? undefined : undefined,
-      conditionPreference: current.type === "BUY" ? condition : undefined,
-      tradeMethod:
-        current.type === "BUY"
-          ? buyShipping && buyMeetup
-            ? "any"
-            : buyShipping
-              ? "shipping"
-              : "meetup"
-          : undefined,
-    });
-    if (!result) {
+    try {
+      const result = await updateDemand({
+        demandId: current.id,
+        title: nextTitle,
+        description: description.trim(),
+        budget: price,
+        fulfillmentOptions: stripGeoFromFulfillmentOptions(fulfillmentOptions),
+        expiresAt,
+        maxPrice: current.type === "BUY" ? price : undefined,
+        itemName:
+          current.type === "BORROW" ? itemName.trim() : undefined,
+        taskDescription:
+          current.type === "TASK" ? description.trim() : undefined,
+        serviceDescription:
+          current.type === "SERVICE"
+            ? description.trim() || current.details.serviceDescription
+            : undefined,
+        startAt:
+          current.type === "BORROW"
+            ? fromDatetimeLocalValue(borrowStart)
+            : undefined,
+        endAt: current.type === "BORROW" ? scheduleIso ?? undefined : undefined,
+        dueAt: current.type === "TASK" ? scheduleIso ?? undefined : undefined,
+        preferredAt:
+          current.type === "SERVICE" ? scheduleIso ?? undefined : undefined,
+        conditionPreference: current.type === "BUY" ? condition : undefined,
+        tradeMethod:
+          current.type === "BUY"
+            ? buyShipping && buyMeetup
+              ? "any"
+              : buyShipping
+                ? "shipping"
+                : "meetup"
+            : undefined,
+      });
+      if (!result) {
+        setError(copy.genericError);
+        return;
+      }
+      navigate(`/demand/item/${current.id}`);
+    } catch {
       setError(copy.genericError);
-      return;
     }
-    navigate(`/demand/item/${current.id}`);
   }
 
   return (
@@ -344,7 +348,7 @@ export function DemandEditPage() {
           <p className="create-page__kicker">
             {locale === "ja" ? "依頼を編集" : "요청 수정"}
           </p>
-          <h1 className="section-title">
+          <h2 className="section-title">
             {current.type === "BUY"
               ? locale === "ja"
                 ? "探している物の条件を変更しますか？"
@@ -360,8 +364,13 @@ export function DemandEditPage() {
                   : locale === "ja"
                     ? "サービスの条件を変更しますか？"
                     : "필요한 서비스 조건을 수정할까요?"}
-          </h1>
+          </h2>
         </div>
+        {locale === "ja" ? (
+          <p className="section-desc" role="note">
+            試験運用中：表示・入力する金額は韓国ウォン（KRW）です。日本円での取引はまだ利用できません。
+          </p>
+        ) : null}
 
         {current.type === "BUY" ? (
           <div className="request-edit-primary">
@@ -617,7 +626,11 @@ export function DemandEditPage() {
           </>
         ) : null}
 
-        {error ? <p className="form-error">{error}</p> : null}
+        {error ? (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        ) : null}
         <Button type="submit" fullWidth size="lg" disabled={busy}>
           {busy ? copy.saving : copy.saveDemand}
         </Button>

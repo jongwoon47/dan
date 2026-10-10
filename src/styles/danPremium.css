@@ -1486,15 +1486,19 @@ body {
 
 
 .deep-header-share {
-  min-height: 34px;
-  padding: 6px 10px;
-  border: 1px solid #dfdbea;
-  border-radius: 11px;
-  background: rgba(255,255,255,.88);
-  color: #5b46d3;
-  font-size: .75rem;
-  font-weight: 850;
-  box-shadow: 0 4px 12px rgba(43,35,66,.04);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--dan-border, #dfdbea);
+  border-radius: 12px;
+  background: var(--dan-surface, rgba(255,255,255,.88));
+  color: var(--dan-accent-text, #0f766e);
+  font-size: 0.875rem;
+  font-weight: 700;
+  box-shadow: none;
 }
 
 .deep-header-share:active {
@@ -2989,8 +2993,8 @@ body {
 }
 
 .camera-demand-create--blueprint .dan-chip {
-  min-height: 40px;
-  padding: 8px 12px;
+  min-height: 44px;
+  padding: 10px 12px;
   border: 0;
   background: #f3f3f6;
   color: #555966;
@@ -3754,7 +3758,8 @@ body {
 }
 
 .camera-demand-create--blueprint .dan-chip {
-  min-height: 38px !important;
+  min-height: 44px !important;
+  padding: 10px 12px !important;
   border: 1px solid #e0e1e6 !important;
   background: #f8f8fa !important;
   color: #62656e !important;
@@ -5068,14 +5073,15 @@ body {
     align-items: center;
     justify-content: center;
     min-height: 44px;
-    padding: 8px 10px;
-    border: 0;
+    min-width: 44px;
+    padding: 10px 14px;
+    border: 1px solid var(--dan-border);
     border-radius: 12px;
-    background: transparent;
+    background: var(--dan-surface);
     box-shadow: none;
     color: var(--dan-ink-secondary);
-    font-size: .78rem;
-    font-weight: 600;
+    font-size: 0.875rem;
+    font-weight: 700;
     text-decoration: none;
   }
 
@@ -5315,6 +5321,7 @@ body {
 }
 
 .settings-section__head h1,
+.settings-section__head h2,
 .account-deletion-intro h1 {
   margin: 0;
   color: var(--dan-ink);
@@ -5414,6 +5421,7 @@ body {
   }
 
   .settings-section__head h1,
+  .settings-section__head h2,
   .account-deletion-intro h1 {
     font-size: 1.05rem;
   }

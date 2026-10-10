@@ -14,6 +14,7 @@ import { ProductVisual } from "@/components/ProductVisual";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
+import { ReportReasonChoices } from "@/components/ui/ReportReasonChoices";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { fillCopyTemplate } from "@/copy/dealChain";
 import { useDanCopy, type LocalizedCopy } from "@/copy/useDanCopy";
@@ -318,8 +319,6 @@ export function MatchChatPage() {
   const buyPaid = match.paymentStatus === "PAID";
   const buyComplete = match.status === "COMPLETED";
 
-  let lastDay = "";
-
   return (
     <div className="chat-page page-narrow">
       <header className="chat-page__header">
@@ -570,24 +569,37 @@ export function MatchChatPage() {
         )}
       </section>
 
-      {error ? <p className="form-error">{error}</p> : null}
-      {toast ? <p className="section-desc">{toast}</p> : null}
+      {error ? (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {toast ? (
+        <p className="section-desc" role="status" aria-live="polite">
+          {toast}
+        </p>
+      ) : null}
 
       <div
         className="chat-thread"
         ref={threadRef}
         aria-live="polite"
+        aria-busy={loading}
         onScroll={onThreadScroll}
       >
-        {loading ? <p className="muted">{copy.loadingChat}</p> : null}
+        {loading ? (
+          <p className="muted discovery-loading" role="status">
+            {copy.loadingChat}
+          </p>
+        ) : null}
         {!loading && messages.length === 0 ? (
           <p className="section-desc">{copy.chatEmpty}</p>
         ) : null}
-        {messages.map((m) => {
+        {messages.map((m, index) => {
           const mine = m.senderId === currentUser?.id;
           const key = dayKey(m.createdAt);
-          const showSep = key !== lastDay;
-          lastDay = key;
+          const prevKey = index > 0 ? dayKey(messages[index - 1]!.createdAt) : "";
+          const showSep = key !== prevKey;
           return (
             <div key={m.id} className="chat-thread__item">
               {showSep ? (
@@ -736,6 +748,7 @@ export function MatchChatPage() {
         title={copy.report}
         body={copy.reportReason}
         confirmLabel={copy.reportSubmit}
+        confirmDisabled={!peerId}
         onCancel={() => setConfirm(null)}
         onConfirm={() => {
           if (!peerId) return;
@@ -748,29 +761,11 @@ export function MatchChatPage() {
           });
         }}
       >
-        <div className="confirm-sheet__choices">
-          {(
-            [
-              ["spam", copy.reportSpam],
-              ["fraud", copy.reportFraud],
-              ["abuse", copy.reportAbuse],
-              ["other", copy.reportOther],
-            ] as const
-          ).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              className={
-                reportReason === value
-                  ? "confirm-sheet__choice is-selected"
-                  : "confirm-sheet__choice"
-              }
-              onClick={() => setReportReason(value)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <ReportReasonChoices
+          value={reportReason}
+          onChange={setReportReason}
+          copy={copy}
+        />
       </ConfirmSheet>
     </div>
   );

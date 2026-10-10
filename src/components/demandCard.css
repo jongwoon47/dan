@@ -65,6 +65,8 @@
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+  font-size: 0.8125rem;
+  color: var(--dan-ink-secondary);
 }
 
 .demand-card__title {
@@ -108,9 +110,9 @@
 }
 
 .demand-card__label {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 700;
-  color: var(--dan-ink-muted);
+  color: var(--dan-ink-secondary);
 }
 
 .demand-card__trend {

@@ -5,13 +5,14 @@ alwaysApply: true
 
 # DAN: Cursor development / launch-safety rules
 
-**On this feature branch, begin by reading `docs/CURSOR_DAN_HANDOFF_20261009.md` and following its priorities and evidence gate.** Prefer the actual latest GitHub remote state/CI logs over stale SHAs or last-turn summaries.
+**When on `automation/dan-autonomous-review-loop-20261010`, begin with `docs/dan-autonomous/START_AUTONOMOUS_RUN.md`, `REVIEW_PROTOCOL.md`, and `loop_state.json`, then read the older handoff for product context.** For other existing feature branches continue to follow `docs/CURSOR_DAN_HANDOFF_20261009.md`. Always prefer latest GitHub remote state/CI logs over stale SHAs or summaries.
 
-- Working target: `feature/dan-location-jp-launch-plan-20261009`, draft PR #31 into `feature/dan-v3-real-app-ui`. Do **not** merge CI-proxy PR #30 to main.
+- Legacy feature target: `feature/dan-location-jp-launch-plan-20261009`, draft PR #31 into `feature/dan-v3-real-app-ui`. Autonomous execution target: `automation/dan-autonomous-review-loop-20261010` based on `cursor/dan-commercial-complete-e0e7`; confirm ancestry before creating/updating PR. Do **not** merge CI-proxy PR #30 to main.
 - Do the engineering tasks autonomously: inspect, fix, test, commit and push scoped changes on the development branch; update reviewable PR evidence and blockers.
+- On the autonomous execution branch, actually invoke the readonly `dan-independent-reviewer` subagent after each patch, and write proof or REVIEW_BLOCKED to `docs/dan-autonomous/loop_state.json`; no self-attested independent review. Validate state with `node scripts/validate-dan-loop-state.mjs`.
 - Preserve both previously submitted iOS builds. **No release / App Store actions, no main/production merge, no real user DB schema/data changes, no production deployment** without separate explicit owner approval.
 - Real transactions only; no dummy marketplace listings, fabricated PASS, fake photos, or false JPY support. `?country=JP` creation stays gated until genuinely supported and verified.
 - Never infer market or stored currency from display language; enforce KR/KRW and JP/JPY consistently in backend, queries, offers, cards, and trades.
 - Protect exact GPS coordinates, secrets and service-role credentials; scrutinize SECURITY DEFINER functions and RLS. Denied location must not break manual lookup.
-- Mandatory local checks: `npm ci`, `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`, `supabase start`, `supabase db reset`, `supabase test db`, local real two-user Supabase browser smoke and visual Playwright 390/desktop. Report any unavailable iPhone/Mac test as BLOCKED, never PASS.
+- Test cadence: follow `docs/dan-autonomous/CI_COST_POLICY.md`. For each patch run targeted local tests and independent review; at coherent checkpoints run typecheck/lint/unit/build; use isolated Supabase/pgTAP/two-user browser/visual + full GitHub CI for DB/security/trading milestones and final integration HEAD. Do **not** run full GitHub Actions or repeat `npm ci` on every small draft commit. Skipped/stale CI is never PASS. Report unavailable iPhone/Mac testing as BLOCKED, never PASS.
 - Finish each phase with HEAD SHA, PR URL, verified test outputs, screenshots when useful, remaining blockers and rollout impact. Prefer real fixes over disabling tests.

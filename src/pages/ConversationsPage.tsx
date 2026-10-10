@@ -141,46 +141,50 @@ export function ConversationsPage() {
       </header>
 
       {loading ? (
-        <p className="muted">{copy.loading}</p>
+        <p className="muted discovery-loading" role="status" aria-live="polite" aria-busy="true">
+          {copy.loading}
+        </p>
       ) : previews.length === 0 ? (
         <EmptyState
           title={copy.chatsEmpty}
           body={copy.chatsEmptyBody}
           action={
-            <Button to="/feed" variant="secondary">
+            <Button to="/feed">
               {copy.navFeed}
             </Button>
           }
         />
       ) : (
-        <div className="chat-list">
+        <ul className="chat-list" aria-label={copy.chatsTitle}>
           {previews.map((row) => (
-            <Link
-              key={row.match.id}
-              to={`/match/${row.match.id}`}
-              className="chat-list__row"
-            >
-              <span className="avatar-initial" aria-hidden>
-                {initialOf(row.peerName)}
-              </span>
-              <span className="chat-list__body">
-                <span className="chat-list__top">
-                  <strong className="chat-list__name">{row.peerName}</strong>
-                  {row.lastAt ? (
-                    <time dateTime={row.lastAt} className="chat-list__time">
-                      {formatRelativeTime(row.lastAt, locale)}
-                    </time>
-                  ) : null}
+            <li key={row.match.id} className="chat-list__item">
+              <Link
+                to={`/match/${row.match.id}`}
+                className="chat-list__row"
+                aria-label={`${row.peerName}. ${row.demandTitle}. ${chatStageLabel(row.match, copy)}. ${row.lastMessage}`}
+              >
+                <span className="avatar-initial" aria-hidden>
+                  {initialOf(row.peerName)}
                 </span>
-                <span className="chat-list__demand">
-                  <span className="chat-list__title">{row.demandTitle}</span>
-                  <em className="chat-list__stage">{chatStageLabel(row.match, copy)}</em>
+                <span className="chat-list__body">
+                  <span className="chat-list__top">
+                    <strong className="chat-list__name">{row.peerName}</strong>
+                    {row.lastAt ? (
+                      <time dateTime={row.lastAt} className="chat-list__time">
+                        {formatRelativeTime(row.lastAt, locale)}
+                      </time>
+                    ) : null}
+                  </span>
+                  <span className="chat-list__demand">
+                    <span className="chat-list__title">{row.demandTitle}</span>
+                    <em className="chat-list__stage">{chatStageLabel(row.match, copy)}</em>
+                  </span>
+                  <span className="chat-list__preview">{row.lastMessage}</span>
                 </span>
-                <span className="chat-list__preview">{row.lastMessage}</span>
-              </span>
-            </Link>
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

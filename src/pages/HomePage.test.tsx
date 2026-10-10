@@ -13,5 +13,8 @@ describe("HomePage", () => {
     expect(screen.queryByRole("link",{ name:/내 구매수요/ })).not.toBeInTheDocument();
     expect(screen.getByRole("link",{ name:/전체 요청 둘러보기/ })).toHaveAttribute("href","/feed");
     expect(screen.getByText(/전체 \d+/)).toBeInTheDocument();
+    // Hero lead once; search uses placeholder only (no duplicate composer caption).
+    expect(screen.getAllByText("구매·빌리기·심부름·서비스를 요청해 보세요.")).toHaveLength(1);
+    expect(screen.getByPlaceholderText("무엇을 찾고 있나요?")).toBeInTheDocument();
   });
 });

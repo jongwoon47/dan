@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
+import { ReportReasonChoices } from "@/components/ui/ReportReasonChoices";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDanCopy } from "@/copy/useDanCopy";
 import { useDanLocale } from "@/i18n/locale";
@@ -40,6 +41,7 @@ export function ProfilePage() {
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [area, setArea] = useState("");
   const [bio, setBio] = useState("");
@@ -154,7 +156,8 @@ export function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="page-stack page-narrow">
+      <div className="page-stack page-narrow" role="status" aria-busy="true">
+        <span className="sr-only">{copy.loadingScreen}</span>
         <div className="skeleton-line skeleton-line--lg" />
         <div className="skeleton-line" />
       </div>
@@ -173,19 +176,26 @@ export function ProfilePage() {
 
   async function onSave(e: FormEvent) {
     e.preventDefault();
-    const next = await updateMyProfile({
-      displayName: name,
-      defaultArea: area,
-      bio,
-    });
-    if (next) {
-      setProfile({
-        ...profile!,
-        displayName: next.name,
-        defaultArea: next.defaultArea,
-        bio: next.bio ?? "",
+    setSaveError(null);
+    try {
+      const next = await updateMyProfile({
+        displayName: name,
+        defaultArea: area,
+        bio,
       });
-      setEditing(false);
+      if (next) {
+        setProfile({
+          ...profile!,
+          displayName: next.name,
+          defaultArea: next.defaultArea,
+          bio: next.bio ?? "",
+        });
+        setEditing(false);
+      } else {
+        setSaveError(copy.genericError);
+      }
+    } catch {
+      setSaveError(copy.genericError);
     }
   }
 
@@ -251,11 +261,19 @@ export function ProfilePage() {
                 maxLength={80}
               />
             </label>
+            {saveError ? (
+              <p className="form-error" role="alert">
+                {saveError}
+              </p>
+            ) : null}
             <div className="action-row">
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => setEditing(false)}
+                onClick={() => {
+                  setSaveError(null);
+                  setEditing(false);
+                }}
               >
                 {copy.cancel}
               </Button>
@@ -448,29 +466,11 @@ export function ProfilePage() {
           });
         }}
       >
-        <div className="confirm-sheet__choices">
-          {(
-            [
-              ["spam", copy.reportSpam],
-              ["fraud", copy.reportFraud],
-              ["abuse", copy.reportAbuse],
-              ["other", copy.reportOther],
-            ] as const
-          ).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              className={
-                reportReason === value
-                  ? "confirm-sheet__choice is-selected"
-                  : "confirm-sheet__choice"
-              }
-              onClick={() => setReportReason(value)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <ReportReasonChoices
+          value={reportReason}
+          onChange={setReportReason}
+          copy={copy}
+        />
       </ConfirmSheet>
     </div>
   );

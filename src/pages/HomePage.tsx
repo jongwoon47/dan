@@ -105,7 +105,6 @@ export function HomePage() {
               autoComplete="off"
               aria-label={t("requestSearch")}
             />
-            <small>{t("homeLead")}</small>
           </label>
           <button type="submit" className="home-intent-composer__submit" aria-label={t("requestSearch")}>
             <span aria-hidden>›</span>
@@ -163,6 +162,7 @@ export function HomePage() {
         </div>
         {visibleProducts.length === 0 ? (
           <EmptyState
+            headingLevel={3}
             title={t("noProducts")}
             body={t("noProductsDetail")}
             action={<Button to="/create?type=BUY">{t("createRequest")}</Button>}

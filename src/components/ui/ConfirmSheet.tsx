@@ -10,6 +10,8 @@ type Props = {
   confirmLabel: string;
   cancelLabel?: string;
   danger?: boolean;
+  /** When true, the confirm action button is not clickable. */
+  confirmDisabled?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
   children?: ReactNode;
@@ -22,6 +24,7 @@ export function ConfirmSheet({
   confirmLabel,
   cancelLabel,
   danger,
+  confirmDisabled = false,
   onConfirm,
   onCancel,
   children,
@@ -41,9 +44,12 @@ export function ConfirmSheet({
     previouslyFocused.current = document.activeElement as HTMLElement | null;
     const panel = panelRef.current;
     const focusable = panel?.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
     );
     focusable?.[0]?.focus();
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -53,7 +59,7 @@ export function ConfirmSheet({
       }
       if (e.key !== "Tab" || !panel) return;
       const nodes = panel.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
       );
       if (nodes.length === 0) return;
       const first = nodes[0]!;
@@ -70,6 +76,7 @@ export function ConfirmSheet({
     document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
       previouslyFocused.current?.focus?.();
     };
   }, [open]);
@@ -106,6 +113,7 @@ export function ConfirmSheet({
           <Button
             fullWidth
             variant={danger ? "danger" : "primary"}
+            disabled={confirmDisabled}
             onClick={() => onConfirmRef.current()}
           >
             {confirmLabel}

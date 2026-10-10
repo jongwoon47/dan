@@ -65,25 +65,43 @@ export function HandoffPage() {
   const [reason, setReason] = useState<DealDisputeReason>("SNAPSHOT_MISMATCH");
   const [detail, setDetail] = useState("");
   const [error, setError] = useState("");
+  const [loadingDeal, setLoadingDeal] = useState(Boolean(matchId));
   const options = disputeOptions(copy);
 
   useDeepHeader({ title: copy.handoffTitle });
 
+  const dealStage = match?.dealStage;
   useEffect(() => {
-    if (!matchId) return;
+    if (!matchId) {
+      setLoadingDeal(false);
+      return;
+    }
+    let cancelled = false;
+    setLoadingDeal(true);
     void Promise.all([
       getDealSnapshot(matchId),
       listDealDisputes(matchId),
-    ]).then(([nextSnapshot, nextDisputes]) => {
-      setSnapshot(nextSnapshot);
-      setDisputes(nextDisputes);
-    });
-  }, [getDealSnapshot, listDealDisputes, matchId, match?.dealStage]);
+    ])
+      .then(([nextSnapshot, nextDisputes]) => {
+        if (cancelled) return;
+        setSnapshot(nextSnapshot);
+        setDisputes(nextDisputes);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingDeal(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // Store getters recreate after HYDRATE (unpaid poll); key on match fields only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable load by matchId/dealStage
+  }, [dealStage, matchId]);
 
   // Ops/provider settlement updates payment_status out-of-band; poll so the
   // handoff confirm UI opens without requiring a full app reload.
+  const paymentStatus = match?.paymentStatus;
   useEffect(() => {
-    if (!matchId || !match || match.paymentStatus === "PAID") return;
+    if (!matchId || paymentStatus === "PAID" || !paymentStatus) return;
     if (!snapshot?.lockedAt) return;
     let cancelled = false;
     const tick = () => {
@@ -96,7 +114,9 @@ export function HandoffPage() {
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [match, matchId, refreshData, snapshot?.lockedAt]);
+    // refreshData identity changes after every HYDRATE; key on payment fields only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable poll by match payment state
+  }, [matchId, paymentStatus, snapshot?.lockedAt]);
 
   const openDispute = disputes.find(
     (x) => x.status === "OPEN" || x.status === "REVIEWING",
@@ -178,15 +198,21 @@ export function HandoffPage() {
     snapshot,
   ]);
 
+  if (loadingDeal) {
+    return (
+      <div className="page-stack page-narrow" role="status" aria-busy="true">
+        <span className="sr-only">{copy.loadingScreen}</span>
+        <div className="skeleton-line skeleton-line--lg" />
+        <div className="skeleton-line" />
+      </div>
+    );
+  }
+
   if (!match || !currentUser || !demand || demand.type !== "BUY" || !product) {
     return (
       <EmptyState
         title={copy.dealMissingTitle}
-        action={
-          <Button to="/my" variant="secondary">
-            {copy.dealTradeList}
-          </Button>
-        }
+        action={<Button to="/my">{copy.dealTradeList}</Button>}
       />
     );
   }
@@ -397,7 +423,11 @@ export function HandoffPage() {
         </>
       )}
 
-      {error ? <p className="form-error">{error}</p> : null}
+      {error ? (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
 
       <Button to={`/match/${match.id}`} fullWidth variant="ghost">
         {copy.handoffChatCoordinate}
