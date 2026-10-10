@@ -4,8 +4,8 @@
   "branch": "automation/dan-autonomous-review-loop-20261010",
   "baseline_branch": "cursor/dan-commercial-complete-e0e7",
   "baseline_sha": "47e456d8d5651dde48d9d8ced056911afb593e5d",
-  "running_head": "602a526e57b7b16fd8c439e153252ff5a1d21d4f",
-  "last_updated": "2026-10-10T04:35:22Z",
+  "running_head": "8c18aec9fb3607c4615fad983d414ac71e333ec4",
+  "last_updated": "2026-10-10T05:22:19Z",
   "phase": "IMPLEMENTING",
   "autonomy": {
     "mode": "cursor-agent-with-readonly-subagent",
@@ -84,7 +84,9 @@
       "evidence": [
         "C008: ReportReasonChoices radiogroup + ConfirmSheet scroll lock/confirmDisabled @ 003c584; reviewer PASS bc-6b885d37-e2cc-5c34-b015-405d8df5e083.",
         "Remaining: broader responsive/chat polish beyond report/block sheets.",
-        "C011: MatchChat day separator without render mutation @ 602a526; reviewer PASS bc-23036f93-0715-5657-a985-293ed842d92b."
+        "C011: MatchChat day separator without render mutation @ 602a526; reviewer PASS bc-23036f93-0715-5657-a985-293ed842d92b.",
+        "C012 FINDINGS→C013 PASS: chat EmptyState/loading/error a11y + ul/li list links @ 8c18aec (bc-ae2b16cf-3e84-5110-bbac-4a4e20e8587d).",
+        "Remaining: broader responsive typography across non-chat screens; real-data visual QA at checkpoint."
       ]
     },
     {
@@ -399,6 +401,71 @@
         "evidence": "PASS AC1-AC4 MatchChat day separator immutability"
       },
       "next_action": "Continue P1-01 responsive/chat polish; keep PR draft"
+    },
+    {
+      "id": "C012",
+      "task_id": "P1-01",
+      "implementation_sha": "65f8c05d7c9e55a113d4f53c6a602d12dcf543d0",
+      "tests": [
+        {
+          "command": "npm run typecheck && npm test && npm run build",
+          "status": "PASS",
+          "evidence": "242 tests; build ok"
+        },
+        {
+          "command": "full CI suite=full",
+          "status": "NOT_RUN",
+          "evidence": "Draft PR skip per CI_COST_POLICY"
+        }
+      ],
+      "review": {
+        "status": "FINDINGS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-3485e6d3-1e13-5444-8968-a69fa454814e",
+        "reviewed_sha": "65f8c05d7c9e55a113d4f53c6a602d12dcf543d0",
+        "findings": [
+          {
+            "severity": "medium",
+            "file": "src/pages/ConversationsPage.tsx",
+            "symbol_or_line": "role=listitem on Link",
+            "reproduction": "listitem overwrote link role on chat rows",
+            "expected_fix": "ul/li wrapper with Link keeping role=link"
+          }
+        ],
+        "evidence": "FINDINGS F1 listitem-on-Link"
+      },
+      "next_action": "Fix F1; re-review C013"
+    },
+    {
+      "id": "C013",
+      "task_id": "P1-01",
+      "implementation_sha": "8c18aec9fb3607c4615fad983d414ac71e333ec4",
+      "tests": [
+        {
+          "command": "npm test -- ConversationsPage.test.tsx EmptyState.test.tsx",
+          "status": "PASS",
+          "evidence": "2/2"
+        },
+        {
+          "command": "npm test",
+          "status": "PASS",
+          "evidence": "242"
+        },
+        {
+          "command": "full CI suite=full",
+          "status": "NOT_RUN",
+          "evidence": "Draft skip"
+        }
+      ],
+      "review": {
+        "status": "PASS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-ae2b16cf-3e84-5110-bbac-4a4e20e8587d",
+        "reviewed_sha": "8c18aec9fb3607c4615fad983d414ac71e333ec4",
+        "findings": [],
+        "evidence": "PASS F1 closed; EmptyState/MatchChat a11y retained"
+      },
+      "next_action": "Begin P1-02 nearby/region/route privacy and relevance checks"
     }
   ],
   "blockers": [
@@ -431,6 +498,6 @@
       "owner_action": "Optional: fix agent VM Docker/Realtime networking"
     }
   ],
-  "next_action": "Continue P1-01 commercial UI/chat polish under draft CI skip policy.",
-  "last_report": "C010 CI cost policy PASS; C011 MatchChat day-sep PASS @ 602a526. Draft CI skipped. P1-01 IN_PROGRESS. Release NOT_APPROVED."
+  "next_action": "P1-02: verify nearby/region/route deny privacy and candidate usefulness; keep P1-01 residual responsive polish for later.",
+  "last_report": "C013 PASS @ 8c18aec chat a11y. P1-01 IN_PROGRESS (chat slice advanced). Next P1-02 location/discovery. Draft PR. Release NOT_APPROVED."
 }
