@@ -451,7 +451,28 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
           assignLogin();
           return null;
         }
-        return run(() => api.sendMessageRemote(matchId, body));
+        // Messaging must surface "blocked" distinctly — run() swallows errors.
+        for (let attempt = 0; attempt < 40 && mutationInFlightRef.current; attempt += 1) {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+        if (mutationInFlightRef.current) return null;
+        mutationInFlightRef.current = true;
+        setBusy(true);
+        setError(null);
+        try {
+          const result = await api.sendMessageRemote(matchId, body);
+          await refresh();
+          return result;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          if (/blocked/i.test(message)) {
+            throw new Error("DAN_CHAT_BLOCKED");
+          }
+          return null;
+        } finally {
+          mutationInFlightRef.current = false;
+          setBusy(false);
+        }
       },
       markMessagesRead: async (matchId) => {
         if (!currentUser) return;

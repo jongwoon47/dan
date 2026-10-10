@@ -276,19 +276,28 @@ export function MatchChatPage() {
     const text = body.trim();
     setBody("");
     stickToBottomRef.current = true;
-    const result = await sendMessage(matchId, text);
-    if (!result) {
-      setError(copy.genericError);
+    try {
+      const result = await sendMessage(matchId, text);
+      if (!result) {
+        setError(copy.genericError);
+        setBody(text);
+        return;
+      }
+      setMessages((prev) =>
+        prev.some((message) => message.id === result.id)
+          ? prev
+          : [...prev, result],
+      );
+      setError(null);
+      void load();
+    } catch (err) {
+      setError(
+        err instanceof Error && err.message === "DAN_CHAT_BLOCKED"
+          ? copy.chatBlockedSend
+          : copy.genericError,
+      );
       setBody(text);
-      return;
     }
-    setMessages((prev) =>
-      prev.some((message) => message.id === result.id)
-        ? prev
-        : [...prev, result],
-    );
-    setError(null);
-    void load();
   }
 
   const mineDone = currentUser ? iConfirmed(match, currentUser.id) : false;

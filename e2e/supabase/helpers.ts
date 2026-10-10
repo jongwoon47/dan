@@ -3,7 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 
 export const supabaseUrl = process.env.VITE_SUPABASE_URL!;
 export const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+export const anonKey = process.env.VITE_SUPABASE_ANON_KEY!;
 export const appBaseUrl = process.env.DAN_E2E_BASE_URL ?? "http://127.0.0.1:5175";
+export const QA_PASSWORD = "DanBrowserQa-Pass1!";
 
 export function datetimeLocal(hoursFromNow: number): string {
   const d = new Date(Date.now() + hoursFromNow * 60 * 60 * 1000);
@@ -70,10 +72,61 @@ export async function signupNamed(
   await page.getByRole("button", { name: "계정이 없나요? 회원가입" }).click();
   await page.getByLabel("이름").fill(name);
   await page.getByLabel("이메일").fill(email);
-  await page.getByLabel("비밀번호").fill("DanBrowserQa-Pass1!");
+  await page.getByLabel("비밀번호").fill(QA_PASSWORD);
   await page.getByRole("button", { name: "가입하기" }).click();
   await completeRequiredConsent(page);
   return email;
+}
+
+/**
+ * Prove send_message is rejected server-side after a block (not just UI toast).
+ * Signs in as the peer with the anon key and asserts RPC error + no new row.
+ */
+export async function assertSendMessageRejectedAsBlocked(
+  email: string,
+  matchId: string,
+  body = "block-probe must not persist",
+) {
+  if (!anonKey) throw new Error("VITE_SUPABASE_ANON_KEY required");
+  const admin = adminClient();
+  const { count: before, error: beforeError } = await admin
+    .from("messages")
+    .select("id", { count: "exact", head: true })
+    .eq("match_id", matchId);
+  if (beforeError) throw beforeError;
+
+  const userClient = createClient(supabaseUrl, anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { error: signError } = await userClient.auth.signInWithPassword({
+    email,
+    password: QA_PASSWORD,
+  });
+  if (signError) throw signError;
+
+  const { data, error } = await userClient.rpc("send_message", {
+    p_match_id: matchId,
+    p_body: body,
+  });
+  if (!error) {
+    throw new Error(
+      `expected blocked send_message to fail, got data=${JSON.stringify(data)}`,
+    );
+  }
+  if (!/blocked/i.test(error.message)) {
+    throw new Error(`expected blocked error, got: ${error.message}`);
+  }
+
+  const { count: after, error: afterError } = await admin
+    .from("messages")
+    .select("id", { count: "exact", head: true })
+    .eq("match_id", matchId);
+  if (afterError) throw afterError;
+  if ((after ?? 0) !== (before ?? 0)) {
+    throw new Error(
+      `message count changed after blocked send (${before} → ${after})`,
+    );
+  }
 }
 
 export async function verifyUser(

@@ -458,6 +458,7 @@ const koBase = {
   "reportSubmit": "신고하기",
   "reportSent": "신고가 접수됐어요",
   "blockedOk": "차단했어요",
+  "chatBlockedSend": "차단된 상대에게는 메시지를 보낼 수 없어요.",
   "myRequestsActive": "진행 중",
   "myRequestsDone": "마감·연결",
   "saving": "저장 중…",

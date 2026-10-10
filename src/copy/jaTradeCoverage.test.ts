@@ -18,6 +18,7 @@ const CRITICAL_TRADE_KEYS = [
   "chatEmpty",
   "report",
   "block",
+  "chatBlockedSend",
   "matchStatusConnected",
   "activityMatchCompleted",
 ] as const;

@@ -4,6 +4,7 @@ import path from "node:path";
 import {
   TINY_PNG,
   appBaseUrl,
+  assertSendMessageRejectedAsBlocked,
   latestPotentialBuyOfferId,
   markMatchPaidTrusted,
   respondToDemand,
@@ -99,7 +100,7 @@ test("two users can report, block, and cancel a connected TASK trade in the brow
       "peer",
       reportPeer,
     );
-    await verifyUser(reportOwnerEmail, "buyer");
+    const reportOwnerId = await verifyUser(reportOwnerEmail, "buyer");
     await verifyUser(reportPeerEmail, "buyer");
 
     await submitTask(report.ownerPage, `${tag}-report`);
@@ -109,6 +110,7 @@ test("two users can report, block, and cancel a connected TASK trade in the brow
     await expect(report.ownerPage.getByText(reportPeer)).toBeVisible();
     await report.ownerPage.getByRole("button", { name: "수락" }).click();
     await expect(report.ownerPage).toHaveURL(/\/match\//);
+    const reportMatchId = await waitForConnectedMatchId(reportOwnerId);
 
     await report.ownerPage.getByRole("button", { name: "더보기" }).click();
     await report.ownerPage.getByRole("menuitem", { name: "신고" }).click();
@@ -137,13 +139,28 @@ test("two users can report, block, and cancel a connected TASK trade in the brow
       fullPage: true,
     });
 
-    // Owner-side block toast already proved the RPC; peer messaging after
-    // block is soft-checked (composer may still accept local input).
-    await report.peerPage.goto("/chats");
-    const row = report.peerPage
-      .locator("a.chat-list__row")
-      .filter({ hasText: /Browser QA Safety Task/ });
-    await expect(row.first()).toBeVisible({ timeout: 30_000 });
+    // Server-side proof: peer RPC must fail with blocked and not insert a row.
+    await assertSendMessageRejectedAsBlocked(reportPeerEmail, reportMatchId);
+
+    // Browser proof: composer may accept input, but send surfaces block error
+    // and the probe body never appears as a delivered bubble.
+    const probe = `block-ui-probe-${tag}`;
+    await report.peerPage.goto(`/match/${reportMatchId}`);
+    await expect(report.peerPage.getByRole("button", { name: "보내기" })).toBeVisible({
+      timeout: 45_000,
+    });
+    const composer = report.peerPage.locator(".chat-composer input");
+    await expect(composer).toBeVisible({ timeout: 45_000 });
+    await composer.fill(probe);
+    await report.peerPage.getByRole("button", { name: "보내기" }).click();
+    await expect(
+      report.peerPage.getByText("차단된 상대에게는 메시지를 보낼 수 없어요."),
+    ).toBeVisible({ timeout: 30_000 });
+    await expect(report.peerPage.getByText(probe, { exact: true })).toHaveCount(0);
+    await report.peerPage.screenshot({
+      path: path.join(outDir, "04-block-send-rejected.png"),
+      fullPage: true,
+    });
   } finally {
     await cancel.ownerContext.close();
     await cancel.peerContext.close();

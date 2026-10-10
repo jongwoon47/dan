@@ -117,6 +117,7 @@ export const jaPilotCopy: Partial<LocalizedCopy> = {
   reportSubmit: "通報する",
   reportSent: "通報を受け付けました",
   blockedOk: "ブロックしました",
+  chatBlockedSend: "ブロックした相手にはメッセージを送れません。",
   tradeCompleteCta: "取引完了",
   tradeCancelCta: "取引しないことにしました",
   tradeCancelTitle: "この取引を終了しますか？",
