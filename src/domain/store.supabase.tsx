@@ -66,7 +66,6 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
       if (generation !== refreshGenerationRef.current) return;
 
       setProducts(productRows);
-      setDemands(demandRows);
       setAggregates(aggRows);
 
       if (auth.user) {
@@ -111,6 +110,12 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         const ownMap = new Map<string, Ownership>();
         for (const o of [...owns, ...openOwns]) ownMap.set(o.id, o);
 
+        // Single demand write: never flash ACTIVE-only feed mid-refresh or
+        // MATCHED deal pages briefly lose their demand/sell rows.
+        const demandMap = new Map(demandRows.map((d) => [d.id, d]));
+        for (const d of myDemands) demandMap.set(d.id, d);
+        for (const d of matchedDemands) demandMap.set(d.id, d);
+
         setOwnerships([...ownMap.values()]);
         setSellIntents(() => {
           const map = new Map(sellRows.map((s) => [s.id, s]));
@@ -120,13 +125,9 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         });
         setResponses(partyResponses);
         setMatches(myMatches);
-        setDemands((prev) => {
-          const map = new Map(prev.map((d) => [d.id, d]));
-          for (const d of myDemands) map.set(d.id, d);
-          for (const d of matchedDemands) map.set(d.id, d);
-          return [...map.values()];
-        });
+        setDemands([...demandMap.values()]);
       } else {
+        setDemands(demandRows);
         setOwnerships([]);
         setSellIntents([]);
         setResponses([]);
@@ -301,7 +302,14 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
           assignLogin();
           return null;
         }
-        return run(() => api.issueDealEvidenceChallengeRemote(matchId));
+        // Challenge codes are page-local state and must not wait on the
+        // mutation lock — connect/refresh often still holds it when the
+        // seller opens evidence, which previously returned null forever.
+        try {
+          return await api.issueDealEvidenceChallengeRemote(matchId);
+        } catch {
+          return null;
+        }
       },
       getDealEvidence: async (matchId) => {
         if (!currentUser) return null;

@@ -210,31 +210,51 @@ test("BUY browser path reaches evidence→snapshot→payment honesty gate (no fa
 
     // Hydrate seller store via match chat, then open evidence with retries.
     let evidenceReady = false;
-    for (let attempt = 0; attempt < 5; attempt += 1) {
+    for (let attempt = 0; attempt < 6; attempt += 1) {
       await sellerPage.goto(`/match/${connectedMatchId}`);
       await expect(
         sellerPage.getByRole("link", { name: "상품 정보 등록" }),
       ).toBeVisible({ timeout: 60_000 });
       await sellerPage.getByRole("link", { name: "상품 정보 등록" }).click();
       await expect(sellerPage).toHaveURL(/\/evidence/);
-      if (
-        await sellerPage
-          .getByText("현재 보유 사진 · 필수")
-          .isVisible()
-          .catch(() => false)
-      ) {
+      const formVisible = await sellerPage
+        .getByText("현재 보유 사진 · 필수")
+        .isVisible()
+        .catch(() => false);
+      if (!formVisible) {
+        await sellerPage.goto("/my");
+        continue;
+      }
+
+      const codeLocator = sellerPage.locator(".evidence-challenge-code strong");
+      try {
+        await expect
+          .poll(
+            async () => {
+              if (await codeLocator.isVisible().catch(() => false)) return true;
+              const retry = sellerPage.getByRole("button", {
+                name: "새 코드 받기",
+              });
+              if (await retry.isVisible().catch(() => false)) {
+                await retry.click();
+              }
+              return false;
+            },
+            { timeout: 45_000, intervals: [500, 750, 1000] },
+          )
+          .toBe(true);
         evidenceReady = true;
         break;
+      } catch {
+        await sellerPage.goto("/my");
       }
-      await sellerPage.goto("/my");
     }
-    expect(evidenceReady, "evidence form did not hydrate after retries").toBe(true);
+    expect(evidenceReady, "evidence challenge did not issue after retries").toBe(
+      true,
+    );
 
-    await expect(sellerPage.getByText("촬영 코드 발급 중…")).toHaveCount(0, {
-      timeout: 60_000,
-    });
     const fileInput = sellerPage.locator('input[type="file"]');
-    await expect(fileInput).toBeEnabled({ timeout: 60_000 });
+    await expect(fileInput).toBeEnabled({ timeout: 30_000 });
     await fileInput.setInputFiles({
       name: "evidence.png",
       mimeType: "image/png",

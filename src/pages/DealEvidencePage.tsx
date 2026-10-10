@@ -173,18 +173,32 @@ export function DealEvidencePage() {
     if (!matchId || !isSeller || match?.status !== "CONNECTED") return;
     let cancelled = false;
     setChallengeError("");
-    void issueDealEvidenceChallenge(matchId).then((row) => {
-      if (cancelled) return;
-      if (!row) {
-        setChallengeError(copy.evidenceChallengeFail);
-        return;
+    setChallenge(null);
+
+    const issue = async () => {
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        if (cancelled) return;
+        const row = await issueDealEvidenceChallenge(matchId);
+        if (cancelled) return;
+        if (row) {
+          setChallenge(row);
+          setChallengeError("");
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
       }
-      setChallenge(row);
-    });
+      if (!cancelled) setChallengeError(copy.evidenceChallengeFail);
+    };
+
+    void issue();
     return () => {
       cancelled = true;
     };
-  }, [copy.evidenceChallengeFail, issueDealEvidenceChallenge, isSeller, match?.status, matchId]);
+    // Intentionally omit issueDealEvidenceChallenge identity — the store
+    // recreates context methods on every refresh and would cancel in-flight
+    // challenge RPCs before the code lands in page state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable issue by matchId/status
+  }, [copy.evidenceChallengeFail, isSeller, match?.status, matchId]);
 
   useEffect(() => {
     if (!matchId) return;
@@ -237,7 +251,7 @@ export function DealEvidencePage() {
   const showUsageCount = product?.category === "camera";
   const componentOptions = product ? componentOptionsFor(product, copy) : [];
 
-  if (!match || !demand || !product || !sell || !currentUser) {
+  if (!currentUser) {
     return (
       <EmptyState
         title={copy.dealMissingTitle}
@@ -245,6 +259,22 @@ export function DealEvidencePage() {
         action={
           <Button to="/my" variant="secondary">
             My DAN
+          </Button>
+        }
+      />
+    );
+  }
+
+  if (!match || !demand || !product || !sell) {
+    // Direct /deal/:id/evidence navigations can race store hydration after
+    // connect — send the seller back through match chat to rehydrate.
+    return (
+      <EmptyState
+        title={copy.dealMissingTitle}
+        body={copy.evidenceMissingBody}
+        action={
+          <Button to={matchId ? `/match/${matchId}` : "/my"} variant="secondary">
+            {matchId ? copy.dealBackToChat : "My DAN"}
           </Button>
         }
       />
