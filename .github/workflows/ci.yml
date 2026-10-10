@@ -4,7 +4,7 @@ name: CI
 # - Draft PR sync: no runner jobs (autonomous iteration stays draft).
 # - Ready PR synchronize: verify only (typecheck/lint/unit/build).
 # - Full supabase/E2E/visual: ready_for_review, base main, title [ci-full],
-#   or workflow_dispatch suite=full.
+#   label ci-checkpoint (pull_request labeled), or workflow_dispatch suite=full.
 # - cancel-in-progress false: do not discard an in-flight heavy suite on the next push.
 # Job names verify / supabase / visual preserved for branch protection.
 
