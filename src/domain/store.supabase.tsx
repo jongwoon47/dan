@@ -464,7 +464,20 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
           await refresh();
           return result;
         } catch (err) {
-          const message = err instanceof Error ? err.message : String(err);
+          const parts: string[] = [];
+          if (err instanceof Error) parts.push(err.message);
+          if (typeof err === "object" && err) {
+            const row = err as {
+              message?: unknown;
+              details?: unknown;
+              hint?: unknown;
+              code?: unknown;
+            };
+            for (const value of [row.message, row.details, row.hint, row.code]) {
+              if (typeof value === "string" && value) parts.push(value);
+            }
+          }
+          const message = parts.join(" ") || String(err);
           if (/blocked/i.test(message)) {
             throw new Error("DAN_CHAT_BLOCKED");
           }

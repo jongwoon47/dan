@@ -152,11 +152,16 @@ test("two users can report, block, and cancel a connected TASK trade in the brow
     const composer = report.peerPage.locator(".chat-composer input");
     await expect(composer).toBeVisible({ timeout: 45_000 });
     await composer.fill(probe);
-    await report.peerPage.getByRole("button", { name: "보내기" }).click();
+    await expect(composer).toHaveValue(probe);
+    await report.peerPage.getByRole("button", { name: /보내기/ }).click();
     await expect(
       report.peerPage.getByText("차단된 상대에게는 메시지를 보낼 수 없어요."),
     ).toBeVisible({ timeout: 30_000 });
-    await expect(report.peerPage.getByText(probe, { exact: true })).toHaveCount(0);
+    // Probe may remain in the composer after a rejected send; it must not
+    // appear as a delivered chat bubble in the thread.
+    await expect(
+      report.peerPage.locator(".chat-thread").getByText(probe, { exact: true }),
+    ).toHaveCount(0);
     await report.peerPage.screenshot({
       path: path.join(outDir, "04-block-send-rejected.png"),
       fullPage: true,
@@ -195,7 +200,10 @@ test("BUY browser path: evidence→snapshot→payment honesty→ops paid→hando
     const demandId = demandPath.split("/").pop()!;
     await sellerPage.goto(demandPath);
     await sellerPage.getByRole("link", { name: "가지고 있어요" }).click();
-    await expect(sellerPage.getByRole("heading", { name: title })).toBeVisible();
+    // Header + page title both use the product name — scope to main.
+    await expect(
+      sellerPage.getByRole("main").getByRole("heading", { name: title }),
+    ).toBeVisible();
     // Prefer target-bound offer so the sell intent links to this BUY demand.
     const productPath = new URL(sellerPage.url()).pathname; // /demand/:productId
     await sellerPage.goto(`${productPath}/offer?target=${encodeURIComponent(demandId)}`);

@@ -150,13 +150,14 @@ export function MatchChatPage() {
       const rows = await listMessages(matchId);
       setMessages(rows);
       await markMessagesRead(matchId);
-      setError(null);
+      // Do not clear composer/send errors here — the poll/focus reload would
+      // wipe a just-shown blocked/send failure before the user (or E2E) reads it.
     } catch {
-      setError(copy.genericError);
+      setError((prev) => prev ?? copy.genericError);
     } finally {
       setLoading(false);
     }
-  }, [listMessages, markMessagesRead, matchId]);
+  }, [copy.genericError, listMessages, markMessagesRead, matchId]);
 
   useEffect(() => {
     void load();

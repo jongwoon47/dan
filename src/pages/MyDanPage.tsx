@@ -9,7 +9,7 @@ import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
 import { effectiveDemandStatus } from "@/domain/demandLifecycle";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
-import { DEMAND_TYPE_LABEL, isBuyDemand } from "@/domain/types";
+import { isBuyDemand, type DemandType } from "@/domain/types";
 import { useDanLocale } from "@/i18n/locale";
 import { formatStoredMoney } from "@/lib/format";
 import "./pages.css";
@@ -19,6 +19,13 @@ type MyTab = "active" | "requests" | "completed";
 function normalizeTab(value: string | null): MyTab {
   if (value === "requests" || value === "completed") return value;
   return "active";
+}
+
+function demandTypeLabel(type: DemandType, copy: LocalizedCopy): string {
+  if (type === "BUY") return copy.typeBuy;
+  if (type === "BORROW") return copy.typeBorrow;
+  if (type === "TASK") return copy.typeTask;
+  return copy.typeService;
 }
 
 function requestStatusLabel(status: string, copy: LocalizedCopy): string {
@@ -185,7 +192,7 @@ export function MyDanPage() {
                       <ProductVisual product={product} size="sm" />
                     ) : (
                       <span className="request-type-avatar" aria-hidden>
-                        {DEMAND_TYPE_LABEL[demand.type].slice(0, 1)}
+                        {demandTypeLabel(demand.type, copy).slice(0, 1)}
                       </span>
                     )}
                     <div className="my-demand-card__body">
@@ -194,7 +201,7 @@ export function MyDanPage() {
                         <span>{requestStatusLabel(status, copy)}</span>
                       </div>
                       <p>
-                        {DEMAND_TYPE_LABEL[demand.type]} ·{" "}
+                        {demandTypeLabel(demand.type, copy)} ·{" "}
                         {formatStoredMoney(demand.budget, demand.currencyCode ?? "KRW", locale)}
                       </p>
                       <small>{formatFulfillmentSummary(demand.fulfillmentOptions, locale)}</small>
