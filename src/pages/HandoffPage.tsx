@@ -69,6 +69,7 @@ export function HandoffPage() {
 
   useDeepHeader({ title: copy.handoffTitle });
 
+  const dealStage = match?.dealStage;
   useEffect(() => {
     if (!matchId) return;
     void Promise.all([
@@ -78,7 +79,9 @@ export function HandoffPage() {
       setSnapshot(nextSnapshot);
       setDisputes(nextDisputes);
     });
-  }, [getDealSnapshot, listDealDisputes, matchId, match?.dealStage]);
+    // Store getters recreate after HYDRATE (unpaid poll); key on match fields only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable load by matchId/dealStage
+  }, [dealStage, matchId]);
 
   // Ops/provider settlement updates payment_status out-of-band; poll so the
   // handoff confirm UI opens without requiring a full app reload.
