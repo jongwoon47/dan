@@ -34,6 +34,8 @@ export function TradeCompletePage() {
     : undefined;
   const [snapshot, setSnapshot] = useState<DealSnapshot | null>(null);
   const [peer, setPeer] = useState<PublicProfile | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadingReceipt, setLoadingReceipt] = useState(false);
 
   useDeepHeader({ title: copy.matchStatusCompleted });
 
@@ -57,18 +59,27 @@ export function TradeCompletePage() {
     let cancelled = false;
 
     const load = async () => {
-      for (let attempt = 0; attempt < 4; attempt += 1) {
-        const [dealSnapshot, publicProfile] = await Promise.all([
-          getDealSnapshot(matchId),
-          getPublicProfile(peerId),
-        ]);
-        if (cancelled) return;
-        if (publicProfile) setPeer(publicProfile);
-        if (dealSnapshot) {
-          setSnapshot(dealSnapshot);
-          return;
+      setLoadingReceipt(true);
+      setLoadError(null);
+      try {
+        for (let attempt = 0; attempt < 4; attempt += 1) {
+          const [dealSnapshot, publicProfile] = await Promise.all([
+            getDealSnapshot(matchId),
+            getPublicProfile(peerId),
+          ]);
+          if (cancelled) return;
+          if (publicProfile) setPeer(publicProfile);
+          if (dealSnapshot) {
+            setSnapshot(dealSnapshot);
+            return;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
         }
-        await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
+        if (!cancelled) setLoadError(copy.genericError);
+      } catch {
+        if (!cancelled) setLoadError(copy.genericError);
+      } finally {
+        if (!cancelled) setLoadingReceipt(false);
       }
     };
 
@@ -126,6 +137,12 @@ export function TradeCompletePage() {
         </div>
       </section>
 
+      {loadError ? (
+        <p className="form-error" role="alert">
+          {loadError}
+        </p>
+      ) : null}
+
       <section className="deal-snapshot-card trade-receipt">
         <div className="snapshot-section">
           <span>{copy.tradeStatusLabel}</span>
@@ -133,7 +150,12 @@ export function TradeCompletePage() {
         </div>
         <div className="snapshot-section">
           <span>{copy.tradeFinalAmountLabel}</span>
-          <strong>{moneyLabel ?? copy.amountConfirming}</strong>
+          <strong
+            role={!moneyLabel || loadingReceipt ? "status" : undefined}
+            aria-live={!moneyLabel || loadingReceipt ? "polite" : undefined}
+          >
+            {moneyLabel ?? copy.amountConfirming}
+          </strong>
         </div>
         <div className="snapshot-section">
           <span>{copy.dealPeer}</span>

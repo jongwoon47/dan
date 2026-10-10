@@ -88,14 +88,29 @@ export function ActivityPage() {
   } = useDan();
   const dataMode = getDataMode();
   const [names, setNames] = useState<Record<string, string>>({});
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useDeepHeader({
     title: copy.activityTitle,
   });
 
   useEffect(() => {
-    if (isLoggedIn) void refreshActivities();
-  }, [isLoggedIn, refreshActivities]);
+    if (!isLoggedIn) return;
+    let cancelled = false;
+    setLoading(true);
+    setLoadError(null);
+    void Promise.resolve(refreshActivities())
+      .catch(() => {
+        if (!cancelled) setLoadError(copy.genericError);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [copy.genericError, isLoggedIn, refreshActivities]);
 
   const actorKey = useMemo(
     () =>
@@ -143,6 +158,16 @@ export function ActivityPage() {
 
   return (
     <div className="page-stack page-narrow">
+      {loading ? (
+        <p className="section-desc" role="status" aria-live="polite">
+          {copy.loadingScreen}
+        </p>
+      ) : null}
+      {loadError ? (
+        <p className="form-error" role="alert">
+          {loadError}
+        </p>
+      ) : null}
       {unreadActivityCount > 0 ? (
         <div className="section-toolbar">
           <button
@@ -154,7 +179,7 @@ export function ActivityPage() {
           </button>
         </div>
       ) : null}
-      {activities.length === 0 ? (
+      {!loading && !loadError && activities.length === 0 ? (
         <EmptyState
           title={copy.activityEmpty}
           body={copy.activityEmptyBody}
@@ -164,7 +189,7 @@ export function ActivityPage() {
             </Button>
           }
         />
-      ) : (
+      ) : activities.length > 0 ? (
         <ul className="activity-list">
           {activities.map((ev) => {
             const demand = ev.demandId ? getDemand(ev.demandId) : undefined;
@@ -215,7 +240,7 @@ export function ActivityPage() {
             );
           })}
         </ul>
-      )}
+      ) : null}
     </div>
   );
 }

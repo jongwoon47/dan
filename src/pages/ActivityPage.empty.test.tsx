@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ShellChromeProvider } from "@/components/layout/ShellChrome";
@@ -12,7 +12,7 @@ vi.mock("@/domain/danContext", () => ({
     login: vi.fn(),
     currentUser: { id: "u1" },
     activities: [],
-    refreshActivities: vi.fn(),
+    refreshActivities: vi.fn(async () => undefined),
     unreadActivityCount: 0,
     state: { responses: [] },
     getDemand: () => undefined,
@@ -27,7 +27,7 @@ afterEach(() => {
 });
 
 describe("ActivityPage empty state", () => {
-  it("uses localized empty body copy with a primary browse CTA", () => {
+  it("uses localized empty body copy with a primary browse CTA", async () => {
     render(
       <ShellChromeProvider>
         <MemoryRouter>
@@ -35,7 +35,11 @@ describe("ActivityPage empty state", () => {
         </MemoryRouter>
       </ShellChromeProvider>,
     );
-    expect(screen.getByText("새 응답, 거래 진행, 메시지 알림이 이곳에 모여요.")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.getByText("새 응답, 거래 진행, 메시지 알림이 이곳에 모여요."),
+      ).toBeInTheDocument();
+    });
     expect(screen.getByRole("link", { name: "찾기" })).toBeInTheDocument();
   });
 });
