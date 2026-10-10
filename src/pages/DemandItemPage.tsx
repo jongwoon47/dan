@@ -412,9 +412,11 @@ export function DemandItemPage() {
                   onChange={(e) => setOfferPrice(e.target.value)}
                   placeholder={
                     demand.budget > 0
-                      ? locale === "ja"
-                        ? `希望 ${formatStoredMoney(demand.budget, demand.currencyCode ?? "KRW", locale)}`
-                        : `희망 ${demand.budget.toLocaleString("ko-KR")}원`
+                      ? formatStoredMoney(
+                          demand.budget,
+                          demand.currencyCode ?? "KRW",
+                          locale,
+                        )
                       : copy.offerPriceOptional
                   }
                 />
@@ -436,9 +438,9 @@ export function DemandItemPage() {
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder={
                     demand.type === "BORROW"
-                      ? `${locale === "ja" ? "例：" : "예: "}${copy.respondBorrow}`
+                      ? copy.respondBorrow
                       : demand.type === "SERVICE"
-                        ? `${locale === "ja" ? "例：" : "예: "}${copy.respondService}`
+                        ? copy.respondService
                         : copy.responseMessagePh
                   }
                   rows={3}
@@ -511,7 +513,7 @@ export function DemandItemPage() {
                       to={`/profile/${r.userId}`}
                       className="text-link muted"
                     >
-                      {locale === "ja" ? "相手" : "상대"}
+                      {copy.chatPeerFallback}
                     </Link>
                   )}
                   <span className="muted">{responseStatusLabel(r.status, copy)}</span>
