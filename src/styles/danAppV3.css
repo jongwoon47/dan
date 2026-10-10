@@ -252,7 +252,18 @@ body {
 /* ---------- Explore ---------- */
 
 .discovery-page {
-  max-width: 980px;
+  width: 100%;
+  max-width: min(980px, 100%);
+  overflow-x: clip;
+  min-width: 0;
+}
+
+.discovery-panel,
+.location-discovery,
+.request-type-filter,
+.discovery-search {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .discovery-header {
@@ -1162,7 +1173,10 @@ body {
   display: flex;
   gap: 7px;
   padding: 14px 0 6px;
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   scrollbar-width: none;
 }
 

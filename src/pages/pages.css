@@ -2774,6 +2774,9 @@
   gap: 12px;
   padding: 14px 0 6px;
   border-top: 1px solid var(--dan-border);
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 .location-discovery__heading {
   display: flex;
@@ -2821,12 +2824,18 @@
 }
 
 .location-discovery__modes {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-wrap: nowrap;
   gap: 8px;
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  padding-bottom: 2px;
 }
 .location-discovery__modes::-webkit-scrollbar {
   display: none;
