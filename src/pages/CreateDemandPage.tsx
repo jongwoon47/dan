@@ -645,7 +645,7 @@ function CreateDemandForm() {
             <div
               className="request-type-grid"
               role="radiogroup"
-              aria-label={locale === "ja" ? "依頼の種類" : "요청 유형"}
+              aria-label={copy.createTypeAria}
             >
               {TYPES.map((t) => (
                 <button
@@ -687,7 +687,7 @@ function CreateDemandForm() {
             </button>
             <div
               className="create-progress"
-              aria-label={locale === "ja" ? "作成ステップ" : "작성 단계"}
+              aria-label={copy.createStepAria}
             >
               <div className="create-progress__track"><span style={{ width: phase === 1 ? "50%" : "100%" }} /></div>
               <div className="create-progress__labels">

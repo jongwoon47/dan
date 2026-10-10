@@ -50,3 +50,14 @@ it("recovers from provider errors so another login can be attempted", async () =
   expect(await screen.findByRole("alert")).toHaveTextContent("간편 로그인에 연결하지 못했어요");
   expect(button).toBeEnabled();
 });
+
+it("localizes social login chrome for Japanese UI", async () => {
+  const { setDanLocale } = await import("@/i18n/locale");
+  setDanLocale("ja");
+  availableSocialProviders.mockResolvedValue(["google"]);
+  render(<MemoryRouter><LoginPage /></MemoryRouter>);
+  expect(await screen.findByRole("button", { name: "Googleで続ける" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "メールで続ける" })).toBeEnabled();
+  expect(screen.getByText("または")).toBeInTheDocument();
+  setDanLocale("ko");
+});

@@ -8,7 +8,6 @@ import { consentReturnPath, useConsent } from "@/auth/ConsentProvider";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Input";
 import { useDanCopy, type LocalizedCopy } from "@/copy/useDanCopy";
-import { useDanLocale } from "@/i18n/locale";
 import { safeReturnPath } from "@/lib/createDraft";
 import "@/pages/pages.css";
 
@@ -20,9 +19,14 @@ function authErrorMessage(err: unknown, copy: LocalizedCopy): string {
   return copy.genericError;
 }
 
+function socialContinueLabel(provider: SocialProvider, copy: LocalizedCopy): string {
+  if (provider === "kakao") return copy.continueWithKakao;
+  if (provider === "apple") return copy.continueWithApple;
+  return copy.continueWithGoogle;
+}
+
 export function LoginPage() {
   const copy = useDanCopy();
-  const locale = useDanLocale();
   const { mode, status, signIn, signUp, error, clearError } = useAuth();
   const { resolution } = useConsent();
   const [params] = useSearchParams();
@@ -58,18 +62,14 @@ export function LoginPage() {
       .catch(() => { if (!controller.signal.aborted) setProviders([]); });
     const hash = new URLSearchParams(window.location.hash.slice(1));
     if (params.has("error") || hash.has("error")) {
-      setLocalError(
-        locale === "ja"
-          ? "かんたんログインを完了できませんでした。もう一度お試しください。"
-          : "간편 로그인을 완료하지 못했어요. 다시 시도해 주세요.",
-      );
+      setLocalError(copy.socialLoginFailed);
       const clean = new URL(window.location.href);
       for (const key of ["error", "error_code", "error_description"]) clean.searchParams.delete(key);
       clean.hash = "";
       window.history.replaceState(null, "", clean.pathname + clean.search);
     }
     return () => controller.abort();
-  }, [locale, mode, params]);
+  }, [copy.socialLoginFailed, mode, params]);
 
   async function onSocialLogin(provider: SocialProvider) {
     if (submitLock.current || status === "loading") return;
@@ -80,11 +80,7 @@ export function LoginPage() {
     try {
       await startSocialLogin(provider, next);
     } catch {
-      setLocalError(
-        locale === "ja"
-          ? "かんたんログインに接続できませんでした。しばらくしてからもう一度お試しください。"
-          : "간편 로그인에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.",
-      );
+      setLocalError(copy.socialLoginConnectFailed);
       setSocialBusy(null);
       submitLock.current = false;
     }
@@ -124,11 +120,7 @@ export function LoginPage() {
         if (result.confirmationRequired) {
           setIsSignUp(false);
           setPassword("");
-          setNotice(
-            locale === "ja"
-              ? "確認メールを送りました。メールのリンクを確認してからログインしてください。"
-              : "가입 확인 메일을 보냈어요. 이메일의 링크를 확인한 뒤 로그인해 주세요.",
-          );
+          setNotice(copy.signupConfirmEmail);
           return;
         }
       } else {
@@ -146,6 +138,11 @@ export function LoginPage() {
   }
 
   const shownError = localError || (error ? copy.genericError : null);
+  const socialProviders = (
+    ["google", "kakao", ...(Capacitor.isNativePlatform() ? ["apple" as const] : [])] as SocialProvider[]
+  ).filter(
+    (provider) => providers?.includes(provider) || (providers === null && provider === "google"),
+  );
 
   return (
     <div className="auth-screen">
@@ -159,25 +156,51 @@ export function LoginPage() {
         </p>
       </div>
 
-      {params.get('account') === 'deleted' && <p role="status">{locale === "ja" ? "退会が完了しました。DANのアカウントと個人情報を削除しました。" : "회원탈퇴가 완료됐어요. DAN 계정과 개인정보를 삭제했어요。"}</p>}
-      <div className="auth-social" aria-label={locale === "ja" ? "ソーシャルログイン" : "간편 로그인"}>
-        {(["google", "kakao", ...(Capacitor.isNativePlatform() ? ["apple" as const] : [])] as SocialProvider[]).filter((provider) => providers?.includes(provider) || (providers === null && provider === "google")).map((provider) => {
-          const label = provider === "kakao" ? "카카오" : provider === "google" ? "Google" : "Apple";
+      {params.get("account") === "deleted" ? (
+        <p role="status">{copy.accountDeletedNotice}</p>
+      ) : null}
+      <div className="auth-social" aria-label={copy.socialLoginGroup}>
+        {socialProviders.map((provider) => {
           const enabled = providers?.includes(provider);
-          return <button key={provider} type="button" className={`auth-social__button auth-social__button--${provider}`}
-            disabled={!enabled || busy || socialBusy !== null}
-            aria-busy={socialBusy === provider}
-            onClick={() => void onSocialLogin(provider)}>
-            <span className="auth-social__content">
-              <span className="auth-social__icon" aria-hidden="true">{provider === "kakao" ? <svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3C6.48 3 2 6.46 2 10.73c0 2.77 1.88 5.2 4.7 6.57l-1.2 4.1c-.1.35.3.63.59.42l4.8-3.28c.37.03.74.05 1.11.05 5.52 0 10-3.46 10-7.86S17.52 3 12 3Z" /></svg> : provider === "google" ? <img src={`${import.meta.env.BASE_URL}google-g-logo.png`} alt="" width={20} height={20} /> : null}</span>
-              <span className="auth-social__label">
-                <span className={socialBusy === provider ? "auth-social__label--hidden" : undefined}>{locale === "ja" ? `${label}で続ける` : `${label}로 계속하기`}</span>
-                {socialBusy === provider ? <span className="auth-social__progress" role="status">{locale === "ja" ? "接続中…" : "연결 중…"}</span> : null}
+          return (
+            <button
+              key={provider}
+              type="button"
+              className={`auth-social__button auth-social__button--${provider}`}
+              disabled={!enabled || busy || socialBusy !== null}
+              aria-busy={socialBusy === provider}
+              onClick={() => void onSocialLogin(provider)}
+            >
+              <span className="auth-social__content">
+                <span className="auth-social__icon" aria-hidden="true">
+                  {provider === "kakao" ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24">
+                      <path
+                        fill="currentColor"
+                        d="M12 3C6.48 3 2 6.46 2 10.73c0 2.77 1.88 5.2 4.7 6.57l-1.2 4.1c-.1.35.3.63.59.42l4.8-3.28c.37.03.74.05 1.11.05 5.52 0 10-3.46 10-7.86S17.52 3 12 3Z"
+                      />
+                    </svg>
+                  ) : provider === "google" ? (
+                    <img src={`${import.meta.env.BASE_URL}google-g-logo.png`} alt="" width={20} height={20} />
+                  ) : null}
+                </span>
+                <span className="auth-social__label">
+                  <span className={socialBusy === provider ? "auth-social__label--hidden" : undefined}>
+                    {socialContinueLabel(provider, copy)}
+                  </span>
+                  {socialBusy === provider ? (
+                    <span className="auth-social__progress" role="status">
+                      {copy.socialConnecting}
+                    </span>
+                  ) : null}
+                </span>
               </span>
-            </span>
-          </button>;
+            </button>
+          );
         })}
-        <div className="auth-social__divider"><span>{locale === "ja" ? "または" : "또는"}</span></div>
+        <div className="auth-social__divider">
+          <span>{copy.orDivider}</span>
+        </div>
       </div>
       <form className="section-stack auth-screen__form" onSubmit={(e) => void onSubmit(e)}>
         {isSignUp ? (
@@ -220,26 +243,26 @@ export function LoginPage() {
           </p>
         ) : null}
         <Button fullWidth type="submit" disabled={busy || socialBusy !== null} size="lg">
-          {busy ? copy.saving : isSignUp ? copy.createAccount : (locale === "ja" ? "メールで続ける" : "이메일로 계속하기")}
+          {busy ? copy.saving : isSignUp ? copy.createAccount : copy.continueWithEmail}
         </Button>
       </form>
 
       <p className="auth-screen__signup">
-        <span>{isSignUp ? (locale === "ja" ? "アカウントをお持ちですか？" : "이미 계정이 있나요?") : (locale === "ja" ? "初めてご利用ですか？" : "계정이 없나요?")}</span>
-      <button
-        type="button"
-        className="text-link"
-        aria-label={isSignUp ? copy.haveAccount : copy.needAccount}
-        disabled={busy || socialBusy !== null}
-        onClick={() => {
-          setIsSignUp((v) => !v);
-          clearError();
-          setLocalError(null);
-          setNotice(null);
-        }}
-      >
-        {isSignUp ? copy.login : copy.signup}
-      </button>
+        <span>{isSignUp ? copy.askHaveAccount : copy.askNeedAccount}</span>
+        <button
+          type="button"
+          className="text-link"
+          aria-label={isSignUp ? copy.haveAccount : copy.needAccount}
+          disabled={busy || socialBusy !== null}
+          onClick={() => {
+            setIsSignUp((v) => !v);
+            clearError();
+            setLocalError(null);
+            setNotice(null);
+          }}
+        >
+          {isSignUp ? copy.login : copy.signup}
+        </button>
       </p>
       <Link to="/" className="text-link text-link--muted">
         {copy.goBack}
