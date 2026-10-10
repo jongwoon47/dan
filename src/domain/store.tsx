@@ -1340,6 +1340,10 @@ export function DanProvider({ children }: { children: ReactNode }) {
       mySellIntents,
       myResponses,
       myMatches,
+      refreshData: async () => {
+        const after = loadState();
+        dispatch({ type: "HYDRATE", state: after });
+      },
       resetDemo: () => {
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem("dan-v0-store");

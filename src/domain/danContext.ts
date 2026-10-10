@@ -164,6 +164,8 @@ export interface DanContextValue {
   myMatches: Match[];
   busy: boolean;
   loadError: string | null;
+  /** Soft reload of marketplace rows (matches, demands, sells). */
+  refreshData: () => Promise<void>;
   resetDemo: () => void;
 }
 

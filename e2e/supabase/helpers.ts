@@ -161,6 +161,26 @@ export async function latestMatchIdForUser(userId: string): Promise<string> {
  * interest. Resolve the derived potential id from the buyer's active demand
  * and the newest OPEN sell intent on that product.
  */
+/** Ops/trusted settlement only — never simulates a client payment UI success. */
+export async function markMatchPaidTrusted(
+  matchId: string,
+  providerRef: string,
+): Promise<void> {
+  const admin = adminClient();
+  const { data, error } = await admin.rpc("settlement_mark_paid", {
+    p_match_id: matchId,
+    p_provider_ref: providerRef,
+  });
+  if (error) throw error;
+  const row = data as { payment_status?: string; deal_stage?: string } | null;
+  if (row?.payment_status !== "PAID") {
+    throw new Error(`expected PAID, got ${row?.payment_status ?? "null"}`);
+  }
+  if (row?.deal_stage !== "HANDOFF_READY") {
+    throw new Error(`expected HANDOFF_READY, got ${row?.deal_stage ?? "null"}`);
+  }
+}
+
 export async function latestPotentialBuyOfferId(buyerId: string): Promise<string> {
   const admin = adminClient();
   const { data: demand, error: demandError } = await admin

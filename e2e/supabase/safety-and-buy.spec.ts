@@ -5,6 +5,7 @@ import {
   TINY_PNG,
   appBaseUrl,
   latestPotentialBuyOfferId,
+  markMatchPaidTrusted,
   respondToDemand,
   signupNamed,
   submitBuy,
@@ -151,7 +152,7 @@ test("two users can report, block, and cancel a connected TASK trade in the brow
   }
 });
 
-test("BUY browser path reaches evidence→snapshot→payment honesty gate (no fake pay)", async ({
+test("BUY browser path: evidence→snapshot→payment honesty→ops paid→handoff→complete", async ({
   browser,
 }) => {
   test.setTimeout(300_000);
@@ -317,6 +318,44 @@ test("BUY browser path reaches evidence→snapshot→payment honesty gate (no fa
       path: path.join(outDir, "04-handoff-blocked.png"),
       fullPage: true,
     });
+
+    // Trusted ops settlement only — never click a fake client "pay" control.
+    await markMatchPaidTrusted(connectedMatchId, `browser-buy-${tag}`);
+
+    await buyerPage.goto(`/deal/${connectedMatchId}/handoff`);
+    await expect(
+      buyerPage.getByRole("button", { name: "물품을 확인했습니다" }),
+    ).toBeVisible({ timeout: 90_000 });
+    await buyerPage.getByRole("button", { name: "물품을 확인했습니다" }).click();
+    await expect(buyerPage.getByText("상대 확인 대기 중")).toBeVisible({
+      timeout: 45_000,
+    });
+    await buyerPage.screenshot({
+      path: path.join(outDir, "05-handoff-buyer-confirmed.png"),
+      fullPage: true,
+    });
+
+    await sellerPage.goto("/my");
+    await sellerPage.goto(`/deal/${connectedMatchId}/handoff`);
+    await expect(
+      sellerPage.getByRole("button", { name: "제품 인도를 완료했습니다" }),
+    ).toBeVisible({ timeout: 60_000 });
+    await sellerPage.getByRole("button", { name: "제품 인도를 완료했습니다" }).click();
+    await expect(sellerPage).toHaveURL(new RegExp(`/deal/${connectedMatchId}/complete`), {
+      timeout: 60_000,
+    });
+    await expect(
+      sellerPage.getByRole("heading", { name: /거래가 완료/ }),
+    ).toBeVisible({ timeout: 30_000 });
+    await sellerPage.screenshot({
+      path: path.join(outDir, "06-handoff-completed.png"),
+      fullPage: true,
+    });
+
+    await buyerPage.goto(`/deal/${connectedMatchId}/complete`);
+    await expect(
+      buyerPage.getByRole("heading", { name: /거래가 완료/ }),
+    ).toBeVisible({ timeout: 60_000 });
   } finally {
     await ownerContext.close();
     await peerContext.close();

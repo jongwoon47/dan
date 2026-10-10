@@ -582,6 +582,9 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
       mySellIntents,
       myResponses,
       myMatches,
+      refreshData: async () => {
+        await refresh();
+      },
       resetDemo: () => {
         void refresh();
       },

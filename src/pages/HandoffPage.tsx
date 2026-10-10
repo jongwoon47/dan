@@ -51,6 +51,7 @@ export function HandoffPage() {
     listDealDisputes,
     openDealDispute,
     confirmMatchCompletion,
+    refreshData,
     busy,
   } = useDan();
 
@@ -76,6 +77,24 @@ export function HandoffPage() {
       setDisputes(nextDisputes);
     });
   }, [getDealSnapshot, listDealDisputes, matchId, match?.dealStage]);
+
+  // Ops/provider settlement updates payment_status out-of-band; poll so the
+  // handoff confirm UI opens without requiring a full app reload.
+  useEffect(() => {
+    if (!matchId || !match || match.paymentStatus === "PAID") return;
+    if (!snapshot?.lockedAt) return;
+    let cancelled = false;
+    const tick = () => {
+      if (cancelled) return;
+      void refreshData();
+    };
+    const id = window.setInterval(tick, 2500);
+    tick();
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [match, matchId, refreshData, snapshot?.lockedAt]);
 
   const openDispute = disputes.find(
     (x) => x.status === "OPEN" || x.status === "REVIEWING",
