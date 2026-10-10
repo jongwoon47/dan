@@ -163,6 +163,9 @@ export function SettingsPage() {
           <a className="settings-link-row" href={legalDocumentHref("privacy", locale)} target="_blank" rel="noopener noreferrer">
             <span>{t("privacy")}</span><span aria-hidden>›</span>
           </a>
+          <a className="settings-link-row" href={legalDocumentHref("support", locale)} target="_blank" rel="noopener noreferrer">
+            <span>{t("support")}</span><span aria-hidden>›</span>
+          </a>
         </div>
       </section>
       <section className="settings-section" aria-labelledby="settings-account-title">
