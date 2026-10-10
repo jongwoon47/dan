@@ -4,8 +4,8 @@
   "branch": "automation/dan-autonomous-review-loop-20261010",
   "baseline_branch": "cursor/dan-commercial-complete-e0e7",
   "baseline_sha": "47e456d8d5651dde48d9d8ced056911afb593e5d",
-  "running_head": "c51bde95c75911453d79db9c42b9ecf4e0675ecb",
-  "last_updated": "2026-10-10T15:40:49Z",
+  "running_head": "ff818d76294560998d659d5a845038f529397a69",
+  "last_updated": "2026-10-10T16:05:34Z",
   "phase": "IMPLEMENTING",
   "autonomy": {
     "mode": "cursor-agent-with-readonly-subagent",
@@ -80,7 +80,7 @@
       "id": "P1-01",
       "priority": "P1",
       "title": "Complete commercial-grade real-data responsive UI, chat and report/block UX",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "C008: ReportReasonChoices radiogroup + ConfirmSheet scroll lock/confirmDisabled @ 003c584; reviewer PASS bc-6b885d37-e2cc-5c34-b015-405d8df5e083.",
         "Remaining: broader responsive/chat polish beyond report/block sheets.",
@@ -97,7 +97,17 @@
         "C023 PASS @ 3df98fc demand detail recovery/share/alert (bc-ed82659c-3ee6-5487-a7af-efc55a11b1bd).",
         "C024 PASS @ 8841584 trade-chain loading/alerts/CTAs (bc-ae232488-6991-5baa-865a-5c423955ce6f).",
         "C025 PASS @ 4f31068 evidence/offer alerts + My tabs (bc-6fc7f413-9a0a-56c9-8e77-c155b69d1174).",
-        "C026 PASS @ c51bde9 explore overflow + location chips; local visual 25 PASS (bc-5ea13e7d-cc64-5b87-9e57-9a1e922558a5)."
+        "C026 PASS @ c51bde9 explore overflow + location chips; local visual 25 PASS (bc-5ea13e7d-cc64-5b87-9e57-9a1e922558a5).",
+        "C027 PASS @ d630a46 form-error alerts + create schedule announce + own/sell fail (bc-aeb814a0-0689-5ed3-ab83-e5e63eaf8d34).",
+        "Remaining: create/edit throw catch hardening; SellIntent error test; Actions suite=full.",
+        "C028 PASS @ 23af257 create/edit/buy throw catch + SellIntent test (bc-74d130ab-4dd8-515b-abc5-71715470ab3d).",
+        "C027 PASS @ d630a46 form-error alerts (bc-aeb814a0).",
+        "C028 PASS @ 23af257 throw catch (bc-74d130ab).",
+        "C029 PASS @ 664fb2a silent failures (bc-c04953d0).",
+        "C030 FINDINGS→C031 PASS @ a85f7e1 settings/JA/touch/verify (bc-93c5e571 → bc-ef5279da).",
+        "Remaining P1-01: optional Activity/TradeComplete load error surfaces; suite=full CI owner-gated.",
+        "C032 PASS @ ff818d7 TradeComplete/Activity load errors (bc-24d3ae6c-3cd8-5661-a78a-c1bfc35332e3).",
+        "Safe commercial UI/a11y batches C019–C032 complete on branch; remaining P1-01 evidence is suite=full visual/E2E (B-005)."
       ]
     },
     {
@@ -110,7 +120,9 @@
         "C015 PASS @ bb53f08: shared nearbyFallbackLabel (bc-d29f3c80-9c0d-52c7-8582-bd3c68a602d4).",
         "Existing locationDiscovery/routeCandidates/NearbyBandMap unit suites green (15+ tests).",
         "Remaining: measured query performance, live staging nearby probe (B-001).",
-        "C026: location mode chips contained/tappable; location-japan visual PASS locally."
+        "C026: location mode chips contained/tappable; location-japan visual PASS locally.",
+        "C030: Settings JP pilotRegionNote honesty when country=JP.",
+        "Location chips/Settings JP honesty done; measured staging nearby still B-001."
       ]
     },
     {
@@ -894,6 +906,192 @@
         "evidence": "PASS explore overflow containment"
       },
       "next_action": "Continue residual safe polish or stop with CODE_COMPLETE_WITH_EXTERNAL_GATES if only blockers remain"
+    },
+    {
+      "id": "C027",
+      "task_id": "P1-01",
+      "implementation_sha": "d630a463af0c7688f303b9e1330a16dfa79dd196",
+      "tests": [
+        {
+          "command": "npm test (form-error focused)",
+          "status": "PASS",
+          "evidence": "2/2"
+        },
+        {
+          "command": "npm test",
+          "status": "PASS",
+          "evidence": "256"
+        },
+        {
+          "command": "npm run typecheck",
+          "status": "PASS",
+          "evidence": "tsc clean"
+        }
+      ],
+      "review": {
+        "status": "PASS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-aeb814a0-0689-5ed3-ab83-e5e63eaf8d34",
+        "reviewed_sha": "d630a463af0c7688f303b9e1330a16dfa79dd196",
+        "findings": [],
+        "evidence": "PASS form-error alerts + schedule announce"
+      },
+      "next_action": "C028 throw catch"
+    },
+    {
+      "id": "C028",
+      "task_id": "P1-01",
+      "implementation_sha": "23af257a68b5b6d66c33223746f1ffa188088955",
+      "tests": [
+        {
+          "command": "npm test -- SellIntentPage.error.test.tsx",
+          "status": "PASS",
+          "evidence": "1/1"
+        },
+        {
+          "command": "npm test",
+          "status": "PASS",
+          "evidence": "257"
+        }
+      ],
+      "review": {
+        "status": "PASS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-74d130ab-4dd8-515b-abc5-71715470ab3d",
+        "reviewed_sha": "23af257a68b5b6d66c33223746f1ffa188088955",
+        "findings": [],
+        "evidence": "PASS create/edit/buy throw catch"
+      },
+      "next_action": "C029 silent failures"
+    },
+    {
+      "id": "C029",
+      "task_id": "P1-01",
+      "implementation_sha": "664fb2ae62d72c6d80d1a698b4e2ff739207cfcc",
+      "tests": [
+        {
+          "command": "npm test -- ProfilePage.saveError.test.tsx",
+          "status": "PASS",
+          "evidence": "1/1"
+        },
+        {
+          "command": "npm test",
+          "status": "PASS",
+          "evidence": "258"
+        }
+      ],
+      "review": {
+        "status": "PASS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-c04953d0-5e42-5d77-81e7-78a5e64e3e1f",
+        "reviewed_sha": "664fb2ae62d72c6d80d1a698b4e2ff739207cfcc",
+        "findings": [],
+        "evidence": "PASS QuickOffer/DemandItem/Profile silent failures"
+      },
+      "next_action": "C030 settings/JA/touch"
+    },
+    {
+      "id": "C030",
+      "task_id": "P1-01",
+      "implementation_sha": "4e8a5636f87891333322965715406ed340f8236a",
+      "tests": [
+        {
+          "command": "npm test -- SettingsPage.test.tsx",
+          "status": "PASS",
+          "evidence": "3/3"
+        },
+        {
+          "command": "npm test",
+          "status": "PASS",
+          "evidence": "259"
+        },
+        {
+          "command": "npm run build",
+          "status": "PASS",
+          "evidence": "vite dist ok"
+        }
+      ],
+      "review": {
+        "status": "FINDINGS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-93c5e571-c31a-5fe4-8588-f1515b6c7415",
+        "reviewed_sha": "4e8a5636f87891333322965715406ed340f8236a",
+        "findings": [
+          {
+            "id": "F030-1",
+            "severity": "medium",
+            "file": "src/styles/danPremium.css",
+            "behavior": "blueprint dan-chip still 38px",
+            "fix": "raise to 44px"
+          },
+          {
+            "id": "F030-2",
+            "severity": "low",
+            "file": "src/pages/DealEvidencePage.tsx",
+            "behavior": "verification error mixed into challengeError",
+            "fix": "dedicated verificationError"
+          }
+        ],
+        "evidence": "FINDINGS F030-1/F030-2"
+      },
+      "next_action": "C031 fix F030 findings"
+    },
+    {
+      "id": "C031",
+      "task_id": "P1-01",
+      "implementation_sha": "a85f7e124b6a7b14656e195ec17234d87b4f75e3",
+      "tests": [
+        {
+          "command": "npm test",
+          "status": "PASS",
+          "evidence": "259"
+        },
+        {
+          "command": "npm run typecheck",
+          "status": "PASS",
+          "evidence": "tsc clean"
+        }
+      ],
+      "review": {
+        "status": "PASS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-ef5279da-a24c-534b-ab3d-d2818c598da5",
+        "reviewed_sha": "a85f7e124b6a7b14656e195ec17234d87b4f75e3",
+        "findings": [],
+        "evidence": "PASS F030-1/F030-2 fixed; cumulative C030+C031"
+      },
+      "next_action": "Optional TradeComplete/Activity load errors; CI suite=full still owner-gated; keep Draft PR #37"
+    },
+    {
+      "id": "C032",
+      "task_id": "P1-01",
+      "implementation_sha": "ff818d76294560998d659d5a845038f529397a69",
+      "tests": [
+        {
+          "command": "npm test -- ActivityPage.empty.test.tsx",
+          "status": "PASS",
+          "evidence": "1/1"
+        },
+        {
+          "command": "npm test",
+          "status": "PASS",
+          "evidence": "259"
+        },
+        {
+          "command": "full CI suite=full",
+          "status": "BLOCKED",
+          "evidence": "CI_DISPATCH_BLOCKED HTTP 403"
+        }
+      ],
+      "review": {
+        "status": "PASS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-24d3ae6c-3cd8-5661-a78a-c1bfc35332e3",
+        "reviewed_sha": "ff818d76294560998d659d5a845038f529397a69",
+        "findings": [],
+        "evidence": "PASS TradeComplete/Activity load failure surfaces"
+      },
+      "next_action": "Owner: Actions suite=full on tip; remaining work external gates only unless new gaps found"
     }
   ],
   "blockers": [
@@ -931,38 +1129,43 @@
       "scope": "github-actions-dispatch",
       "reason": "workflow_dispatch suite=full returns HTTP 403 for automation integration",
       "owner_action": "Grant workflow_dispatch to CI token or manually run suite=full on tip",
-      "attempted_safe_evidence": "Local visual 25 PASS + unit 254 on c51bde9",
+      "attempted_safe_evidence": "Local unit 259 PASS @ ff818d7; prior visual 25 PASS @ c51bde9",
       "risk": "No remote supabase/two-user/visual Actions evidence on tip",
-      "safe_remaining_work": "Local unit/visual continue; no unlock"
+      "safe_remaining_work": "None requiring agent without Actions permission; optional local visual re-run"
     }
   ],
-  "next_action": "Owner: grant Actions dispatch or run suite=full; remaining agent work only if new gaps found. Residual: scan remaining form-error without role=alert; keep JP writes locked.",
-  "last_report": "Owner-away one-shot: C024–C026 PASS @ c51bde9. Local visual 25 PASS. Full CI CI_DISPATCH_BLOCKED. Draft PR #37. CODE_COMPLETE_WITH_EXTERNAL_GATES.",
+  "next_action": "Owner: grant Actions dispatch or manually run suite=full on ff818d7; agent resume only for new gaps. Keep JP writes locked. Draft PR #37.",
+  "last_report": "C027–C032 PASS @ ff818d7 (259 unit). Full CI CI_DISPATCH_BLOCKED. Draft PR #37. CODE_COMPLETE_WITH_EXTERNAL_GATES.",
   "screen_audit": {
-    "updated": "2026-10-10T15:40:49Z",
+    "updated": "2026-10-10T16:05:34Z",
     "method": "code + computerUse + local Playwright visual @390/desktop",
     "screens": {
       "home": "IMPROVED_C019",
       "feed": "IMPROVED_C026",
-      "create": "IMPROVED_C020",
+      "create": "IMPROVED_C027_C030",
       "demand_detail": "IMPROVED_C023",
       "trade_chain": "IMPROVED_C024",
       "chat": "PRIOR_C013",
-      "activity": "IMPROVED_C019",
+      "activity": "IMPROVED_C032",
       "my": "IMPROVED_C019_C021",
-      "profile": "IMPROVED_C022",
-      "settings": "IMPROVED_C019",
+      "profile": "IMPROVED_C029",
+      "settings": "IMPROVED_C030",
       "login": "IMPROVED_C020_C022",
       "consent": "IMPROVED_C022",
       "report_block": "PRIOR_C008",
       "not_found": "IMPROVED_C021",
       "network": "IMPROVED_C021",
       "offer_detail": "IMPROVED_C024",
-      "evidence": "IMPROVED_C025",
-      "location_jp": "IMPROVED_C026"
+      "evidence": "IMPROVED_C030_C031",
+      "location_jp": "IMPROVED_C026",
+      "ownership": "IMPROVED_C027",
+      "sell_intent": "IMPROVED_C027_C028",
+      "demand_item": "IMPROVED_C029",
+      "buy_create": "IMPROVED_C030",
+      "trade_complete": "IMPROVED_C032"
     },
     "open_gaps": [
-      "GitHub Actions suite=full CI_DISPATCH_BLOCKED (403)",
+      "GitHub Actions suite=full CI_DISPATCH_BLOCKED (403) on ff818d7",
       "Local Supabase/pgTAP/two-user E2E (B-004)",
       "Real iOS/TestFlight (B-002)",
       "Staging DB apply (B-001)",
@@ -1030,12 +1233,12 @@
   "last_full_ci_sha": null,
   "ci_dispatch": {
     "status": "CI_DISPATCH_BLOCKED",
-    "attempted_at": "2026-10-10T15:40:49Z",
+    "attempted_at": "2026-10-10T16:05:34Z",
     "suite": "full",
-    "sha": "4f310689fb2c4df99fb724bed2019a189dd3f31a",
+    "sha": "ff818d76294560998d659d5a845038f529397a69",
     "error": "HTTP 403 Resource not accessible by integration on workflow_dispatch",
-    "owner_action": "Grant Actions workflow_dispatch permission to automation token or run suite=full manually",
-    "local_substitute": "Playwright visual 390px+desktop 25 PASS / 9 skipped @ c51bde9; unit 254 PASS"
+    "owner_action": "Grant Actions workflow_dispatch permission to automation token or run suite=full manually on tip ff818d7",
+    "local_substitute": "unit 259 PASS @ ff818d7; prior local visual 25 PASS @ c51bde9 (CSS/touch since — re-run visual at owner CI)"
   },
   "code_status": "CODE_COMPLETE_WITH_EXTERNAL_GATES"
 }
