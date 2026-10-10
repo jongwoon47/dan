@@ -1030,7 +1030,7 @@ function CreateDemandForm() {
                               onClick={() => {
                                 setGeoError(null);
                                 setGeoBusy(true);
-                                void requestCurrentPlace(servicePlaceNote).then(
+                                void requestCurrentPlace(servicePlaceNote, locale).then(
                                   (result) => {
                                     setGeoBusy(false);
                                     if (!result.ok) {

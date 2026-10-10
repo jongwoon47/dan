@@ -104,6 +104,23 @@ describe("geoDistance", () => {
     ).toBe("평택시");
   });
 
+  it("uses locale-only nearby fallback when geo lacks region labels", () => {
+    expect(
+      formatPublicPlaceLine(
+        { publicLabel: "secret", geo: { lat: 35.68, lng: 139.76 } },
+        null,
+        { locale: "ja" },
+      ),
+    ).toBe("近く");
+    expect(
+      formatPublicPlaceLine(
+        { publicLabel: "secret", geo: { lat: 37.56, lng: 126.97 } },
+        null,
+        { locale: "ko" },
+      ),
+    ).toBe("내 주변");
+  });
+
   it("keeps text-entered labels", () => {
     expect(
       formatPublicPlaceLine({ publicLabel: "평택역 근처" }),

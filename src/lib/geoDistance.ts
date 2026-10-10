@@ -92,7 +92,8 @@ export function formatPublicPlaceLine(
     return formatApproxDistance(meters, opts?.locale);
   }
   if (place.geo) {
-    return (place.region2 || place.region1 || "내 주변").trim();
+    const fallback = opts?.locale === "ja" ? "近く" : "내 주변";
+    return (place.region2 || place.region1 || fallback).trim();
   }
   return place.publicLabel.trim();
 }
