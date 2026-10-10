@@ -4,8 +4,8 @@
   "branch": "automation/dan-autonomous-review-loop-20261010",
   "baseline_branch": "cursor/dan-commercial-complete-e0e7",
   "baseline_sha": "47e456d8d5651dde48d9d8ced056911afb593e5d",
-  "running_head": "20e165ef354e65a482fdd93cdd7c1bdfcd8c876f",
-  "last_updated": "2026-10-10T03:52:43.339Z",
+  "running_head": null,
+  "last_updated": "2026-10-10T03:58:00Z",
   "phase": "IMPLEMENTING",
   "autonomy": {
     "mode": "cursor-agent-with-readonly-subagent",
@@ -42,7 +42,7 @@
       "title": "Recheck latest HEAD CI and local validations; repair genuine failures",
       "status": "DONE",
       "evidence": [
-        "C001 PASS bc-e1432805… on 5b9996c; C002 PASS bc-fcc68965… on df2c325.",
+        "C001 PASS bc-e1432805\u2026 on 5b9996c; C002 PASS bc-fcc68965\u2026 on df2c325.",
         "Draft PR #37."
       ]
     },
@@ -52,25 +52,28 @@
       "title": "Audit RLS, SECURITY DEFINER, market/write gates, consent, location privacy",
       "status": "IN_PROGRESS",
       "evidence": [
-        "Added 20261010040000_security_privacy_hardening.sql: fulfillment geo scrub trigger; upsert_quick_offer assert_tradable_demand; revoke market trigger helpers.",
-        "Added supabase/tests/security_privacy_hardening.sql (geo scrub, DEFINER grants, consent anon deny, JP quick-offer gate).",
-        "Staging apply docs tip extended through 20261010040000 (still APPROVAL_REQUIRED).",
-        "Local pgtap BLOCKED (B-004); CI supabase job must prove migration."
+        "Migration 20261010040000 + security_privacy_hardening.sql tests.",
+        "C003 PASS bc-a532a011\u2026 on 77ee7ab (static + unit; pgtap BLOCKED locally).",
+        "CI was not firing: workflow only matched main/feature/dan-**; expanded to cursor/dan-** and automation/** so PR #37 runs verify+supabase+visual."
       ]
     },
     {
       "id": "P0-03",
       "priority": "P0",
       "title": "Validate all KR trade types with two users including safety, payment, error paths",
-      "status": "TODO",
-      "evidence": []
+      "status": "BLOCKED",
+      "evidence": [
+        "Local two-user e2e blocked by B-004; awaiting CI supabase job after workflow trigger fix."
+      ]
     },
     {
       "id": "P0-04",
       "priority": "P0",
       "title": "Reconcile remote staging migration drift read-only, propose owner-gated apply",
-      "status": "TODO",
-      "evidence": []
+      "status": "BLOCKED",
+      "evidence": [
+        "Read-only docs tip updated through 20261010040000; live staging probe still B-001 (no credentials)."
+      ]
     },
     {
       "id": "P1-01",
@@ -148,6 +151,42 @@
         "evidence": "PASS F-001 Handoff deps"
       },
       "next_action": "P0-02"
+    },
+    {
+      "id": "C003",
+      "task_id": "P0-02",
+      "implementation_sha": "77ee7ab6728847ae260ab098052a7cf27cd62159",
+      "tests": [
+        {
+          "command": "npm run typecheck",
+          "status": "PASS",
+          "evidence": "reviewer tsc exit 0"
+        },
+        {
+          "command": "npm test",
+          "status": "PASS",
+          "evidence": "235 passed"
+        },
+        {
+          "command": "node scripts/validate-dan-loop-state.mjs",
+          "status": "PASS",
+          "evidence": "invariants PASS"
+        },
+        {
+          "command": "supabase test db",
+          "status": "BLOCKED",
+          "evidence": "B-004"
+        }
+      ],
+      "review": {
+        "status": "PASS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-a532a011-5b64-5e57-83c1-0d5baad4de08",
+        "reviewed_sha": "77ee7ab6728847ae260ab098052a7cf27cd62159",
+        "findings": [],
+        "evidence": "PASS AC1-AC6 static; pgtap deferred to CI"
+      },
+      "next_action": "Expand CI base-branch filters; confirm CI supabase proves new migration."
     }
   ],
   "blockers": [
@@ -176,10 +215,10 @@
       "id": "B-004",
       "status": "BLOCKED",
       "scope": "local-supabase",
-      "reason": "Realtime→Postgres TCP timeout during supabase start",
+      "reason": "Realtime\u2192Postgres TCP timeout during supabase start",
       "owner_action": "CI supabase job is authority until host networking fixed"
     }
   ],
-  "next_action": "Commit P0-02 migration+tests; invoke C003 independent review; await CI supabase job for pgtap proof.",
-  "last_report": "P0-02 implementation ready: geo scrub + quick-offer market gate + DEFINER grant tests. Local pgtap BLOCKED."
+  "next_action": "Push CI workflow filter fix; wait for PR #37 CI; then C004 review if green.",
+  "last_report": "C003 PASS on 77ee7ab. CI never ran because PR base cursor/dan-* was excluded from workflow; patching ci.yml."
 }
