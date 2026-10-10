@@ -2,42 +2,32 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { ko } from "@/copy/ko";
+import { useDanCopy } from "@/copy/useDanCopy";
+import { useDanLocale } from "@/i18n/locale";
 import { getDataMode } from "@/data/mode";
 import { useDan } from "@/domain/danContext";
 import { dedupeConnectedMatches } from "@/domain/matchLifecycle";
 import type { ChatMessage, Match } from "@/domain/types";
+import { formatRelativeTime } from "@/lib/format";
 import "./pages.css";
-
-function formatRelativeChatTime(iso: string, nowMs = Date.now()): string {
-  const t = new Date(iso).getTime();
-  if (!Number.isFinite(t)) return "";
-  const diff = Math.max(0, nowMs - t);
-  const min = Math.floor(diff / 60000);
-  if (min < 1) return "방금";
-  if (min < 60) return `${min}분 전`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr}시간 전`;
-  const day = Math.floor(hr / 24);
-  if (day === 1) return "어제";
-  if (day < 7) return `${day}일 전`;
-  return new Date(iso).toLocaleDateString("ko-KR", {
-    month: "short",
-    day: "numeric",
-  });
-}
 
 function initialOf(name: string) {
   return (name.trim().slice(0, 1) || "?").toUpperCase();
 }
 
-function chatStageLabel(match: Match): string {
-  if (match.status === "CLOSED") return "거래 종료";
-  if (match.status === "COMPLETED") return "거래 완료";
-  if (match.dealStage === "HANDOFF_READY" || match.paymentStatus === "PAID") return "인계 확인";
-  if (match.dealStage === "PAYMENT_PENDING" || match.dealStage === "DEAL_LOCKED") return "결제";
-  if (match.dealStage === "EVIDENCE_READY" || match.dealStage === "DEAL_REVIEW") return "조건 확인";
-  return "채팅 중";
+function chatStageLabel(match: Match, copy: ReturnType<typeof useDanCopy>): string {
+  if (match.status === "CLOSED") return copy.tradeClosedTitle;
+  if (match.status === "COMPLETED") return copy.matchStatusCompleted;
+  if (match.dealStage === "HANDOFF_READY" || match.paymentStatus === "PAID") {
+    return copy.matchStageHandoff;
+  }
+  if (match.dealStage === "PAYMENT_PENDING" || match.dealStage === "DEAL_LOCKED") {
+    return copy.matchStagePaymentNeeded;
+  }
+  if (match.dealStage === "EVIDENCE_READY" || match.dealStage === "DEAL_REVIEW") {
+    return copy.matchStageDealReview;
+  }
+  return copy.matchStageChatting;
 }
 
 type Preview = {
@@ -50,6 +40,8 @@ type Preview = {
 };
 
 export function ConversationsPage() {
+  const copy = useDanCopy();
+  const locale = useDanLocale();
   const {
     isLoggedIn,
     login,
@@ -95,9 +87,9 @@ export function ConversationsPage() {
           return {
             match,
             peerId,
-            peerName: profile?.displayName?.trim() || "상대",
-            demandTitle: demand?.title?.trim() || ko.chatTitle,
-            lastMessage: last?.body?.trim() || ko.chatsStartHint,
+            peerName: profile?.displayName?.trim() || copy.chatPeerFallback,
+            demandTitle: demand?.title?.trim() || copy.chatTitle,
+            lastMessage: last?.body?.trim() || copy.chatsStartHint,
             lastAt: last?.createdAt ?? match.createdAt,
           } satisfies Preview;
         }),
@@ -122,18 +114,20 @@ export function ConversationsPage() {
     isLoggedIn,
     listMessages,
     connected,
+    copy,
+    locale,
   ]);
 
   if (!isLoggedIn) {
     return (
       <EmptyState
-        title={ko.chatsTitle}
-        body={ko.needLoginBody}
+        title={copy.chatsTitle}
+        body={copy.needLoginBody}
         action={
           dataMode === "supabase" ? (
-            <Button to="/login">{ko.login}</Button>
+            <Button to="/login">{copy.login}</Button>
           ) : (
-            <Button onClick={() => login()}>{ko.login}</Button>
+            <Button onClick={() => login()}>{copy.login}</Button>
           )
         }
       />
@@ -143,18 +137,18 @@ export function ConversationsPage() {
   return (
     <div className="page-stack page-narrow chats-page">
       <header>
-        <h1 className="page-title">{ko.chatsTitle}</h1>
+        <h1 className="page-title">{copy.chatsTitle}</h1>
       </header>
 
       {loading ? (
-        <p className="muted">{ko.loading}</p>
+        <p className="muted">{copy.loading}</p>
       ) : previews.length === 0 ? (
         <EmptyState
-          title={ko.chatsEmpty}
-          body={ko.chatsEmptyBody}
+          title={copy.chatsEmpty}
+          body={copy.chatsEmptyBody}
           action={
             <Button to="/feed" variant="secondary">
-              {ko.navFeed}
+              {copy.navFeed}
             </Button>
           }
         />
@@ -174,13 +168,13 @@ export function ConversationsPage() {
                   <strong className="chat-list__name">{row.peerName}</strong>
                   {row.lastAt ? (
                     <time dateTime={row.lastAt} className="chat-list__time">
-                      {formatRelativeChatTime(row.lastAt)}
+                      {formatRelativeTime(row.lastAt, locale)}
                     </time>
                   ) : null}
                 </span>
                 <span className="chat-list__demand">
                   <span className="chat-list__title">{row.demandTitle}</span>
-                  <em className="chat-list__stage">{chatStageLabel(row.match)}</em>
+                  <em className="chat-list__stage">{chatStageLabel(row.match, copy)}</em>
                 </span>
                 <span className="chat-list__preview">{row.lastMessage}</span>
               </span>

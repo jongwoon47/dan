@@ -5,25 +5,65 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Field, TextInput } from "@/components/ui/Input";
 import { ProductVisual } from "@/components/ProductVisual";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
+import { fillCopyTemplate } from "@/copy/dealChain";
+import { localizeStoredComponent } from "@/copy/evidenceComponents";
+import { useDanCopy, type LocalizedCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
 import type { DealEvidence, DealEvidenceChallenge, Product } from "@/domain/types";
-import { formatWon } from "@/lib/format";
+import { useDanLocale } from "@/i18n/locale";
+import { formatStoredMoney } from "@/lib/format";
 import "./pages.css";
 
-function componentOptionsFor(product: Product): string[] {
-  if (product.category === "fashion" || product.category === "shoes" || product.category === "watches_accessories") {
-    return ["제품", "박스/더스트백", "택", "보증서/영수증", "추가 구성품"];
+type ComponentOption = { store: string; label: string };
+
+function componentOptionsFor(product: Product, copy: LocalizedCopy): ComponentOption[] {
+  if (
+    product.category === "fashion" ||
+    product.category === "shoes" ||
+    product.category === "watches_accessories"
+  ) {
+    return [
+      { store: "제품", label: copy.evidenceCompProduct },
+      { store: "박스/더스트백", label: copy.evidenceCompBoxDust },
+      { store: "택", label: copy.evidenceCompTag },
+      { store: "보증서/영수증", label: copy.evidenceCompWarranty },
+      { store: "추가 구성품", label: copy.evidenceCompExtra },
+    ];
   }
   if (product.category === "furniture") {
-    return ["제품/본체", "조립 부품", "설명서", "보증서/영수증", "추가 부품"];
+    return [
+      { store: "제품/본체", label: copy.evidenceCompBody },
+      { store: "조립 부품", label: copy.evidenceCompParts },
+      { store: "설명서", label: copy.evidenceCompManual },
+      { store: "보증서/영수증", label: copy.evidenceCompWarranty },
+      { store: "추가 부품", label: copy.evidenceCompExtraParts },
+    ];
   }
   if (product.category === "books_media") {
-    return ["본품", "케이스", "부록", "포토카드/특전", "영수증"];
+    return [
+      { store: "본품", label: copy.evidenceCompMain },
+      { store: "케이스", label: copy.evidenceCompCase },
+      { store: "부록", label: copy.evidenceCompBonus },
+      { store: "포토카드/특전", label: copy.evidenceCompPhotocard },
+      { store: "영수증", label: copy.evidenceCompReceipt },
+    ];
   }
   if (product.category === "hobby_collectible") {
-    return ["본품", "원박스", "설명서", "한정 구성품", "영수증"];
+    return [
+      { store: "본품", label: copy.evidenceCompMain },
+      { store: "원박스", label: copy.evidenceCompOrigBox },
+      { store: "설명서", label: copy.evidenceCompManual },
+      { store: "한정 구성품", label: copy.evidenceCompLimited },
+      { store: "영수증", label: copy.evidenceCompReceipt },
+    ];
   }
-  return ["제품/본체", "박스", "충전기/어댑터", "케이블", "보증서/영수증"];
+  return [
+    { store: "제품/본체", label: copy.evidenceCompBody },
+    { store: "박스", label: copy.evidenceCompBox },
+    { store: "충전기/어댑터", label: copy.evidenceCompCharger },
+    { store: "케이블", label: copy.evidenceCompCable },
+    { store: "보증서/영수증", label: copy.evidenceCompWarranty },
+  ];
 }
 
 function fileToDataUrl(file: File): Promise<string> {
@@ -38,6 +78,9 @@ function fileToDataUrl(file: File): Promise<string> {
 export function DealEvidencePage() {
   const { matchId = "" } = useParams();
   const navigate = useNavigate();
+  const locale = useDanLocale();
+  const copy = useDanCopy();
+  const numberLocale = locale === "ja" ? "ja-JP" : "ko-KR";
   const {
     myMatches,
     state,
@@ -76,7 +119,9 @@ export function DealEvidencePage() {
   const [photoError, setPhotoError] = useState("");
   const [submitError, setSubmitError] = useState("");
 
-  useDeepHeader({ title: isSeller ? "상품 정보 등록" : "상품 정보 확인" });
+  useDeepHeader({
+    title: isSeller ? copy.evidenceTitleSeller : copy.evidenceTitleBuyer,
+  });
 
   useEffect(() => {
     if (!isSeller) {
@@ -104,18 +149,32 @@ export function DealEvidencePage() {
     if (!matchId || !isSeller || match?.status !== "CONNECTED") return;
     let cancelled = false;
     setChallengeError("");
-    void issueDealEvidenceChallenge(matchId).then((row) => {
-      if (cancelled) return;
-      if (!row) {
-        setChallengeError("촬영 코드를 발급하지 못했어요.");
-        return;
+    setChallenge(null);
+
+    const issue = async () => {
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        if (cancelled) return;
+        const row = await issueDealEvidenceChallenge(matchId);
+        if (cancelled) return;
+        if (row) {
+          setChallenge(row);
+          setChallengeError("");
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
       }
-      setChallenge(row);
-    });
+      if (!cancelled) setChallengeError(copy.evidenceChallengeFail);
+    };
+
+    void issue();
     return () => {
       cancelled = true;
     };
-  }, [issueDealEvidenceChallenge, isSeller, match?.status, matchId]);
+    // Intentionally omit issueDealEvidenceChallenge identity — the store
+    // recreates context methods on every refresh and would cancel in-flight
+    // challenge RPCs before the code lands in page state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable issue by matchId/status
+  }, [copy.evidenceChallengeFail, isSeller, match?.status, matchId]);
 
   useEffect(() => {
     if (!matchId) return;
@@ -158,22 +217,42 @@ export function DealEvidencePage() {
   if (isSeller && match?.status === "BUYER_INTERESTED") {
     return (
       <EmptyState
-        title="먼저 구매자와 연결해 주세요"
-        body="제안이 선택됐다면 먼저 연결해 대화하세요. 실제 거래를 이어갈 때 상품 정보를 등록합니다."
-        action={<Button to="/my">판매 제안으로 돌아가기</Button>}
+        title={copy.evidenceConnectFirstTitle}
+        body={copy.evidenceConnectFirstBody}
+        action={<Button to="/my">{copy.evidenceBackToOffers}</Button>}
       />
     );
   }
 
   const showUsageCount = product?.category === "camera";
-  const componentOptions = product ? componentOptionsFor(product) : [];
+  const componentOptions = product ? componentOptionsFor(product, copy) : [];
 
-  if (!match || !demand || !product || !sell || !currentUser) {
+  if (!currentUser) {
     return (
       <EmptyState
-        title="거래 정보를 찾을 수 없어요"
-        body="거래 목록에서 다시 들어와 주세요."
-        action={<Button to="/my" variant="secondary">My DAN</Button>}
+        title={copy.dealMissingTitle}
+        body={copy.evidenceMissingBody}
+        action={
+          <Button to="/my" variant="secondary">
+            My DAN
+          </Button>
+        }
+      />
+    );
+  }
+
+  if (!match || !demand || !product || !sell) {
+    // Direct /deal/:id/evidence navigations can race store hydration after
+    // connect — send the seller back through match chat to rehydrate.
+    return (
+      <EmptyState
+        title={copy.dealMissingTitle}
+        body={copy.evidenceMissingBody}
+        action={
+          <Button to={matchId ? `/match/${matchId}` : "/my"} variant="secondary">
+            {matchId ? copy.dealBackToChat : "My DAN"}
+          </Button>
+        }
       />
     );
   }
@@ -182,23 +261,23 @@ export function DealEvidencePage() {
     setPhotoError("");
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setPhotoError("이미지 파일만 올릴 수 있어요.");
+      setPhotoError(copy.dealImageFileOnly);
       return;
     }
     if (file.size > 700_000) {
-      setPhotoError("700KB 이하 사진을 사용해 주세요.");
+      setPhotoError(copy.dealPhotoTooLarge);
       return;
     }
     try {
       setPossessionPhotoUrl(await fileToDataUrl(file));
     } catch {
-      setPhotoError("사진을 읽지 못했어요.");
+      setPhotoError(copy.dealPhotoReadFailed);
     }
   }
 
-  function toggleComponent(label: string) {
+  function toggleComponent(store: string) {
     setComponents((prev) =>
-      prev.includes(label) ? prev.filter((x) => x !== label) : [...prev, label],
+      prev.includes(store) ? prev.filter((x) => x !== store) : [...prev, store],
     );
   }
 
@@ -209,62 +288,78 @@ export function DealEvidencePage() {
     if (!activeMatch || !activeProduct) return;
     setSubmitError("");
     if (!challenge) return;
-    const row = await upsertDealEvidence({
-      matchId,
-      challengeCode: challenge.challengeCode,
-      possessionPhotoUrl: possessionPhotoUrl || undefined,
-      serialLast4: serialLast4.trim() || undefined,
-      usageCount:
-        activeProduct.category === "camera" && usageCount
-          ? Number(usageCount)
-          : undefined,
-      purchaseDate: purchaseDate || undefined,
-      warrantyUntil: warrantyUntil || undefined,
-      components,
-      cosmeticNotes,
-      knownIssues,
-      repairHistory,
-      waterDamageStatement,
-      evidenceMeta: { source: "seller_submitted", productCategory: activeProduct.category },
-    });
-    if (!row) {
-      setSubmitError("상품 정보를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
-      return;
+    try {
+      const row = await upsertDealEvidence({
+        matchId,
+        challengeCode: challenge.challengeCode,
+        possessionPhotoUrl: possessionPhotoUrl || undefined,
+        serialLast4: serialLast4.trim() || undefined,
+        usageCount:
+          activeProduct.category === "camera" && usageCount
+            ? Number(usageCount)
+            : undefined,
+        purchaseDate: purchaseDate || undefined,
+        warrantyUntil: warrantyUntil || undefined,
+        components,
+        cosmeticNotes,
+        knownIssues,
+        repairHistory,
+        waterDamageStatement,
+        evidenceMeta: {
+          source: "seller_submitted",
+          productCategory: activeProduct.category,
+        },
+      });
+      if (!row) {
+        setSubmitError(copy.evidenceSaveFail);
+        return;
+      }
+      navigate(`/deal/${activeMatch.id}/snapshot`);
+    } catch {
+      setSubmitError(copy.evidenceSaveFail);
     }
-    navigate(`/deal/${activeMatch.id}/snapshot`);
   }
+
+  const money = formatStoredMoney(
+    sell.minimumPrice,
+    demand.currencyCode ?? "KRW",
+    locale,
+  );
 
   return (
     <div className="page-stack page-narrow deal-page">
       <section className="deal-product-card">
         <ProductVisual product={product} size="sm" />
         <div>
-          <p className="eyebrow">상품 정보</p>
+          <p className="eyebrow">{copy.evidenceEyebrow}</p>
           <h1 className="page-title">{product.name}</h1>
-          <strong className="deal-price">{formatWon(sell.minimumPrice)}</strong>
+          <strong className="deal-price">{money}</strong>
         </div>
       </section>
 
       <section className="trust-explainer">
-        <strong>판매자가 등록한 상품 정보예요</strong>
-        <p>판매자가 직접 등록한 정보예요. DAN은 제출 내용을 기록하지만 상품 상태나 정품 여부를 대신 보증하지 않아요.</p>
+        <strong>{copy.evidenceTrustTitle}</strong>
+        <p>{copy.evidenceTrustBody}</p>
       </section>
 
       {!isSeller && existing ? (
         <section className="deal-evidence-summary">
-          <EvidenceSummary evidence={existing} product={product} />
+          <EvidenceSummary
+            evidence={existing}
+            product={product}
+            copy={copy}
+            numberLocale={numberLocale}
+          />
           <Button to={`/deal/${match.id}/snapshot`} fullWidth size="lg">
-            거래 조건 확인
+            {copy.evidenceReviewSnapshot}
           </Button>
         </section>
       ) : null}
 
       {isSeller && sellerVerificationLoaded && !sellerVerifiedForDeal ? (
         <section className="verification-gate">
-          <strong>실거래 전 판매자 검증이 필요해요</strong>
-          <p>
-            제안은 먼저 보낼 수 있지만 실제 거래를 진행하려면 휴대폰·본인·정산계좌 확인이 필요해요.
-          </p>
+          <strong>{copy.evidenceVerifyTitle}</strong>
+          <p>{copy.evidenceVerifyBody}</p>
         </section>
       ) : null}
 
@@ -272,21 +367,18 @@ export function DealEvidencePage() {
         <section className="section-stack deal-form">
           <div className="evidence-challenge-block">
             <div className="evidence-challenge-copy">
-              <p className="field-inline-label">현재 보유 사진 · 필수</p>
-              <p>
-                아래 코드를 종이나 다른 화면에 띄워 실제 물품과 함께 촬영해 주세요.
-                DAN이 진품이나 상태를 보증하는 것은 아니지만, 오래된 도용 사진을 쓰기 어렵게 합니다.
-              </p>
+              <p className="field-inline-label">{copy.evidencePhotoRequired}</p>
+              <p>{copy.evidenceChallengeBody}</p>
             </div>
             {challenge ? (
               <div className="evidence-challenge-code">
-                <span>촬영 코드</span>
+                <span>{copy.evidenceChallengeCode}</span>
                 <strong>{challenge.challengeCode}</strong>
-                <small>15분 동안 유효</small>
+                <small>{copy.evidenceChallengeTtl}</small>
               </div>
             ) : (
               <div className="evidence-challenge-code evidence-challenge-code--loading">
-                <span>{challengeError || "촬영 코드 발급 중…"}</span>
+                <span>{challengeError || copy.evidenceChallengeLoading}</span>
                 {challengeError ? (
                   <Button
                     type="button"
@@ -296,26 +388,28 @@ export function DealEvidencePage() {
                       setChallengeError("");
                       void issueDealEvidenceChallenge(matchId).then((row) => {
                         if (!row) {
-                          setChallengeError("촬영 코드를 발급하지 못했어요.");
+                          setChallengeError(copy.evidenceChallengeFail);
                           return;
                         }
                         setChallenge(row);
                       });
                     }}
                   >
-                    새 코드 받기
+                    {copy.evidenceNewCode}
                   </Button>
                 ) : null}
               </div>
             )}
             <label className="evidence-upload">
               {possessionPhotoUrl ? (
-                <img src={possessionPhotoUrl} alt="현재 보유 물품" />
+                <img src={possessionPhotoUrl} alt={copy.evidencePhotoAlt} />
               ) : (
                 <span>
                   {challenge
-                    ? `물품과 촬영 코드 ${challenge.challengeCode}가 함께 보이게 찍어주세요`
-                    : "촬영 코드가 발급되면 사진을 추가할 수 있어요"}
+                    ? fillCopyTemplate(copy.evidencePhotoWithCode, {
+                        code: challenge.challengeCode,
+                      })
+                    : copy.evidencePhotoWaitCode}
                 </span>
               )}
               <input
@@ -330,75 +424,112 @@ export function DealEvidencePage() {
 
           <div className="evidence-form-divider">
             <span>2</span>
-            <div><strong>제품 정보</strong><small>사용량·식별번호·구매 및 보증 정보가 있다면 함께 남겨요.</small></div>
+            <div>
+              <strong>{copy.evidenceSectionProduct}</strong>
+              <small>{copy.evidenceSectionProductHint}</small>
+            </div>
           </div>
 
           <div className="deal-grid-2">
             {showUsageCount ? (
-              <Field label="컷수">
+              <Field label={copy.dealShutterCount}>
                 <TextInput
                   inputMode="numeric"
                   value={usageCount}
                   onChange={(e) => setUsageCount(e.target.value.replace(/\D/g, ""))}
-                  placeholder="예: 2417"
+                  placeholder={copy.evidenceUsagePh}
                 />
               </Field>
             ) : null}
-            <Field label="시리얼 / 식별번호 끝자리 (선택)">
+            <Field label={copy.evidenceSerialLabel}>
               <TextInput
                 value={serialLast4}
                 onChange={(e) => setSerialLast4(e.target.value.slice(0, 8))}
-                placeholder="예: 3812"
+                placeholder={copy.evidenceSerialPh}
               />
             </Field>
           </div>
 
           <div className="deal-grid-2">
-            <Field label="구매일">
-              <input className="dan-input" type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} />
+            <Field label={copy.evidencePurchaseDate}>
+              <input
+                className="dan-input"
+                type="date"
+                value={purchaseDate}
+                onChange={(e) => setPurchaseDate(e.target.value)}
+              />
             </Field>
-            <Field label="보증 종료">
-              <input className="dan-input" type="date" value={warrantyUntil} onChange={(e) => setWarrantyUntil(e.target.value)} />
+            <Field label={copy.evidenceWarrantyEnd}>
+              <input
+                className="dan-input"
+                type="date"
+                value={warrantyUntil}
+                onChange={(e) => setWarrantyUntil(e.target.value)}
+              />
             </Field>
           </div>
 
           <div className="evidence-form-divider">
             <span>3</span>
-            <div><strong>구성품 · 상태 · 추가 정보</strong><small>거래 조건에 그대로 기록될 내용이에요.</small></div>
+            <div>
+              <strong>{copy.evidenceSectionCondition}</strong>
+              <small>{copy.evidenceSectionConditionHint}</small>
+            </div>
           </div>
 
           <div>
-            <p className="field-inline-label">구성품</p>
+            <p className="field-inline-label">{copy.dealComponents}</p>
             <div className="evidence-chip-row">
               {componentOptions.map((item) => (
                 <button
-                  key={item}
+                  key={item.store}
                   type="button"
-                  className={components.includes(item) ? "evidence-chip is-selected" : "evidence-chip"}
-                  onClick={() => toggleComponent(item)}
+                  className={
+                    components.includes(item.store) ? "evidence-chip is-selected" : "evidence-chip"
+                  }
+                  onClick={() => toggleComponent(item.store)}
                 >
-                  {item}
+                  {item.label}
                 </button>
               ))}
             </div>
           </div>
 
-          <Field label="외관 상태">
-            <textarea className="dan-textarea dan-input" value={cosmeticNotes} onChange={(e) => setCosmeticNotes(e.target.value)} placeholder="예: 상단 미세스크래치 1곳" />
+          <Field label={copy.evidenceCosmetic}>
+            <textarea
+              className="dan-textarea dan-input"
+              value={cosmeticNotes}
+              onChange={(e) => setCosmeticNotes(e.target.value)}
+              placeholder={copy.evidenceCosmeticPh}
+            />
           </Field>
-          <Field label="알려진 기능 이상">
-            <textarea className="dan-textarea dan-input" value={knownIssues} onChange={(e) => setKnownIssues(e.target.value)} placeholder="없다면 ‘없음’이라고 적어주세요" />
+          <Field label={copy.evidenceKnownIssuesLabel}>
+            <textarea
+              className="dan-textarea dan-input"
+              value={knownIssues}
+              onChange={(e) => setKnownIssues(e.target.value)}
+              placeholder={copy.evidenceKnownIssuesPh}
+            />
           </Field>
-          <Field label="수리 이력">
-            <textarea className="dan-textarea dan-input" value={repairHistory} onChange={(e) => setRepairHistory(e.target.value)} placeholder="없음 / 수리 내용" />
+          <Field label={copy.evidenceRepair}>
+            <textarea
+              className="dan-textarea dan-input"
+              value={repairHistory}
+              onChange={(e) => setRepairHistory(e.target.value)}
+              placeholder={copy.evidenceRepairPh}
+            />
           </Field>
-          <Field label="침수 / 물손상 이력 (해당 시)">
-            <TextInput value={waterDamageStatement} onChange={(e) => setWaterDamageStatement(e.target.value)} placeholder="없음 / 있음 / 모름" />
+          <Field label={copy.evidenceWater}>
+            <TextInput
+              value={waterDamageStatement}
+              onChange={(e) => setWaterDamageStatement(e.target.value)}
+              placeholder={copy.evidenceWaterPh}
+            />
           </Field>
 
           {submitError ? <p className="form-error">{submitError}</p> : null}
           <Button fullWidth size="lg" disabled={!canSubmit || busy} onClick={() => void submit()}>
-            {busy ? "저장 중…" : "상품 정보 저장하기"}
+            {busy ? copy.saving : copy.evidenceSave}
           </Button>
         </section>
       ) : null}
@@ -409,16 +540,22 @@ export function DealEvidencePage() {
 function EvidenceSummary({
   evidence,
   product,
+  copy,
+  numberLocale,
 }: {
   evidence: DealEvidence;
   product: Product;
+  copy: LocalizedCopy;
+  numberLocale: string;
 }) {
   const usageValue =
     evidence.usageCount == null
       ? null
       : product.category === "camera"
-        ? `${evidence.usageCount.toLocaleString("ko-KR")}컷`
-        : evidence.usageCount.toLocaleString("ko-KR");
+        ? fillCopyTemplate(copy.dealShutterCountValue, {
+            n: evidence.usageCount.toLocaleString(numberLocale),
+          })
+        : evidence.usageCount.toLocaleString(numberLocale);
 
   return (
     <div className="deal-evidence-review">
@@ -426,20 +563,40 @@ function EvidenceSummary({
         <img
           className="deal-evidence-review__photo"
           src={evidence.possessionPhotoUrl}
-          alt="판매자가 제출한 현재 보유 물품"
+          alt={copy.evidenceSellerPhotoAlt}
         />
       ) : null}
       <dl className="deal-facts">
         {usageValue ? (
           <div>
-            <dt>{product.category === "camera" ? "컷수" : "사용량 / 횟수"}</dt>
+            <dt>
+              {product.category === "camera" ? copy.dealShutterCount : copy.dealUsageCount}
+            </dt>
             <dd>{usageValue}</dd>
           </div>
         ) : null}
-        <div><dt>식별번호</dt><dd>{evidence.serialLast4 ? `••••${evidence.serialLast4}` : "미제출"}</dd></div>
-        <div><dt>구성품</dt><dd>{evidence.components.join(", ") || "없음"}</dd></div>
-        <div><dt>외관</dt><dd>{evidence.cosmeticNotes || "미제출"}</dd></div>
-        <div><dt>알려진 이상</dt><dd>{evidence.knownIssues || "미제출"}</dd></div>
+        <div>
+          <dt>{copy.evidenceIdentLabel}</dt>
+          <dd>
+            {evidence.serialLast4 ? `••••${evidence.serialLast4}` : copy.dealNotSubmitted}
+          </dd>
+        </div>
+        <div>
+          <dt>{copy.dealComponents}</dt>
+          <dd>
+            {evidence.components.length
+              ? evidence.components.map((c) => localizeStoredComponent(c, copy)).join(", ")
+              : copy.dealNone}
+          </dd>
+        </div>
+        <div>
+          <dt>{copy.dealAppearance}</dt>
+          <dd>{evidence.cosmeticNotes || copy.dealNotSubmitted}</dd>
+        </div>
+        <div>
+          <dt>{copy.evidenceKnownShort}</dt>
+          <dd>{evidence.knownIssues || copy.dealNotSubmitted}</dd>
+        </div>
       </dl>
     </div>
   );

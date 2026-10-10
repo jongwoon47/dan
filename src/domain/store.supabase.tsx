@@ -66,7 +66,6 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
       if (generation !== refreshGenerationRef.current) return;
 
       setProducts(productRows);
-      setDemands(demandRows);
       setAggregates(aggRows);
 
       if (auth.user) {
@@ -111,6 +110,12 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         const ownMap = new Map<string, Ownership>();
         for (const o of [...owns, ...openOwns]) ownMap.set(o.id, o);
 
+        // Single demand write: never flash ACTIVE-only feed mid-refresh or
+        // MATCHED deal pages briefly lose their demand/sell rows.
+        const demandMap = new Map(demandRows.map((d) => [d.id, d]));
+        for (const d of myDemands) demandMap.set(d.id, d);
+        for (const d of matchedDemands) demandMap.set(d.id, d);
+
         setOwnerships([...ownMap.values()]);
         setSellIntents(() => {
           const map = new Map(sellRows.map((s) => [s.id, s]));
@@ -120,13 +125,9 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
         });
         setResponses(partyResponses);
         setMatches(myMatches);
-        setDemands((prev) => {
-          const map = new Map(prev.map((d) => [d.id, d]));
-          for (const d of myDemands) map.set(d.id, d);
-          for (const d of matchedDemands) map.set(d.id, d);
-          return [...map.values()];
-        });
+        setDemands([...demandMap.values()]);
       } else {
+        setDemands(demandRows);
         setOwnerships([]);
         setSellIntents([]);
         setResponses([]);
@@ -202,6 +203,11 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
 
   const run = useCallback(
     async <T,>(fn: () => Promise<T>): Promise<T | null> => {
+      // Brief wait instead of silent drop — confirm/cancel after chat send can
+      // overlap the prior mutation's refresh and would otherwise no-op.
+      for (let attempt = 0; attempt < 40 && mutationInFlightRef.current; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
       if (mutationInFlightRef.current) return null;
       mutationInFlightRef.current = true;
       setBusy(true);
@@ -296,7 +302,14 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
           assignLogin();
           return null;
         }
-        return run(() => api.issueDealEvidenceChallengeRemote(matchId));
+        // Challenge codes are page-local state and must not wait on the
+        // mutation lock — connect/refresh often still holds it when the
+        // seller opens evidence, which previously returned null forever.
+        try {
+          return await api.issueDealEvidenceChallengeRemote(matchId);
+        } catch {
+          return null;
+        }
       },
       getDealEvidence: async (matchId) => {
         if (!currentUser) return null;
@@ -311,7 +324,38 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
           assignLogin();
           return null;
         }
-        return run(() => api.upsertDealEvidenceRemote(payload));
+        // Evidence upload + RPC must not silently no-op when connect/refresh
+        // still holds the mutation lock (E2E flake: saveFail without snapshot).
+        for (let attempt = 0; attempt < 80 && mutationInFlightRef.current; attempt += 1) {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+        if (mutationInFlightRef.current) {
+          throw new Error("DAN_EVIDENCE_BUSY");
+        }
+        mutationInFlightRef.current = true;
+        setBusy(true);
+        try {
+          const result = await api.upsertDealEvidenceRemote(payload);
+          await refresh();
+          return result;
+        } catch (err) {
+          if (err instanceof Error && err.message === "DAN_EVIDENCE_BUSY") {
+            throw err;
+          }
+          const message =
+            err instanceof Error
+              ? err.message
+              : typeof err === "object" &&
+                  err &&
+                  "message" in err &&
+                  typeof (err as { message: unknown }).message === "string"
+                ? (err as { message: string }).message
+                : String(err);
+          throw new Error(message || "DAN_EVIDENCE_SAVE_FAILED");
+        } finally {
+          mutationInFlightRef.current = false;
+          setBusy(false);
+        }
       },
       getDealSnapshot: async (matchId) => {
         if (!currentUser) return null;
@@ -438,7 +482,41 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
           assignLogin();
           return null;
         }
-        return run(() => api.sendMessageRemote(matchId, body));
+        // Messaging must surface "blocked" distinctly — run() swallows errors.
+        for (let attempt = 0; attempt < 40 && mutationInFlightRef.current; attempt += 1) {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+        if (mutationInFlightRef.current) return null;
+        mutationInFlightRef.current = true;
+        setBusy(true);
+        setError(null);
+        try {
+          const result = await api.sendMessageRemote(matchId, body);
+          await refresh();
+          return result;
+        } catch (err) {
+          const parts: string[] = [];
+          if (err instanceof Error) parts.push(err.message);
+          if (typeof err === "object" && err) {
+            const row = err as {
+              message?: unknown;
+              details?: unknown;
+              hint?: unknown;
+              code?: unknown;
+            };
+            for (const value of [row.message, row.details, row.hint, row.code]) {
+              if (typeof value === "string" && value) parts.push(value);
+            }
+          }
+          const message = parts.join(" ") || String(err);
+          if (/blocked/i.test(message)) {
+            throw new Error("DAN_CHAT_BLOCKED");
+          }
+          return null;
+        } finally {
+          mutationInFlightRef.current = false;
+          setBusy(false);
+        }
       },
       markMessagesRead: async (matchId) => {
         if (!currentUser) return;
@@ -569,6 +647,9 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
       mySellIntents,
       myResponses,
       myMatches,
+      refreshData: async () => {
+        await refresh();
+      },
       resetDemo: () => {
         void refresh();
       },

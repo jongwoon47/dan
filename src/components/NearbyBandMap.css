@@ -1,0 +1,123 @@
+.nearby-band-map {
+  display: grid;
+  gap: 16px;
+}
+
+.nearby-band-map__privacy {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--dan-ink-secondary);
+}
+
+.nearby-band-map__rings {
+  position: relative;
+  width: min(100%, 360px);
+  aspect-ratio: 1;
+  margin-inline: auto;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, color-mix(in srgb, var(--dan-accent, #0f766e) 12%, transparent) 0 8%, transparent 8%),
+    linear-gradient(180deg, color-mix(in srgb, var(--dan-surface) 92%, #dce8e4), var(--dan-surface));
+  border: 1px solid var(--dan-border);
+  overflow: hidden;
+}
+
+.nearby-band-map__ring {
+  position: absolute;
+  inset: calc((1 - var(--band-scale)) * 50%);
+  border: 1px dashed color-mix(in srgb, var(--dan-ink-secondary) 45%, transparent);
+  border-radius: 50%;
+  display: grid;
+  place-items: start end;
+  padding: 6px 10px;
+  pointer-events: none;
+}
+
+.nearby-band-map__ring span {
+  font-size: 0.68rem;
+  color: var(--dan-ink-secondary);
+  background: color-mix(in srgb, var(--dan-surface) 88%, transparent);
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+
+.nearby-band-map__you {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 2.4rem;
+  min-height: 2.4rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: var(--dan-ink);
+  color: var(--dan-surface);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.nearby-band-map__bands {
+  display: grid;
+  gap: 12px;
+}
+
+.nearby-band-map__band {
+  border-top: 1px solid var(--dan-border);
+  padding-top: 12px;
+}
+
+.nearby-band-map__band header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.nearby-band-map__band header strong {
+  font-size: 0.95rem;
+}
+
+.nearby-band-map__band header span,
+.nearby-band-map__empty {
+  font-size: 0.8rem;
+  color: var(--dan-ink-secondary);
+}
+
+.nearby-band-map__empty {
+  margin: 0;
+}
+
+.nearby-band-map__band ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.nearby-band-map__band a {
+  display: grid;
+  gap: 2px;
+  text-decoration: none;
+  color: inherit;
+  padding: 10px 0;
+}
+
+.nearby-band-map__type {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--dan-ink-secondary);
+  letter-spacing: 0.02em;
+}
+
+.nearby-band-map__band a strong {
+  font-size: 0.98rem;
+  line-height: 1.35;
+}
+
+.nearby-band-map__band a span:not(.nearby-band-map__type) {
+  font-size: 0.8rem;
+  color: var(--dan-ink-secondary);
+}

@@ -5,10 +5,14 @@ import { Field, TextInput } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProductVisual } from "@/components/ProductVisual";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
+import { fillCopyTemplate } from "@/copy/dealChain";
+import { formatStoredComponents } from "@/copy/evidenceComponents";
+import { useDanCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
 import type { DealEvidence, DealSnapshot } from "@/domain/types";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
-import { formatWon } from "@/lib/format";
+import { useDanLocale } from "@/i18n/locale";
+import { formatStoredMoney } from "@/lib/format";
 import "./pages.css";
 
 function snapshotText(
@@ -24,6 +28,9 @@ function snapshotText(
 
 export function DealSnapshotPage() {
   const { matchId = "" } = useParams();
+  const locale = useDanLocale();
+  const copy = useDanCopy();
+  const numberLocale = locale === "ja" ? "ja-JP" : "ko-KR";
   const {
     myMatches,
     state,
@@ -48,7 +55,7 @@ export function DealSnapshotPage() {
   const [handoffAt, setHandoffAt] = useState("");
   const [error, setError] = useState("");
 
-  useDeepHeader({ title: "거래 조건 확인" });
+  useDeepHeader({ title: copy.snapshotTitle });
 
   useEffect(() => {
     if (!matchId) return;
@@ -94,7 +101,9 @@ export function DealSnapshotPage() {
         waterDamageStatement: evidence.waterDamageStatement,
       },
       handoff: {
-        method: formatFulfillmentSummary(demand.fulfillmentOptions),
+        // Persist mode codes — never a KO/JA display string — so Handoff can
+        // localize from demand.fulfillmentOptions (or fall back to modes).
+        method: demand.fulfillmentOptions.map((option) => option.mode).join("|"),
         place: meetupRequired ? handoffPlace.trim() : "",
         at: meetupRequired ? handoffAt : "",
       },
@@ -113,8 +122,12 @@ export function DealSnapshotPage() {
   if (!match || !demand || !product || !sell || !currentUser) {
     return (
       <EmptyState
-        title="거래 정보를 찾을 수 없어요"
-        action={<Button to="/my" variant="secondary">내 거래</Button>}
+        title={copy.dealMissingTitle}
+        action={
+          <Button to="/my" variant="secondary">
+            {copy.dealMyTrades}
+          </Button>
+        }
       />
     );
   }
@@ -126,6 +139,8 @@ export function DealSnapshotPage() {
   const peerConfirmed = isBuyer
     ? Boolean(snapshot?.sellerConfirmedAt)
     : Boolean(snapshot?.buyerConfirmedAt);
+  const currency = demand.currencyCode ?? "KRW";
+  const money = (value: number) => formatStoredMoney(value, currency, locale);
 
   const appointmentReady =
     !meetupRequired || Boolean(handoffPlace.trim() && handoffAt);
@@ -141,31 +156,51 @@ export function DealSnapshotPage() {
       snapshot: payload,
     });
     if (!result) {
-      setError("거래 조건을 저장하지 못했어요.");
+      setError(copy.snapshotSaveFail);
       return;
     }
     setSnapshot(result);
   }
 
   if (snapshot?.snapshot?.accountDeleted === true) {
-    return <div className="page-stack page-narrow deal-page">
-      <h1 className="page-title">종료된 거래 기록</h1>
-      <p>회원탈퇴로 개인 작성 내용과 상품 확인 정보가 삭제됐어요.</p>
-      <p>거래 상태: {match.status === 'COMPLETED' ? '완료' : '종료'}</p>
-      <p>합의 금액: {formatWon(snapshot.agreedPrice)}</p>
-      <Button to="/my?tab=completed" variant="secondary">완료된 거래</Button>
-    </div>;
+    return (
+      <div className="page-stack page-narrow deal-page">
+        <h1 className="page-title">{copy.snapshotClosedTitle}</h1>
+        <p>{copy.snapshotClosedBody}</p>
+        <p>
+          {copy.snapshotClosedStatus}:{" "}
+          {match.status === "COMPLETED"
+            ? copy.snapshotClosedCompleted
+            : copy.snapshotClosedEnded}
+        </p>
+        <p>
+          {copy.snapshotAgreedAmount}:{" "}
+          {formatStoredMoney(
+            snapshot.agreedPrice,
+            snapshot.currencyCode ?? demand?.currencyCode ?? "KRW",
+            locale,
+          )}
+        </p>
+        <Button to="/my?tab=completed" variant="secondary">
+          {copy.snapshotCompletedTrades}
+        </Button>
+      </div>
+    );
   }
   if (!evidence) {
     return (
       <EmptyState
-        title="상품 정보가 아직 없어요"
-        body={isBuyer ? "판매자가 상품 정보를 등록하면 거래 조건을 확인할 수 있어요." : "먼저 상품 상태와 확인 정보를 등록해 주세요."}
+        title={copy.snapshotNoEvidenceTitle}
+        body={isBuyer ? copy.snapshotNoEvidenceBuyer : copy.snapshotNoEvidenceSeller}
         action={
           isBuyer ? (
-            <Button to="/my" variant="secondary">거래 목록</Button>
+            <Button to="/my" variant="secondary">
+              {copy.dealTradeList}
+            </Button>
           ) : (
-            <Button to={`/deal/${match.id}/evidence`}>상품 정보 등록</Button>
+            <Button to={`/deal/${match.id}/evidence`}>
+              {copy.snapshotRegisterEvidence}
+            </Button>
           )
         }
       />
@@ -179,7 +214,7 @@ export function DealSnapshotPage() {
           <ProductVisual product={product} size="sm" />
           <div>
             <h1 className="page-title">{product.name}</h1>
-            <strong className="deal-price">{formatWon(sell.minimumPrice)}</strong>
+            <strong className="deal-price">{money(sell.minimumPrice)}</strong>
           </div>
         </div>
       </section>
@@ -187,70 +222,82 @@ export function DealSnapshotPage() {
       <section className="deal-snapshot-card deal-snapshot-card--focused">
         <div className="snapshot-card-heading">
           <div>
-            <h2>거래 조건을 확인해 주세요</h2>
+            <h2>{copy.snapshotConfirmHeading}</h2>
           </div>
-          <strong>{formatWon(sell.minimumPrice)}</strong>
+          <strong>{money(sell.minimumPrice)}</strong>
         </div>
 
         {evidence.usageCount != null ? (
           <div className="snapshot-section snapshot-section--key">
-            <span>{product.category === "camera" ? "컷수" : "사용량 / 횟수"}</span>
+            <span>
+              {product.category === "camera" ? copy.dealShutterCount : copy.dealUsageCount}
+            </span>
             <strong>
               {product.category === "camera"
-                ? `${evidence.usageCount.toLocaleString("ko-KR")}컷`
-                : evidence.usageCount.toLocaleString("ko-KR")}
+                ? fillCopyTemplate(copy.dealShutterCountValue, {
+                    n: evidence.usageCount.toLocaleString(numberLocale),
+                  })
+                : evidence.usageCount.toLocaleString(numberLocale)}
             </strong>
           </div>
         ) : null}
         <div className="snapshot-section snapshot-section--key">
-          <span>외관</span>
-          <strong>{evidence.cosmeticNotes || "미제출"}</strong>
+          <span>{copy.dealAppearance}</span>
+          <strong>{evidence.cosmeticNotes || copy.dealNotSubmitted}</strong>
         </div>
         <div className="snapshot-section snapshot-section--key">
-          <span>기능 이상</span>
-          <strong>{evidence.knownIssues || "미제출"}</strong>
+          <span>{copy.dealKnownIssues}</span>
+          <strong>{evidence.knownIssues || copy.dealNotSubmitted}</strong>
         </div>
         <div className="snapshot-section snapshot-section--key">
-          <span>거래 방식</span>
-          <strong>{formatFulfillmentSummary(demand.fulfillmentOptions)}</strong>
+          <span>{copy.dealTradeMethod}</span>
+          <strong>
+            {formatFulfillmentSummary(demand.fulfillmentOptions, locale)}
+          </strong>
         </div>
 
         <details className="snapshot-details">
           <summary>
             <span>
-              <strong>판매자 등록 정보</strong>
-              <small>보증·구성품·수리 이력</small>
+              <strong>{copy.snapshotSellerInfo}</strong>
+              <small>{copy.snapshotSellerInfoSub}</small>
             </span>
-            <span className="snapshot-details__chevron" aria-hidden>⌄</span>
+            <span className="snapshot-details__chevron" aria-hidden>
+              ⌄
+            </span>
           </summary>
           <div className="snapshot-details__body">
             <div className="snapshot-section">
-              <span>제품 정보</span>
+              <span>{copy.snapshotProductInfo}</span>
               <strong>{product.name}</strong>
             </div>
             <div className="snapshot-section">
-              <span>구매일</span>
-              <strong>{evidence.purchaseDate || "미제출"}</strong>
+              <span>{copy.evidencePurchaseDate}</span>
+              <strong>{evidence.purchaseDate || copy.dealNotSubmitted}</strong>
             </div>
             <div className="snapshot-section">
-              <span>보증기간</span>
-              <strong>{evidence.warrantyUntil || "미제출"}</strong>
+              <span>{copy.snapshotWarranty}</span>
+              <strong>{evidence.warrantyUntil || copy.dealNotSubmitted}</strong>
             </div>
             <div className="snapshot-section">
-              <span>식별번호 끝자리</span>
-              <strong>{evidence.serialLast4 ? `••••${evidence.serialLast4}` : "미제출"}</strong>
+              <span>{copy.snapshotSerialLast4}</span>
+              <strong>
+                {evidence.serialLast4 ? `••••${evidence.serialLast4}` : copy.dealNotSubmitted}
+              </strong>
             </div>
             <div className="snapshot-section">
-              <span>구성품</span>
-              <strong>{evidence.components.join(", ") || "없음"}</strong>
+              <span>{copy.dealComponents}</span>
+              <strong>
+                {formatStoredComponents(evidence.components, copy) || copy.dealNone}
+              </strong>
             </div>
             <div className="snapshot-section">
-              <span>수리 이력</span>
-              <strong>{evidence.repairHistory || "없음"}</strong>
+              <span>{copy.snapshotRepair}</span>
+              <strong>{evidence.repairHistory || copy.dealNone}</strong>
             </div>
             <div className="snapshot-section">
-              <span>침수 / 물손상 이력</span>
-              <strong>{evidence.waterDamageStatement || "미제출"}</strong>
+              <span>{copy.snapshotWater}</span>
+              <strong>{evidence.waterDamageStatement || copy.dealNotSubmitted}</strong>
             </div>
           </div>
         </details>
@@ -260,44 +307,41 @@ export function DealSnapshotPage() {
         <section className="deal-snapshot-card snapshot-appointment">
           <div className="snapshot-card-heading">
             <div>
-              <h2>직거래 약속</h2>
+              <h2>{copy.snapshotMeetupTitle}</h2>
             </div>
           </div>
           {snapshot?.lockedAt ? (
             <>
               <div className="snapshot-section snapshot-section--key">
-                <span>만남 장소</span>
-                <strong>{handoffPlace || "미정"}</strong>
+                <span>{copy.snapshotMeetupPlace}</span>
+                <strong>{handoffPlace || copy.snapshotTbd}</strong>
               </div>
               <div className="snapshot-section snapshot-section--key">
-                <span>약속 시간</span>
+                <span>{copy.snapshotMeetupAt}</span>
                 <strong>
                   {handoffAt
-                    ? new Date(handoffAt).toLocaleString("ko-KR", {
+                    ? new Date(handoffAt).toLocaleString(numberLocale, {
                         month: "long",
                         day: "numeric",
                         weekday: "short",
                         hour: "2-digit",
                         minute: "2-digit",
                       })
-                    : "미정"}
+                    : copy.snapshotTbd}
                 </strong>
               </div>
             </>
           ) : (
             <div className="section-stack">
-              <Field
-                label="만남 장소"
-                hint="이 거래 참여자만 볼 수 있어요."
-              >
+              <Field label={copy.snapshotMeetupPlace} hint={copy.snapshotMeetupPlaceHint}>
                 <TextInput
                   value={handoffPlace}
                   onChange={(event) => setHandoffPlace(event.target.value)}
-                  placeholder="예: 강남역 11번 출구 스타벅스 앞"
+                  placeholder={copy.snapshotMeetupPlacePh}
                   maxLength={120}
                 />
               </Field>
-              <Field label="약속 시간">
+              <Field label={copy.snapshotMeetupAt}>
                 <input
                   className="dan-input"
                   type="datetime-local"
@@ -311,16 +355,18 @@ export function DealSnapshotPage() {
       ) : null}
 
       <section className="snapshot-lock-notice">
-        <strong>확인하면 이 조건으로 거래가 확정돼요.</strong>
-        <p>양쪽 확인 후에는 수정할 수 없어요. 다르면 먼저 채팅에서 조율하세요.</p>
+        <strong>{copy.snapshotLockTitle}</strong>
+        <p>{copy.snapshotLockBody}</p>
       </section>
 
       <section className="deal-confirm-state">
         <div className={myConfirmed ? "confirm-state is-done" : "confirm-state"}>
-          <span>나</span><strong>{myConfirmed ? "확인 완료" : "확인 필요"}</strong>
+          <span>{copy.dealMe}</span>
+          <strong>{myConfirmed ? copy.dealConfirmDone : copy.dealConfirmNeeded}</strong>
         </div>
         <div className={peerConfirmed ? "confirm-state is-done" : "confirm-state"}>
-          <span>상대</span><strong>{peerConfirmed ? "확인 완료" : "대기 중"}</strong>
+          <span>{copy.dealPeer}</span>
+          <strong>{peerConfirmed ? copy.dealConfirmDone : copy.dealWaiting}</strong>
         </div>
       </section>
 
@@ -329,20 +375,18 @@ export function DealSnapshotPage() {
           <section className="safe-payment-placeholder">
             <span className="safe-payment-placeholder__icon">✓</span>
             <div>
-              <strong>거래 조건이 확정됐어요</strong>
-              <p>
-                결제 후 인계할 때 같은 거래 조건을 다시 확인하세요.
-              </p>
+              <strong>{copy.snapshotLockedTitle}</strong>
+              <p>{copy.snapshotLockedBody}</p>
             </div>
           </section>
           <Button to={`/deal/${match.id}/payment`} fullWidth size="lg">
-            결제하기
+            {copy.dealPayCta}
           </Button>
         </>
       ) : (
         <>
           {meetupRequired && !appointmentReady ? (
-            <p className="form-error">직거래 장소와 시간을 입력해야 거래 조건을 확인할 수 있어요.</p>
+            <p className="form-error">{copy.snapshotNeedAppointment}</p>
           ) : null}
           {error ? <p className="form-error">{error}</p> : null}
           <Button
@@ -351,13 +395,13 @@ export function DealSnapshotPage() {
             disabled={busy || !payload || !appointmentReady || myConfirmed}
             onClick={() => void confirm()}
           >
-            {myConfirmed ? "상대 확인 대기 중" : "거래 조건 확인"}
+            {myConfirmed ? copy.dealWaitingPeerConfirm : copy.snapshotConfirmCta}
           </Button>
         </>
       )}
 
       <Button to={`/match/${match.id}`} variant="secondary" fullWidth>
-        채팅으로 돌아가기
+        {copy.dealBackToChat}
       </Button>
     </div>
   );

@@ -1,9 +1,25 @@
+import { demandTypeLabel, type DemandTypeCopy } from "@/copy/demandTypeLabel";
+import { ko } from "@/copy/ko";
+import { jaPilotCopy } from "@/copy/useDanCopy";
 import type { DealDispute, Demand, Match, PublicProfile, PublicProfileActivity } from "./types";
-import { DEMAND_TYPE_LABEL } from "./types";
 
 function isLiveConnection(status: Match["status"]) {
   return status === "CONNECTED" || status === "COMPLETED";
 }
+
+const KO_TYPE_COPY: DemandTypeCopy = {
+  typeBuy: ko.typeBuy,
+  typeBorrow: ko.typeBorrow,
+  typeTask: ko.typeTask,
+  typeService: ko.typeService,
+};
+
+const JA_TYPE_COPY: DemandTypeCopy = {
+  typeBuy: jaPilotCopy.typeBuy ?? ko.typeBuy,
+  typeBorrow: jaPilotCopy.typeBorrow ?? ko.typeBorrow,
+  typeTask: jaPilotCopy.typeTask ?? ko.typeTask,
+  typeService: jaPilotCopy.typeService ?? ko.typeService,
+};
 
 export function buildPublicProfileStats(input: {
   userId: string;
@@ -17,6 +33,8 @@ export function buildPublicProfileStats(input: {
   viewerIsSelf: boolean;
   identityVerified?: boolean;
   authLabel?: string | null;
+  /** Locale for recent-activity labels (demo store). Default Korean. */
+  locale?: "ko" | "ja";
 }): PublicProfile {
   const myMatches = input.matches.filter(
     (m) => m.buyerId === input.userId || m.sellerId === input.userId,
@@ -54,16 +72,22 @@ export function buildPublicProfileStats(input: {
     const bt = b.completedAt ?? b.createdAt;
     return bt.localeCompare(at);
   });
+  const typeCopy = input.locale === "ja" ? JA_TYPE_COPY : KO_TYPE_COPY;
+  const tradeDone =
+    input.locale === "ja"
+      ? (jaPilotCopy.profileCompleted ?? "取引完了")
+      : ko.profileCompleted;
+  const tradeFallback = input.locale === "ja" ? "取引" : "거래";
   const recentActivity: PublicProfileActivity[] = recentSource
     .slice(0, 3)
     .map((m) => {
       const d = demandById.get(m.demandId);
-      const typeLabel = d ? DEMAND_TYPE_LABEL[d.type] : "거래";
+      const typeLabel = d ? demandTypeLabel(d.type, typeCopy) : tradeFallback;
       return {
         id: m.id,
         label: input.viewerIsSelf
-          ? `${d?.title ?? typeLabel} · 거래 완료`
-          : `${typeLabel} · 거래 완료`,
+          ? `${d?.title ?? typeLabel} · ${tradeDone}`
+          : `${typeLabel} · ${tradeDone}`,
         href: `/match/${m.id}`,
       };
     });

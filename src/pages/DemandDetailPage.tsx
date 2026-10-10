@@ -4,14 +4,18 @@ import { ProductVisual } from "@/components/ProductVisual";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
-import { ko } from "@/copy/ko";
+import { useDanCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
-import { CONDITION_LABEL, isBuyDemand, type BuyDemand } from "@/domain/types";
-import { formatWon } from "@/lib/format";
+import { isBuyDemand, type BuyDemand } from "@/domain/types";
+import { conditionLabel } from "@/i18n/categories";
+import { useDanLocale } from "@/i18n/locale";
+import { formatStoredMoney } from "@/lib/format";
 import "./pages.css";
 
 export function DemandDetailPage() {
+  const copy = useDanCopy();
+  const locale = useDanLocale();
   const { productId = "" } = useParams();
   const { getProduct, getAggregate, myOwnerships, myDemands, currentUser, state } = useDan();
   const [shareStatus, setShareStatus] = useState("");
@@ -39,38 +43,40 @@ export function DemandDetailPage() {
   async function shareDemand() {
     if (!product) return;
     const shareData = {
-      title: `${product.name} · DAN 요청`,
-      text: `${aggregate?.seekerCount ?? 0}명이 지금 ${product.name}을 찾고 있어요.`,
+      title: copy.detailShareTitle.replace("{name}", product.name),
+      text: copy.detailShareText
+        .replace("{n}", String(aggregate?.seekerCount ?? 0))
+        .replace("{name}", product.name),
       url: window.location.href,
     };
 
     try {
       if (navigator.share) {
         await navigator.share(shareData);
-        setShareStatus("공유했어요");
+        setShareStatus(copy.detailShareOk);
       } else if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(shareData.url);
-        setShareStatus("링크를 복사했어요");
+        setShareStatus(copy.detailShareCopied);
       } else {
-        setShareStatus("주소창의 링크를 복사해 주세요");
+        setShareStatus(copy.detailShareManual);
       }
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
-      setShareStatus("공유하지 못했어요");
+      setShareStatus(copy.detailShareFail);
     }
   }
 
   useDeepHeader({
-    title: product?.name ?? ko.seekingOnly,
+    title: product?.name ?? copy.seekingOnly,
     hide: !product,
     right: product ? (
       <button
         type="button"
         className="deep-header-share"
         onClick={() => void shareDemand()}
-        aria-label="요청 공유"
+        aria-label={copy.detailShareAria}
       >
-        공유
+        {copy.detailShare}
       </button>
     ) : undefined,
   });
@@ -78,65 +84,79 @@ export function DemandDetailPage() {
   if (!product || !aggregate) {
     return (
       <EmptyState
-        title={ko.missingDemand}
-        body={ko.detailMissingBody}
-        action={<Button to="/feed" variant="secondary">탐색</Button>}
+        title={copy.missingDemand}
+        body={copy.detailMissingBody}
+        action={<Button to="/feed" variant="secondary">{copy.navFeed}</Button>}
       />
     );
   }
+
+  const money = (value: number) => formatStoredMoney(value, "KRW", locale);
 
   return (
     <div className="page-stack page-narrow detail-page detail-page--blueprint">
       <section className="demand-detail-hero">
         <ProductVisual product={product} size="lg" />
         <div className="demand-detail-copy">
-          <span className="eyebrow">지금 찾는 사람</span>
+          <span className="eyebrow">{copy.detailSeekingEyebrow}</span>
           <h1>{product.name}</h1>
           <p className="detail-hero__count">
-            <strong>{aggregate.seekerCount}명</strong>이 지금 찾고 있어요
+            <strong>
+              {aggregate.seekerCount}
+              {copy.myung}
+            </strong>
+            {copy.detailSeekingNow}
           </p>
-          <p className="section-desc">
-            구매자가 원하는 물건과 가격을 먼저 올려둔 요청이에요.
-          </p>
+          <p className="section-desc">{copy.detailBuyLead}</p>
         </div>
       </section>
 
       {shareStatus ? (
-        <p className="share-status" role="status">{shareStatus}</p>
+        <p className="share-status" role="status">
+          {shareStatus}
+        </p>
       ) : null}
 
       <section className="demand-detail-summary">
         <div>
-          <span>현재 최고 구매 희망가</span>
+          <span>{copy.suggestPrice}</span>
           <strong>
             {aggregate.highestIntentPrice > 0
-              ? formatWon(aggregate.highestIntentPrice)
-              : "가격 확인 중"}
+              ? money(aggregate.highestIntentPrice)
+              : copy.detailPriceChecking}
           </strong>
         </div>
         <div>
-          <span>구매자 희망 거래 방식</span>
-          <strong>{aggregate.fulfillmentSummary || "거래방식 확인"}</strong>
+          <span>{copy.detailBuyerFulfillment}</span>
+          <strong>{aggregate.fulfillmentSummary || copy.detailFulfillmentChecking}</strong>
         </div>
       </section>
 
       <section className="detail-section buyer-demand-list">
         <div className="section-heading">
           <div>
-            <span className="eyebrow">구매 요청</span>
-            <h2>이 제품을 찾는 사람들</h2>
+            <span className="eyebrow">{copy.detailBuyerRequests}</span>
+            <h2>{copy.detailPeopleSeeking}</h2>
           </div>
-          <span>{activeBuyerDemands.length}개</span>
+          <span>
+            {activeBuyerDemands.length}
+            {copy.detailCountSuffix}
+          </span>
         </div>
         {activeBuyerDemands.length > 0 ? (
           <div className="buyer-demand-list__rows">
             {activeBuyerDemands.map((demand, index) => (
               <div key={demand.id} className="buyer-demand-row">
                 <div className="buyer-demand-row__main">
-                  <span>구매수요 {index + 1}</span>
-                  <strong>최대 {formatWon(demand.details.maxPrice)}</strong>
+                  <span>
+                    {copy.detailBuyerDemandN.replace("{n}", String(index + 1))}
+                  </span>
+                  <strong>
+                    {copy.detailMaxPrefix} {money(demand.details.maxPrice)}
+                  </strong>
                   <small>
-                    {CONDITION_LABEL[demand.details.conditionPreference]} · {formatFulfillmentSummary(demand.fulfillmentOptions)}
+                    {conditionLabel(locale, demand.details.conditionPreference)} ·{" "}
+                    {formatFulfillmentSummary(demand.fulfillmentOptions, locale)}
                   </small>
                 </div>
                 <Button
@@ -144,43 +164,46 @@ export function DemandDetailPage() {
                   variant="secondary"
                   size="sm"
                 >
-                  제안하기
+                  {copy.detailSendOffer}
                 </Button>
               </div>
             ))}
           </div>
         ) : (
-          <p className="section-desc">
-            아직 공개된 개별 요청이 없어요. 이 제품을 찾는 사람에게 먼저 제안을 남길 수 있어요.
-          </p>
+          <p className="section-desc">{copy.detailNoPublicBuyers}</p>
         )}
       </section>
 
       <section className="seller-action-card">
         <div>
-          <span>이 제품을 가지고 있나요?</span>
-          <h2>원하는 가격과 상태만 적고 바로 제안하세요.</h2>
-          <p>상대가 제안을 선택하면 채팅에서 상품 정보와 거래 조건을 확인해요.</p>
+          <span>{copy.haveItTitle}</span>
+          <h2>{copy.detailOfferNowTitle}</h2>
+          <p>{copy.detailOfferNowBody}</p>
         </div>
         <Button to={`/demand/${product.id}/offer`} fullWidth size="lg">
-          제안 보내기
+          {copy.detailSendOfferCta}
         </Button>
-        {owned ? <small>등록한 내 물건 정보를 재사용할 수 있어요.</small> : null}
+        {owned ? <small>{copy.detailReuseOwned}</small> : null}
       </section>
 
       {myBuy ? (
         <section className="detail-section demand-my-request">
           <div>
-            <span>내 요청</span>
-            <strong>최대 {formatWon(myBuy.budget)}</strong>
+            <span>{copy.myRequests}</span>
+            <strong>
+              {copy.detailMaxPrefix} {money(myBuy.budget)}
+            </strong>
           </div>
           <Button to={`/demand/item/${myBuy.id}`} fullWidth variant="secondary">
-            내 요청 관리
+            {copy.myBuyManage}
           </Button>
         </section>
       ) : (
         <p className="detail-foot">
-          같은 제품을 찾고 있나요? <Link to={`/create?type=BUY&q=${encodeURIComponent(product.name)}`}>나도 요청 올리기</Link>
+          {copy.buyerSide}
+          <Link to={`/create?type=BUY&q=${encodeURIComponent(product.name)}`}>
+            {copy.registerSame}
+          </Link>
         </p>
       )}
     </div>

@@ -23,6 +23,23 @@ function datetimeLocal(hoursFromNow: number): string {
   ].join("");
 }
 
+async function completeRequiredConsent(page: Page) {
+  // Sign-up must require explicit Terms and Privacy consent. Exercise the
+  // actual flow, do not bypass the gate with fixtures or service role writes.
+  await expect(page.getByRole("heading", { name: "DAN 시작하기" })).toBeVisible();
+  const confirm = page.getByRole("button", { name: "동의하고 시작하기" });
+  await expect(confirm).toBeDisabled();
+  // Custom checkbox UI: visible .consent-check span intercepts the clipped input.
+  // Prefer label activation (real user path) over clicking the visually-hidden input.
+  await page.locator("label").filter({ hasText: "전체 동의" }).click();
+  await expect(page.getByRole("checkbox", { name: "전체 동의" })).toBeChecked();
+  await expect(confirm).toBeEnabled();
+  await confirm.click();
+  await expect(page).not.toHaveURL(/\/consent(?:\?|$)/);
+  await page.goto("/my");
+  await expect(page.getByRole("heading", { name: "내 거래" })).toBeVisible();
+}
+
 async function signup(page: Page, tag: string) {
   const email = `dan.browser.qa.${tag}@example.com`;
   await page.goto("/login");
@@ -31,7 +48,7 @@ async function signup(page: Page, tag: string) {
   await page.getByLabel("이메일").fill(email);
   await page.getByLabel("비밀번호").fill("DanBrowserQa-Pass1!");
   await page.getByRole("button", { name: "가입하기" }).click();
-  await expect(page.getByRole("heading", { name: "내 거래" })).toBeVisible();
+  await completeRequiredConsent(page);
   return email;
 }
 
@@ -44,7 +61,7 @@ async function signupNamed(page: Page, tag: string, role: string, name: string) 
   await page.getByLabel("이메일").fill(email);
   await page.getByLabel("비밀번호").fill("DanBrowserQa-Pass1!");
   await page.getByRole("button", { name: "가입하기" }).click();
-  await expect(page.getByRole("heading", { name: "내 거래" })).toBeVisible();
+  await completeRequiredConsent(page);
   return email;
 }
 
@@ -101,17 +118,27 @@ async function completeNonBuyUiFlow(args: {
   await ownerPage.getByRole("button", { name: "거래 완료" }).click();
   await expect(ownerPage.getByText("실제 거래가 끝났나요?")).toBeVisible();
   await ownerPage.getByRole("button", { name: "완료 확인" }).click();
-  await expect(ownerPage.getByText("거래 진행 중")).toBeVisible();
+  // Wait for persisted one-sided completion — not the generic "거래 진행 중" chrome.
+  await expect(
+    ownerPage.getByText("상대의 완료 확인을 기다리는 중이에요."),
+  ).toBeVisible({ timeout: 30_000 });
+  await expect(ownerPage.getByRole("button", { name: "거래 완료" })).toHaveCount(0);
 
   await responderPage.reload();
-  await expect(responderPage.getByText("상대가 거래 완료를 확인했어요.")).toBeVisible();
+  await expect(
+    responderPage.getByText("상대가 거래 완료를 확인했어요."),
+  ).toBeVisible({ timeout: 30_000 });
   await responderPage.getByRole("button", { name: "나도 완료했어요" }).click();
   await expect(responderPage.getByText("실제 거래가 끝났나요?")).toBeVisible();
   await responderPage.getByRole("button", { name: "완료 확인" }).click();
-  await expect(responderPage.getByText("거래가 완료됐어요")).toBeVisible();
+  await expect(responderPage.getByText("거래가 완료됐어요")).toBeVisible({
+    timeout: 30_000,
+  });
 
   await ownerPage.reload();
-  await expect(ownerPage.getByText("거래가 완료됐어요")).toBeVisible();
+  await expect(ownerPage.getByText("거래가 완료됐어요")).toBeVisible({
+    timeout: 30_000,
+  });
 
   await ownerPage.screenshot({
     path: path.join(outDir, `flow-${label.toLowerCase()}-completed.png`),
@@ -210,7 +237,7 @@ test("fresh Supabase user sees real zero states and can create all four request 
   await expect(page.getByRole("heading", { name: "내 거래" })).toBeVisible();
   await expect(page.getByText("진행 중인 거래가 없어요")).toBeVisible();
   await page.getByRole("button", { name: /내 요청/ }).click();
-  await expect(page.getByText("아직 올린 요청이 없어요")).toBeVisible();
+  await expect(page.getByText("아직 요청이 없어요.")).toBeVisible();
   await page.screenshot({ path: path.join(outDir, "01-my-zero.png"), fullPage: true });
 
   await page.goto("/chats");

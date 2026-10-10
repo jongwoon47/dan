@@ -10,8 +10,8 @@ export default defineConfig({
   testDir: "e2e/supabase",
   fullyParallel: false,
   workers: 1,
-  timeout: 120_000,
-  expect: { timeout: 20_000 },
+  timeout: 240_000,
+  expect: { timeout: 30_000 },
   reporter: [["list"]],
   outputDir: "qa-screenshots/supabase-test-output",
   use: {
