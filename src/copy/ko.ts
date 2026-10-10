@@ -439,6 +439,7 @@ const koBase = {
   "viewRequest": "요청 보기",
   "activityTitle": "알림",
   "activityEmpty": "새로운 알림이 없어요.",
+  "activityEmptyBody": "새 응답, 거래 진행, 메시지 알림이 이곳에 모여요.",
   "nowEmpty": "지금 확인할 일이 없어요.",
   "activityNewResponse": "새 응답이 도착했어요",
   "activityAccepted": "응답이 수락됐어요",

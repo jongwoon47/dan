@@ -157,13 +157,9 @@ export function ActivityPage() {
       {activities.length === 0 ? (
         <EmptyState
           title={copy.activityEmpty}
-          body={
-            locale === "ja"
-              ? "新しい返答、取引の進行、メッセージのお知らせがここに集まります。"
-              : "새 응답, 거래 진행, 메시지 알림이 이곳에 모여요."
-          }
+          body={copy.activityEmptyBody}
           action={
-            <Button to="/feed" variant="secondary">
+            <Button to="/feed">
               {copy.ctaBrowse}
             </Button>
           }

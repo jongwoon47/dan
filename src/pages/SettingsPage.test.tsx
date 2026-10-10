@@ -16,6 +16,9 @@ it("exposes legal links separately from account deletion", () => {
       <SettingsPage />
     </MemoryRouter>,
   );
+  expect(screen.getByRole("heading", { name: "표시 언어" })).toBeInTheDocument();
+  // Visible language label is the section heading only (select keeps aria-label).
+  expect(screen.getByRole("combobox", { name: "표시 언어" })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: "법적 정보" })).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "이용약관" })).toHaveAttribute(
     "href",

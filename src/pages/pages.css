@@ -2557,29 +2557,40 @@
 .my-dan__header.my-dan__header--v1 {
   display: flex;
   flex-direction: row;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
 }
 
-.my-dan__header--v1 .my-dan__name {
-  display: inline-flex;
+.my-dan__actions {
+  display: flex;
   align-items: center;
-  gap: 4px;
-  min-height: 34px;
-  padding: 7px 11px;
-  border: 1px solid var(--dan-border);
-  border-radius: 999px;
-  background: rgba(255,255,255,.76);
-  color: var(--dan-ink-secondary);
-  font-size: .75rem;
-  font-weight: 800;
-  box-shadow: 0 5px 16px rgba(42,35,66,.04);
+  gap: 8px;
+  margin-left: auto;
 }
 
-.my-dan__header--v1 .my-dan__name span {
-  color: var(--dan-accent-text);
-  font-size: .9rem;
+.my-dan__header--v1 .my-dan__name,
+.my-dan__settings {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--dan-border);
+  border-radius: 12px;
+  background: var(--dan-surface);
+  color: var(--dan-ink-secondary);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: none;
+}
+
+.my-dan__header--v1 .my-dan__name:hover,
+.my-dan__settings:hover {
+  color: var(--dan-ink);
+  border-color: var(--dan-border-strong);
 }
 
 .offer-detail-product--catalog {
@@ -2811,19 +2822,27 @@
 
 .location-discovery__modes {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.location-discovery__modes::-webkit-scrollbar {
+  display: none;
 }
 .location-discovery__modes button,
 .location-discovery__action {
+  flex: 0 0 auto;
   cursor: pointer;
   border-radius: 100px;
   border: 1px solid var(--dan-border);
-  padding: 8px 12px;
+  min-height: 44px;
+  padding: 10px 14px;
   background: var(--dan-surface);
   color: var(--dan-ink);
   font: inherit;
-  font-size: 0.86rem;
+  font-size: 0.875rem;
   font-weight: 600;
 }
 .location-discovery__modes button.is-active {

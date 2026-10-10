@@ -66,7 +66,7 @@ export function SettingsPage() {
         </div>
         <div className="settings-list">
           <label className="location-pref-field">
-            <span>{t("language")}</span>
+            <span className="sr-only">{t("language")}</span>
             <select
               aria-label={t("language")}
               value={locale}

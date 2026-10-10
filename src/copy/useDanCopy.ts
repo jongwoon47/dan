@@ -202,6 +202,7 @@ export const jaPilotCopy: Partial<LocalizedCopy> = {
   profileMyConnections: "つながり",
   activityTitle: "お知らせ",
   activityEmpty: "新しいお知らせはありません。",
+  activityEmptyBody: "新しい返答、取引の進行、メッセージのお知らせがここに集まります。",
   activityNewResponse: "新しい返答が届きました",
   activityAccepted: "返答が承認されました",
   activityDeclined: "返答がお断りされました",

@@ -149,7 +149,7 @@ export function ConversationsPage() {
           title={copy.chatsEmpty}
           body={copy.chatsEmptyBody}
           action={
-            <Button to="/feed" variant="secondary">
+            <Button to="/feed">
               {copy.navFeed}
             </Button>
           }

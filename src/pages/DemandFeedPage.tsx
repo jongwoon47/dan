@@ -783,11 +783,11 @@ export function DemandFeedPage() {
             >
               {t("mapView")}
             </button>
-            <p className="location-discovery__note">{t("mapViewSoon")}</p>
+            {resultView === "map" ? (
+              <p className="location-discovery__note">{t("mapViewSoon")}</p>
+            ) : null}
           </div>
-        ) : (
-          <p className="location-discovery__note">{t("mapViewSoon")}</p>
-        )}
+        ) : null}
       </section>
 
       {remoteError && includesBuy ? (

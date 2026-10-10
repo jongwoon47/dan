@@ -105,7 +105,6 @@ export function HomePage() {
               autoComplete="off"
               aria-label={t("requestSearch")}
             />
-            <small>{t("homeLead")}</small>
           </label>
           <button type="submit" className="home-intent-composer__submit" aria-label={t("requestSearch")}>
             <span aria-hidden>›</span>
