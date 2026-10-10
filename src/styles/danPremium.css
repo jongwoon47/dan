@@ -5068,14 +5068,15 @@ body {
     align-items: center;
     justify-content: center;
     min-height: 44px;
-    padding: 8px 10px;
-    border: 0;
+    min-width: 44px;
+    padding: 10px 14px;
+    border: 1px solid var(--dan-border);
     border-radius: 12px;
-    background: transparent;
+    background: var(--dan-surface);
     box-shadow: none;
     color: var(--dan-ink-secondary);
-    font-size: .78rem;
-    font-weight: 600;
+    font-size: 0.875rem;
+    font-weight: 700;
     text-decoration: none;
   }
 
