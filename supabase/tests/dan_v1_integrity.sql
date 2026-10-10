@@ -592,14 +592,14 @@ select has_trigger(
 select has_function(
   'public',
   'search_live_demand',
-  array['text','text','text','integer','integer'],
+  array['text','text','text','integer','integer','text'],
   'server-side Live Demand search RPC exists'
 );
 
 select ok(
   has_function_privilege(
     'anon',
-    'public.search_live_demand(text,text,text,integer,integer)',
+    'public.search_live_demand(text,text,text,integer,integer,text)',
     'EXECUTE'
   ),
   'public discovery can execute server-side Live Demand search'

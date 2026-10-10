@@ -286,7 +286,7 @@ test("DAN App V3 core request and transaction journey renders", async ({ page },
   await settle(page);
   await expect(page.getByText("판매 제안", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "이 제안 선택하기" })).toBeVisible();
-  await expect(page.getByText("거래 이력 보기")).toBeVisible();
+  await expect(page.getByText("거래 내역 보기")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outDir, "05-offer-detail.png"), fullPage: true });
 
@@ -354,7 +354,7 @@ test("V3 explore searches all request types and carries a missing query into cre
   await settle(page);
 
   await expect(page.getByRole("heading", { name: "지금 올라온 요청" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "심부름" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "심부름", exact: true })).toBeVisible();
   await page.getByLabel("요청 검색").fill("Aeron");
   await expect(page.getByText("Herman Miller Aeron Chair")).toBeVisible();
   await expectNoHorizontalOverflow(page);

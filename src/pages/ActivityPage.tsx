@@ -3,36 +3,57 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
-import { ko } from "@/copy/ko";
+import { useDanCopy, type LocalizedCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
 import type { ActivityEvent, Demand } from "@/domain/types";
 import { getDataMode } from "@/data/mode";
-import { formatRelativeTime, formatWon } from "@/lib/format";
+import { useDanLocale, type DanLocale } from "@/i18n/locale";
+import { formatRelativeTime, formatStoredMoney } from "@/lib/format";
 import "./pages.css";
 
-function kindVerb(kind: ActivityEvent["kind"]) {
+function kindVerb(kind: ActivityEvent["kind"], copy: LocalizedCopy) {
   switch (kind) {
     case "NEW_RESPONSE":
-      return "응답했어요";
+      return copy.activityNewResponse;
     case "RESPONSE_ACCEPTED":
-      return "응답을 수락했어요";
+      return copy.activityAccepted;
     case "RESPONSE_DECLINED":
-      return "응답이 거절됐어요";
+      return copy.activityDeclined;
     case "BUYER_INTEREST":
-      return "제안을 선택했어요";
+      return copy.activityInterest;
     case "MATCH_CONNECTED":
-      return "연결됐어요";
+      return copy.activityConnected;
     case "MATCH_COMPLETED":
-      return ko.activityMatchCompleted;
+      return copy.activityMatchCompleted;
     case "MATCH_TRADE_CLOSED":
-      return ko.activityMatchTradeClosed;
+      return copy.activityMatchTradeClosed;
     case "NEW_MESSAGE":
-      return "메시지를 보냈어요";
+      return copy.activityMessage;
     case "DEMAND_CLOSED":
-      return "요청이 마감됐어요";
+      return copy.activityClosed;
     default:
-      return "알림이 있어요";
+      return copy.activityTitle;
   }
+}
+
+function titleFor(
+  ev: ActivityEvent,
+  actor: string | undefined,
+  copy: LocalizedCopy,
+  locale: DanLocale,
+) {
+  const verb = kindVerb(ev.kind, copy);
+  const withActor =
+    Boolean(actor) &&
+    (ev.kind === "NEW_RESPONSE" ||
+      ev.kind === "MATCH_CONNECTED" ||
+      ev.kind === "MATCH_COMPLETED" ||
+      ev.kind === "MATCH_TRADE_CLOSED" ||
+      ev.kind === "BUYER_INTEREST" ||
+      ev.kind === "NEW_MESSAGE" ||
+      ev.kind === "RESPONSE_ACCEPTED");
+  if (!withActor || !actor) return verb;
+  return locale === "ja" ? `${actor}さん：${verb}` : `${actor}님이 ${verb}`;
 }
 
 function hrefFor(ev: ActivityEvent, demand?: Demand) {
@@ -52,6 +73,8 @@ function hrefFor(ev: ActivityEvent, demand?: Demand) {
 }
 
 export function ActivityPage() {
+  const locale = useDanLocale();
+  const copy = useDanCopy();
   const {
     isLoggedIn,
     login,
@@ -67,7 +90,7 @@ export function ActivityPage() {
   const [names, setNames] = useState<Record<string, string>>({});
 
   useDeepHeader({
-    title: ko.activityTitle,
+    title: copy.activityTitle,
   });
 
   useEffect(() => {
@@ -92,7 +115,7 @@ export function ActivityPage() {
       await Promise.all(
         ids.map(async (id) => {
           const p = await getPublicProfile(id);
-          next[id] = p?.displayName ?? "누군가";
+          next[id] = p?.displayName ?? (locale === "ja" ? "だれか" : "누군가");
         }),
       );
       if (!cancelled) setNames((prev) => ({ ...prev, ...next }));
@@ -100,18 +123,18 @@ export function ActivityPage() {
     return () => {
       cancelled = true;
     };
-  }, [actorKey, getPublicProfile]);
+  }, [actorKey, getPublicProfile, locale]);
 
   if (!isLoggedIn) {
     return (
       <EmptyState
-        title={ko.needLogin}
-        body={ko.needLoginBody}
+        title={copy.needLogin}
+        body={copy.needLoginBody}
         action={
           dataMode === "supabase" ? (
-            <Button to="/login">{ko.login}</Button>
+            <Button to="/login">{copy.login}</Button>
           ) : (
-            <Button onClick={() => login()}>{ko.login}</Button>
+            <Button onClick={() => login()}>{copy.login}</Button>
           )
         }
       />
@@ -127,15 +150,23 @@ export function ActivityPage() {
             className="text-link text-link--muted"
             onClick={() => void markActivityRead()}
           >
-            {ko.markAllRead}
+            {copy.markAllRead}
           </button>
         </div>
       ) : null}
       {activities.length === 0 ? (
         <EmptyState
-          title={ko.activityEmpty}
-          body="새 응답, 거래 진행, 메시지 알림이 이곳에 모여요."
-          action={<Button to="/feed" variant="secondary">요청 둘러보기</Button>}
+          title={copy.activityEmpty}
+          body={
+            locale === "ja"
+              ? "新しい返答、取引の進行、メッセージのお知らせがここに集まります。"
+              : "새 응답, 거래 진행, 메시지 알림이 이곳에 모여요."
+          }
+          action={
+            <Button to="/feed" variant="secondary">
+              {copy.ctaBrowse}
+            </Button>
+          }
         />
       ) : (
         <ul className="activity-list">
@@ -145,24 +176,13 @@ export function ActivityPage() {
               ? state.responses.find((r) => r.id === ev.responseId)
               : undefined;
             const actor = ev.actorId ? names[ev.actorId] : undefined;
-            const withActor =
-              Boolean(actor) &&
-              (ev.kind === "NEW_RESPONSE" ||
-                ev.kind === "MATCH_CONNECTED" ||
-                ev.kind === "MATCH_COMPLETED" ||
-                ev.kind === "MATCH_TRADE_CLOSED" ||
-                ev.kind === "BUYER_INTEREST" ||
-                ev.kind === "NEW_MESSAGE" ||
-                ev.kind === "RESPONSE_ACCEPTED");
-            const title = withActor
-              ? `${actor}님이 ${kindVerb(ev.kind)}`
-              : kindVerb(ev.kind);
+            const title = titleFor(ev, actor, copy, locale);
             const bits = [
               demand?.title,
               response?.offeredPrice != null && response.offeredPrice > 0
-                ? formatWon(response.offeredPrice)
+                ? formatStoredMoney(response.offeredPrice, demand?.currencyCode ?? "KRW", locale)
                 : demand?.type === "BUY" && demand.budget > 0
-                  ? formatWon(demand.budget)
+                  ? formatStoredMoney(demand.budget, demand.currencyCode ?? "KRW", locale)
                   : null,
               response?.availabilityText,
             ].filter(Boolean);
@@ -187,9 +207,12 @@ export function ActivityPage() {
                   </span>
                   <span className="activity-list__time">
                     {!ev.readAt ? (
-                      <span className="activity-list__dot" aria-label="안 읽음" />
+                      <span
+                        className="activity-list__dot"
+                        aria-label={locale === "ja" ? "未読" : "안 읽음"}
+                      />
                     ) : null}
-                    {formatRelativeTime(ev.createdAt)}
+                    {formatRelativeTime(ev.createdAt, locale)}
                   </span>
                 </Link>
               </li>

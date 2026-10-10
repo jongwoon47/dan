@@ -1,3 +1,6 @@
+import { demandTypeLabel } from "@/copy/demandTypeLabel";
+import { ko } from "@/copy/ko";
+import { jaPilotCopy } from "@/copy/useDanCopy";
 import type { CreateDemandInput } from "@/domain/danContext";
 import {
   defaultExpiresAtIso,
@@ -16,6 +19,7 @@ import {
   findProductByMatchKey,
   productMatchKey,
 } from "@/domain/productName";
+import { getLocale } from "@/i18n/locale";
 import type {
   ChatMessage,
   Demand,
@@ -193,11 +197,14 @@ export async function ensureProductRemote(
   return mapProduct(data as DbProduct);
 }
 
-export async function listActiveDemands(): Promise<Demand[]> {
+export async function listActiveDemands(
+  marketCountry: "KR" | "JP" = "KR",
+): Promise<Demand[]> {
   const { data, error } = await getSupabase()
     .from("demands")
     .select("*")
     .eq("status", "ACTIVE")
+    .eq("country_code", marketCountry)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return ((data ?? []) as DbDemand[])
@@ -374,7 +381,14 @@ export async function searchLiveDemandRemote(input: {
   sort?: "popular" | "growing" | "price";
   limit?: number;
   offset?: number;
+  /** BUY aggregation is KR-only during the Japan pilot. */
+  countryCode?: "KR" | "JP";
 }): Promise<{ rows: RemoteLiveDemandRow[]; total: number }> {
+  const market = input.countryCode ?? "KR";
+  // Fail closed: JP storefront must not receive KR BUY aggregates.
+  if (market !== "KR") {
+    return { rows: [], total: 0 };
+  }
   const { data, error } = await getSupabase().rpc("search_live_demand", {
     p_query: input.query?.trim() ?? "",
     p_category:
@@ -382,6 +396,7 @@ export async function searchLiveDemandRemote(input: {
     p_sort: input.sort ?? "popular",
     p_limit: input.limit ?? 24,
     p_offset: input.offset ?? 0,
+    p_country_code: "KR",
   });
   if (error) throw error;
 
@@ -474,6 +489,9 @@ export async function createDemandRemote(input: CreateDemandInput): Promise<Dema
     fulfillment_options: publicOptions,
     status: "ACTIVE",
     expires_at: defaultExpiresAtIso(input.type, scheduleIso),
+    // Explicit pilot market; server trigger also rejects non-KR/KRW writes.
+    country_code: "KR",
+    currency_code: "KRW",
   };
   const row =
     input.type === "BORROW"
@@ -538,20 +556,44 @@ async function upsertDemandExactGeoRemote(
   }
 }
 
-export async function fetchApproxDistancesRemote(
-  demandIds: string[],
+/**
+ * Server-selected, privacy-coarsened nearby discovery. No arbitrary demand IDs
+ * and no raw demand coordinates are exposed. Requires migration 0047.
+ */
+export async function searchNearbyDemandDistancesRemote(
   viewer: { lat: number; lng: number },
-): Promise<Record<string, number>> {
-  if (demandIds.length === 0) return {};
-  const { data, error } = await getSupabase().rpc("approx_demand_distances", {
+  radiusKm: 1 | 3 | 5 | 10,
+  marketCountry: "KR" | "JP",
+  offset = 0,
+): Promise<Array<{ id: string; meters: number }>> {
+  if (
+    !Number.isFinite(viewer.lat) || !Number.isFinite(viewer.lng) ||
+    Math.abs(viewer.lat) > 90 || Math.abs(viewer.lng) > 180 ||
+    !([1, 3, 5, 10] as number[]).includes(radiusKm) ||
+    !Number.isInteger(offset) || offset < 0 || offset > 400
+  ) {
+    throw new Error("invalid proximity request");
+  }
+  const { data, error } = await getSupabase().rpc("search_nearby_demands_market", {
+    p_country_code: marketCountry,
     p_lat: viewer.lat,
     p_lng: viewer.lng,
-    p_demand_ids: demandIds,
+    p_radius_m: radiusKm * 1000,
+    p_limit: 40,
+    p_offset: offset,
   });
-  if (error) return {};
-  const out: Record<string, number> = {};
-  for (const row of (data ?? []) as Array<{ id: string; meters: number }>) {
-    if (row?.id && Number.isFinite(row.meters)) out[row.id] = row.meters;
+  if (error) throw new Error("nearby discovery unavailable");
+  if (!Array.isArray(data)) throw new Error("invalid nearby result");
+  const out: Array<{ id: string; meters: number }> = [];
+  const seen = new Set<string>();
+  for (const item of data) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as { id?: unknown; meters?: unknown };
+    if (typeof row.id !== "string" || typeof row.meters !== "number") continue;
+    if (!/^[0-9a-f-]{36}$/i.test(row.id) || !Number.isFinite(row.meters) || row.meters < 1000) continue;
+    if (seen.has(row.id)) continue;
+    seen.add(row.id);
+    out.push({ id: row.id, meters: row.meters });
   }
   return out;
 }
@@ -803,6 +845,15 @@ export async function markActivityReadRemote(activityId?: string) {
 }
 
 export async function fetchPublicProfile(userId: string) {
+  const locale = getLocale();
+  const copy = locale === "ja" ? { ...ko, ...jaPilotCopy } : ko;
+  const typeCopy = {
+    typeBuy: copy.typeBuy,
+    typeBorrow: copy.typeBorrow,
+    typeTask: copy.typeTask,
+    typeService: copy.typeService,
+  };
+
   const sb = getSupabase();
   const { data: profile, error } = await sb
     .from("profiles")
@@ -819,8 +870,8 @@ export async function fetchPublicProfile(userId: string) {
     const provider =
       (auth.user.app_metadata?.provider as string | undefined) ||
       auth.user.identities?.[0]?.provider;
-    if (provider === "google") authLabel = "Google로 가입";
-    else if (provider === "email") authLabel = "이메일로 가입";
+    if (provider === "google") authLabel = copy.authGoogle;
+    else if (provider === "email") authLabel = copy.authEmail;
   }
 
   const [{ data: trustRaw, error: trustError }, { data: verificationRaw }] =
@@ -848,13 +899,6 @@ export async function fetchPublicProfile(userId: string) {
     viewerIsSelf?: boolean;
   };
 
-  const typeLabel: Record<string, string> = {
-    BUY: "물건 구매",
-    BORROW: "빌리기",
-    TASK: "심부름",
-    SERVICE: "서비스",
-  };
-
   const isSelf = trust.viewerIsSelf ?? viewerIsSelf;
   const verification = (verificationRaw ?? {}) as Record<string, unknown>;
 
@@ -877,21 +921,28 @@ export async function fetchPublicProfile(userId: string) {
     identityVerified: Boolean(verification.identityVerified),
     authLabel,
     recentActivity: (trust.recentActivity ?? []).map((row) => {
-      const statusKo =
+      const statusLabel =
         row.status === "COMPLETED"
-          ? "거래 완료"
+          ? copy.profileCompleted
           : row.status === "MATCHED"
-            ? "연결됨"
+            ? copy.matchStatusConnected
             : row.status === "CLOSED"
-              ? "마감"
+              ? copy.statusClosed
               : row.status;
       const title = row.title?.trim();
+      const demandType =
+        row.type === "BUY" ||
+        row.type === "BORROW" ||
+        row.type === "TASK" ||
+        row.type === "SERVICE"
+          ? demandTypeLabel(row.type, typeCopy)
+          : row.type;
       return {
         id: row.id,
         label:
           isSelf && title
-            ? `${title} · ${statusKo}`
-            : `${typeLabel[row.type] ?? row.type} · ${statusKo}`,
+            ? `${title} · ${statusLabel}`
+            : `${demandType} · ${statusLabel}`,
         href:
           row.status === "COMPLETED"
             ? `/match/${row.id}`

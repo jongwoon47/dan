@@ -119,8 +119,15 @@ export interface Product {
   createdAt: string;
 }
 
+export type MarketCountry = "KR" | "JP";
+export type MoneyCurrency = "KRW" | "JPY";
+
 export interface DemandBase {
   id: string;
+  /** Market is independent of UI language. */
+  countryCode?: MarketCountry;
+  /** Stored budget denomination, never guessed from locale. */
+  currencyCode?: MoneyCurrency;
   userId: string;
   type: DemandType;
   title: string;
@@ -248,6 +255,8 @@ export interface DealSnapshot {
   buyerId: string;
   sellerId: string;
   agreedPrice: number;
+  /** Stored settlement currency; never inferred from UI language. */
+  currencyCode?: MoneyCurrency;
   snapshot: Record<string, unknown>;
   buyerConfirmedAt?: string;
   sellerConfirmedAt?: string;
@@ -397,6 +406,7 @@ export type FeedItem =
       sortAt: string;
     };
 
+/** @deprecated Prefer `demandTypeLabel(type, copy)` from `@/copy/demandTypeLabel`. KO-only legacy. */
 export const DEMAND_TYPE_LABEL: Record<DemandType, string> = {
   BUY: ko.typeBuy,
   BORROW: ko.typeBorrow,

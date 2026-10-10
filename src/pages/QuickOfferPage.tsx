@@ -7,22 +7,20 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDan } from "@/domain/danContext";
 import type { ItemCondition, Ownership, TradeMethod } from "@/domain/types";
-import { CONDITION_LABEL } from "@/domain/types";
+import { fillCopyTemplate } from "@/copy/dealChain";
+import { useDanCopy } from "@/copy/useDanCopy";
+import { conditionLabel, tradeLabel } from "@/i18n/categories";
+import { useDanLocale } from "@/i18n/locale";
 import {
   digitsOnly,
   formatDigitsGrouped,
-  formatWon,
+  formatStoredMoney,
   parseMoneyInput,
 } from "@/lib/format";
 import "./pages.css";
 
 const CONDITIONS: ItemCondition[] = ["sealed", "like_new", "lightly_used"];
 const SELLER_TRADE_METHODS: TradeMethod[] = ["meetup", "shipping", "any"];
-const SELLER_TRADE_LABEL: Record<TradeMethod, string> = {
-  meetup: "직거래",
-  shipping: "택배",
-  any: "둘 다 가능",
-};
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -35,6 +33,8 @@ function fileToDataUrl(file: File): Promise<string> {
 }
 
 export function QuickOfferPage() {
+  const locale = useDanLocale();
+  const copy = useDanCopy();
   const { productId = "" } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -48,6 +48,8 @@ export function QuickOfferPage() {
     createSellIntent,
     isLoggedIn,
   } = useDan();
+  const money = (value: number, currency: "KRW" | "JPY" = "KRW") =>
+    formatStoredMoney(value, currency, locale);
 
   const product = getProduct(productId);
   const aggregate = getAggregate(productId);
@@ -78,13 +80,13 @@ export function QuickOfferPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  useDeepHeader({ title: "판매 제안하기" });
+  useDeepHeader({ title: copy.quickOfferTitle });
 
   if (!product) {
     return (
       <EmptyState
-        title="제품을 찾을 수 없어요"
-        action={<Button to="/" variant="secondary">홈으로</Button>}
+        title={copy.missingProduct}
+        action={<Button to="/" variant="secondary">{copy.navHome}</Button>}
       />
     );
   }
@@ -97,17 +99,17 @@ export function QuickOfferPage() {
     setPhotoError("");
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setPhotoError("이미지 파일만 올릴 수 있어요.");
+      setPhotoError(copy.dealImageFileOnly);
       return;
     }
     if (file.size > 700_000) {
-      setPhotoError("700KB 이하 사진을 사용해 주세요.");
+      setPhotoError(copy.dealPhotoTooLarge);
       return;
     }
     try {
       setQuickPhotoUrl(await fileToDataUrl(file));
     } catch {
-      setPhotoError("사진을 읽지 못했어요.");
+      setPhotoError(copy.dealPhotoReadFailed);
     }
   }
 
@@ -127,7 +129,7 @@ export function QuickOfferPage() {
           (await createOwnership({ productId, condition })) ?? undefined;
       }
       if (!ownership) {
-        setError("물품 보유 정보를 만들지 못했어요.");
+        setError(copy.ownershipCreateFail);
         return;
       }
 
@@ -142,7 +144,7 @@ export function QuickOfferPage() {
         quickPhotoUrl: quickPhotoUrl || undefined,
       });
       if (!offer) {
-        setError("판매 제안을 보내지 못했어요.");
+        setError(copy.offerSendFail);
         return;
       }
       navigate("/my");
@@ -156,11 +158,13 @@ export function QuickOfferPage() {
       <section className="deal-product-card quick-offer-product-card">
         <ProductVisual product={product} size="sm" />
         <div>
-          <p className="eyebrow">판매 제안</p>
+          <p className="eyebrow">{copy.quickOfferEyebrow}</p>
           <h1 className="page-title">{product.name}</h1>
           {aggregate?.seekerCount ? (
             <p className="quick-offer-signal">
-              지금 <strong>{aggregate.seekerCount}명</strong>이 찾고 있어요
+              {fillCopyTemplate(copy.quickOfferSeeking, {
+                n: aggregate.seekerCount,
+              })}
             </p>
           ) : null}
         </div>
@@ -168,37 +172,39 @@ export function QuickOfferPage() {
 
       {targetBuyDemand ? (
         <section className="live-demand-banner">
-          <span>선택한 구매수요 · 최대 희망가</span>
-          <strong>{formatWon(targetBuyDemand.details.maxPrice)}</strong>
+          <span>{copy.selectedBuyMax}</span>
+          <strong>
+            {money(targetBuyDemand.details.maxPrice, targetBuyDemand.currencyCode ?? "KRW")}
+          </strong>
           <button type="button" onClick={() => setPrice(String(targetBuyDemand.details.maxPrice))}>
-            이 가격 사용
+            {copy.useThisPrice}
           </button>
         </section>
       ) : aggregate?.highestIntentPrice ? (
         <section className="live-demand-banner">
-          <span>현재 최고 구매 희망가</span>
-          <strong>{formatWon(aggregate.highestIntentPrice)}</strong>
+          <span>{copy.currentBuyHighest}</span>
+          <strong>{money(aggregate.highestIntentPrice)}</strong>
           <button
             type="button"
             onClick={() => setPrice(String(aggregate.highestIntentPrice))}
           >
-            이 가격 사용
+            {copy.useThisPrice}
           </button>
         </section>
       ) : null}
 
       <section className="section-stack quick-offer-form">
-        <Field label="희망 판매가" hint="구매자는 가격을 가장 먼저 비교해요.">
+        <Field label={copy.quickOfferPriceLabel} hint={copy.quickOfferPriceHint}>
           <TextInput
             inputMode="numeric"
-            value={formatDigitsGrouped(price)}
+            value={formatDigitsGrouped(price, locale)}
             onChange={(event) => setPrice(digitsOnly(event.target.value))}
-            placeholder="예: 2,130,000"
+            placeholder={copy.quickOfferPricePh}
           />
         </Field>
 
         <div>
-          <p className="field-inline-label">내 물건 상태</p>
+          <p className="field-inline-label">{copy.myItemCondition}</p>
           <ChipGroup>
             {CONDITIONS.map((item) => (
               <Chip
@@ -206,14 +212,14 @@ export function QuickOfferPage() {
                 selected={condition === item}
                 onClick={() => setCondition(item)}
               >
-                {CONDITION_LABEL[item]}
+                {conditionLabel(locale, item)}
               </Chip>
             ))}
           </ChipGroup>
         </div>
 
         <div>
-          <p className="field-inline-label">가능한 거래 방식</p>
+          <p className="field-inline-label">{copy.possibleTradeMethod}</p>
           <ChipGroup>
             {SELLER_TRADE_METHODS.map((item) => (
               <Chip
@@ -221,7 +227,7 @@ export function QuickOfferPage() {
                 selected={tradeMethod === item}
                 onClick={() => setTradeMethod(item)}
               >
-                {SELLER_TRADE_LABEL[item]}
+                {item === "any" ? copy.tradeBoth : tradeLabel(locale, item)}
               </Chip>
             ))}
           </ChipGroup>
@@ -230,46 +236,46 @@ export function QuickOfferPage() {
         <details className="offer-extra-details" open={Boolean(quickPhotoUrl || conditionNote || usageCount)}>
           <summary>
             <span>
-              <strong>추가 정보</strong>
-              <small>선택</small>
+              <strong>{copy.extraInfo}</strong>
+              <small>{copy.offerPriceOptional}</small>
             </span>
             <span aria-hidden>⌄</span>
           </summary>
           <div className="offer-extra-details__body">
             {showUsageCount ? (
               <Field
-                label="대략적인 컷수"
-                hint="지금은 대략적인 정보만 적어도 돼요."
+                label={copy.approxShutter}
+                hint={copy.approxShutterHint}
               >
                 <TextInput
                   inputMode="numeric"
-                  value={formatDigitsGrouped(usageCount)}
+                  value={formatDigitsGrouped(usageCount, locale)}
                   onChange={(event) =>
                     setUsageCount(digitsOnly(event.target.value))
                   }
-                  placeholder="예: 2,400"
+                  placeholder={copy.approxShutterPh}
                 />
               </Field>
             ) : null}
 
-            <Field label="상태 메모">
+            <Field label={copy.conditionNoteLabel}>
               <TextInput
                 value={conditionNote}
                 onChange={(event) => setConditionNote(event.target.value)}
-                placeholder="예: 상태 좋음 · 상단 미세스크래치"
+                placeholder={copy.conditionNotePh}
               />
             </Field>
 
             <div className="quick-offer-photo">
               <div className="quick-offer-photo__head">
-                <strong>사진</strong>
-                <small>선택 · 없어도 제안 가능</small>
+                <strong>{copy.photoLabel}</strong>
+                <small>{copy.photoOptionalHint}</small>
               </div>
               <label className="evidence-upload evidence-upload--quick">
                 {quickPhotoUrl ? (
-                  <img src={quickPhotoUrl} alt="현재 물품" />
+                  <img src={quickPhotoUrl} alt={copy.evidencePhotoAlt} />
                 ) : (
-                  <span>사진이 있으면 상대가 더 쉽게 판단할 수 있어요.</span>
+                  <span>{copy.photoHelp}</span>
                 )}
                 <input
                   type="file"
@@ -283,7 +289,7 @@ export function QuickOfferPage() {
         </details>
 
         <p className="quick-offer-helper">
-          가격과 상태, 가능한 거래 방식만 먼저 알려주면 돼요.
+          {copy.quickOfferHelper}
         </p>
 
         {error ? <p className="form-error">{error}</p> : null}
@@ -293,7 +299,7 @@ export function QuickOfferPage() {
           disabled={!canSubmit || busy}
           onClick={() => void submit()}
         >
-          {busy ? "제안 중…" : "제안 보내기"}
+          {busy ? copy.offerSending : copy.detailSendOfferCta}
         </Button>
       </section>
     </div>

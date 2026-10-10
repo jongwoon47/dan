@@ -3,35 +3,32 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProductVisual } from "@/components/ProductVisual";
+import { useDanCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
 import { formatFulfillmentSummary } from "@/domain/fulfillment";
-import { CONDITION_LABEL, type Match } from "@/domain/types";
+import { type Match } from "@/domain/types";
 import { isBuyDemand } from "@/domain/types";
-import { formatWon } from "@/lib/format";
+import { conditionLabel } from "@/i18n/categories";
+import { useDanLocale } from "@/i18n/locale";
+import { formatRelativeTime, formatStoredMoney } from "@/lib/format";
 import "./matchCard.css";
 
-function formatOfferTime(iso: string): string {
-  const ms = Date.now() - new Date(iso).getTime();
-  if (!Number.isFinite(ms) || ms < 0) return "";
-  const minutes = Math.max(1, Math.floor(ms / 60000));
-  if (minutes < 60) return `${minutes}분 전`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}시간 전`;
-  return `${Math.floor(hours / 24)}일 전`;
-}
-
-function matchStatusLabel(match: Match): string {
-  if (match.status === "COMPLETED") return "거래 완료";
+function matchStatusLabel(match: Match, copy: ReturnType<typeof useDanCopy>): string {
+  if (match.status === "COMPLETED") return copy.matchStatusCompleted;
   if (match.status === "CONNECTED") {
-    if (match.dealStage === "PAYMENT_PENDING") return "결제 필요";
-    if (match.dealStage === "PAID" || match.dealStage === "HANDOFF_READY") return "인계 확인";
-    if (match.dealStage === "DEAL_LOCKED") return "거래 조건 확정";
-    if (match.dealStage === "EVIDENCE_READY" || match.dealStage === "DEAL_REVIEW") return "거래 조건 확인";
-    return "채팅 중";
+    if (match.dealStage === "PAYMENT_PENDING") return copy.matchStagePaymentNeeded;
+    if (match.dealStage === "PAID" || match.dealStage === "HANDOFF_READY") {
+      return copy.matchStageHandoff;
+    }
+    if (match.dealStage === "DEAL_LOCKED") return copy.matchStageDealLocked;
+    if (match.dealStage === "EVIDENCE_READY" || match.dealStage === "DEAL_REVIEW") {
+      return copy.matchStageDealReview;
+    }
+    return copy.matchStageChatting;
   }
-  if (match.status === "BUYER_INTERESTED") return "상대 수락 대기";
-  if (match.status === "SELLER_ACCEPTED") return "연결 준비";
-  return "새 제안";
+  if (match.status === "BUYER_INTERESTED") return copy.matchStatusWaitingAccept;
+  if (match.status === "SELLER_ACCEPTED") return copy.matchStatusConnectReady;
+  return copy.matchStatusNewOffer;
 }
 
 function matchHref(match: Match): string {
@@ -41,6 +38,8 @@ function matchHref(match: Match): string {
 }
 
 export function MatchCard({ match }: { match: Match }) {
+  const locale = useDanLocale();
+  const copy = useDanCopy();
   const { currentUser, getProduct, state, connectAsSeller } = useDan();
   const [busy, setBusy] = useState(false);
 
@@ -67,7 +66,10 @@ export function MatchCard({ match }: { match: Match }) {
 
   const isBuyer = match.buyerId === currentUser.id;
   const isSeller = match.sellerId === currentUser.id;
-  const status = matchStatusLabel(match);
+  const status = matchStatusLabel(match, copy);
+  const currency = demand.currencyCode ?? "KRW";
+  const money = (value: number) => formatStoredMoney(value, currency, locale);
+  const connecting = busy ? copy.matchConnectingBusy : copy.connect;
 
   if (!sell || !ownership || !product) {
     return (
@@ -79,14 +81,14 @@ export function MatchCard({ match }: { match: Match }) {
               <strong>{demand.title}</strong>
               <span>{status}</span>
             </div>
-            <p>{formatWon(demand.budget)}</p>
-            <small>{formatFulfillmentSummary(demand.fulfillmentOptions)}</small>
+            <p>{money(demand.budget)}</p>
+            <small>{formatFulfillmentSummary(demand.fulfillmentOptions, locale)}</small>
           </div>
           <span className="trade-row-card__chevron" aria-hidden>›</span>
         </Link>
         {!isBuyer && match.status === "BUYER_INTERESTED" ? (
           <Button size="sm" onClick={() => void onConnect()} disabled={busy}>
-            {busy ? "연결 중…" : "연결하기"}
+            {connecting}
           </Button>
         ) : null}
       </article>
@@ -94,8 +96,32 @@ export function MatchCard({ match }: { match: Match }) {
   }
 
   const buyMax = isBuyDemand(demand) ? demand.details.maxPrice : demand.budget;
-  const offerTime = formatOfferTime(sell.createdAt);
+  const offerTime = formatRelativeTime(sell.createdAt, locale);
   const delta = buyMax - sell.minimumPrice;
+  const photoAlt =
+    locale === "ja"
+      ? `${product.name} 出品者が撮影した現物`
+      : `${product.name} 판매자가 올린 현재 물품`;
+  const deltaLabel =
+    delta >= 0
+      ? locale === "ja"
+        ? `希望上限より ${money(delta)} 安い`
+        : `내 최대가보다 ${money(delta)} 낮아요`
+      : locale === "ja"
+        ? `希望上限より ${money(Math.abs(delta))} 高い`
+        : `내 최대가보다 ${money(Math.abs(delta))} 높아요`;
+  const buyerMaxLine =
+    locale === "ja"
+      ? `購入者の上限 ${money(buyMax)} · ${formatFulfillmentSummary(demand.fulfillmentOptions, locale)}`
+      : `구매자 최대 ${money(buyMax)} · ${formatFulfillmentSummary(demand.fulfillmentOptions, locale)}`;
+  const connectBuyer =
+    busy
+      ? locale === "ja"
+        ? "接続中…"
+        : "연결 중…"
+      : locale === "ja"
+        ? "購入者と接続する"
+        : "구매자와 연결하기";
 
   if (isBuyer) {
     return (
@@ -105,7 +131,7 @@ export function MatchCard({ match }: { match: Match }) {
             <img
               className="trade-row-card__photo"
               src={sell.quickPhotoUrl}
-              alt={`${product.name} 판매자가 올린 현재 물품`}
+              alt={photoAlt}
             />
           ) : (
             <ProductVisual product={product} size="sm" />
@@ -115,15 +141,13 @@ export function MatchCard({ match }: { match: Match }) {
               <strong>{product.name}</strong>
               <span>{status}</span>
             </div>
-            <p className="trade-row-card__price">{formatWon(sell.minimumPrice)}</p>
+            <p className="trade-row-card__price">{money(sell.minimumPrice)}</p>
             <small>
-              {CONDITION_LABEL[ownership.condition]}
+              {conditionLabel(locale, ownership.condition)}
               {sell.conditionNote ? ` · ${sell.conditionNote}` : ""}
             </small>
             <small className={delta >= 0 ? "trade-row-card__delta is-good" : "trade-row-card__delta"}>
-              {delta >= 0
-                ? `내 최대가보다 ${formatWon(delta)} 낮아요`
-                : `내 최대가보다 ${formatWon(Math.abs(delta))} 높아요`}
+              {deltaLabel}
             </small>
           </div>
           <div className="trade-row-card__trail">
@@ -144,8 +168,8 @@ export function MatchCard({ match }: { match: Match }) {
             <strong>{product.name}</strong>
             <span>{status}</span>
           </div>
-          <p className="trade-row-card__price">{formatWon(sell.minimumPrice)}</p>
-          <small>구매자 최대 {formatWon(buyMax)} · {formatFulfillmentSummary(demand.fulfillmentOptions)}</small>
+          <p className="trade-row-card__price">{money(sell.minimumPrice)}</p>
+          <small>{buyerMaxLine}</small>
         </div>
         <span className="trade-row-card__chevron" aria-hidden>›</span>
       </Link>
@@ -153,7 +177,7 @@ export function MatchCard({ match }: { match: Match }) {
       {isSeller && match.status === "BUYER_INTERESTED" ? (
         <div className="trade-row-card__inline-action">
           <Button size="sm" onClick={() => void onConnect()} disabled={busy}>
-            {busy ? "연결 중…" : "구매자와 연결하기"}
+            {connectBuyer}
           </Button>
         </div>
       ) : null}
@@ -162,13 +186,14 @@ export function MatchCard({ match }: { match: Match }) {
 }
 
 export function MatchList({ matches, emptyWhenZero = true }: { matches: Match[]; emptyWhenZero?: boolean; }) {
+  const copy = useDanCopy();
   if (matches.length === 0) {
     if (!emptyWhenZero) return null;
     return (
       <EmptyState
-        title="아직 거래가 없어요"
-        body="요청을 올리거나 탐색에서 다른 사람의 요청에 제안해보세요."
-        action={<Button to="/feed" variant="secondary">탐색하기</Button>}
+        title={copy.noMatch}
+        body={copy.noMatchBody}
+        action={<Button to="/feed" variant="secondary">{copy.ctaBrowse}</Button>}
       />
     );
   }

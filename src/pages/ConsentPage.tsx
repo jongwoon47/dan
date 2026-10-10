@@ -4,6 +4,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { consentReturnPath, useConsent } from "@/auth/ConsentProvider";
 import { legalDocumentHref } from "@/auth/consentVersions";
 import { Button } from "@/components/ui/Button";
+import { translate, useDanLocale } from "@/i18n/locale";
 import "@/pages/pages.css";
 
 export function ConsentPage() {
@@ -12,6 +13,8 @@ export function ConsentPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const next = consentReturnPath(params.get("next"));
+  const locale = useDanLocale();
+  const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
   const termsId = useId();
   const privacyId = useId();
   const allId = useId();
@@ -42,7 +45,7 @@ export function ConsentPage() {
     try {
       await refresh();
     } catch {
-      setError("동의 상태를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      setError(t("consentStatusFailed"));
     } finally {
       setRetryBusy(false);
     }
@@ -59,11 +62,11 @@ export function ConsentPage() {
             height={56}
           />
           <p className="auth-screen__mark">DAN</p>
-          <h1 className="auth-screen__headline">DAN 시작하기</h1>
-          <p className="section-desc">동의 상태를 아직 확인하지 못했어요.</p>
+          <h1 className="auth-screen__headline">{t("consentHeadline")}</h1>
+          <p className="section-desc">{t("consentStatusFailed")}</p>
         </div>
         <p className="form-error" role="alert">
-          {error ?? "동의 상태를 확인하지 못했어요. 잠시 후 다시 시도해 주세요."}
+          {error ?? t("consentStatusFailed")}
         </p>
         <Button
           fullWidth
@@ -71,7 +74,7 @@ export function ConsentPage() {
           disabled={retryBusy}
           onClick={() => void onRetryStatus()}
         >
-          {retryBusy ? "확인 중…" : "다시 시도"}
+          {retryBusy ? t("consentRetrying") : t("consentRetry")}
         </Button>
       </div>
     );
@@ -94,7 +97,7 @@ export function ConsentPage() {
       await accept();
       navigate(next, { replace: true });
     } catch {
-      setError("동의 내용을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      setError(t("consentSaveFailed"));
       setBusy(false);
     }
   }
@@ -109,11 +112,14 @@ export function ConsentPage() {
           height={56}
         />
         <p className="auth-screen__mark">DAN</p>
-        <h1 className="auth-screen__headline">DAN 시작하기</h1>
-        <p className="section-desc">서비스 이용을 위해 아래 내용을 확인해 주세요.</p>
+        <h1 className="auth-screen__headline">{t("consentHeadline")}</h1>
+        <p className="section-desc">{t("consentLead")}</p>
+        {locale === "ja" ? (
+          <p className="section-desc">{t("consentLegalPendingJa")}</p>
+        ) : null}
       </div>
 
-      <div className="consent-list" role="group" aria-label="필수 동의">
+      <div className="consent-list" role="group" aria-label={t("consentGroup")}>
         <div className="consent-row consent-row--all">
           <label className="consent-row__main" htmlFor={allId}>
             <input
@@ -126,7 +132,7 @@ export function ConsentPage() {
             <span className="consent-check" aria-hidden="true" data-checked={allChecked}>
               {allChecked ? "✓" : ""}
             </span>
-            <span className="consent-row__label">전체 동의</span>
+            <span className="consent-row__label">{t("consentAll")}</span>
           </label>
         </div>
 
@@ -145,17 +151,17 @@ export function ConsentPage() {
               {terms ? "✓" : ""}
             </span>
             <span className="consent-row__label">
-              <span className="consent-row__required">[필수]</span> 이용약관 동의
+              <span className="consent-row__required">{t("consentRequiredTag")}</span> {t("consentTerms")}
             </span>
           </label>
           <a
             className="consent-row__view"
-            href={legalDocumentHref("terms")}
+            href={legalDocumentHref("terms", locale)}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="이용약관 보기"
+            aria-label={t("consentViewTerms")}
           >
-            보기 <span aria-hidden="true">›</span>
+            {t("consentView")} <span aria-hidden="true">›</span>
           </a>
         </div>
 
@@ -172,17 +178,17 @@ export function ConsentPage() {
               {privacy ? "✓" : ""}
             </span>
             <span className="consent-row__label">
-              <span className="consent-row__required">[필수]</span> 개인정보처리방침 동의
+              <span className="consent-row__required">{t("consentRequiredTag")}</span> {t("consentPrivacy")}
             </span>
           </label>
           <a
             className="consent-row__view"
-            href={legalDocumentHref("privacy")}
+            href={legalDocumentHref("privacy", locale)}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="개인정보처리방침 보기"
+            aria-label={t("consentViewPrivacy")}
           >
-            보기 <span aria-hidden="true">›</span>
+            {t("consentView")} <span aria-hidden="true">›</span>
           </a>
         </div>
       </div>
@@ -199,7 +205,7 @@ export function ConsentPage() {
         disabled={!canSubmit}
         onClick={() => void onSubmit()}
       >
-        {busy ? "저장 중…" : "동의하고 시작하기"}
+        {busy ? t("consentSaving") : t("consentSubmit")}
       </Button>
     </div>
   );

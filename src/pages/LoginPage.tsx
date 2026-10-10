@@ -7,19 +7,22 @@ import { useAuth } from "@/auth/AuthProvider";
 import { consentReturnPath, useConsent } from "@/auth/ConsentProvider";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Input";
-import { ko } from "@/copy/ko";
+import { useDanCopy, type LocalizedCopy } from "@/copy/useDanCopy";
+import { useDanLocale } from "@/i18n/locale";
 import { safeReturnPath } from "@/lib/createDraft";
 import "@/pages/pages.css";
 
-function authErrorMessage(err: unknown): string {
+function authErrorMessage(err: unknown, copy: LocalizedCopy): string {
   const msg = err instanceof Error ? err.message : "";
-  if (/invalid login|invalid credentials/i.test(msg)) return ko.authInvalid;
-  if (/already registered|user already/i.test(msg)) return ko.authExists;
-  if (/password/i.test(msg) && /6|least|weak/i.test(msg)) return ko.authWeakPassword;
-  return ko.genericError;
+  if (/invalid login|invalid credentials/i.test(msg)) return copy.authInvalid;
+  if (/already registered|user already/i.test(msg)) return copy.authExists;
+  if (/password/i.test(msg) && /6|least|weak/i.test(msg)) return copy.authWeakPassword;
+  return copy.genericError;
 }
 
 export function LoginPage() {
+  const copy = useDanCopy();
+  const locale = useDanLocale();
   const { mode, status, signIn, signUp, error, clearError } = useAuth();
   const { resolution } = useConsent();
   const [params] = useSearchParams();
@@ -55,14 +58,18 @@ export function LoginPage() {
       .catch(() => { if (!controller.signal.aborted) setProviders([]); });
     const hash = new URLSearchParams(window.location.hash.slice(1));
     if (params.has("error") || hash.has("error")) {
-      setLocalError("간편 로그인을 완료하지 못했어요. 다시 시도해 주세요.");
+      setLocalError(
+        locale === "ja"
+          ? "かんたんログインを完了できませんでした。もう一度お試しください。"
+          : "간편 로그인을 완료하지 못했어요. 다시 시도해 주세요.",
+      );
       const clean = new URL(window.location.href);
       for (const key of ["error", "error_code", "error_description"]) clean.searchParams.delete(key);
       clean.hash = "";
       window.history.replaceState(null, "", clean.pathname + clean.search);
     }
     return () => controller.abort();
-  }, [mode, params]);
+  }, [locale, mode, params]);
 
   async function onSocialLogin(provider: SocialProvider) {
     if (submitLock.current || status === "loading") return;
@@ -73,7 +80,11 @@ export function LoginPage() {
     try {
       await startSocialLogin(provider, next);
     } catch {
-      setLocalError("간편 로그인에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      setLocalError(
+        locale === "ja"
+          ? "かんたんログインに接続できませんでした。しばらくしてからもう一度お試しください。"
+          : "간편 로그인에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.",
+      );
       setSocialBusy(null);
       submitLock.current = false;
     }
@@ -114,7 +125,9 @@ export function LoginPage() {
           setIsSignUp(false);
           setPassword("");
           setNotice(
-            "가입 확인 메일을 보냈어요. 이메일의 링크를 확인한 뒤 로그인해 주세요.",
+            locale === "ja"
+              ? "確認メールを送りました。メールのリンクを確認してからログインしてください。"
+              : "가입 확인 메일을 보냈어요. 이메일의 링크를 확인한 뒤 로그인해 주세요.",
           );
           return;
         }
@@ -124,7 +137,7 @@ export function LoginPage() {
       // Keep resolving until AuthProvider + ConsentProvider finish; then Navigate above.
       setAwaitingSession(true);
     } catch (err) {
-      setLocalError(authErrorMessage(err));
+      setLocalError(authErrorMessage(err, copy));
       setAwaitingSession(false);
     } finally {
       setBusy(false);
@@ -132,22 +145,22 @@ export function LoginPage() {
     }
   }
 
-  const shownError = localError || (error ? ko.genericError : null);
+  const shownError = localError || (error ? copy.genericError : null);
 
   return (
     <div className="auth-screen">
       <div className="auth-screen__brand">
         <img src={`${import.meta.env.BASE_URL}dan-logo.png`} alt="" width={56} height={56} />
         <p className="auth-screen__mark">DAN</p>
-        <h1 className="auth-screen__headline">{ko.authHeadline}</h1>
+        <h1 className="auth-screen__headline">{copy.authHeadline}</h1>
         <p className="section-desc">
-          {isSignUp ? ko.signupLead : ko.loginLead}
-          {next === "/create" ? ` ${ko.loginToContinue}` : ""}
+          {isSignUp ? copy.signupLead : copy.loginLead}
+          {next === "/create" ? ` ${copy.loginToContinue}` : ""}
         </p>
       </div>
 
-      {params.get('account') === 'deleted' && <p role="status">회원탈퇴가 완료됐어요. DAN 계정과 개인정보를 삭제했어요.</p>}
-      <div className="auth-social" aria-label="간편 로그인">
+      {params.get('account') === 'deleted' && <p role="status">{locale === "ja" ? "退会が完了しました。DANのアカウントと個人情報を削除しました。" : "회원탈퇴가 완료됐어요. DAN 계정과 개인정보를 삭제했어요。"}</p>}
+      <div className="auth-social" aria-label={locale === "ja" ? "ソーシャルログイン" : "간편 로그인"}>
         {(["google", "kakao", ...(Capacitor.isNativePlatform() ? ["apple" as const] : [])] as SocialProvider[]).filter((provider) => providers?.includes(provider) || (providers === null && provider === "google")).map((provider) => {
           const label = provider === "kakao" ? "카카오" : provider === "google" ? "Google" : "Apple";
           const enabled = providers?.includes(provider);
@@ -158,17 +171,17 @@ export function LoginPage() {
             <span className="auth-social__content">
               <span className="auth-social__icon" aria-hidden="true">{provider === "kakao" ? <svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3C6.48 3 2 6.46 2 10.73c0 2.77 1.88 5.2 4.7 6.57l-1.2 4.1c-.1.35.3.63.59.42l4.8-3.28c.37.03.74.05 1.11.05 5.52 0 10-3.46 10-7.86S17.52 3 12 3Z" /></svg> : provider === "google" ? <img src={`${import.meta.env.BASE_URL}google-g-logo.png`} alt="" width={20} height={20} /> : null}</span>
               <span className="auth-social__label">
-                <span className={socialBusy === provider ? "auth-social__label--hidden" : undefined}>{`${label}로 계속하기`}</span>
-                {socialBusy === provider ? <span className="auth-social__progress" role="status">연결 중…</span> : null}
+                <span className={socialBusy === provider ? "auth-social__label--hidden" : undefined}>{locale === "ja" ? `${label}で続ける` : `${label}로 계속하기`}</span>
+                {socialBusy === provider ? <span className="auth-social__progress" role="status">{locale === "ja" ? "接続中…" : "연결 중…"}</span> : null}
               </span>
             </span>
           </button>;
         })}
-        <div className="auth-social__divider"><span>또는</span></div>
+        <div className="auth-social__divider"><span>{locale === "ja" ? "または" : "또는"}</span></div>
       </div>
       <form className="section-stack auth-screen__form" onSubmit={(e) => void onSubmit(e)}>
         {isSignUp ? (
-          <Field label={ko.displayNameLabel}>
+          <Field label={copy.displayNameLabel}>
             <TextInput
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
@@ -177,7 +190,7 @@ export function LoginPage() {
             />
           </Field>
         ) : null}
-        <Field label={ko.emailLabel}>
+        <Field label={copy.emailLabel}>
           <TextInput
             type="email"
             autoComplete="email"
@@ -186,7 +199,7 @@ export function LoginPage() {
             required
           />
         </Field>
-        <Field label={ko.passwordLabel}>
+        <Field label={copy.passwordLabel}>
           <TextInput
             type="password"
             autoComplete={isSignUp ? "new-password" : "current-password"}
@@ -207,16 +220,16 @@ export function LoginPage() {
           </p>
         ) : null}
         <Button fullWidth type="submit" disabled={busy || socialBusy !== null} size="lg">
-          {busy ? ko.saving : isSignUp ? ko.createAccount : "이메일로 계속하기"}
+          {busy ? copy.saving : isSignUp ? copy.createAccount : (locale === "ja" ? "メールで続ける" : "이메일로 계속하기")}
         </Button>
       </form>
 
       <p className="auth-screen__signup">
-        <span>{isSignUp ? "이미 계정이 있나요?" : "계정이 없나요?"}</span>
+        <span>{isSignUp ? (locale === "ja" ? "アカウントをお持ちですか？" : "이미 계정이 있나요?") : (locale === "ja" ? "初めてご利用ですか？" : "계정이 없나요?")}</span>
       <button
         type="button"
         className="text-link"
-        aria-label={isSignUp ? ko.haveAccount : ko.needAccount}
+        aria-label={isSignUp ? copy.haveAccount : copy.needAccount}
         disabled={busy || socialBusy !== null}
         onClick={() => {
           setIsSignUp((v) => !v);
@@ -225,11 +238,11 @@ export function LoginPage() {
           setNotice(null);
         }}
       >
-        {isSignUp ? "로그인" : "회원가입"}
+        {isSignUp ? copy.login : copy.signup}
       </button>
       </p>
       <Link to="/" className="text-link text-link--muted">
-        {ko.goBack}
+        {copy.goBack}
       </Link>
     </div>
   );

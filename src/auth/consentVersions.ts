@@ -35,9 +35,12 @@ export function isConsentSatisfied(
   );
 }
 
-/** Same-origin static legal pages under /public. */
-export function legalDocumentHref(doc: "terms" | "privacy"): string {
+/** Same-origin static legal pages under /public. JA drafts live under /ja/. */
+export function legalDocumentHref(
+  doc: "terms" | "privacy",
+  locale: "ko" | "ja" = "ko",
+): string {
   const base = import.meta.env.BASE_URL || "/";
   const root = base.endsWith("/") ? base : `${base}/`;
-  return `${root}${doc}/`;
+  return locale === "ja" ? `${root}ja/${doc}/` : `${root}${doc}/`;
 }

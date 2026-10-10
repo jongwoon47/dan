@@ -1,0 +1,2 @@
+/* Localized iOS permission purpose for Japanese users. */
+"NSLocationWhenInUseUsageDescription" = "近くのおつかいや取引の依頼を探すために、ボタンを押したときだけ現在地を使用します。許可しなくても地域名で検索できます。";

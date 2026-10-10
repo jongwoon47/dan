@@ -1,0 +1,17 @@
+---
+description: "DAN engineering handoff: safe, tested production hardening and Japan pilot readiness"
+alwaysApply: true
+---
+
+# DAN: Cursor development / launch-safety rules
+
+**On this feature branch, begin by reading `docs/CURSOR_DAN_HANDOFF_20261009.md` and following its priorities and evidence gate.** Prefer the actual latest GitHub remote state/CI logs over stale SHAs or last-turn summaries.
+
+- Working target: `feature/dan-location-jp-launch-plan-20261009`, draft PR #31 into `feature/dan-v3-real-app-ui`. Do **not** merge CI-proxy PR #30 to main.
+- Do the engineering tasks autonomously: inspect, fix, test, commit and push scoped changes on the development branch; update reviewable PR evidence and blockers.
+- Preserve both previously submitted iOS builds. **No release / App Store actions, no main/production merge, no real user DB schema/data changes, no production deployment** without separate explicit owner approval.
+- Real transactions only; no dummy marketplace listings, fabricated PASS, fake photos, or false JPY support. `?country=JP` creation stays gated until genuinely supported and verified.
+- Never infer market or stored currency from display language; enforce KR/KRW and JP/JPY consistently in backend, queries, offers, cards, and trades.
+- Protect exact GPS coordinates, secrets and service-role credentials; scrutinize SECURITY DEFINER functions and RLS. Denied location must not break manual lookup.
+- Mandatory local checks: `npm ci`, `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`, `supabase start`, `supabase db reset`, `supabase test db`, local real two-user Supabase browser smoke and visual Playwright 390/desktop. Report any unavailable iPhone/Mac test as BLOCKED, never PASS.
+- Finish each phase with HEAD SHA, PR URL, verified test outputs, screenshots when useful, remaining blockers and rollout impact. Prefer real fixes over disabling tests.

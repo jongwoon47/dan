@@ -33,11 +33,17 @@ export function liveDemandCategoryCounts(
   return [...counts.entries()].sort((a, b) => b[1] - a[1]);
 }
 
+function normalizeSearchText(value: string): string {
+  // NFKC + locale-neutral casefold so Japanese kana/kanji queries are not
+  // forced through ko-KR case mapping.
+  return value.normalize("NFKC").trim().toLocaleLowerCase();
+}
+
 function matchesQuery(row: LiveDemandRow, rawQuery: string): boolean {
   const query = rawQuery.trim();
   if (!query) return true;
 
-  const lower = query.toLocaleLowerCase("ko-KR");
+  const lower = normalizeSearchText(query);
   const matchKey = productMatchKey(query);
   const haystacks = [
     row.product.name,
@@ -48,7 +54,7 @@ function matchesQuery(row: LiveDemandRow, rawQuery: string): boolean {
   ];
 
   return haystacks.some((value) => {
-    const normalized = value.toLocaleLowerCase("ko-KR");
+    const normalized = normalizeSearchText(value);
     if (normalized.includes(lower)) return true;
     return Boolean(matchKey && productMatchKey(value).includes(matchKey));
   });

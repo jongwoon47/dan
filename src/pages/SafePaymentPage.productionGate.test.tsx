@@ -1,8 +1,9 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ShellChromeProvider } from "@/components/layout/ShellChrome";
 import { DanProvider } from "@/domain/store";
+import { setDanLocale } from "@/i18n/locale";
 import { SafePaymentPage } from "./SafePaymentPage";
 
 vi.mock("@/data/mode", async (importOriginal) => {
@@ -87,7 +88,13 @@ function installLockedDeal() {
 describe("SafePaymentPage production gate", () => {
   beforeEach(() => {
     localStorage.clear();
+    setDanLocale("ko");
     installLockedDeal();
+  });
+
+  afterEach(() => {
+    cleanup();
+    setDanLocale("ko");
   });
 
   it("does not offer a demo payment that could mark the deal paid", async () => {
@@ -110,6 +117,34 @@ describe("SafePaymentPage production gate", () => {
     ).toBeVisible();
     expect(screen.getByText("결제 기능이 연결되기 전까지는 거래 조건 확인까지만 진행할 수 있어요.")).toBeVisible();
     expect(screen.queryByRole("button", { name: /결제하기/ })).toBeNull();
+    await waitFor(() => {
+      expect(localStorage.getItem(STORE_KEY)).not.toContain('"paymentStatus":"PAID"');
+    });
+  });
+
+  it("keeps the honest payment gate in Japanese without a pay CTA", async () => {
+    setDanLocale("ja");
+    render(
+      <ShellChromeProvider>
+        <DanProvider>
+          <MemoryRouter initialEntries={["/deal/pay-match/payment"]}>
+            <Routes>
+              <Route path="/deal/:matchId/payment" element={<SafePaymentPage />} />
+            </Routes>
+          </MemoryRouter>
+        </DanProvider>
+      </ShellChromeProvider>,
+    );
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "現在は実際の支払いを受け付けていません。",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByText("支払い機能が接続されるまでは、取引条件の確認まで進めます。"),
+    ).toBeVisible();
+    expect(screen.queryByRole("button", { name: /支払う|결제하기/ })).toBeNull();
     await waitFor(() => {
       expect(localStorage.getItem(STORE_KEY)).not.toContain('"paymentStatus":"PAID"');
     });

@@ -4,14 +4,15 @@ import { Button } from "@/components/ui/Button";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
-import { ko } from "@/copy/ko";
+import { demandTypeLabel } from "@/copy/demandTypeLabel";
+import { useDanCopy, type LocalizedCopy } from "@/copy/useDanCopy";
+import { useDanLocale } from "@/i18n/locale";
 import { useDan } from "@/domain/danContext";
 import { effectiveDemandStatus, isDemandOpen } from "@/domain/demandLifecycle";
 import {
   formatFulfillmentModes,
   primaryPublicPlace,
 } from "@/domain/fulfillment";
-import { DEMAND_TYPE_LABEL } from "@/domain/types";
 import {
   clearResponseDraft,
   loadResponseDraft,
@@ -20,7 +21,7 @@ import {
 import {
   formatDemandWhen,
   formatDurationMinutes,
-  formatWon,
+  formatStoredMoney,
 } from "@/lib/format";
 import {
   formatPublicPlaceLine,
@@ -28,15 +29,17 @@ import {
 } from "@/lib/geoDistance";
 import "./pages.css";
 
-function responseStatusLabel(status: string) {
-  if (status === "OPEN") return ko.statusOpen;
-  if (status === "ACCEPTED") return ko.statusAccepted;
-  if (status === "DECLINED") return ko.statusDeclined;
-  if (status === "WITHDRAWN") return ko.statusWithdrawn;
+function responseStatusLabel(status: string, copy: LocalizedCopy) {
+  if (status === "OPEN") return copy.statusOpen;
+  if (status === "ACCEPTED") return copy.statusAccepted;
+  if (status === "DECLINED") return copy.statusDeclined;
+  if (status === "WITHDRAWN") return copy.statusWithdrawn;
   return status;
 }
 
 export function DemandItemPage() {
+  const copy = useDanCopy();
+  const locale = useDanLocale();
   const { demandId = "" } = useParams();
   const navigate = useNavigate();
   const {
@@ -54,7 +57,7 @@ export function DemandItemPage() {
   } = useDan();
   const demand = getDemand(demandId);
   useDeepHeader({
-    title: demand ? DEMAND_TYPE_LABEL[demand.type] : ko.viewDemand,
+    title: demand ? demandTypeLabel(demand.type, copy) : copy.viewDemand,
   });
   const restored = loadResponseDraft(demandId);
   const [composerOpen, setComposerOpen] = useState(Boolean(restored));
@@ -118,9 +121,9 @@ export function DemandItemPage() {
   );
 
   function statusBadgeLabel(status: typeof viewStatus): string {
-    if (status === "CLOSED") return ko.statusClosed;
-    if (status === "MATCHED") return ko.statusMatched;
-    if (status === "EXPIRED") return ko.statusExpired;
+    if (status === "CLOSED") return copy.statusClosed;
+    if (status === "MATCHED") return copy.statusMatched;
+    if (status === "EXPIRED") return copy.statusExpired;
     return "";
   }
 
@@ -149,8 +152,8 @@ export function DemandItemPage() {
   if (!demand) {
     return (
       <EmptyState
-        title={ko.missingDemand}
-        action={<Button to="/feed" variant="secondary">{ko.goBack}</Button>}
+        title={copy.missingDemand}
+        action={<Button to="/feed" variant="secondary">{copy.goBack}</Button>}
       />
     );
   }
@@ -161,7 +164,7 @@ export function DemandItemPage() {
     setLocalError(null);
     const msg = message.trim();
     if (!msg) {
-      setLocalError(ko.genericError);
+      setLocalError(copy.genericError);
       return;
     }
     const price = offerPrice.trim() ? Number(offerPrice.replace(/,/g, "")) : undefined;
@@ -179,7 +182,7 @@ export function DemandItemPage() {
       availabilityText: availability.trim() || undefined,
     });
     if (!result) {
-      setLocalError(ko.genericError);
+      setLocalError(copy.genericError);
       return;
     }
     clearResponseDraft();
@@ -198,7 +201,7 @@ export function DemandItemPage() {
     <div className="page-stack page-narrow demand-item">
       <header className="demand-item__header">
         <div className="demand-item__badges">
-          <span className="demand-chip">{DEMAND_TYPE_LABEL[demand.type]}</span>
+          <span className="demand-chip">{demandTypeLabel(demand.type, copy)}</span>
           {viewStatus !== "ACTIVE" ? (
             <span
               className={
@@ -212,7 +215,7 @@ export function DemandItemPage() {
               {statusBadgeLabel(viewStatus)}
             </span>
           ) : (
-            <span className="demand-chip demand-chip--open">{ko.statusActive}</span>
+            <span className="demand-chip demand-chip--open">{copy.statusActive}</span>
           )}
         </div>
         <h1 className="page-title demand-item__title">{demand.title}</h1>
@@ -226,49 +229,49 @@ export function DemandItemPage() {
         <div className="detail-facts__row detail-facts__row--reward">
           <dt>
             {demand.type === "BORROW"
-              ? ko.borrowBudgetTotal
+              ? copy.borrowBudgetTotal
               : demand.type === "TASK" || demand.type === "SERVICE"
-                ? ko.reward
-                : ko.detailBudget}
+                ? copy.reward
+                : copy.detailBudget}
           </dt>
-          <dd>{formatWon(demand.budget)}</dd>
+          <dd>{formatStoredMoney(demand.budget, demand.currencyCode ?? "KRW", locale)}</dd>
         </div>
         <div className="detail-facts__row">
           <dt>
             {demand.type === "BUY"
-              ? ko.whereLabelBuy
+              ? copy.whereLabelBuy
               : demand.type === "BORROW"
-                ? ko.whereLabelBorrow
+                ? copy.whereLabelBorrow
                 : demand.type === "SERVICE"
-                  ? ko.whereLabelService
-                  : ko.whereLabelTask}
+                  ? copy.whereLabelService
+                  : copy.whereLabelTask}
           </dt>
-          <dd>{formatFulfillmentModes(demand.fulfillmentOptions)}</dd>
+          <dd>{formatFulfillmentModes(demand.fulfillmentOptions, locale)}</dd>
         </div>
         {primaryPublicPlace(demand.fulfillmentOptions) ? (
           <div className="detail-facts__row">
-            <dt>{ko.detailLocation}</dt>
+            <dt>{copy.detailLocation}</dt>
             <dd>
               {formatPublicPlaceLine(
                 primaryPublicPlace(demand.fulfillmentOptions)!,
                 loadViewerGeo(),
-                { revealDetail: revealLocation },
+                { revealDetail: revealLocation, locale },
               )}
             </dd>
           </div>
         ) : null}
         {formatDemandWhen(demand) ? (
           <div className="detail-facts__row">
-            <dt>{ko.detailWhen}</dt>
-            <dd>{formatDemandWhen(demand)}</dd>
+            <dt>{copy.detailWhen}</dt>
+            <dd>{formatDemandWhen(demand, locale)}</dd>
           </div>
         ) : null}
         {demand.type === "SERVICE" &&
-        formatDurationMinutes(demand.details.estimatedDurationMinutes) ? (
+        formatDurationMinutes(demand.details.estimatedDurationMinutes, locale) ? (
           <div className="detail-facts__row">
-            <dt>{ko.detailDuration}</dt>
+            <dt>{copy.detailDuration}</dt>
             <dd>
-              {formatDurationMinutes(demand.details.estimatedDurationMinutes)}
+              {formatDurationMinutes(demand.details.estimatedDurationMinutes, locale)}
             </dd>
           </div>
         ) : null}
@@ -280,7 +283,7 @@ export function DemandItemPage() {
             variant="secondary"
             to={`/demand/item/${demand.id}/edit`}
           >
-            {ko.editDemand}
+            {copy.editDemand}
           </Button>
           <Button
             variant="ghost"
@@ -288,7 +291,7 @@ export function DemandItemPage() {
             onClick={() => setCloseOpen(true)}
             disabled={busy}
           >
-            {ko.closeDemand}
+            {copy.closeDemand}
           </Button>
         </div>
       ) : null}
@@ -297,21 +300,21 @@ export function DemandItemPage() {
         <div className="section-stack">
           {demand.type === "BUY" ? (
             <>
-              <p className="section-desc">{ko.expiredBuyAsk}</p>
+              <p className="section-desc">{copy.expiredBuyAsk}</p>
               <Button
                 fullWidth
                 size="lg"
                 disabled={busy}
                 onClick={() => void extendBuyDemand(demand.id)}
               >
-                {ko.extend30d}
+                {copy.extend30d}
               </Button>
             </>
           ) : (
             <>
-              <p className="section-desc">{ko.expiredTimedBody}</p>
+              <p className="section-desc">{copy.expiredTimedBody}</p>
               <Button fullWidth size="lg" to={`/create?type=${demand.type}`}>
-                {ko.recreateSimilar}
+                {copy.recreateSimilar}
               </Button>
             </>
           )}
@@ -322,10 +325,10 @@ export function DemandItemPage() {
         <div className="section-stack">
           {myConnectedMatch ? (
             <Button to={`/match/${myConnectedMatch.id}`} fullWidth size="lg">
-              {ko.openChat}
+              {copy.openChat}
             </Button>
           ) : (
-            <p className="section-desc">{ko.demandClosed}</p>
+            <p className="section-desc">{copy.demandClosed}</p>
           )}
         </div>
       ) : null}
@@ -334,9 +337,9 @@ export function DemandItemPage() {
 
       {!isOwner && demandOpen && demand.type === "BUY" ? (
         <div className="section-stack">
-          <p className="section-desc">{ko.haveItBody}</p>
+          <p className="section-desc">{copy.haveItBody}</p>
           <Button to={`/demand/${demand.details.productId}`} fullWidth size="lg">
-            {ko.haveIt}
+            {copy.haveIt}
           </Button>
         </div>
       ) : null}
@@ -345,31 +348,31 @@ export function DemandItemPage() {
         <>
           {sent || myOpen ? (
             <div className="section-stack">
-              <p className="section-desc">{ko.respondSent}</p>
+              <p className="section-desc">{copy.respondSent}</p>
               {myOpen ? (
                 <>
                   <div className="response-card">
                     {myOpen.offeredPrice != null ? (
                       <div className="response-card__fact">
-                        <span className="response-card__label">{ko.offerPrice}</span>
+                        <span className="response-card__label">{copy.offerPrice}</span>
                         <strong className="response-card__price">
-                          {formatWon(myOpen.offeredPrice)}
+                          {formatStoredMoney(myOpen.offeredPrice, demand.currencyCode ?? "KRW", locale)}
                         </strong>
                       </div>
                     ) : null}
                     {myOpen.availabilityText ? (
                       <div className="response-card__fact">
                         <span className="response-card__label">
-                          {ko.availabilityShort}
+                          {copy.availabilityShort}
                         </span>
                         <span>{myOpen.availabilityText}</span>
                       </div>
                     ) : null}
                     <div className="response-card__fact">
-                      <span className="response-card__label">{ko.responseMessage}</span>
+                      <span className="response-card__label">{copy.responseMessage}</span>
                       <span>{myOpen.message}</span>
                     </div>
-                    <p className="muted">{responseStatusLabel(myOpen.status)}</p>
+                    <p className="muted">{responseStatusLabel(myOpen.status, copy)}</p>
                   </div>
                   <div className="action-row">
                     <Button
@@ -381,14 +384,14 @@ export function DemandItemPage() {
                         setComposerOpen(true);
                       }}
                     >
-                      {ko.editResponse}
+                      {copy.editResponse}
                     </Button>
                     <Button
                       variant="secondary"
                       disabled={busy}
                       onClick={() => void withdrawResponse(myOpen.id)}
                     >
-                      {ko.withdrawResponse}
+                      {copy.withdrawResponse}
                     </Button>
                   </div>
                 </>
@@ -398,10 +401,10 @@ export function DemandItemPage() {
 
           {canRespond && composerOpen ? (
             <form className="composer-sheet" onSubmit={(e) => void submitResponse(e)}>
-              <h2 className="section-title">{ko.respondSheetTitle}</h2>
+              <h2 className="section-title">{copy.respondSheetTitle}</h2>
               <label className="field">
                 <span>
-                  {ko.offerPrice} <em>{ko.offerPriceOptional}</em>
+                  {copy.offerPrice} <em>{copy.offerPriceOptional}</em>
                 </span>
                 <input
                   inputMode="numeric"
@@ -409,39 +412,43 @@ export function DemandItemPage() {
                   onChange={(e) => setOfferPrice(e.target.value)}
                   placeholder={
                     demand.budget > 0
-                      ? `희망 ${demand.budget.toLocaleString("ko-KR")}원`
-                      : ko.offerPriceOptional
+                      ? formatStoredMoney(
+                          demand.budget,
+                          demand.currencyCode ?? "KRW",
+                          locale,
+                        )
+                      : copy.offerPriceOptional
                   }
                 />
               </label>
               <label className="field">
                 <span>
-                  {ko.availability} <em>{ko.offerPriceOptional}</em>
+                  {copy.availability} <em>{copy.offerPriceOptional}</em>
                 </span>
                 <input
                   value={availability}
                   onChange={(e) => setAvailability(e.target.value)}
-                  placeholder={ko.availabilityPh}
+                  placeholder={copy.availabilityPh}
                 />
               </label>
               <label className="field">
-                <span>{ko.responseMessage}</span>
+                <span>{copy.responseMessage}</span>
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder={
                     demand.type === "BORROW"
-                      ? `예: ${ko.respondBorrow}`
+                      ? copy.respondBorrow
                       : demand.type === "SERVICE"
-                        ? `예: ${ko.respondService}`
-                        : ko.responseMessagePh
+                        ? copy.respondService
+                        : copy.responseMessagePh
                   }
                   rows={3}
                   required
                 />
               </label>
               <Button fullWidth type="submit" disabled={busy}>
-                {busy ? ko.saving : ko.sendResponse}
+                {busy ? copy.saving : copy.sendResponse}
               </Button>
             </form>
           ) : null}
@@ -458,7 +465,7 @@ export function DemandItemPage() {
                 setComposerOpen(true);
               }}
             >
-              {ko.respondCta}
+              {copy.respondCta}
             </Button>
           ) : null}
         </>
@@ -470,28 +477,28 @@ export function DemandItemPage() {
             <>
               <div className="demand-offer-summary">
                 <div>
-                  <span className="demand-offer-summary__label">받은 제안</span>
+                  <span className="demand-offer-summary__label">{copy.receivedOffers}</span>
                   <strong>{buyOfferCount}</strong>
                 </div>
                 <Button
                   to="/my"
                   variant="secondary"
                 >
-                  제안 보기
+                  {copy.viewOffers}
                 </Button>
               </div>
               {buyOfferCount === 0 ? (
-                <p className="section-desc">판매 제안이 도착하면 여기에서 바로 확인할 수 있어요.</p>
+                <p className="section-desc">{copy.buyOffersEmpty}</p>
               ) : (
-                <p className="section-desc">가격과 상태를 비교한 뒤 관심 있는 제안을 선택하세요.</p>
+                <p className="section-desc">{copy.buyOffersHint}</p>
               )}
             </>
           ) : (
-            <h2 className="section-title">{ko.ownerResponsesLead}</h2>
+            <h2 className="section-title">{copy.ownerResponsesLead}</h2>
           )}
           {demand.type === "BUY" ? null : ownerResponses.length === 0 ? (
             <div className="demand-item__empty">
-              <p className="section-desc">{ko.ownerResponsesEmpty}</p>
+              <p className="section-desc">{copy.ownerResponsesEmpty}</p>
             </div>
           ) : (
             ownerResponses.map((r) => (
@@ -506,29 +513,29 @@ export function DemandItemPage() {
                       to={`/profile/${r.userId}`}
                       className="text-link muted"
                     >
-                      상대
+                      {copy.chatPeerFallback}
                     </Link>
                   )}
-                  <span className="muted">{responseStatusLabel(r.status)}</span>
+                  <span className="muted">{responseStatusLabel(r.status, copy)}</span>
                 </div>
                 {r.offeredPrice != null ? (
                   <div className="response-card__fact">
-                    <span className="response-card__label">{ko.offerPrice}</span>
+                    <span className="response-card__label">{copy.offerPrice}</span>
                     <strong className="response-card__price">
-                      {formatWon(r.offeredPrice)}
+                      {formatStoredMoney(r.offeredPrice, demand.currencyCode ?? "KRW", locale)}
                     </strong>
                   </div>
                 ) : null}
                 {r.availabilityText ? (
                   <div className="response-card__fact">
                     <span className="response-card__label">
-                      {ko.availabilityShort}
+                      {copy.availabilityShort}
                     </span>
                     <span>{r.availabilityText}</span>
                   </div>
                 ) : null}
                 <div className="response-card__fact">
-                  <span className="response-card__label">{ko.responseMessage}</span>
+                  <span className="response-card__label">{copy.responseMessage}</span>
                   <span>{r.message}</span>
                 </div>
                 {r.status === "OPEN" && demandOpen ? (
@@ -541,14 +548,14 @@ export function DemandItemPage() {
                         })
                       }
                     >
-                      {ko.acceptResponseAction}
+                      {copy.acceptResponseAction}
                     </Button>
                     <Button
                       variant="secondary"
                       disabled={busy}
                       onClick={() => void declineResponse(r.id)}
                     >
-                      {ko.declineResponse}
+                      {copy.declineResponse}
                     </Button>
                   </div>
                 ) : null}
@@ -560,9 +567,9 @@ export function DemandItemPage() {
 
       <ConfirmSheet
         open={closeOpen}
-        title={ko.closeDemand}
-        body={ko.closeDemandConfirm}
-        confirmLabel={ko.closeDemand}
+        title={copy.closeDemand}
+        body={copy.closeDemandConfirm}
+        confirmLabel={copy.closeDemand}
         danger
         onCancel={() => setCloseOpen(false)}
         onConfirm={() => void onCloseDemand()}
