@@ -204,9 +204,9 @@ test("BUY browser path reaches evidence→snapshot→payment honesty gate (no fa
       fullPage: true,
     });
 
-    const matchId = await latestMatchIdForUser(buyerId);
+    const potentialOfferId = await latestPotentialBuyOfferId(buyerId);
 
-    await buyerPage.goto(`/offer/${matchId}`);
+    await buyerPage.goto(`/offer/${potentialOfferId}`);
     await buyerPage.getByRole("button", { name: "이 제안 선택하기" }).click();
     await expect(buyerPage.getByText("제안을 선택했어요")).toBeVisible({
       timeout: 45_000,
@@ -217,7 +217,16 @@ test("BUY browser path reaches evidence→snapshot→payment honesty gate (no fa
       sellerPage.getByRole("button", { name: "구매자와 연결하기" }),
     ).toBeVisible({ timeout: 45_000 });
     await sellerPage.getByRole("button", { name: "구매자와 연결하기" }).click();
-    await expect(sellerPage).toHaveURL(/\/match\//, { timeout: 45_000 });
+    // Connect does not auto-navigate; wait for persisted CONNECTED match.
+    await expect.poll(async () => {
+      try {
+        return await latestMatchIdForUser(buyerId);
+      } catch {
+        return "";
+      }
+    }, { timeout: 45_000 }).not.toEqual("");
+    const connectedMatchId = await latestMatchIdForUser(buyerId);
+    await sellerPage.goto(`/match/${connectedMatchId}`);
 
     await sellerPage.getByRole("link", { name: "상품 정보 등록" }).click();
     await expect(sellerPage).toHaveURL(/\/evidence/);
@@ -244,7 +253,7 @@ test("BUY browser path reaches evidence→snapshot→payment honesty gate (no fa
       timeout: 45_000,
     });
 
-    await buyerPage.goto(`/deal/${matchId}/snapshot`);
+    await buyerPage.goto(`/deal/${connectedMatchId}/snapshot`);
     const buyerConfirm = buyerPage.getByRole("button", { name: "거래 조건 확인" });
     await expect(buyerConfirm).toBeVisible({ timeout: 30_000 });
     await buyerConfirm.click();
@@ -256,7 +265,7 @@ test("BUY browser path reaches evidence→snapshot→payment honesty gate (no fa
       fullPage: true,
     });
 
-    await buyerPage.goto(`/deal/${matchId}/payment`);
+    await buyerPage.goto(`/deal/${connectedMatchId}/payment`);
     await expect(
       buyerPage.getByRole("heading", {
         name: "현재는 실제 결제를 받을 수 없어요.",
@@ -270,7 +279,7 @@ test("BUY browser path reaches evidence→snapshot→payment honesty gate (no fa
       fullPage: true,
     });
 
-    await buyerPage.goto(`/deal/${matchId}/handoff`);
+    await buyerPage.goto(`/deal/${connectedMatchId}/handoff`);
     await expect(buyerPage.getByText("결제가 먼저 필요해요")).toBeVisible({
       timeout: 30_000,
     });

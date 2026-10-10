@@ -159,25 +159,20 @@ export async function latestPotentialBuyOfferId(buyerId: string): Promise<string
     throw new Error("no active BUY demand for buyer");
   }
 
-  const { data: ownerships, error: ownershipError } = await admin
-    .from("ownerships")
-    .select("id")
-    .eq("product_id", demand.product_id)
-    .eq("status", "OWNED");
-  if (ownershipError) throw ownershipError;
-  const ownershipIds = (ownerships ?? []).map((row) => row.id as string);
-  if (ownershipIds.length === 0) throw new Error("no ownerships for product");
-
   const { data: sell, error: sellError } = await admin
     .from("sell_intents")
     .select("id,created_at")
     .eq("status", "OPEN")
-    .in("ownership_id", ownershipIds)
+    .eq("product_id", demand.product_id)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   if (sellError) throw sellError;
-  if (!sell?.id) throw new Error("no OPEN sell intent for product");
+  if (!sell?.id) {
+    throw new Error(
+      `no OPEN sell intent for product ${demand.product_id} (demand ${demand.id})`,
+    );
+  }
 
   return `potential::${demand.id}::${sell.id}`;
 }
