@@ -164,7 +164,11 @@ export function SellIntentPage() {
             )}
             <input type="file" accept="image/*" onChange={(e) => void pickPhoto(e.target.files?.[0])} />
           </label>
-          {photoError ? <p className="form-error">{photoError}</p> : null}
+          {photoError ? (
+            <p className="form-error" role="alert">
+              {photoError}
+            </p>
+          ) : null}
         </div>
 
         <div className="quick-offer-note">

@@ -609,18 +609,23 @@ textarea.dan-input,
 }
 .my-demand-tabs button {
   position: relative;
-  min-height: 44px;
-  padding: 0 2px !important;
+  min-height: 48px;
+  padding: 0 4px !important;
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
   color: var(--dan-ink-muted) !important;
+  font-size: 0.9375rem !important;
+  font-weight: 600 !important;
 }
-.my-demand-tabs button.is-active { color: var(--dan-ink) !important; }
+.my-demand-tabs button.is-active {
+  color: var(--dan-ink) !important;
+  font-weight: 800 !important;
+}
 .my-demand-tabs button.is-active::after {
   content: "";
   position: absolute; left: 0; right: 0; bottom: -1px;
-  height: 2px; background: var(--dan-ink); border-radius: 999px;
+  height: 3px; background: var(--dan-ink); border-radius: 999px;
 }
 .my-demand-tabs button span {
   margin-left: 5px;

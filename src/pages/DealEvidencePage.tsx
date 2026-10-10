@@ -419,7 +419,11 @@ export function DealEvidencePage() {
                 onChange={(e) => void pickPhoto(e.target.files?.[0])}
               />
             </label>
-            {photoError ? <p className="form-error">{photoError}</p> : null}
+            {photoError ? (
+              <p className="form-error" role="alert">
+                {photoError}
+              </p>
+            ) : null}
           </div>
 
           <div className="evidence-form-divider">
@@ -527,7 +531,11 @@ export function DealEvidencePage() {
             />
           </Field>
 
-          {submitError ? <p className="form-error">{submitError}</p> : null}
+          {submitError ? (
+            <p className="form-error" role="alert">
+              {submitError}
+            </p>
+          ) : null}
           <Button fullWidth size="lg" disabled={!canSubmit || busy} onClick={() => void submit()}>
             {busy ? copy.saving : copy.evidenceSave}
           </Button>
