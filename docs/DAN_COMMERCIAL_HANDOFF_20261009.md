@@ -6,34 +6,37 @@
 |---|---|
 | BRANCH | `cursor/dan-commercial-complete-e0e7` |
 | Base for PR #36 | `feature/dan-v3-real-app-ui` |
-| Also tracks | ff history toward `feature/dan-location-jp-launch-plan-20261009` |
-| Tip | `2224216` (or newer — always `git rev-parse HEAD`) |
+| Also tracks | FF-synced with `feature/dan-location-jp-launch-plan-20261009` |
+| Tip | always `git rev-parse HEAD` on complete branch |
 | PR | https://github.com/jongwoon47/dan/pull/36 |
 | Ready | **NO** (no JP store Ready; no staging/prod write; no main merge) |
 
 ## Latest work (this re-entry)
 
 1. **Block send UI race** — `MatchChatPage.load()` no longer clears composer/send errors on poll/focus success. Blocked send keeps `copy.chatBlockedSend` visible. PostgrestError `message/details/hint/code` parsed for `/blocked/i`.
-2. **BUY E2E strict mode** — product title assert scoped to `main` (header + page both use name).
-3. **MyDan / feed / detail JA types** — `src/copy/demandTypeLabel.ts`; DEMAND_TYPE_LABEL hardcoding removed from MyDan, DemandItem chip/header, IndividualDemandCard; feed search matches KO+JA type names; demo `profileTrust` locale-aware.
-4. **Dispute browser E2E** — `prepareBuyPaidDeal` helper; new test opens dispute after ops PAID and asserts handoff completion CTA removed + pause copy.
+2. **BUY E2E** — product title assert scoped to `main`; `prepareBuyPaidDeal` shared helper.
+3. **Dispute browser E2E** — after ops PAID, open dispute → pause copy + handoff confirm CTA gone.
+4. **JA demand types** — `src/copy/demandTypeLabel.ts` on MyDan / DemandItem / IndividualDemandCard; feed search KO+JA; demo `profileTrust` locale-aware.
+5. **MatchCard / Conversations stages** — copy keys (`matchStage*`, `matchStatusWaitingAccept`, …).
+6. **Live profile + ProductVisual JA** — `fetchPublicProfile` auth/type/status via locale copy; `categoryLabel` on ProductVisual/CategoryPill; `openDealDisputeRemote` unit test.
+7. Gap audit residual: MyDan/TradeComplete/Profile/BuyDemandCreate inline ternaries → dictionary; fully deprecate `DEMAND_TYPE_LABEL`.
 
 ## Next agent (no user questions)
 
-1. Confirm CI green on tip (`d575751` or newer): verify + visual + supabase (safety block UI, BUY complete, BUY dispute, smoke).
-2. If block UI still fails: download Playwright failure screenshot; confirm error node `.form-error` and that peer session is blocked pair.
-3. Residual JA: MatchCard stage ternaries → copy keys; DemandItem remaining locale ternaries; AccountDeletion KO strings.
-4. Staging apply / JP write unlock / main / store / real PG / Ready → **BLOCKED** (ask human). Never touch PAN; protect in-review DAN app.
+1. Confirm CI green on tip: verify + visual + supabase (block UI, BUY complete, BUY dispute, smoke).
+2. If block UI still fails: download Playwright failure screenshot; confirm `.form-error` and blocked pair.
+3. Residual JA dictionary work above.
+4. Staging apply / JP write unlock / main / store / real PG / Ready → **BLOCKED**. Never touch PAN; protect in-review DAN app.
 
 ## Scorecard snapshot (update after CI)
 
 | Area | Status |
 |---|---|
-| BUY browser complete (CI local) | IMPLEMENTED — re-verify on tip |
-| BUY dispute pause (CI local) | IMPLEMENTED — awaiting tip CI |
-| Report/block/cancel TASK UI | IMPLEMENTED — block UI fix awaiting tip CI |
+| BUY browser complete (CI local) | IMPLEMENTED — tip CI |
+| BUY dispute pause (CI local) | IMPLEMENTED — tip CI |
+| Report/block/cancel TASK UI | IMPLEMENTED — tip CI |
 | BORROW/TASK/SERVICE browser complete | VERIFIED (prior green CI) |
-| JA demand type labels (MyDan/feed/detail) | IMPLEMENTED |
+| JA demand type / profile / category labels | IMPLEMENTED |
 | Staging DB apply | BLOCKED |
 | JP write unlock / legal / device QA | BLOCKED |
 | Japan Ready | **NO** |
