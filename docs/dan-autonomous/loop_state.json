@@ -4,8 +4,8 @@
   "branch": "automation/dan-autonomous-review-loop-20261010",
   "baseline_branch": "cursor/dan-commercial-complete-e0e7",
   "baseline_sha": "47e456d8d5651dde48d9d8ced056911afb593e5d",
-  "running_head": "3df98fc3a7f059d945ecc88570dd742bbd4cd79d",
-  "last_updated": "2026-10-10T07:04:28Z",
+  "running_head": "88415845fea7ae9b0dc4b2e610d25a46cd52d3d7",
+  "last_updated": "2026-10-10T15:30:05Z",
   "phase": "IMPLEMENTING",
   "autonomy": {
     "mode": "cursor-agent-with-readonly-subagent",
@@ -94,7 +94,8 @@
         "C020 PASS @ db57c7f login/create copy centralization (bc-845e62fc).",
         "C021 PASS @ d879bd6 offline/not-found + My touch (bc-0ab94c90).",
         "C022 PASS @ 6553a4c loading AT announcements (bc-ff6d5a6a).",
-        "C023 PASS @ 3df98fc demand detail recovery/share/alert (bc-ed82659c-3ee6-5487-a7af-efc55a11b1bd)."
+        "C023 PASS @ 3df98fc demand detail recovery/share/alert (bc-ed82659c-3ee6-5487-a7af-efc55a11b1bd).",
+        "C024 PASS @ 8841584 trade-chain loading/alerts/CTAs (bc-ae232488-6991-5baa-865a-5c423955ce6f)."
       ]
     },
     {
@@ -797,6 +798,37 @@
         "evidence": "PASS detail recovery/share/alert"
       },
       "next_action": "Trade chain commercial UX: DealSnapshot/SafePayment/Handoff/TradeComplete"
+    },
+    {
+      "id": "C024",
+      "task_id": "P1-01",
+      "implementation_sha": "88415845fea7ae9b0dc4b2e610d25a46cd52d3d7",
+      "tests": [
+        {
+          "command": "npm test -- DealSnapshot.loading SafePayment.productionGate jaTradeCoverage",
+          "status": "PASS",
+          "evidence": "9 targeted"
+        },
+        {
+          "command": "npm test",
+          "status": "PASS",
+          "evidence": "254"
+        },
+        {
+          "command": "full CI",
+          "status": "NOT_RUN",
+          "evidence": "Deferred until next polish batch stable"
+        }
+      ],
+      "review": {
+        "status": "PASS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-ae232488-6991-5baa-865a-5c423955ce6f",
+        "reviewed_sha": "88415845fea7ae9b0dc4b2e610d25a46cd52d3d7",
+        "findings": [],
+        "evidence": "PASS AC1-AC5 trade-chain trust"
+      },
+      "next_action": "Evidence/QuickOffer alerts + My tabs; then Full CI checkpoint"
     }
   ],
   "blockers": [
@@ -829,17 +861,17 @@
       "owner_action": "Optional: fix agent VM Docker/Realtime networking"
     }
   ],
-  "next_action": "Continue: DealSnapshot/SafePayment/Handoff/TradeComplete + OfferDetail commercial UX; Full CI after that stable batch.",
-  "last_report": "C019–C023 whole-app commercial polish @ 3df98fc VERIFIED (253 tests). Draft PR #37. Full CI deferred. Release NOT_APPROVED.",
+  "next_action": "C025 evidence/quickoffer alerts + My tab polish; then Full CI suite=full on stable tip.",
+  "last_report": "One-shot owner-away: C024 trade-chain PASS @ 8841584. Draft PR #37. Full CI next after small evidence polish.",
   "screen_audit": {
-    "updated": "2026-10-10T07:04:28Z",
+    "updated": "2026-10-10T15:30:05Z",
     "method": "code + computerUse browser @390/720",
     "screens": {
       "home": "IMPROVED_C019",
       "feed": "IMPROVED_C019",
       "create": "IMPROVED_C020",
       "demand_detail": "IMPROVED_C023",
-      "trade_chain": "NEEDS_REVIEW",
+      "trade_chain": "IMPROVED_C024",
       "chat": "PRIOR_C013",
       "activity": "IMPROVED_C019",
       "my": "IMPROVED_C019_C021",
@@ -849,13 +881,62 @@
       "consent": "IMPROVED_C022",
       "report_block": "PRIOR_C008",
       "not_found": "IMPROVED_C021",
-      "network": "IMPROVED_C021"
+      "network": "IMPROVED_C021",
+      "offer_detail": "IMPROVED_C024"
     },
     "open_gaps": [
-      "Trade chain (snapshot/payment/handoff/complete) commercial UX pass",
-      "Offer detail residual",
+      "Offer/evidence visual residual + browser seeded deal walk",
       "Measured nearby query performance (B-001)",
-      "Legal/TestFlight/JP write unlock owner-gated"
+      "Legal/TestFlight/JP write unlock owner-gated",
+      "Full CI checkpoint pending after next polish batch"
+    ]
+  },
+  "jp_pilot_readiness": {
+    "status": "PREPARED_PENDING_OWNER",
+    "write_unlock": "DISABLED",
+    "checklist": [
+      {
+        "id": "JP-LEGAL",
+        "item": "APPI/legal review of JA terms/privacy/support drafts",
+        "status": "BLOCKED",
+        "owner_action": "Qualified JP counsel review"
+      },
+      {
+        "id": "JP-CURRENCY",
+        "item": "True JPY amounts without false KRW→JPY conversion",
+        "status": "CODE_READY",
+        "evidence": "marketMoney tests"
+      },
+      {
+        "id": "JP-LOCALE-MARKET",
+        "item": "Locale ≠ market country separation",
+        "status": "CODE_READY",
+        "evidence": "marketPrefs + CreateDemand gate tests"
+      },
+      {
+        "id": "JP-CREATE-GATE",
+        "item": "JP create/trade writes remain locked",
+        "status": "CODE_READY",
+        "evidence": "CreateDemandPage.ja + backend gates"
+      },
+      {
+        "id": "JP-ADDRESS",
+        "item": "Prefecture/postal scaffolding without precise address as area",
+        "status": "CODE_READY",
+        "evidence": "jpAddress + savedAreas tests"
+      },
+      {
+        "id": "JP-TESTFLIGHT",
+        "item": "Real iOS TestFlight device verification",
+        "status": "BLOCKED",
+        "owner_action": "B-002 Mac/device"
+      },
+      {
+        "id": "JP-GEOGRAPHY",
+        "item": "Pilot pilot region keys before write unlock",
+        "status": "BLOCKED",
+        "owner_action": "Product approve pilot regions"
+      }
     ]
   }
 }
