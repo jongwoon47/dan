@@ -1,15 +1,12 @@
 import { expect, test, type Browser } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
+import { prepareBuyPaidDeal } from "./buyDealSetup";
 import {
-  TINY_PNG,
   appBaseUrl,
   assertSendMessageRejectedAsBlocked,
-  latestPotentialBuyOfferId,
-  markMatchPaidTrusted,
   respondToDemand,
   signupNamed,
-  submitBuy,
   submitTask,
   verifyUser,
   waitForConnectedMatchId,
@@ -182,172 +179,11 @@ test("BUY browser path: evidence→snapshot→payment honesty→ops paid→hando
   const outDir = path.join("qa-screenshots", "supabase-buy-deal");
   mkdirSync(outDir, { recursive: true });
 
-  const { ownerContext, peerContext, ownerPage: buyerPage, peerPage: sellerPage } =
-    await twoPages(browser);
+  const deal = await prepareBuyPaidDeal(browser, tag, outDir);
+  const { buyerPage, sellerPage, matchId, ownerContext, peerContext } = deal;
 
   try {
-    const buyerName = `구매자${tag.slice(-4)}`;
-    const sellerName = `판매자${tag.slice(-4)}`;
-    const buyerEmail = await signupNamed(buyerPage, tag, "buyer", buyerName);
-    const sellerEmail = await signupNamed(sellerPage, tag, "seller", sellerName);
-    const buyerId = await verifyUser(buyerEmail, "buyer");
-    await verifyUser(sellerEmail, "seller");
-
-    const title = await submitBuy(buyerPage, tag);
-    const demandPath = new URL(buyerPage.url()).pathname;
-
-    // Seller: demand item → product detail → quick offer (condition required)
-    const demandId = demandPath.split("/").pop()!;
-    await sellerPage.goto(demandPath);
-    await sellerPage.getByRole("link", { name: "가지고 있어요" }).click();
-    // Header + page title both use the product name — scope to main.
-    await expect(
-      sellerPage.getByRole("main").getByRole("heading", { name: title }),
-    ).toBeVisible();
-    // Prefer target-bound offer so the sell intent links to this BUY demand.
-    const productPath = new URL(sellerPage.url()).pathname; // /demand/:productId
-    await sellerPage.goto(`${productPath}/offer?target=${encodeURIComponent(demandId)}`);
-    await expect(sellerPage.getByLabel("희망 판매가")).toBeVisible({
-      timeout: 30_000,
-    });
-    await sellerPage.getByLabel("희망 판매가").fill("800000");
-    await sellerPage.getByRole("button", { name: "거의 새것" }).click();
-    await sellerPage.getByRole("button", { name: "제안 보내기" }).click();
-    await expect(sellerPage).toHaveURL(/\/my/, { timeout: 45_000 });
-    await sellerPage.screenshot({
-      path: path.join(outDir, "00-offer-sent.png"),
-      fullPage: true,
-    });
-
-    const potentialOfferId = await latestPotentialBuyOfferId(buyerId);
-
-    await buyerPage.goto(`/offer/${potentialOfferId}`);
-    await buyerPage.getByRole("button", { name: "이 제안 선택하기" }).click();
-    await expect(buyerPage.getByText("제안을 선택했어요")).toBeVisible({
-      timeout: 45_000,
-    });
-
-    await sellerPage.goto("/my");
-    await expect(
-      sellerPage.getByRole("button", { name: "구매자와 연결하기" }),
-    ).toBeVisible({ timeout: 45_000 });
-    await sellerPage.getByRole("button", { name: "구매자와 연결하기" }).click();
-    const connectedMatchId = await waitForConnectedMatchId(buyerId);
-
-    // Hydrate seller store via match chat, then open evidence with retries.
-    let evidenceReady = false;
-    for (let attempt = 0; attempt < 6; attempt += 1) {
-      await sellerPage.goto(`/match/${connectedMatchId}`);
-      await expect(
-        sellerPage.getByRole("link", { name: "상품 정보 등록" }),
-      ).toBeVisible({ timeout: 60_000 });
-      await sellerPage.getByRole("link", { name: "상품 정보 등록" }).click();
-      await expect(sellerPage).toHaveURL(/\/evidence/);
-      const formVisible = await sellerPage
-        .getByText("현재 보유 사진 · 필수")
-        .isVisible()
-        .catch(() => false);
-      if (!formVisible) {
-        await sellerPage.goto("/my");
-        continue;
-      }
-
-      const codeLocator = sellerPage.locator(".evidence-challenge-code strong");
-      try {
-        await expect
-          .poll(
-            async () => {
-              if (await codeLocator.isVisible().catch(() => false)) return true;
-              const retry = sellerPage.getByRole("button", {
-                name: "새 코드 받기",
-              });
-              if (await retry.isVisible().catch(() => false)) {
-                await retry.click();
-              }
-              return false;
-            },
-            { timeout: 45_000, intervals: [500, 750, 1000] },
-          )
-          .toBe(true);
-        evidenceReady = true;
-        break;
-      } catch {
-        await sellerPage.goto("/my");
-      }
-    }
-    expect(evidenceReady, "evidence challenge did not issue after retries").toBe(
-      true,
-    );
-
-    const fileInput = sellerPage.locator('input[type="file"]');
-    await expect(fileInput).toBeEnabled({ timeout: 30_000 });
-    await fileInput.setInputFiles({
-      name: "evidence.png",
-      mimeType: "image/png",
-      buffer: TINY_PNG,
-    });
-    await sellerPage.getByLabel("외관 상태").fill("사용감 적음");
-    await sellerPage.getByLabel("알려진 기능 이상").fill("없음");
-    // Toggle at least one component chip if present (helps canSubmit).
-    const componentChip = sellerPage.locator(".chip, .dan-chip, button").filter({
-      hasText: /제품|본체|박스/,
-    }).first();
-    if (await componentChip.count()) {
-      await componentChip.click().catch(() => undefined);
-    }
-    await sellerPage.getByRole("button", { name: "상품 정보 저장하기" }).click();
-    await expect(sellerPage).toHaveURL(/\/snapshot/, { timeout: 60_000 });
-    await sellerPage.screenshot({
-      path: path.join(outDir, "01-evidence-to-snapshot.png"),
-      fullPage: true,
-    });
-
-    const sellerConfirm = sellerPage.getByRole("button", { name: "거래 조건 확인" });
-    await expect(sellerConfirm).toBeVisible({ timeout: 30_000 });
-    await sellerConfirm.click();
-    await expect(sellerPage.getByText(/상대 확인 대기|확정/)).toBeVisible({
-      timeout: 45_000,
-    });
-
-    await buyerPage.goto(`/deal/${connectedMatchId}/snapshot`);
-    const buyerConfirm = buyerPage.getByRole("button", { name: "거래 조건 확인" });
-    await expect(buyerConfirm).toBeVisible({ timeout: 30_000 });
-    await buyerConfirm.click();
-    await expect(buyerPage.getByText("거래 조건이 확정됐어요")).toBeVisible({
-      timeout: 60_000,
-    });
-    await buyerPage.screenshot({
-      path: path.join(outDir, "02-snapshot-locked.png"),
-      fullPage: true,
-    });
-
-    await buyerPage.goto(`/deal/${connectedMatchId}/payment`);
-    await expect(
-      buyerPage.getByRole("heading", {
-        name: "현재는 실제 결제를 받을 수 없어요.",
-      }),
-    ).toBeVisible({ timeout: 30_000 });
-    await expect(
-      buyerPage.getByRole("button", { name: /결제하기|원 결제/ }),
-    ).toHaveCount(0);
-    await buyerPage.screenshot({
-      path: path.join(outDir, "03-payment-gate.png"),
-      fullPage: true,
-    });
-
-    await buyerPage.goto(`/deal/${connectedMatchId}/handoff`);
-    await expect(buyerPage.getByText("결제가 먼저 필요해요")).toBeVisible({
-      timeout: 30_000,
-    });
-    await buyerPage.screenshot({
-      path: path.join(outDir, "04-handoff-blocked.png"),
-      fullPage: true,
-    });
-
-    // Trusted ops settlement only — never click a fake client "pay" control.
-    await markMatchPaidTrusted(connectedMatchId, `browser-buy-${tag}`);
-
-    await buyerPage.goto(`/deal/${connectedMatchId}/handoff`);
+    await buyerPage.goto(`/deal/${matchId}/handoff`);
     await expect(
       buyerPage.getByRole("button", { name: "물품을 확인했습니다" }),
     ).toBeVisible({ timeout: 90_000 });
@@ -361,12 +197,12 @@ test("BUY browser path: evidence→snapshot→payment honesty→ops paid→hando
     });
 
     await sellerPage.goto("/my");
-    await sellerPage.goto(`/deal/${connectedMatchId}/handoff`);
+    await sellerPage.goto(`/deal/${matchId}/handoff`);
     await expect(
       sellerPage.getByRole("button", { name: "제품 인도를 완료했습니다" }),
     ).toBeVisible({ timeout: 60_000 });
     await sellerPage.getByRole("button", { name: "제품 인도를 완료했습니다" }).click();
-    await expect(sellerPage).toHaveURL(new RegExp(`/deal/${connectedMatchId}/complete`), {
+    await expect(sellerPage).toHaveURL(new RegExp(`/deal/${matchId}/complete`), {
       timeout: 60_000,
     });
     await expect(
@@ -381,12 +217,55 @@ test("BUY browser path: evidence→snapshot→payment honesty→ops paid→hando
       fullPage: true,
     });
 
-    await buyerPage.goto(`/deal/${connectedMatchId}/complete`);
+    await buyerPage.goto(`/deal/${matchId}/complete`);
     await expect(
       buyerPage.getByRole("heading", { name: /거래가 완료/ }),
     ).toBeVisible({ timeout: 60_000 });
     await expect(buyerPage.getByText("800,000원").first()).toBeVisible({
       timeout: 30_000,
+    });
+  } finally {
+    await ownerContext.close();
+    await peerContext.close();
+  }
+});
+
+test("BUY browser path: ops paid→open dispute pauses handoff completion", async ({
+  browser,
+}) => {
+  test.setTimeout(300_000);
+  const tag = `d${String(Date.now())}`;
+  const outDir = path.join("qa-screenshots", "supabase-buy-dispute");
+  mkdirSync(outDir, { recursive: true });
+
+  const deal = await prepareBuyPaidDeal(browser, tag, outDir);
+  const { buyerPage, matchId, ownerContext, peerContext } = deal;
+
+  try {
+    await buyerPage.goto(`/deal/${matchId}/handoff`);
+    await expect(
+      buyerPage.getByRole("button", { name: "물품을 확인했습니다" }),
+    ).toBeVisible({ timeout: 90_000 });
+
+    await buyerPage.getByText("거래 조건과 다르거나 문제가 있나요?").click();
+    await buyerPage.getByRole("button", { name: "다른 물건이에요" }).click();
+    await buyerPage
+      .getByPlaceholder("확인한 문제를 구체적으로 적어주세요.")
+      .fill(`dispute-browser-${tag}`);
+    await buyerPage
+      .getByRole("button", { name: "거래 중지하고 분쟁 접수" })
+      .click();
+
+    await expect(
+      buyerPage.getByText("거래가 분쟁 검토 상태예요"),
+    ).toBeVisible({ timeout: 60_000 });
+    await expect(
+      buyerPage.getByRole("button", { name: "물품을 확인했습니다" }),
+    ).toHaveCount(0);
+    await expect(buyerPage.getByText("다른 물건이에요")).toBeVisible();
+    await buyerPage.screenshot({
+      path: path.join(outDir, "05-dispute-paused.png"),
+      fullPage: true,
     });
   } finally {
     await ownerContext.close();
