@@ -111,7 +111,7 @@ export function ProfilePage() {
 
   const tradeHistoryRows = useMemo(() => {
     if (!isSelf) return [];
-    const fallbackTitle = locale === "ja" ? "取引" : "거래";
+    const fallbackTitle = copy.tradeFallbackShort;
     return myMatches
       .filter((match) => {
         if (historyTab === "completed") return match.status === "COMPLETED";
@@ -293,16 +293,14 @@ export function ProfilePage() {
 
             <div className="trust-history trust-history--blueprint">
               <div className="trust-history__head">
-                <strong>{locale === "ja" ? "取引の信頼" : "거래 신뢰"}</strong>
+                <strong>{copy.trustSectionTitle}</strong>
                 <div className="trust-history__badges">
                   {profile.identityVerified ? (
                     <span className="trust-verified-badge">
-                      {locale === "ja" ? "本人確認済み" : "본인인증 완료"}
+                      {copy.identityVerified}
                     </span>
                   ) : null}
-                  <span>
-                    {locale === "ja" ? "確定済みの取引記録" : "확정된 거래 기록"}
-                  </span>
+                  <span>{copy.confirmedTradeRecords}</span>
                 </div>
               </div>
 
@@ -313,23 +311,21 @@ export function ProfilePage() {
                 </div>
                 <div>
                   <strong>{profile.unresolvedDisputeCount}</strong>
-                  <span>{locale === "ja" ? "未解決の紛争" : "미해결 분쟁"}</span>
+                  <span>{copy.unresolvedDisputesLabel}</span>
                 </div>
                 <div>
                   <strong>
                     {profile.sellerFaultCancellationCount +
                       profile.buyerFaultCancellationCount}
                   </strong>
-                  <span>{locale === "ja" ? "帰責キャンセル" : "귀책 취소"}</span>
+                  <span>{copy.faultCancelLabel}</span>
                 </div>
               </div>
 
               {profile.confirmedMismatchCount > 0 ? (
                 <div className="trust-fact-list">
                   <div>
-                    <span>
-                      {locale === "ja" ? "確定条件の不一致" : "확정 조건 불일치"}
-                    </span>
+                    <span>{copy.snapshotMismatchLabel}</span>
                     <strong>{profile.confirmedMismatchCount}</strong>
                   </div>
                 </div>
@@ -339,15 +335,13 @@ export function ProfilePage() {
             {isSelf ? (
               <section className="profile-trade-history">
                 <div className="profile-trade-history__head">
-                  <strong>{locale === "ja" ? "自分の取引履歴" : "내 거래 내역"}</strong>
-                  <span>
-                    {locale === "ja" ? "確定済みの記録のみ表示" : "확정된 기록만 표시"}
-                  </span>
+                  <strong>{copy.myTradeHistoryTitle}</strong>
+                  <span>{copy.confirmedOnlyHint}</span>
                 </div>
                 <div
                   className="profile-trade-tabs"
                   role="tablist"
-                  aria-label={locale === "ja" ? "取引履歴" : "거래 내역"}
+                  aria-label={copy.tradeHistoryAria}
                 >
                   <button
                     type="button"
@@ -384,11 +378,7 @@ export function ProfilePage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="profile-trade-empty">
-                    {locale === "ja"
-                      ? "表示できる取引はまだありません。"
-                      : "표시할 거래가 아직 없어요."}
-                  </p>
+                  <p className="profile-trade-empty">{copy.noTradesYet}</p>
                 )}
               </section>
             ) : null}

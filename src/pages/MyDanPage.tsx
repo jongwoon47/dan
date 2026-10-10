@@ -32,7 +32,6 @@ function requestStatusLabel(status: string, copy: LocalizedCopy): string {
 export function MyDanPage() {
   const locale = useDanLocale();
   const copy = useDanCopy();
-  const ja = locale === "ja";
   const {
     isLoggedIn,
     login,
@@ -92,7 +91,7 @@ export function MyDanPage() {
       <header className="my-dan__header my-dan__header--v1">
         <div>
           <p className="eyebrow">DAN</p>
-          <h1 className="page-title">{ja ? "自分の取引" : "내 거래"}</h1>
+          <h1 className="page-title">{copy.dealMyTrades}</h1>
         </div>
         <div className="my-dan__actions">
           <Link to={"/profile/" + currentUser?.id} className="my-dan__name">
@@ -101,14 +100,14 @@ export function MyDanPage() {
           <Link
             to="/settings"
             className="my-dan__settings"
-            aria-label={ja ? "設定" : "설정"}
+            aria-label={copy.settingsLink}
           >
-            {ja ? "設定" : "설정"}
+            {copy.settingsLink}
           </Link>
         </div>
       </header>
 
-      <nav className="my-demand-tabs" aria-label={ja ? "自分の取引メニュー" : "내 거래 메뉴"}>
+      <nav className="my-demand-tabs" aria-label={copy.myTradesMenuAria}>
         <button
           type="button"
           className={tab === "active" ? "is-active" : ""}
@@ -139,24 +138,16 @@ export function MyDanPage() {
         <section className="my-demand-panel">
           <div className="my-demand-section-head">
             <div>
-              <h2>{ja ? "今つなげる取引" : "지금 이어가야 할 거래"}</h2>
-              <p>
-                {ja
-                  ? "新しい提案からチャット、条件確認、支払い・受け渡しまで、ここで続けられます。"
-                  : "새 제안부터 채팅, 조건 확인, 결제·인계까지 한곳에서 이어갈 수 있어요."}
-              </p>
+              <h2>{copy.myActiveNowTitle}</h2>
+              <p>{copy.myActiveNowBody}</p>
             </div>
           </div>
           {activeMatches.length > 0 ? (
             <MatchList matches={activeMatches} emptyWhenZero={false} />
           ) : (
             <EmptyState
-              title={ja ? "進行中の取引はありません" : "진행 중인 거래가 없어요"}
-              body={
-                ja
-                  ? "依頼を出すか、探す画面で他の人の依頼に応えてみてください。"
-                  : "요청을 올리거나 탐색에서 다른 사람의 요청에 제안해보세요."
-              }
+              title={copy.myActiveEmptyTitle}
+              body={copy.myActiveEmptyBody}
               action={
                 <Button to="/feed" variant="secondary">
                   {copy.ctaBrowse}
@@ -208,17 +199,13 @@ export function MyDanPage() {
           ) : (
             <EmptyState
               title={copy.emptyMyRequests}
-              body={
-                ja
-                  ? "購入、レンタル、おつかい、サービスから必要な依頼を出してみましょう。"
-                  : "구매, 빌리기, 심부름, 서비스 중 필요한 요청을 올려보세요."
-              }
+              body={copy.emptyMyRequestsBody}
               action={<Button to="/create">{copy.ctaCreate}</Button>}
             />
           )}
 
           <Button to="/create" variant="secondary" fullWidth>
-            {ja ? "新しい依頼を出す" : "새 요청 올리기"}
+            {copy.createNewRequestCta}
           </Button>
         </section>
       ) : null}
@@ -227,24 +214,16 @@ export function MyDanPage() {
         <section className="my-demand-panel">
           <div className="my-demand-section-head">
             <div>
-              <h2>{ja ? "完了した取引" : "완료된 거래"}</h2>
-              <p>
-                {ja
-                  ? "確定した取引結果と相手情報を再度確認できます。"
-                  : "확정된 거래 결과와 상대 정보를 다시 확인할 수 있어요."}
-              </p>
+              <h2>{copy.myCompletedTitle}</h2>
+              <p>{copy.myCompletedBody}</p>
             </div>
           </div>
           {completedMatches.length > 0 ? (
             <MatchList matches={completedMatches} emptyWhenZero={false} />
           ) : (
             <EmptyState
-              title={ja ? "完了した取引はまだありません" : "완료된 거래가 아직 없어요"}
-              body={
-                ja
-                  ? "取引が終わるとここに記録されます。"
-                  : "거래가 끝나면 여기에 기록됩니다."
-              }
+              title={copy.myCompletedEmptyTitle}
+              body={copy.myCompletedEmptyBody}
             />
           )}
         </section>
