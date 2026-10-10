@@ -1,40 +1,61 @@
-import { useEffect, useRef, useState } from 'react';
-import { useAuth } from '@/auth/AuthProvider';
-import { accountDeletionStatus, deleteAccount, type DeletionStatus } from '@/auth/accountDeletion';
-import { useDeepHeader } from '@/components/layout/ShellChrome';
-import { Button } from '@/components/ui/Button';
-import { ConfirmSheet } from '@/components/ui/ConfirmSheet';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { useDanCopy } from '@/copy/useDanCopy';
-import { useDanLocale } from '@/i18n/locale';
+import { useEffect, useRef, useState } from "react";
+import { useAuth } from "@/auth/AuthProvider";
+import {
+  accountDeletionStatus,
+  deleteAccount,
+  type DeletionStatus,
+} from "@/auth/accountDeletion";
+import { useDeepHeader } from "@/components/layout/ShellChrome";
+import { Button } from "@/components/ui/Button";
+import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { useDanCopy } from "@/copy/useDanCopy";
+
+function deletionErrorCopy(
+  message: string,
+  copy: ReturnType<typeof useDanCopy>,
+): string {
+  if (message === "DAN_DELETE_ACTIVE" || /진행 중 거래/.test(message)) {
+    return copy.deleteAccountActiveBlock;
+  }
+  if (message === "DAN_DELETE_RELOGIN" || /다시 로그인/.test(message)) {
+    return copy.deleteAccountRelogin;
+  }
+  if (message === "DAN_DELETE_FAIL_PENDING" || /삭제가 시작된/.test(message)) {
+    return copy.deleteAccountFailPending;
+  }
+  if (message === "DAN_DELETE_STATUS_FAIL" || /삭제 가능 여부/.test(message)) {
+    return copy.deleteAccountStatusFail;
+  }
+  return message || copy.deleteAccountFail;
+}
 
 export function AccountDeletionPage() {
   const auth = useAuth();
   const copy = useDanCopy();
-  const locale = useDanLocale();
-  const ja = locale === 'ja';
   const [status, setStatus] = useState<DeletionStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [retry, setRetry] = useState(0);
   const busy = useRef(false);
-  useDeepHeader({ title: ja ? '退会' : '회원탈퇴' });
+  useDeepHeader({ title: copy.deleteAccountTitle });
   useEffect(() => {
-    if (!auth.user || auth.mode !== 'supabase') return;
+    if (!auth.user || auth.mode !== "supabase") return;
     let alive = true;
-    setError(null); setStatus(null);
-    void accountDeletionStatus().then(s => { if (alive) setStatus(s); }).catch(() => {
-      if (alive) {
-        setError(
-          ja
-            ? '削除できるか確認できませんでした。もう一度お試しください。'
-            : '삭제 가능 여부를 확인하지 못했어요. 다시 시도해 주세요.',
-        );
-      }
-    });
-    return () => { alive = false; };
-  }, [auth.user?.id, auth.mode, retry, ja]);
+    setError(null);
+    setStatus(null);
+    void accountDeletionStatus()
+      .then((s) => {
+        if (alive) setStatus(s);
+      })
+      .catch(() => {
+        if (alive) setError(copy.deleteAccountStatusFail);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [auth.user?.id, auth.mode, retry, copy.deleteAccountStatusFail]);
   if (!auth.user) {
     return (
       <EmptyState
@@ -43,119 +64,97 @@ export function AccountDeletionPage() {
       />
     );
   }
-  if (auth.mode !== 'supabase') {
-    return (
-      <EmptyState
-        title={ja ? 'デモアカウントは退会できません' : '데모 계정은 탈퇴할 수 없어요'}
-      />
-    );
+  if (auth.mode !== "supabase") {
+    return <EmptyState title={copy.deleteAccountDemoBlocked} />;
   }
   async function execute() {
     if (busy.current) return;
-    busy.current = true; setConfirm(false); setDeleting(true); setError(null);
+    busy.current = true;
+    setConfirm(false);
+    setDeleting(true);
+    setError(null);
     try {
       await deleteAccount();
       await auth.finishAccountDeletion();
     } catch (e) {
       setError(
-        e instanceof Error
-          ? e.message
-          : ja
-            ? '削除を完了できませんでした。もう一度お試しください。'
-            : '삭제를 완료하지 못했어요. 다시 시도해 주세요.',
+        deletionErrorCopy(
+          e instanceof Error ? e.message : "",
+          copy,
+        ),
       );
-      busy.current = false; setDeleting(false);
+      busy.current = false;
+      setDeleting(false);
     }
   }
-  return <div className="page-stack page-narrow account-deletion-page">
-    <section className="account-deletion-intro">
-      <h1>{ja ? 'アカウントを削除すると元に戻せません' : '계정을 삭제하면 되돌릴 수 없어요'}</h1>
-      <p>
-        {ja
-          ? '退会前に、削除される情報と残る取引記録を確認してください。'
-          : '탈퇴 전에 삭제되는 정보와 유지되는 거래 기록을 확인해 주세요.'}
-      </p>
-    </section>
-    <ul className="account-deletion-list">
-      <li>
-        {ja
-          ? 'プロフィール、認証情報、個人情報、アップロードしたファイルを削除します。'
-          : '프로필, 인증 정보, 개인정보와 업로드한 파일을 삭제해요.'}
-      </li>
-      <li>
-        {ja
-          ? '進行中の取引・未精算の支払い・未解決の紛争は、既存の完了またはキャンセル手順で先に整理してください。'
-          : '진행 중 거래·미정산 결제·열린 분쟁은 기존 완료 또는 취소 절차로 먼저 정리해 주세요.'}
-      </li>
-      <li>
-        {ja
-          ? '終了した取引の状態・金額・完了時点は相手の取引記録のために残します。表示名は「退会したユーザー」に替え、個人の作成内容と認証アカウントの接続は取り除きます。'
-          : '종료된 거래의 상태·금액·완료 시점은 상대방의 거래 기록을 위해 유지해요. 이름은 ‘탈퇴한 사용자’로 바꾸고 개인 작성 내용과 인증 계정 연결은 제거해요.'}
-      </li>
-      <li>
-        {ja
-          ? 'DANサービスアカウントのみ削除します。Googleアカウント自体は削除しません。'
-          : 'DAN 서비스 계정만 삭제돼요. Google 계정 자체는 삭제하지 않아요.'}
-      </li>
-    </ul>
-    {error && <p className="account-deletion-state is-error" role="alert">{error}</p>}
-    {!status && !error && (
-      <p className="account-deletion-state" role="status">
-        {ja ? '削除できるか確認しています…' : '삭제 가능 여부를 확인하고 있어요…'}
-      </p>
-    )}
-    {status && status.activeTransactions > 0 && (
-      <div className="account-deletion-state">
-        <p role="status">
-          {ja
-            ? `先に整理する取引または紛争が ${status.activeTransactions} 件あります。`
-            : `먼저 정리할 거래 또는 분쟁이 ${status.activeTransactions}건 있어요.`}
+  return (
+    <div className="page-stack page-narrow account-deletion-page">
+      <section className="account-deletion-intro">
+        <h1>{copy.deleteAccountHero}</h1>
+        <p>{copy.deleteAccountLead}</p>
+      </section>
+      <ul className="account-deletion-list">
+        <li>{copy.deleteAccountBulletProfile}</li>
+        <li>{copy.deleteAccountBulletActive}</li>
+        <li>{copy.deleteAccountBulletRetain}</li>
+        <li>{copy.deleteAccountBulletGoogle}</li>
+      </ul>
+      {error ? (
+        <p className="account-deletion-state is-error" role="alert">
+          {error}
         </p>
-        <Button to="/my">{ja ? '自分の取引を確認' : '내 거래 확인'}</Button>
-      </div>
-    )}
-    {status?.pending && (
-      <p className="account-deletion-state">
-        {ja
-          ? '以前開始した削除を続けて完了してください。'
-          : '이전에 시작한 삭제를 이어서 완료해 주세요.'}
-      </p>
-    )}
-    {deleting ? (
-      <p className="account-deletion-state" role="status" aria-live="polite">
-        {ja
-          ? 'アカウントを削除しています。しばらくお待ちください…'
-          : '계정을 삭제하고 있어요. 잠시 기다려 주세요…'}
-      </p>
-    ) : (
-      <div className="account-deletion-actions">
-        {error && !status && (
-          <Button variant="secondary" onClick={() => setRetry(n => n + 1)}>
-            {ja ? 'もう一度確認' : '다시 확인'}
+      ) : null}
+      {!status && !error ? (
+        <p className="account-deletion-state" role="status">
+          {copy.deleteAccountChecking}
+        </p>
+      ) : null}
+      {status && status.activeTransactions > 0 ? (
+        <div className="account-deletion-state">
+          <p role="status">
+            {copy.deleteAccountActiveN.replace(
+              "{n}",
+              String(status.activeTransactions),
+            )}
+          </p>
+          <Button to="/my">{copy.deleteAccountOpenMyTrades}</Button>
+        </div>
+      ) : null}
+      {status?.pending ? (
+        <p className="account-deletion-state">{copy.deleteAccountPending}</p>
+      ) : null}
+      {deleting ? (
+        <p className="account-deletion-state" role="status" aria-live="polite">
+          {copy.deleteAccountBusy}
+        </p>
+      ) : (
+        <div className="account-deletion-actions">
+          {error && !status ? (
+            <Button variant="secondary" onClick={() => setRetry((n) => n + 1)}>
+              {copy.deleteAccountRecheck}
+            </Button>
+          ) : null}
+          <Button
+            variant="danger"
+            disabled={!status || status.activeTransactions > 0}
+            onClick={() => setConfirm(true)}
+          >
+            {copy.deleteAccountCta}
           </Button>
-        )}
-        <Button
-          variant="danger"
-          disabled={!status || status.activeTransactions > 0}
-          onClick={() => setConfirm(true)}
-        >
-          {ja ? '退会する' : '탈퇴하기'}
-        </Button>
-        <Button to="/settings" variant="secondary">{copy.cancel}</Button>
-      </div>
-    )}
-    <ConfirmSheet
-      open={confirm}
-      title={ja ? '本当に退会しますか？' : '정말 탈퇴할까요?'}
-      body={
-        ja
-          ? 'アカウントと個人情報が削除され、復元できません。案内した取引記録は個人識別情報と切り離して残ります。'
-          : '계정과 개인정보가 삭제되고 복구할 수 없어요. 안내한 거래 기록은 개인 식별정보와 분리하여 남아요.'
-      }
-      confirmLabel={ja ? 'アカウントを永久削除' : '계정 영구 삭제'}
-      danger
-      onConfirm={() => void execute()}
-      onCancel={() => setConfirm(false)}
-    />
-  </div>;
+          <Button to="/settings" variant="secondary">
+            {copy.cancel}
+          </Button>
+        </div>
+      )}
+      <ConfirmSheet
+        open={confirm}
+        title={copy.deleteAccountConfirmTitle}
+        body={copy.deleteAccountConfirmBody}
+        confirmLabel={copy.deleteAccountConfirmAction}
+        danger
+        onConfirm={() => void execute()}
+        onCancel={() => setConfirm(false)}
+      />
+    </div>
+  );
 }

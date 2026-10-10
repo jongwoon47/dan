@@ -572,6 +572,38 @@ export const jaPilotCopy: Partial<LocalizedCopy> = {
   buyDemandDescSuffix: "購入需要",
   buyDemandExtraPrefix: " · 追加条件: ",
   defaultAreaSeoul: "ソウル",
+  deleteAccountTitle: "退会",
+  deleteAccountHero: "アカウントを削除すると元に戻せません",
+  deleteAccountLead:
+    "退会前に、削除される情報と残る取引記録を確認してください。",
+  deleteAccountBulletProfile:
+    "プロフィール、認証情報、個人情報、アップロードしたファイルを削除します。",
+  deleteAccountBulletActive:
+    "進行中の取引・未精算の支払い・未解決の紛争は、既存の完了またはキャンセル手順で先に整理してください。",
+  deleteAccountBulletRetain:
+    "終了した取引の状態・金額・完了時点は相手の取引記録のために残します。表示名は「退会したユーザー」に替え、個人の作成内容と認証アカウントの接続は取り除きます。",
+  deleteAccountBulletGoogle:
+    "DANサービスアカウントのみ削除します。Googleアカウント自体は削除しません。",
+  deleteAccountChecking: "削除できるか確認しています…",
+  deleteAccountStatusFail:
+    "削除できるか確認できませんでした。もう一度お試しください。",
+  deleteAccountActiveN: "先に整理する取引または紛争が {n} 件あります。",
+  deleteAccountOpenMyTrades: "自分の取引を確認",
+  deleteAccountPending: "以前開始した削除を続けて完了してください。",
+  deleteAccountBusy: "アカウントを削除しています。しばらくお待ちください…",
+  deleteAccountRecheck: "もう一度確認",
+  deleteAccountCta: "退会する",
+  deleteAccountConfirmTitle: "本当に退会しますか？",
+  deleteAccountConfirmBody:
+    "アカウントと個人情報が削除され、復元できません。案内した取引記録は個人識別情報と切り離して残ります。",
+  deleteAccountConfirmAction: "アカウントを永久削除",
+  deleteAccountDemoBlocked: "デモアカウントは退会できません",
+  deleteAccountFail: "削除を完了できませんでした。もう一度お試しください。",
+  deleteAccountActiveBlock:
+    "進行中の取引または紛争を先に完了またはキャンセルしてください。",
+  deleteAccountRelogin: "もう一度ログインしてください。",
+  deleteAccountFailPending:
+    "削除を完了できませんでした。もう一度お試しください。削除が開始されたアカウントは取引機能を使えません。",
 };
 export function useDanCopy(): LocalizedCopy {
   const locale = useDanLocale();

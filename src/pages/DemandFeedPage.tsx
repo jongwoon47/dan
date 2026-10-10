@@ -39,20 +39,25 @@ import {
   type LiveDemandRow,
   type LiveDemandSort,
 } from "@/domain/liveDemandDiscovery";
+import { demandTypeLabel } from "@/copy/demandTypeLabel";
+import { ko } from "@/copy/ko";
 import { jaPilotCopy } from "@/copy/useDanCopy";
-import {
-  DEMAND_TYPE_LABEL,
-  type DemandType,
-  type FeedItem,
-} from "@/domain/types";
+import { type DemandType, type FeedItem } from "@/domain/types";
 import "./pages.css";
 import "@/components/feedCards.css";
 
-const JA_TYPE_LABEL: Record<DemandType, string> = {
-  BUY: jaPilotCopy.typeBuy ?? DEMAND_TYPE_LABEL.BUY,
-  BORROW: jaPilotCopy.typeBorrow ?? DEMAND_TYPE_LABEL.BORROW,
-  TASK: jaPilotCopy.typeTask ?? DEMAND_TYPE_LABEL.TASK,
-  SERVICE: jaPilotCopy.typeService ?? DEMAND_TYPE_LABEL.SERVICE,
+const KO_TYPE_COPY = {
+  typeBuy: ko.typeBuy,
+  typeBorrow: ko.typeBorrow,
+  typeTask: ko.typeTask,
+  typeService: ko.typeService,
+};
+
+const JA_TYPE_COPY = {
+  typeBuy: jaPilotCopy.typeBuy ?? ko.typeBuy,
+  typeBorrow: jaPilotCopy.typeBorrow ?? ko.typeBorrow,
+  typeTask: jaPilotCopy.typeTask ?? ko.typeTask,
+  typeService: jaPilotCopy.typeService ?? ko.typeService,
 };
 
 const PAGE_SIZE = 24;
@@ -105,8 +110,8 @@ function matchesIndividualQuery(item: Extract<FeedItem, { kind: "individual" }>,
   const hay = [
     demand.title,
     demand.description,
-    DEMAND_TYPE_LABEL[demand.type],
-    JA_TYPE_LABEL[demand.type],
+    demandTypeLabel(demand.type, KO_TYPE_COPY),
+    demandTypeLabel(demand.type, JA_TYPE_COPY),
   ]
     .filter(Boolean)
     .join(" ")

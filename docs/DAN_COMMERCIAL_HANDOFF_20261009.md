@@ -5,39 +5,40 @@
 | Field | Value |
 |---|---|
 | BRANCH | `cursor/dan-commercial-complete-e0e7` |
-| PR | https://github.com/jongwoon47/dan/pull/36 (also FF → launch-plan #31) |
+| PR | https://github.com/jongwoon47/dan/pull/36 (FF → launch-plan #31) |
 | Tip | always `git rev-parse HEAD` |
 | Ready | **NO** |
 
-## Green CI
+## Green CI baselines
 
 | Ref | Result |
 |---|---|
-| `7e2d545` | **SUCCESS** #36 / #31 / #30 — viewTradeHistory = **거래 내역 보기** |
-| Prior `1d64896` | SUCCESS — evidence lock + BUY/dispute E2E |
+| `b7d62af` | **SUCCESS** — BuyDemandCreate JA |
+| `7e2d545` | **SUCCESS** — viewTradeHistory = **거래 내역 보기** / JA 取引履歴 |
+| `1d64896` | **SUCCESS** — evidence lock + BUY/dispute E2E |
 
-## Copy decision
+## Copy decisions
 
-- KO trade-history CTA: **거래 내역 보기** (`viewTradeHistory`) — matches V3 UI spec + profile `내역`
-- JA: **取引履歴を見る** (unchanged; 履歴 is consistent across JA keys)
+- KO trade-history CTA: **거래 내역 보기**
+- JA: **取引履歴を見る**
 
-## Latest
+## Latest this tip (pending CI)
 
-1. BuyDemandCreatePage wired to `useDanCopy` (JA chrome)
-2. Residual: AccountDeletion KO strings; deprecate `DEMAND_TYPE_LABEL` fully; native/device QA BLOCKED
+- AccountDeletionPage fully on `useDanCopy`; API throws stable `DAN_DELETE_*` codes
+- DemandFeed search uses `demandTypeLabel` (KO+JA); `DEMAND_TYPE_LABEL` marked deprecated
 
 ## Next agent
 
-1. Confirm tip CI green after BuyDemandCreate push.
-2. AccountDeletion / remaining KO ternaries.
-3. Staging / JP unlock / main / store / Ready → **BLOCKED**.
+1. Confirm tip CI green.
+2. Residual KO only where intentional (stored descriptions, preference placeholder maps).
+3. Staging / JP unlock / main / store / Ready → **BLOCKED**. Never touch PAN.
 
 ## Scorecard
 
 | Area | Status |
 |---|---|
-| BUY/BORROW/TASK/SERVICE browser + BUY dispute | **VERIFIED** |
-| Block send UI | **VERIFIED** |
-| viewTradeHistory 내역 unify + visual | **VERIFIED** (`7e2d545`) |
-| BuyDemandCreate JA | IMPLEMENTED (await tip CI) |
+| Four-type browser trades + BUY dispute + block UI | **VERIFIED** |
+| viewTradeHistory 내역 + visual | **VERIFIED** |
+| BuyDemandCreate JA | **VERIFIED** (`b7d62af`) |
+| AccountDeletion JA | IMPLEMENTED (await tip CI) |
 | Staging / JP Ready | BLOCKED / **NO** |

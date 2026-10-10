@@ -406,6 +406,7 @@ export type FeedItem =
       sortAt: string;
     };
 
+/** @deprecated Prefer `demandTypeLabel(type, copy)` from `@/copy/demandTypeLabel`. KO-only legacy. */
 export const DEMAND_TYPE_LABEL: Record<DemandType, string> = {
   BUY: ko.typeBuy,
   BORROW: ko.typeBorrow,
