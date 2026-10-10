@@ -1,11 +1,13 @@
 import type { Place } from "@/domain/fulfillment";
 import { placeFromLabel } from "@/domain/fulfillment";
-import { saveViewerGeo } from "@/lib/geoDistance";
+import { nearbyFallbackLabel, saveViewerGeo } from "@/lib/geoDistance";
 import type { FormatLanguage } from "@/lib/format";
 
 export type GeoLocateResult =
   | { ok: true; place: Place }
   | { ok: false; reason: "unsupported" | "denied" | "unavailable" | "timeout" };
+
+export { nearbyFallbackLabel };
 
 function mapGeoError(
   err: GeolocationPositionError,
@@ -13,11 +15,6 @@ function mapGeoError(
   if (err.code === err.PERMISSION_DENIED) return "denied";
   if (err.code === err.TIMEOUT) return "timeout";
   return "unavailable";
-}
-
-/** Coarse fallback label when reverse-geocode fails. Locale-only; never invents a city. */
-export function nearbyFallbackLabel(language: FormatLanguage = "ko"): string {
-  return language === "ja" ? "近く" : "내 주변";
 }
 
 /** Reverse-geocode to an approximate public label — never expose raw coords in UI. */

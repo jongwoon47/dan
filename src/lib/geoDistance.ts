@@ -2,6 +2,11 @@ import type { Place } from "@/domain/fulfillment";
 
 const VIEWER_GEO_KEY = "dan-viewer-geo-v1";
 
+/** Coarse fallback when region labels are unavailable. Locale-only; never invents a city. */
+export function nearbyFallbackLabel(locale: "ko" | "ja" | undefined = "ko"): string {
+  return locale === "ja" ? "近く" : "내 주변";
+}
+
 export type ViewerGeo = { lat: number; lng: number; savedAt: number };
 
 export function saveViewerGeo(lat: number, lng: number): void {
@@ -92,8 +97,7 @@ export function formatPublicPlaceLine(
     return formatApproxDistance(meters, opts?.locale);
   }
   if (place.geo) {
-    const fallback = opts?.locale === "ja" ? "近く" : "내 주변";
-    return (place.region2 || place.region1 || fallback).trim();
+    return (place.region2 || place.region1 || nearbyFallbackLabel(opts?.locale)).trim();
   }
   return place.publicLabel.trim();
 }
