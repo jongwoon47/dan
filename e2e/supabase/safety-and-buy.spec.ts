@@ -4,13 +4,13 @@ import path from "node:path";
 import {
   TINY_PNG,
   appBaseUrl,
-  latestMatchIdForUser,
   latestPotentialBuyOfferId,
   respondToDemand,
   signupNamed,
   submitBuy,
   submitTask,
   verifyUser,
+  waitForConnectedMatchId,
 } from "./helpers";
 
 const mobileContext = {
@@ -217,21 +217,33 @@ test("BUY browser path reaches evidence→snapshot→payment honesty gate (no fa
       sellerPage.getByRole("button", { name: "구매자와 연결하기" }),
     ).toBeVisible({ timeout: 45_000 });
     await sellerPage.getByRole("button", { name: "구매자와 연결하기" }).click();
-    // Connect does not auto-navigate; wait for persisted CONNECTED match.
+    // Connect does not auto-navigate; wait until status is CONNECTED in DB.
     await expect.poll(async () => {
-      try {
-        return await latestMatchIdForUser(buyerId);
-      } catch {
-        return "";
-      }
-    }, { timeout: 45_000 }).not.toEqual("");
+      const admin = (await import("./helpers")).adminClient();
+      const { data } = await admin
+        .from("matches")
+        .select("id,status")
+        .eq("buyer_id", buyerId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data?.status === "CONNECTED" ? data.id : "";
+    }, { timeout: 60_000 }).not.toEqual("");
     const connectedMatchId = await latestMatchIdForUser(buyerId);
-    await sellerPage.goto(`/match/${connectedMatchId}`);
 
+    // Load match chat first so the store hydrates sell intent + demand rows.
+    await sellerPage.goto(`/match/${connectedMatchId}`);
+    await expect(
+      sellerPage.getByRole("link", { name: "상품 정보 등록" }),
+    ).toBeVisible({ timeout: 60_000 });
     await sellerPage.getByRole("link", { name: "상품 정보 등록" }).click();
     await expect(sellerPage).toHaveURL(/\/evidence/);
+    await expect(sellerPage.getByText("거래 정보를 찾을 수 없어요")).toHaveCount(0);
+    await expect(sellerPage.getByText(/촬영 코드|현재 보유/)).toBeVisible({
+      timeout: 60_000,
+    });
     const fileInput = sellerPage.locator('input[type="file"]');
-    await expect(fileInput).toBeEnabled({ timeout: 45_000 });
+    await expect(fileInput).toBeEnabled({ timeout: 60_000 });
     await fileInput.setInputFiles({
       name: "evidence.png",
       mimeType: "image/png",

@@ -28,6 +28,24 @@ export function adminClient() {
   });
 }
 
+export async function waitForConnectedMatchId(buyerId: string): Promise<string> {
+  const admin = adminClient();
+  for (let i = 0; i < 60; i += 1) {
+    const { data, error } = await admin
+      .from("matches")
+      .select("id,status")
+      .eq("buyer_id", buyerId)
+      .eq("status", "CONNECTED")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    if (data?.id) return data.id as string;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  throw new Error("timed out waiting for CONNECTED match");
+}
+
 export async function completeRequiredConsent(page: Page) {
   await expect(page.getByRole("heading", { name: "DAN 시작하기" })).toBeVisible();
   const confirm = page.getByRole("button", { name: "동의하고 시작하기" });
