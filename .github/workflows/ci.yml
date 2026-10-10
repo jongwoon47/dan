@@ -1,18 +1,22 @@
 name: CI
 
+# Cost policy: docs/dan-autonomous/CI_COST_POLICY.md
+# - Draft PR sync: no runner jobs (autonomous iteration stays draft).
+# - Ready PR synchronize: verify only (typecheck/lint/unit/build).
+# - Full supabase/E2E/visual: ready_for_review, base main, title [ci-full],
+#   or workflow_dispatch suite=full.
+# - cancel-in-progress false: do not discard an in-flight heavy suite on the next push.
+# Job names verify / supabase / visual preserved for branch protection.
+
 on:
   pull_request:
-    # Draft PR commits do NOT execute runner jobs. Changing to ready_for_review
-    # launches the full gate; subsequent commits to a ready PR re-run it.
-    types: [opened, reopened, synchronize, ready_for_review]
+    types: [opened, reopened, synchronize, ready_for_review, labeled]
     branches:
       - main
       - "feature/dan-**"
       - "cursor/dan-**"
       - "automation/**"
   workflow_dispatch:
-    # Explicit milestone checkpoint on the selected ref. No automatic heavy
-    # suite on every autonomous draft-PR commit.
     inputs:
       suite:
         description: "checkpoint = ledger only; verify = typecheck/lint/unit/build; full = all"
@@ -26,10 +30,11 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: dan-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   checkpoint:
@@ -43,10 +48,10 @@ jobs:
         with:
           node-version: 22
       - run: node scripts/validate-dan-loop-state.mjs
+      - run: node scripts/validate-dan-ci-policy.mjs
 
   verify:
-    # Preserve required checks on ready PRs and manual verification runs.
-    # Skipped jobs in a DRAFT are NOT evidence of a verified current SHA.
+    # Ready PRs + manual verify/full. Skipped draft jobs are not PASS evidence.
     if: ${{ (github.event_name == 'workflow_dispatch' && inputs.suite != 'checkpoint') || (github.event_name == 'pull_request' && github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     steps:
@@ -56,6 +61,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run validate:ci-policy
       - run: npm run typecheck
       - name: Check account deletion Edge Function
         run: npx --yes deno@2.9.6 check supabase/functions/delete-account/index.ts
@@ -63,10 +69,9 @@ jobs:
       - run: npm test
       - run: npm run build
 
-
   supabase:
-    # Expensive Docker/DB/E2E only at explicit checkpoint or ready-for-review.
-    if: ${{ (github.event_name == 'workflow_dispatch' && inputs.suite == 'full') || (github.event_name == 'pull_request' && github.event.pull_request.draft == false) }}
+    # Heavy DB/E2E only at explicit full checkpoints (not every ready-PR push).
+    if: "${{ (github.event_name == 'workflow_dispatch' && inputs.suite == 'full') || (github.event_name == 'pull_request' && github.event.pull_request.draft == false && (github.base_ref == 'main' || github.event.action == 'ready_for_review' || contains(github.event.pull_request.title, '[ci-full]') || contains(join(github.event.pull_request.labels.*.name, ','), 'ci-checkpoint'))) }}"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -106,8 +111,8 @@ jobs:
         run: command -v supabase >/dev/null 2>&1 && supabase stop --no-backup || true
 
   visual:
-    # Browser screenshots only at checkpoints and on ready PRs.
-    if: ${{ (github.event_name == 'workflow_dispatch' && inputs.suite == 'full') || (github.event_name == 'pull_request' && github.event.pull_request.draft == false) }}
+    # Visual only with full checkpoints; ready-PR synchronize alone stays verify-only.
+    if: "${{ (github.event_name == 'workflow_dispatch' && inputs.suite == 'full') || (github.event_name == 'pull_request' && github.event.pull_request.draft == false && (github.base_ref == 'main' || github.event.action == 'ready_for_review' || contains(github.event.pull_request.title, '[ci-full]') || contains(join(github.event.pull_request.labels.*.name, ','), 'ci-checkpoint'))) }}"
     needs: [verify]
     runs-on: ubuntu-latest
     steps:

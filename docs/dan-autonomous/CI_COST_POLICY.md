@@ -2,20 +2,28 @@
 
 **Inspired by PAN 0.1.3:** implement and test iteratively in Cursor, use a separate readonly reviewer, checkpoint state locally, dispatch expensive GitHub Actions **only when there is a testable stable milestone**, and require fresh full gates before release.
 
+## Observed waste (automation branch, 2026-10-10)
+
+Before draft-gating, most `pull_request` synchronizes launched full `verify`+`supabase`+`visual` (~5.5 min). `cancel-in-progress: true` then cancelled prior runs when the next commit landed, discarding multi-minute Docker/E2E work. After draft-skip, draft PR jobs conclude `skipped` (no minutes). This revision also stops cancelling in-flight runs and keeps heavy suites off ordinary ready-PR pushes.
+
 ## Actual GitHub Actions behavior
 
-Workflow: `.github/workflows/ci.yml` (also exists on default branch).
+Workflow: `.github/workflows/ci.yml` (validate with `npm run validate:ci-policy`).
 
-| Event | verify (typecheck / lint / unit / build / Deno) | Supabase + pgTAP + two-user E2E + browser | Visual Playwright |
+| Event | verify | Supabase + pgTAP + two-user E2E + browser | Visual Playwright |
 |---|---|---|---|
-| Pull request **draft** opened/synchronized/reopened | SKIPPED | SKIPPED | SKIPPED |
+| Pull request **draft** opened/synchronized/reopened/labeled | SKIPPED | SKIPPED | SKIPPED |
 | Pull request changed to **ready for review** | RUN | RUN | RUN |
-| Commit pushed to an already ready PR | RUN | RUN | RUN |
-| Explicit `workflow_dispatch`, `suite=checkpoint` | SKIPPED (ledger validator only) | SKIPPED | SKIPPED |
-| Explicit `workflow_dispatch`, `suite=verify` | RUN | SKIPPED | SKIPPED |
-| Explicit `workflow_dispatch`, `suite=full` | RUN | RUN | RUN |
+| Commit pushed to an already **ready** PR (non-`main` base) | RUN | SKIPPED | SKIPPED |
+| Ready PR title contains `[ci-full]` or label `ci-checkpoint` | RUN | RUN | RUN |
+| PR base **`main`** (non-draft) | RUN | RUN | RUN |
+| `workflow_dispatch` `suite=checkpoint` | SKIPPED (ledger + CI policy validator) | SKIPPED | SKIPPED |
+| `workflow_dispatch` `suite=verify` | RUN | SKIPPED | SKIPPED |
+| `workflow_dispatch` `suite=full` | RUN | RUN | RUN |
 
-A skipped job is **neither PASS nor verified release evidence**. PRs must stay **draft** during ordinary autonomous implementation. Do not change release branch protections or required checks to hide failures. Converting a draft to ready is owner/release-review gated; do not do it just to run CI.
+Concurrency: `cancel-in-progress: false` so an in-flight heavy suite is not discarded by the next push/dispatch.
+
+A skipped job is **neither PASS nor verified release evidence**. PRs must stay **draft** during ordinary autonomous implementation. Do not change release branch protections or required checks to hide failures. Converting a draft to ready is owner/release-review gated; do not do it just to run CI. Job names `verify` / `supabase` / `visual` remain stable.
 
 ## Tiered verification
 
@@ -23,7 +31,7 @@ A skipped job is **neither PASS nor verified release evidence**. PRs must stay *
 
 **Checkpoint after a coherent unit of work, not every commit:** run `npm run typecheck && npm run lint && npm test && npm run build` in agent environment. Use `suite=verify` manually only if a remote check is needed or local evidence cannot be trusted.
 
-**Full CI checkpoint:** dispatch `suite=full` for security, RLS, Supabase migration, auth, payments, KR/JP writes, location privacy, full four-type trade lifecycle or browser/UI suite changes **after a coherent stable batch**. Also dispatch once after completing a multi-patch feature area or at the pre-release handoff. Do not dispatch again while a run on the **same commit** is already queued/running; check existing runs first. If a legitimate full test fails, inspect its log and fix root cause; run again on fixed SHA. Never suppress a test just to save minutes.
+**Full CI checkpoint:** dispatch `suite=full` (or `bash scripts/dan-ci-checkpoint.sh full`) for security, RLS, Supabase migration, auth, payments, KR/JP writes, location privacy, full four-type trade lifecycle or browser/UI suite changes **after a coherent stable batch**. Also dispatch once after completing a multi-patch feature area or at the pre-release handoff. Do not dispatch again while a run on the **same commit** is already queued/running; the checkpoint script checks first. If a legitimate full test fails, inspect its log and fix root cause; run again on fixed SHA. Never suppress a test just to save minutes.
 
 **Before any integration/release approval:** a FULL run (verify+supabase+visual) must PASS on the **exact final HEAD** under consideration. Local test PASS or reviewer PASS on an earlier SHA cannot substitute. The draft branch may remain unmergeable until ready-stage checks and separate human review. Remote DB, iOS device, legal and storefront gates remain separate.
 
@@ -33,12 +41,14 @@ A skipped job is **neither PASS nor verified release evidence**. PRs must stay *
 # Check existing runs for this branch/SHA first; no duplicate if already running.
 gh run list --workflow ci.yml --branch automation/dan-autonomous-review-loop-20261010 --limit 10
 
-# Ledger-only checkpoint (one short job, PAN-style):
-gh workflow run ci.yml --ref automation/dan-autonomous-review-loop-20261010 -f suite=checkpoint
+# Helper (skips dispatch when same SHA is already queued/in progress):
+bash scripts/dan-ci-checkpoint.sh checkpoint   # ledger + CI policy only
+bash scripts/dan-ci-checkpoint.sh verify
+bash scripts/dan-ci-checkpoint.sh full
 
-# Only if justified for a feature checkpoint and Actions billing is authorized:
+# Equivalent raw dispatches:
+gh workflow run ci.yml --ref automation/dan-autonomous-review-loop-20261010 -f suite=checkpoint
 gh workflow run ci.yml --ref automation/dan-autonomous-review-loop-20261010 -f suite=verify
-# or full (Docker, E2E, visuals; can consume materially more Actions minutes):
 gh workflow run ci.yml --ref automation/dan-autonomous-review-loop-20261010 -f suite=full
 ```
 
