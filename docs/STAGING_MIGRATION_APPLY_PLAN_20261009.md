@@ -43,8 +43,9 @@ Apply only versions **missing** from the staging ledger, in filename order:
 | 4 | `20261009010000` | market country/currency | `country_code` / `currency_code` |
 | 5 | `20261009120000` | market partition hardening | JP write/trade blocks |
 | 6 | `20261009130000` | JP pilot region control | Browse-only region catalog + `list_pilot_regions` |
+| 7 | `20261010040000` | security/privacy hardening | Fulfillment geo scrub trigger; quick-offer market gate; revoke market trigger helpers |
 
-See also `docs/MIGRATION_20261009_CONSENT_RENAME.md`.
+See also `docs/MIGRATION_20261009_CONSENT_RENAME.md`. Owner approval still required before any staging apply.
 
 ## 4. Read-only inspection SQL (owner / Dashboard)
 

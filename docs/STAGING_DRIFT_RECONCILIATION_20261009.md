@@ -8,7 +8,7 @@
 
 | Object | Staging (confirmed) | Repo expects | Action after approval |
 |---|---|---|---|
-| Ledger tip | `20261006054157` | through `20261009130000` | Forward-apply missing versions only |
+| Ledger tip | `20261006054157` | through `20261010040000` | Forward-apply missing versions only |
 | `public.user_consents` + consent RPCs | **Already present** (applied out-of-band or under alternate ledger names) | `20261007000000` + `20261008000000` | Apply repo files **as-is**; they use `IF NOT EXISTS` / `CREATE OR REPLACE` — **do not duplicate consent DDL in a new migration** |
 | `public.demands.country_code` / `currency_code` | **Missing** | `20261009010000` | Apply `20261009010000` |
 | Nearby / market RPCs (`search_nearby_demands*`, partition hardening) | **Missing** | `20261009000000` + `20261009120000` | Apply in order |
@@ -25,6 +25,7 @@ Apply only versions absent from `supabase_migrations.schema_migrations`, in this
 4. `20261009010000_market_country_currency.sql`  
 5. `20261009120000_market_partition_hardening.sql`  
 6. `20261009130000_jp_pilot_region_control.sql`  
+7. `20261010040000_security_privacy_hardening.sql` — geo scrub + quick-offer tradable gate  
 
 **Do not** invent a parallel consent migration. Prefer `IF NOT EXISTS` / `CREATE OR REPLACE` behavior already in repo files.  
 **Do not** enable `dan.allow_jp_market_write` or flip `jp_market_writes_allowed()` in the same change set.

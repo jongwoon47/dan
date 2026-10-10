@@ -1,4 +1,4 @@
--- Target-state asserts after full reset / forward apply through 20261009130000.
+-- Target-state asserts after full reset / forward apply through 20261010040000.
 -- Validates market columns, JP write gate default (false), and list_pilot_regions
 -- even when the full staging-drift simulator needs Docker + a tip-shaped DB.
 
