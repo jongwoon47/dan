@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
 import { useDanCopy } from "@/copy/useDanCopy";
 import { useDan } from "@/domain/danContext";
-import type { DealSnapshot, PublicProfile } from "@/domain/types";
+import { isBuyDemand, type DealSnapshot, type PublicProfile } from "@/domain/types";
 import { useDanLocale } from "@/i18n/locale";
 import { formatStoredMoney } from "@/lib/format";
 import "./pages.css";
@@ -18,15 +18,20 @@ export function TradeCompletePage() {
   const ja = locale === "ja";
   const {
     myMatches,
+    state,
     currentUser,
     getProduct,
     getDemand,
     getDealSnapshot,
     getPublicProfile,
+    refreshData,
   } = useDan();
   const match = myMatches.find((row) => row.id === matchId);
   const demand = match ? getDemand(match.demandId) : undefined;
   const product = match?.productId ? getProduct(match.productId) : undefined;
+  const sell = match?.sellIntentId
+    ? state.sellIntents.find((row) => row.id === match.sellIntentId)
+    : undefined;
   const [snapshot, setSnapshot] = useState<DealSnapshot | null>(null);
   const [peer, setPeer] = useState<PublicProfile | null>(null);
 
@@ -36,14 +41,38 @@ export function TradeCompletePage() {
     if (!matchId || !match || !currentUser) return;
     const peerId =
       currentUser.id === match.buyerId ? match.sellerId : match.buyerId;
-    void Promise.all([
-      getDealSnapshot(matchId),
-      getPublicProfile(peerId),
-    ]).then(([dealSnapshot, publicProfile]) => {
-      setSnapshot(dealSnapshot);
-      setPeer(publicProfile);
-    });
-  }, [currentUser, getDealSnapshot, getPublicProfile, match, matchId]);
+    let cancelled = false;
+
+    const load = async () => {
+      await refreshData().catch(() => undefined);
+      if (cancelled) return;
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        const [dealSnapshot, publicProfile] = await Promise.all([
+          getDealSnapshot(matchId),
+          getPublicProfile(peerId),
+        ]);
+        if (cancelled) return;
+        if (publicProfile) setPeer(publicProfile);
+        if (dealSnapshot) {
+          setSnapshot(dealSnapshot);
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
+      }
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    currentUser,
+    getDealSnapshot,
+    getPublicProfile,
+    match,
+    matchId,
+    refreshData,
+  ]);
 
   if (!match || !product || !currentUser) {
     return (
@@ -69,6 +98,15 @@ export function TradeCompletePage() {
   }
 
   const peerId = currentUser.id === match.buyerId ? match.sellerId : match.buyerId;
+  const currency = snapshot?.currencyCode ?? demand?.currencyCode ?? "KRW";
+  const finalPrice =
+    snapshot?.agreedPrice ??
+    sell?.minimumPrice ??
+    (demand && isBuyDemand(demand) ? demand.details.maxPrice : demand?.budget);
+  const moneyLabel =
+    typeof finalPrice === "number"
+      ? formatStoredMoney(finalPrice, currency, locale)
+      : null;
 
   return (
     <div className="page-stack page-narrow trade-complete-page">
@@ -86,15 +124,7 @@ export function TradeCompletePage() {
         <ProductVisual product={product} size="sm" />
         <div>
           <strong>{product.name}</strong>
-          <span>
-            {snapshot
-              ? formatStoredMoney(
-                  snapshot.agreedPrice,
-                  snapshot.currencyCode ?? demand?.currencyCode ?? "KRW",
-                  locale,
-                )
-              : copy.matchStatusCompleted}
-          </span>
+          <span>{moneyLabel ?? copy.matchStatusCompleted}</span>
         </div>
       </section>
 
@@ -106,15 +136,7 @@ export function TradeCompletePage() {
         <div className="snapshot-section">
           <span>{ja ? "最終取引金額" : "최종 거래 금액"}</span>
           <strong>
-            {snapshot
-              ? formatStoredMoney(
-                  snapshot.agreedPrice,
-                  snapshot.currencyCode ?? demand?.currencyCode ?? "KRW",
-                  locale,
-                )
-              : ja
-                ? "確認中"
-                : "확인 중"}
+            {moneyLabel ?? (ja ? "確認中" : "확인 중")}
           </strong>
         </div>
         <div className="snapshot-section">

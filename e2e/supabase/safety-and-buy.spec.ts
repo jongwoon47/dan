@@ -364,6 +364,10 @@ test("BUY browser path: evidence→snapshot→payment honesty→ops paid→hando
     await expect(
       sellerPage.getByRole("heading", { name: /거래가 완료/ }),
     ).toBeVisible({ timeout: 30_000 });
+    await expect(sellerPage.getByText("800,000원").first()).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(sellerPage.getByText("확인 중")).toHaveCount(0);
     await sellerPage.screenshot({
       path: path.join(outDir, "06-handoff-completed.png"),
       fullPage: true,
@@ -373,6 +377,9 @@ test("BUY browser path: evidence→snapshot→payment honesty→ops paid→hando
     await expect(
       buyerPage.getByRole("heading", { name: /거래가 완료/ }),
     ).toBeVisible({ timeout: 60_000 });
+    await expect(buyerPage.getByText("800,000원").first()).toBeVisible({
+      timeout: 30_000,
+    });
   } finally {
     await ownerContext.close();
     await peerContext.close();

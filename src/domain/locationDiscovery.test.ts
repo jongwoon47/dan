@@ -19,7 +19,10 @@ const mixed: LocationDemand = {
 };
 const online: LocationDemand = { id: "online", fulfillmentOptions: [{ mode: "REMOTE" }] };
 const unknown: LocationDemand = { id: "unknown", fulfillmentOptions: [{ mode: "PICKUP", place: { publicLabel: "장소 미상" } }] };
-const filter = (mode: "all" | "nearby" | "area" | "online", areaQuery = "") => ({
+const filter = (
+  mode: "all" | "nearby" | "area" | "online" | "route",
+  areaQuery = "",
+) => ({
   mode,
   radiusKm: 3,
   areaQuery,
@@ -84,5 +87,54 @@ describe("location discovery", () => {
   it("does not accept non-finite or negative distances", () => {
     expect(matchesLocationDiscovery(onsite, { ...filter("nearby"), approximateMetersById: { onsite: Number.NaN } })).toBe(false);
     expect(matchesLocationDiscovery(onsite, { ...filter("nearby"), approximateMetersById: { onsite: -1 } })).toBe(false);
+  });
+
+  it("never invents distance for physical requests without server meters", () => {
+    // Privacy: missing approximateMeters must exclude the demand, not fabricate km.
+    expect(
+      matchesLocationDiscovery(onsite, {
+        ...filter("nearby"),
+        approximateMetersById: {},
+      }),
+    ).toBe(false);
+    expect(
+      matchesLocationDiscovery(mixed, {
+        ...filter("nearby"),
+        approximateMetersById: { mixed: 900 },
+        radiusKm: 1,
+      }),
+    ).toBe(true);
+  });
+
+  it("keeps route matching directional and label-based (no GPS corridor)", () => {
+    const route = {
+      id: "route-only",
+      fulfillmentOptions: [{
+        mode: "ROUTE" as const,
+        from: { publicLabel: "서울 성수", region2: "성동구" },
+        to: { publicLabel: "서울 강남", region2: "강남구" },
+      }],
+    };
+    expect(
+      matchesLocationDiscovery(route, {
+        ...filter("route"),
+        routeFrom: "성수",
+        routeTo: "강남",
+      }),
+    ).toBe(true);
+    expect(
+      matchesLocationDiscovery(route, {
+        ...filter("route"),
+        routeFrom: "강남",
+        routeTo: "성수",
+      }),
+    ).toBe(false);
+    // Nearby GPS mode must not treat ROUTE endpoints as approximate pins without meters.
+    expect(
+      matchesLocationDiscovery(route, {
+        ...filter("nearby"),
+        approximateMetersById: {},
+      }),
+    ).toBe(false);
   });
 });
