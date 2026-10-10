@@ -15,12 +15,13 @@ on:
     # suite on every autonomous draft-PR commit.
     inputs:
       suite:
-        description: "verify = typecheck/lint/unit/build; full = verify + Supabase + visual"
+        description: "checkpoint = ledger only; verify = typecheck/lint/unit/build; full = all"
         required: true
         type: choice
         options:
           - full
           - verify
+          - checkpoint
         default: full
 
 permissions:
@@ -31,10 +32,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  checkpoint:
+    # PAN-style low-cost manual checkpoint: no npm ci, Docker or browsers.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.suite == 'checkpoint' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/validate-dan-loop-state.mjs
+
   verify:
     # Preserve required checks on ready PRs and manual verification runs.
     # Skipped jobs in a DRAFT are NOT evidence of a verified current SHA.
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false }}
+    if: ${{ (github.event_name == 'workflow_dispatch' && inputs.suite != 'checkpoint') || (github.event_name == 'pull_request' && github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
