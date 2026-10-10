@@ -61,7 +61,7 @@ export function SettingsPage() {
     <div className="page-stack page-narrow settings-page">
       <section className="settings-section" aria-labelledby="settings-language-title">
         <div className="settings-section__head">
-          <h1 id="settings-language-title">{t("language")}</h1>
+          <h2 id="settings-language-title">{t("language")}</h2>
           <p>{t("languageHint")}</p>
         </div>
         <div className="settings-list">
@@ -83,10 +83,15 @@ export function SettingsPage() {
 
       <section className="settings-section" aria-labelledby="settings-saved-areas">
         <div className="settings-section__head">
-          <h1 id="settings-saved-areas">{t("savedAreas")}</h1>
+          <h2 id="settings-saved-areas">{t("savedAreas")}</h2>
           <p>{t("savedAreaHint")}</p>
         </div>
         <div className="settings-list">
+          {country === "JP" ? (
+            <p className="location-pref-hint" role="note">
+              {t("pilotRegionNote")}
+            </p>
+          ) : null}
           {savedAreas.length === 0 ? <p className="location-pref-hint">{t("noSavedAreas")}</p> : null}
           {savedAreas.map((area) => (
             <div className="location-pref-row" key={area.country + ":" + area.label}>
@@ -153,7 +158,7 @@ export function SettingsPage() {
 
       <section className="settings-section" aria-labelledby="settings-legal-title">
         <div className="settings-section__head">
-          <h1 id="settings-legal-title">{t("legal")}</h1>
+          <h2 id="settings-legal-title">{t("legal")}</h2>
           <p>{t("legalHint")}</p>
         </div>
         <div className="settings-list">
@@ -170,7 +175,7 @@ export function SettingsPage() {
       </section>
       <section className="settings-section" aria-labelledby="settings-account-title">
         <div className="settings-section__head">
-          <h1 id="settings-account-title">{t("account")}</h1>
+          <h2 id="settings-account-title">{t("account")}</h2>
           <p>{auth.user ? t("settings") : t("loginRequiredSettings")}</p>
         </div>
         <div className="settings-list">

@@ -2076,7 +2076,8 @@
 .live-demand-banner button {
   grid-column: 1 / -1;
   justify-self: start;
-  padding: 0;
+  min-height: 44px;
+  padding: 8px 4px;
   border: 0;
   background: transparent;
   color: var(--dan-accent-text);
@@ -2908,7 +2909,16 @@
 .location-pref-form > button, .location-pref-form > p { grid-column: 1 / -1; }
 .location-pref-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 4px; border-bottom: 1px solid var(--dan-border); }
 .location-pref-row a { color: var(--dan-ink); flex: 1; min-width: 0; overflow-wrap: anywhere; }
-.location-pref-row button { background: transparent; border: 0; cursor: pointer; color: var(--dan-ink-secondary); font: inherit; }
+.location-pref-row button {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--dan-ink-secondary);
+  font: inherit;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 10px;
+}
 .location-discovery__saved { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .location-discovery__saved > span { font-size: .8rem; color: var(--dan-ink-secondary); }
 .location-discovery__saved > button { border: 1px solid var(--dan-border); border-radius: 999px; padding: 7px 10px; background: var(--dan-surface); color: var(--dan-ink); font: inherit; font-size: .82rem; cursor: pointer; }

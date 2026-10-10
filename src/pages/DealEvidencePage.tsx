@@ -130,20 +130,27 @@ export function DealEvidencePage() {
       return;
     }
     let cancelled = false;
-    void getMyVerification().then((status) => {
-      if (cancelled) return;
-      setSellerVerifiedForDeal(
-        status.phoneVerified &&
-          status.identityVerified &&
-          status.payoutVerified &&
-          Boolean(status.sellerType),
-      );
-      setSellerVerificationLoaded(true);
-    });
+    void getMyVerification()
+      .then((status) => {
+        if (cancelled) return;
+        setSellerVerifiedForDeal(
+          status.phoneVerified &&
+            status.identityVerified &&
+            status.payoutVerified &&
+            Boolean(status.sellerType),
+        );
+        setSellerVerificationLoaded(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSellerVerifiedForDeal(false);
+        setSellerVerificationLoaded(true);
+        setChallengeError(copy.genericError);
+      });
     return () => {
       cancelled = true;
     };
-  }, [getMyVerification, isSeller]);
+  }, [copy.genericError, getMyVerification, isSeller]);
 
   useEffect(() => {
     if (!matchId || !isSeller || match?.status !== "CONNECTED") return;
@@ -377,7 +384,11 @@ export function DealEvidencePage() {
                 <small>{copy.evidenceChallengeTtl}</small>
               </div>
             ) : (
-              <div className="evidence-challenge-code evidence-challenge-code--loading">
+              <div
+                className="evidence-challenge-code evidence-challenge-code--loading"
+                role={challengeError ? "alert" : "status"}
+                aria-live={challengeError ? "assertive" : "polite"}
+              >
                 <span>{challengeError || copy.evidenceChallengeLoading}</span>
                 {challengeError ? (
                   <Button

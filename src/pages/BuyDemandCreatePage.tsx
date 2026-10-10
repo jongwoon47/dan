@@ -143,15 +143,22 @@ export function BuyDemandCreatePage() {
       return;
     }
     let cancelled = false;
-    void getMyVerification().then((status) => {
-      if (cancelled) return;
-      setPhoneVerified(status.phoneVerified);
-      setVerificationLoaded(true);
-    });
+    void getMyVerification()
+      .then((status) => {
+        if (cancelled) return;
+        setPhoneVerified(status.phoneVerified);
+        setVerificationLoaded(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setPhoneVerified(false);
+        setVerificationLoaded(true);
+        setError(copy.genericError);
+      });
     return () => {
       cancelled = true;
     };
-  }, [getMyVerification, isLoggedIn]);
+  }, [copy.genericError, getMyVerification, isLoggedIn]);
 
   const selectedProduct = products.find((product) => product.id === selectedProductId);
   const suggestions = useMemo(
@@ -262,7 +269,7 @@ export function BuyDemandCreatePage() {
       <div className="page-stack page-narrow camera-demand-create camera-demand-create--blueprint">
         <section className="create-v1-intro">
           <span className="eyebrow">{copy.buyDemandStepReview}</span>
-          <h1 className="page-title">{copy.buyDemandReviewTitle}</h1>
+          <h2 className="page-title">{copy.buyDemandReviewTitle}</h2>
           <p>{copy.buyDemandReviewBody}</p>
         </section>
 
@@ -323,8 +330,13 @@ export function BuyDemandCreatePage() {
     <div className="page-stack page-narrow camera-demand-create camera-demand-create--blueprint">
       <section className="create-v1-intro">
         <span className="eyebrow">{copy.buyDemandStepInput}</span>
-        <h1 className="page-title">{copy.buyDemandLeadTitle}</h1>
+        <h2 className="page-title">{copy.buyDemandLeadTitle}</h2>
         <p>{copy.buyDemandLeadBody}</p>
+        {locale === "ja" ? (
+          <p className="section-desc" role="note">
+            試験運用中：表示・入力する金額は韓国ウォン（KRW）です。日本円での取引はまだ利用できません。
+          </p>
+        ) : null}
       </section>
 
       <section className="product-search-section commerce-panel commerce-panel--product">

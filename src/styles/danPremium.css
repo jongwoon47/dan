@@ -5320,6 +5320,7 @@ body {
 }
 
 .settings-section__head h1,
+.settings-section__head h2,
 .account-deletion-intro h1 {
   margin: 0;
   color: var(--dan-ink);
@@ -5419,6 +5420,7 @@ body {
   }
 
   .settings-section__head h1,
+  .settings-section__head h2,
   .account-deletion-intro h1 {
     font-size: 1.05rem;
   }
