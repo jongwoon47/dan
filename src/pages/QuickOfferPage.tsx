@@ -148,6 +148,8 @@ export function QuickOfferPage() {
         return;
       }
       navigate("/my");
+    } catch {
+      setError(copy.offerSendFail);
     } finally {
       setBusy(false);
     }

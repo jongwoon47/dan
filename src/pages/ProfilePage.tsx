@@ -41,6 +41,7 @@ export function ProfilePage() {
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [area, setArea] = useState("");
   const [bio, setBio] = useState("");
@@ -175,19 +176,26 @@ export function ProfilePage() {
 
   async function onSave(e: FormEvent) {
     e.preventDefault();
-    const next = await updateMyProfile({
-      displayName: name,
-      defaultArea: area,
-      bio,
-    });
-    if (next) {
-      setProfile({
-        ...profile!,
-        displayName: next.name,
-        defaultArea: next.defaultArea,
-        bio: next.bio ?? "",
+    setSaveError(null);
+    try {
+      const next = await updateMyProfile({
+        displayName: name,
+        defaultArea: area,
+        bio,
       });
-      setEditing(false);
+      if (next) {
+        setProfile({
+          ...profile!,
+          displayName: next.name,
+          defaultArea: next.defaultArea,
+          bio: next.bio ?? "",
+        });
+        setEditing(false);
+      } else {
+        setSaveError(copy.genericError);
+      }
+    } catch {
+      setSaveError(copy.genericError);
     }
   }
 
@@ -253,11 +261,19 @@ export function ProfilePage() {
                 maxLength={80}
               />
             </label>
+            {saveError ? (
+              <p className="form-error" role="alert">
+                {saveError}
+              </p>
+            ) : null}
             <div className="action-row">
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => setEditing(false)}
+                onClick={() => {
+                  setSaveError(null);
+                  setEditing(false);
+                }}
               >
                 {copy.cancel}
               </Button>

@@ -175,26 +175,88 @@ export function DemandItemPage() {
       availability,
       message: msg,
     });
-    const result = await createResponse({
-      demandId: demand.id,
-      message: msg,
-      offeredPrice: Number.isFinite(price) ? price : undefined,
-      availabilityText: availability.trim() || undefined,
-    });
-    if (!result) {
+    try {
+      const result = await createResponse({
+        demandId: demand.id,
+        message: msg,
+        offeredPrice: Number.isFinite(price) ? price : undefined,
+        availabilityText: availability.trim() || undefined,
+      });
+      if (!result) {
+        setLocalError(copy.genericError);
+        return;
+      }
+      clearResponseDraft();
+      setSent(true);
+      setComposerOpen(false);
+    } catch {
       setLocalError(copy.genericError);
-      return;
     }
-    clearResponseDraft();
-    setSent(true);
-    setComposerOpen(false);
   }
 
   async function onCloseDemand() {
     if (busy || !demand) return;
-    const result = await closeDemand(demand.id);
-    setCloseOpen(false);
-    if (result) navigate("/my");
+    setLocalError(null);
+    try {
+      const result = await closeDemand(demand.id);
+      setCloseOpen(false);
+      if (result) {
+        navigate("/my");
+      } else {
+        setLocalError(copy.genericError);
+      }
+    } catch {
+      setCloseOpen(false);
+      setLocalError(copy.genericError);
+    }
+  }
+
+  async function onExtendBuyDemand() {
+    if (busy || !demand) return;
+    setLocalError(null);
+    try {
+      const result = await extendBuyDemand(demand.id);
+      if (!result) setLocalError(copy.genericError);
+    } catch {
+      setLocalError(copy.genericError);
+    }
+  }
+
+  async function onAcceptResponse(responseId: string) {
+    if (busy) return;
+    setLocalError(null);
+    try {
+      const match = await acceptResponse(responseId);
+      if (match) {
+        navigate(`/match/${match.id}`);
+      } else {
+        setLocalError(copy.genericError);
+      }
+    } catch {
+      setLocalError(copy.genericError);
+    }
+  }
+
+  async function onDeclineResponse(responseId: string) {
+    if (busy) return;
+    setLocalError(null);
+    try {
+      const result = await declineResponse(responseId);
+      if (!result) setLocalError(copy.genericError);
+    } catch {
+      setLocalError(copy.genericError);
+    }
+  }
+
+  async function onWithdrawResponse(responseId: string) {
+    if (busy) return;
+    setLocalError(null);
+    try {
+      const result = await withdrawResponse(responseId);
+      if (!result) setLocalError(copy.genericError);
+    } catch {
+      setLocalError(copy.genericError);
+    }
   }
 
   return (
@@ -305,7 +367,7 @@ export function DemandItemPage() {
                 fullWidth
                 size="lg"
                 disabled={busy}
-                onClick={() => void extendBuyDemand(demand.id)}
+                onClick={() => void onExtendBuyDemand()}
               >
                 {copy.extend30d}
               </Button>
@@ -393,7 +455,7 @@ export function DemandItemPage() {
                     <Button
                       variant="secondary"
                       disabled={busy}
-                      onClick={() => void withdrawResponse(myOpen.id)}
+                      onClick={() => void onWithdrawResponse(myOpen.id)}
                     >
                       {copy.withdrawResponse}
                     </Button>
@@ -546,18 +608,14 @@ export function DemandItemPage() {
                   <div className="action-row">
                     <Button
                       disabled={busy}
-                      onClick={() =>
-                        void acceptResponse(r.id).then((m) => {
-                          if (m) navigate(`/match/${m.id}`);
-                        })
-                      }
+                      onClick={() => void onAcceptResponse(r.id)}
                     >
                       {copy.acceptResponseAction}
                     </Button>
                     <Button
                       variant="secondary"
                       disabled={busy}
-                      onClick={() => void declineResponse(r.id)}
+                      onClick={() => void onDeclineResponse(r.id)}
                     >
                       {copy.declineResponse}
                     </Button>
