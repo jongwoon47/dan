@@ -163,6 +163,7 @@ export function HomePage() {
         </div>
         {visibleProducts.length === 0 ? (
           <EmptyState
+            headingLevel={3}
             title={t("noProducts")}
             body={t("noProductsDetail")}
             action={<Button to="/create?type=BUY">{t("createRequest")}</Button>}

@@ -1,14 +1,17 @@
-import { useId, type ReactNode } from "react";
+import { useId, type ElementType, type ReactNode } from "react";
 import "./ui.css";
 
 type Props = {
   title: string;
   body?: string;
   action?: ReactNode;
+  /** Use 3 when the page already has an h2 section title above the empty state. */
+  headingLevel?: 2 | 3;
 };
 
-export function EmptyState({ title, body, action }: Props) {
+export function EmptyState({ title, body, action, headingLevel = 2 }: Props) {
   const titleId = useId();
+  const Heading = `h${headingLevel}` as ElementType;
   return (
     <div
       className="dan-empty"
@@ -16,9 +19,9 @@ export function EmptyState({ title, body, action }: Props) {
       aria-live="polite"
       aria-labelledby={titleId}
     >
-      <h2 id={titleId} className="dan-empty__title">
+      <Heading id={titleId} className="dan-empty__title">
         {title}
-      </h2>
+      </Heading>
       {body ? <p className="dan-empty__body">{body}</p> : null}
       {action ? <div className="dan-empty__action">{action}</div> : null}
     </div>

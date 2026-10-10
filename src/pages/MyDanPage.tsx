@@ -146,6 +146,7 @@ export function MyDanPage() {
             <MatchList matches={activeMatches} emptyWhenZero={false} />
           ) : (
             <EmptyState
+              headingLevel={3}
               title={copy.myActiveEmptyTitle}
               body={copy.myActiveEmptyBody}
               action={
@@ -198,6 +199,7 @@ export function MyDanPage() {
             </div>
           ) : (
             <EmptyState
+              headingLevel={3}
               title={copy.emptyMyRequests}
               body={copy.emptyMyRequestsBody}
               action={<Button to="/create">{copy.ctaCreate}</Button>}
@@ -222,6 +224,7 @@ export function MyDanPage() {
             <MatchList matches={completedMatches} emptyWhenZero={false} />
           ) : (
             <EmptyState
+              headingLevel={3}
               title={copy.myCompletedEmptyTitle}
               body={copy.myCompletedEmptyBody}
             />

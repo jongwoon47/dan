@@ -22,4 +22,11 @@ describe("EmptyState", () => {
       screen.getByText("요청이 연결되면 여기에서 대화를 이어가요."),
     ).toBeInTheDocument();
   });
+
+  it("supports headingLevel 3 under existing section titles", () => {
+    render(<EmptyState headingLevel={3} title="요청이 없어요" />);
+    expect(
+      screen.getByRole("heading", { level: 3, name: "요청이 없어요" }),
+    ).toBeInTheDocument();
+  });
 });
