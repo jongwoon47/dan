@@ -5,7 +5,7 @@
   "baseline_branch": "cursor/dan-commercial-complete-e0e7",
   "baseline_sha": "47e456d8d5651dde48d9d8ced056911afb593e5d",
   "running_head": "b2fc822c507f83d4bb2de2c1d9529b86097e6bbf",
-  "last_updated": "2026-10-10T04:00:00Z",
+  "last_updated": "2026-10-10T04:05:00Z",
   "phase": "IMPLEMENTING",
   "autonomy": {
     "mode": "cursor-agent-with-readonly-subagent",
@@ -28,12 +28,12 @@
     "unit": "PASS",
     "build": "PASS",
     "local_db": "BLOCKED",
-    "pgtap": "BLOCKED",
+    "pgtap": "FAIL",
     "two_user_e2e": "BLOCKED",
     "browser_smoke": "BLOCKED",
     "visual": "PASS",
     "ios_device": "NOT_RUN",
-    "ci": "NOT_RUN"
+    "ci": "FAIL"
   },
   "backlog": [
     {
@@ -54,7 +54,8 @@
       "evidence": [
         "Migration 20261010040000 + security_privacy_hardening.sql tests.",
         "C003 PASS bc-a532a011\u2026 on 77ee7ab (static + unit; pgtap BLOCKED locally).",
-        "CI was not firing: workflow only matched main/feature/dan-**; expanded to cursor/dan-** and automation/** so PR #37 runs verify+supabase+visual."
+        "CI was not firing: workflow only matched main/feature/dan-**; expanded to cursor/dan-** and automation/** so PR #37 runs verify+supabase+visual.",
+        "CI supabase FAIL 38022494047: Bad plan 10 vs 9 \u2014 fix pushed."
       ]
     },
     {
@@ -250,6 +251,6 @@
       "owner_action": "CI supabase job is authority until host networking fixed"
     }
   ],
-  "next_action": "Await GitHub CI on b2fc822 (run ~38022407857); if supabase/pgTAP green, mark P0-02 DONE and continue P1/P2; if fail, fix.",
-  "last_report": "HEAD b2fc822 PR #37. C001\u2013C004 independent PASS. CI filter fixed; tip CI in progress. Local supabase BLOCKED. Release NOT_APPROVED."
+  "next_action": "Push plan(9) fix for security_privacy_hardening.sql; await CI; C005 review.",
+  "last_report": "CI 38022494047 FAIL: security_privacy_hardening.sql planned 10 ran 9. Fixing plan count."
 }

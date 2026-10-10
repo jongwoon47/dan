@@ -1,7 +1,7 @@
 -- P0-02: geo scrub, SECURITY DEFINER EXECUTE boundary, quick-offer market gate.
 
 begin;
-select plan(10);
+select plan(9);
 
 -- Intentional anon-callable SECURITY DEFINER helpers (discovery booleans only).
 select ok(
