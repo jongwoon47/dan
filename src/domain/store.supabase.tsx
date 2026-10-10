@@ -324,7 +324,38 @@ export function SupabaseDanProvider({ children }: { children: ReactNode }) {
           assignLogin();
           return null;
         }
-        return run(() => api.upsertDealEvidenceRemote(payload));
+        // Evidence upload + RPC must not silently no-op when connect/refresh
+        // still holds the mutation lock (E2E flake: saveFail without snapshot).
+        for (let attempt = 0; attempt < 80 && mutationInFlightRef.current; attempt += 1) {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+        if (mutationInFlightRef.current) {
+          throw new Error("DAN_EVIDENCE_BUSY");
+        }
+        mutationInFlightRef.current = true;
+        setBusy(true);
+        try {
+          const result = await api.upsertDealEvidenceRemote(payload);
+          await refresh();
+          return result;
+        } catch (err) {
+          if (err instanceof Error && err.message === "DAN_EVIDENCE_BUSY") {
+            throw err;
+          }
+          const message =
+            err instanceof Error
+              ? err.message
+              : typeof err === "object" &&
+                  err &&
+                  "message" in err &&
+                  typeof (err as { message: unknown }).message === "string"
+                ? (err as { message: string }).message
+                : String(err);
+          throw new Error(message || "DAN_EVIDENCE_SAVE_FAILED");
+        } finally {
+          mutationInFlightRef.current = false;
+          setBusy(false);
+        }
       },
       getDealSnapshot: async (matchId) => {
         if (!currentUser) return null;

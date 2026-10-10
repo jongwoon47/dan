@@ -288,29 +288,36 @@ export function DealEvidencePage() {
     if (!activeMatch || !activeProduct) return;
     setSubmitError("");
     if (!challenge) return;
-    const row = await upsertDealEvidence({
-      matchId,
-      challengeCode: challenge.challengeCode,
-      possessionPhotoUrl: possessionPhotoUrl || undefined,
-      serialLast4: serialLast4.trim() || undefined,
-      usageCount:
-        activeProduct.category === "camera" && usageCount
-          ? Number(usageCount)
-          : undefined,
-      purchaseDate: purchaseDate || undefined,
-      warrantyUntil: warrantyUntil || undefined,
-      components,
-      cosmeticNotes,
-      knownIssues,
-      repairHistory,
-      waterDamageStatement,
-      evidenceMeta: { source: "seller_submitted", productCategory: activeProduct.category },
-    });
-    if (!row) {
+    try {
+      const row = await upsertDealEvidence({
+        matchId,
+        challengeCode: challenge.challengeCode,
+        possessionPhotoUrl: possessionPhotoUrl || undefined,
+        serialLast4: serialLast4.trim() || undefined,
+        usageCount:
+          activeProduct.category === "camera" && usageCount
+            ? Number(usageCount)
+            : undefined,
+        purchaseDate: purchaseDate || undefined,
+        warrantyUntil: warrantyUntil || undefined,
+        components,
+        cosmeticNotes,
+        knownIssues,
+        repairHistory,
+        waterDamageStatement,
+        evidenceMeta: {
+          source: "seller_submitted",
+          productCategory: activeProduct.category,
+        },
+      });
+      if (!row) {
+        setSubmitError(copy.evidenceSaveFail);
+        return;
+      }
+      navigate(`/deal/${activeMatch.id}/snapshot`);
+    } catch {
       setSubmitError(copy.evidenceSaveFail);
-      return;
     }
-    navigate(`/deal/${activeMatch.id}/snapshot`);
   }
 
   const money = formatStoredMoney(
