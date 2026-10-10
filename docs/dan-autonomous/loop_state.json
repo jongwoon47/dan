@@ -4,8 +4,8 @@
   "branch": "automation/dan-autonomous-review-loop-20261010",
   "baseline_branch": "cursor/dan-commercial-complete-e0e7",
   "baseline_sha": "47e456d8d5651dde48d9d8ced056911afb593e5d",
-  "running_head": "6553a4cb9a22b62c37392537babdb4ca1d6ec639",
-  "last_updated": "2026-10-10T07:00:53Z",
+  "running_head": "3df98fc3a7f059d945ecc88570dd742bbd4cd79d",
+  "last_updated": "2026-10-10T07:04:28Z",
   "phase": "IMPLEMENTING",
   "autonomy": {
     "mode": "cursor-agent-with-readonly-subagent",
@@ -93,7 +93,8 @@
         "C019 PASS @ 812d28e commercial audit polish (bc-5f07ba3a).",
         "C020 PASS @ db57c7f login/create copy centralization (bc-845e62fc).",
         "C021 PASS @ d879bd6 offline/not-found + My touch (bc-0ab94c90).",
-        "C022 PASS @ 6553a4c loading AT announcements (bc-ff6d5a6a)."
+        "C022 PASS @ 6553a4c loading AT announcements (bc-ff6d5a6a).",
+        "C023 PASS @ 3df98fc demand detail recovery/share/alert (bc-ed82659c-3ee6-5487-a7af-efc55a11b1bd)."
       ]
     },
     {
@@ -765,6 +766,37 @@
         "evidence": "PASS loading screen AT announcements"
       },
       "next_action": "Commercial pass on demand detail + trade chain screens (BUY/BORROW/TASK/SERVICE)"
+    },
+    {
+      "id": "C023",
+      "task_id": "P1-01",
+      "implementation_sha": "3df98fc3a7f059d945ecc88570dd742bbd4cd79d",
+      "tests": [
+        {
+          "command": "npm test -- DemandDetailPage.missing DemandDetailPage.ja",
+          "status": "PASS",
+          "evidence": "2/2"
+        },
+        {
+          "command": "npm test",
+          "status": "PASS",
+          "evidence": "253"
+        },
+        {
+          "command": "full CI",
+          "status": "NOT_RUN",
+          "evidence": "Draft skip; defer until trade-chain batch"
+        }
+      ],
+      "review": {
+        "status": "PASS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-ed82659c-3ee6-5487-a7af-efc55a11b1bd",
+        "reviewed_sha": "3df98fc3a7f059d945ecc88570dd742bbd4cd79d",
+        "findings": [],
+        "evidence": "PASS detail recovery/share/alert"
+      },
+      "next_action": "Trade chain commercial UX: DealSnapshot/SafePayment/Handoff/TradeComplete"
     }
   ],
   "blockers": [
@@ -797,16 +829,16 @@
       "owner_action": "Optional: fix agent VM Docker/Realtime networking"
     }
   ],
-  "next_action": "Continue whole-app completion: DemandDetail/Offer/Deal chain commercial UX + flow edge cases; keep JP writes locked; Full CI only after stable batch.",
-  "last_report": "C019–C022 whole-app commercial polish @ 6553a4c VERIFIED. Screen audit updated. Draft PR #37. Full CI deferred. Release NOT_APPROVED.",
+  "next_action": "Continue: DealSnapshot/SafePayment/Handoff/TradeComplete + OfferDetail commercial UX; Full CI after that stable batch.",
+  "last_report": "C019–C023 whole-app commercial polish @ 3df98fc VERIFIED (253 tests). Draft PR #37. Full CI deferred. Release NOT_APPROVED.",
   "screen_audit": {
-    "updated": "2026-10-10T07:00:53Z",
+    "updated": "2026-10-10T07:04:28Z",
     "method": "code + computerUse browser @390/720",
     "screens": {
       "home": "IMPROVED_C019",
       "feed": "IMPROVED_C019",
       "create": "IMPROVED_C020",
-      "demand_detail": "NEEDS_REVIEW",
+      "demand_detail": "IMPROVED_C023",
       "trade_chain": "NEEDS_REVIEW",
       "chat": "PRIOR_C013",
       "activity": "IMPROVED_C019",
@@ -820,8 +852,8 @@
       "network": "IMPROVED_C021"
     },
     "open_gaps": [
-      "Demand detail / trade chain visual+UX commercial pass",
-      "Feed card density residual",
+      "Trade chain (snapshot/payment/handoff/complete) commercial UX pass",
+      "Offer detail residual",
       "Measured nearby query performance (B-001)",
       "Legal/TestFlight/JP write unlock owner-gated"
     ]
