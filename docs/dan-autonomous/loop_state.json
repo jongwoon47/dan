@@ -4,8 +4,8 @@
   "branch": "automation/dan-autonomous-review-loop-20261010",
   "baseline_branch": "cursor/dan-commercial-complete-e0e7",
   "baseline_sha": "47e456d8d5651dde48d9d8ced056911afb593e5d",
-  "running_head": "bb53f08d5db44f23d802d1d7188ca2b2300ab69a",
-  "last_updated": "2026-10-10T05:26:09Z",
+  "running_head": "3c98df454d5d0534028b8d7b0fbd82d5524ed185",
+  "last_updated": "2026-10-10T05:28:53Z",
   "phase": "IMPLEMENTING",
   "autonomy": {
     "mode": "cursor-agent-with-readonly-subagent",
@@ -116,8 +116,12 @@
       "id": "P2-02",
       "priority": "P2",
       "title": "Prepare guarded JP pilot legal, location, currency and TestFlight readiness",
-      "status": "TODO",
-      "evidence": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "C016 PASS @ 3c98df4: JP create gate + locale≠market tests (bc-2e6f557d-19c7-5832-8ceb-805dc57f8aa5).",
+        "Existing marketMoney (no false JPY conversion) + jpAddress scaffolding tests green.",
+        "BLOCKED for human: APPI legal approval, TestFlight/iOS device (B-002), JP write unlock approval."
+      ]
     }
   ],
   "cycles": [
@@ -528,6 +532,37 @@
         "evidence": "PASS shared nearbyFallbackLabel; no behavior regression"
       },
       "next_action": "Continue P2-02 JP gate/currency separation verification without unlocking writes"
+    },
+    {
+      "id": "C016",
+      "task_id": "P2-02",
+      "implementation_sha": "3c98df454d5d0534028b8d7b0fbd82d5524ed185",
+      "tests": [
+        {
+          "command": "npm test -- marketPrefs CreateDemandPage.ja marketMoney jpAddress",
+          "status": "PASS",
+          "evidence": "13 targeted; full suite 248"
+        },
+        {
+          "command": "full CI suite=full",
+          "status": "NOT_RUN",
+          "evidence": "Draft skip; no security/DB code change"
+        },
+        {
+          "command": "ios_device / legal review",
+          "status": "BLOCKED",
+          "evidence": "B-002 + human legal"
+        }
+      ],
+      "review": {
+        "status": "PASS",
+        "reviewer_tool": "cursor-task/generalPurpose (dan-independent-reviewer prompt)",
+        "invocation_ref": "bc-2e6f557d-19c7-5832-8ceb-805dc57f8aa5",
+        "reviewed_sha": "3c98df454d5d0534028b8d7b0fbd82d5524ed185",
+        "findings": [],
+        "evidence": "PASS AC1-AC5 tests-only JP gate lock; no write unlock"
+      },
+      "next_action": "P1-01 residual non-chat responsive polish OR stop if only external blockers remain for P2-02 unlock"
     }
   ],
   "blockers": [
@@ -560,6 +595,6 @@
       "owner_action": "Optional: fix agent VM Docker/Realtime networking"
     }
   ],
-  "next_action": "P2-02: verify JP create/write gates and locale≠market/currency separation with tests; keep JP writes disabled.",
-  "last_report": "C013 chat a11y PASS; C014/C015 P1-02 geo locale/deny PASS @ bb53f08. P1-01/P1-02 IN_PROGRESS. Next P2-02 JP readiness verification (no unlock). Draft PR #37. Release NOT_APPROVED."
+  "next_action": "Continue P1-01 residual responsive/typography polish on non-chat surfaces; P2-02 unlock/legal/iOS remain owner-gated.",
+  "last_report": "Session: C012-C013 chat a11y; C014-C015 geo locale/deny; C016 JP gate tests @ 3c98df4. P0-04/B-001/B-002 blocked. Draft PR #37. Release NOT_APPROVED."
 }
