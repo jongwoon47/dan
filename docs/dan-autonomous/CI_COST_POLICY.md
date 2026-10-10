@@ -11,6 +11,7 @@ Workflow: `.github/workflows/ci.yml` (also exists on default branch).
 | Pull request **draft** opened/synchronized/reopened | SKIPPED | SKIPPED | SKIPPED |
 | Pull request changed to **ready for review** | RUN | RUN | RUN |
 | Commit pushed to an already ready PR | RUN | RUN | RUN |
+| Explicit `workflow_dispatch`, `suite=checkpoint` | SKIPPED (ledger validator only) | SKIPPED | SKIPPED |
 | Explicit `workflow_dispatch`, `suite=verify` | RUN | SKIPPED | SKIPPED |
 | Explicit `workflow_dispatch`, `suite=full` | RUN | RUN | RUN |
 
@@ -32,7 +33,10 @@ A skipped job is **neither PASS nor verified release evidence**. PRs must stay *
 # Check existing runs for this branch/SHA first; no duplicate if already running.
 gh run list --workflow ci.yml --branch automation/dan-autonomous-review-loop-20261010 --limit 10
 
-# Only if justified for a checkpoint, and GitHub Actions billing is authorized:
+# Ledger-only checkpoint (one short job, PAN-style):
+gh workflow run ci.yml --ref automation/dan-autonomous-review-loop-20261010 -f suite=checkpoint
+
+# Only if justified for a feature checkpoint and Actions billing is authorized:
 gh workflow run ci.yml --ref automation/dan-autonomous-review-loop-20261010 -f suite=verify
 # or full (Docker, E2E, visuals; can consume materially more Actions minutes):
 gh workflow run ci.yml --ref automation/dan-autonomous-review-loop-20261010 -f suite=full
