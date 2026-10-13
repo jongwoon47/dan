@@ -32,16 +32,50 @@ Required/preferred marketplace conditions, consent versions, and Apple name hand
 
 ## Remote schema gaps (need DB credentials)
 
-Verified via anon/authenticated REST against `wmznpuhqmmqunwtewntt`:
+Verified via authenticated REST against `wmznpuhqmmqunwtewntt` (2026-10-13):
 
 | Object | Status |
 |--------|--------|
-| Consent RPCs / tables | Present |
+| `user_consents` / `consent_requirements` | Present |
+| `get_consent_requirements` / `accept_my_consents` | Present |
 | Account deletion profile columns | Present |
-| `demands.country_code` / market RPCs | **Missing** |
-| Apple `handle_new_user` given/family name | **Not applied** (profile still email-local) |
+| `ensure_ownership` / `upsert_quick_offer` | Present |
+| Phone gate on live BUY (`0023`) | Present (security E2E) |
+| Distance / geo RPCs (`0012`/`0014`) | Present (security E2E) |
+| `demands.country_code` / market RPCs (`20261009010000`+) | **Missing** |
+| Apple `handle_new_user` / `profiles.given_name` (`20261013000000`) | **Not applied** |
 
-Apply remaining migrations with service-role/DB URL (human or CI secret), in repo order, after backup. This agent does not have `SUPABASE_DB_URL` / management token in the environment.
+Apply remaining migrations with `SUPABASE_ACCESS_TOKEN` (or `SUPABASE_DB_URL`) via `scripts/apply-sql-remote.mjs`, in repo order, after backup. This agent does not have those secrets in the environment.
+
+Recommended apply order (non-destructive, live DAN only):
+
+1. `20261009010000_market_country_currency.sql`
+2. `20261009120000_market_partition_hardening.sql`
+3. `20261009130000_jp_pilot_region_control.sql`
+4. `20261013000000_apple_profile_display_name.sql`
+
+## Live security E2E (2026-10-13)
+
+`npm run test:e2e:security` against live DAN:
+
+- PASS without service role: Task happy-path, phone gate, blocks RPC, forged sell intent, match close/reopen, distance RPC, foreign writes denied.
+- SKIP_NO_SERVICE_ROLE (explicit, exit 2 — not silent PASS): BUY happy-path / match completion / ownership direct-update forge, because `ops_set_user_verification` needs service role.
+- Test updates mirror product boundaries (`block_user`, `ensure_ownership`, `upsert_quick_offer`, phone gate). Expectations were not weakened.
+
+## App Review demo account
+
+`dan.app.review@example.com` signs in on live DAN; profile + required consents are present. Password is agent-store only — put in App Store Connect Review Information, never git.
+
+## Hosting
+
+| URL | Status |
+|-----|--------|
+| `https://dan-v1-staging-jongwoon.pages.dev` | Live DAN web app (200) |
+| `https://dan.pages.dev` | Still **HELLO WORLD** stub — needs Cloudflare production deploy (`CLOUDFLARE_API_TOKEN` / account id) |
+
+## Auth providers (live)
+
+`GET /auth/v1/settings`: `google: true`, `apple: false`, `email: true`. Apple enable is a dashboard step (see `APPLE_SIGNIN_SETUP.md`).
 
 ## PAN / “71·22 failures”
 
