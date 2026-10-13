@@ -66,16 +66,22 @@ Recommended apply order (non-destructive, live DAN only):
 
 `dan.app.review@example.com` signs in on live DAN; profile + required consents are present. Password is agent-store only — put in App Store Connect Review Information, never git.
 
+Browser smoke (`scripts/e2e-staging-review-login.mjs`) against staging Pages: login → authenticated `/my` (session key `sb-wmznpuhqmmqunwtewntt-auth-token`).
+
 ## Hosting
 
 | URL | Status |
 |-----|--------|
-| `https://dan-v1-staging-jongwoon.pages.dev` | Live DAN web app (200) |
-| `https://dan.pages.dev` | Still **HELLO WORLD** stub — needs Cloudflare production deploy (`CLOUDFLARE_API_TOKEN` / account id) |
+| `https://dan-v1-staging-jongwoon.pages.dev` | Live DAN web app (200); bundle embeds `wmznpuhqmmqunwtewntt` + publishable key + `signInWithIdToken` |
+| `https://dan.pages.dev` | Still **HELLO WORLD** stub — production Cloudflare deploy is `main`-only + `CLOUDFLARE_*` secrets |
+
+Staging workflow YAML lives on this branch; GitHub only dispatches workflows present on the **default** branch, so staging redeploy from this PR requires merging the workflow to `main` first (or deploying with a local token).
 
 ## Auth providers (live)
 
 `GET /auth/v1/settings`: `google: true`, `apple: false`, `email: true`. Apple enable is a dashboard step (see `APPLE_SIGNIN_SETUP.md`).
+
+Web login shows Google only (by design). Apple button is iOS-native (`Capacitor.getPlatform() === "ios"`); App Review 4.8 is the iOS binary path.
 
 ## PAN / “71·22 failures”
 
