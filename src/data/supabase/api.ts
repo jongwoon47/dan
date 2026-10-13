@@ -871,6 +871,7 @@ export async function fetchPublicProfile(userId: string) {
       (auth.user.app_metadata?.provider as string | undefined) ||
       auth.user.identities?.[0]?.provider;
     if (provider === "google") authLabel = copy.authGoogle;
+    else if (provider === "apple") authLabel = copy.authApple;
     else if (provider === "email") authLabel = copy.authEmail;
   }
 

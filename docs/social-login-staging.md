@@ -1,6 +1,6 @@
 # DAN social login — staging connection
 
-The client implements Kakao and Google OAuth through Supabase. Provider availability is read from public Auth settings. Disabled/unconfigured providers show “준비 중” and cannot be clicked. The email flow remains available. This is not a claim that live OAuth has been connected.
+The client implements Kakao and Google OAuth through Supabase. On **iOS**, Sign in with Apple uses the native Authentication Services sheet and Supabase `signInWithIdToken` (see [APPLE_SIGNIN_SETUP.md](./APPLE_SIGNIN_SETUP.md)). Provider availability is read from public Auth settings; iOS always offers Apple whenever Google/Kakao is enabled (Guideline 4.8). The email flow remains available. This is not a claim that live OAuth has been connected.
 
 ## Connect staging only
 

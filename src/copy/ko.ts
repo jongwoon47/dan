@@ -170,6 +170,7 @@ const koBase = {
   "profileMyPosts": "내 요청",
   "profileMyConnections": "내 연결",
   "authGoogle": "Google로 가입",
+  "authApple": "Apple로 가입",
   "authEmail": "이메일로 가입",
   "vaultOpen": "보관함",
   "registerOwned": "내 물건으로 등록",

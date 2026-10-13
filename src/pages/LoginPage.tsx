@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { availableSocialProviders, startSocialLogin, type SocialProvider } from "@/auth/socialLogin";
+import {
+  availableSocialProviders,
+  startSocialLogin,
+  type SocialProvider,
+} from "@/auth/socialLogin";
+import { AppleSignInCancelledError } from "@/auth/appleSignIn";
 import { Capacitor } from "@capacitor/core";
 import { NATIVE_AUTH_FINISHED } from "@/auth/nativeAuth";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
@@ -18,6 +23,23 @@ function authErrorMessage(err: unknown, copy: LocalizedCopy): string {
   if (/already registered|user already/i.test(msg)) return copy.authExists;
   if (/password/i.test(msg) && /6|least|weak/i.test(msg)) return copy.authWeakPassword;
   return copy.genericError;
+}
+
+function AppleMark() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M16.37 12.73c-.03-2.24 1.83-3.32 1.91-3.37-1.04-1.52-2.66-1.73-3.23-1.75-1.38-.14-2.69.81-3.39.81-.7 0-1.78-.79-2.93-.77-1.51.02-2.9.88-3.68 2.23-1.57 2.72-.4 6.74 1.13 8.95.75 1.08 1.64 2.29 2.81 2.25 1.13-.05 1.56-.73 2.93-.73 1.36 0 1.75.73 2.94.71 1.22-.02 1.99-1.1 2.73-2.19.86-1.26 1.21-2.48 1.23-2.54-.03-.01-2.36-.91-2.45-3.6ZM14.6 5.98c.62-.75 1.04-1.8.93-2.84-.9.04-1.99.6-2.63 1.35-.58.67-1.08 1.74-.95 2.76 1 .08 2.03-.51 2.65-1.27Z"
+      />
+    </svg>
+  );
+}
+
+function providerLabel(provider: SocialProvider): string {
+  if (provider === "kakao") return "카카오";
+  if (provider === "google") return "Google";
+  return "Apple";
 }
 
 export function LoginPage() {
@@ -40,8 +62,13 @@ export function LoginPage() {
   const [awaitingSession, setAwaitingSession] = useState(false);
 
   useEffect(() => {
-    const reset = () => { submitLock.current = false; setSocialBusy(null); };
-    const onPageShow = (event: PageTransitionEvent) => { if (event.persisted) reset(); };
+    const reset = () => {
+      submitLock.current = false;
+      setSocialBusy(null);
+    };
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) reset();
+    };
     window.addEventListener(NATIVE_AUTH_FINISHED, reset);
     window.addEventListener("pageshow", onPageShow);
     return () => {
@@ -55,7 +82,9 @@ export function LoginPage() {
     const controller = new AbortController();
     void availableSocialProviders(controller.signal)
       .then(setProviders)
-      .catch(() => { if (!controller.signal.aborted) setProviders([]); });
+      .catch(() => {
+        if (!controller.signal.aborted) setProviders([]);
+      });
     const hash = new URLSearchParams(window.location.hash.slice(1));
     if (params.has("error") || hash.has("error")) {
       setLocalError(
@@ -64,7 +93,9 @@ export function LoginPage() {
           : "간편 로그인을 완료하지 못했어요. 다시 시도해 주세요.",
       );
       const clean = new URL(window.location.href);
-      for (const key of ["error", "error_code", "error_description"]) clean.searchParams.delete(key);
+      for (const key of ["error", "error_code", "error_description"]) {
+        clean.searchParams.delete(key);
+      }
       clean.hash = "";
       window.history.replaceState(null, "", clean.pathname + clean.search);
     }
@@ -78,15 +109,26 @@ export function LoginPage() {
     setLocalError(null);
     clearError();
     try {
-      await startSocialLogin(provider, next);
-    } catch {
-      setLocalError(
-        locale === "ja"
-          ? "かんたんログインに接続できませんでした。しばらくしてからもう一度お試しください。"
-          : "간편 로그인에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.",
-      );
+      const result = await startSocialLogin(provider, next);
+      if (result.mode === "session") {
+        setAwaitingSession(true);
+        setSocialBusy(null);
+        submitLock.current = false;
+      }
+      // redirect mode: keep busy until OAuth return / NATIVE_AUTH_FINISHED
+    } catch (err) {
+      if (err instanceof AppleSignInCancelledError) {
+        setLocalError(null);
+      } else {
+        setLocalError(
+          locale === "ja"
+            ? "かんたんログインに接続できませんでした。しばらくしてからもう一度お試しください。"
+            : "간편 로그인에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.",
+        );
+      }
       setSocialBusy(null);
       submitLock.current = false;
+      setAwaitingSession(false);
     }
   }
 
@@ -146,11 +188,19 @@ export function LoginPage() {
   }
 
   const shownError = localError || (error ? copy.genericError : null);
+  const optimisticProviders: SocialProvider[] =
+    Capacitor.getPlatform() === "ios" ? ["apple", "google"] : ["google"];
+  const visibleProviders = providers ?? optimisticProviders;
 
   return (
     <div className="auth-screen">
       <div className="auth-screen__brand">
-        <img src={`${import.meta.env.BASE_URL}dan-logo.png`} alt="" width={56} height={56} />
+        <img
+          src={`${import.meta.env.BASE_URL}dan-logo.png`}
+          alt=""
+          width={56}
+          height={56}
+        />
         <p className="auth-screen__mark">DAN</p>
         <h1 className="auth-screen__headline">{copy.authHeadline}</h1>
         <p className="section-desc">
@@ -159,27 +209,82 @@ export function LoginPage() {
         </p>
       </div>
 
-      {params.get('account') === 'deleted' && <p role="status">{locale === "ja" ? "退会が完了しました。DANのアカウントと個人情報を削除しました。" : "회원탈퇴가 완료됐어요. DAN 계정과 개인정보를 삭제했어요。"}</p>}
-      <div className="auth-social" aria-label={locale === "ja" ? "ソーシャルログイン" : "간편 로그인"}>
-        {(["google", "kakao", ...(Capacitor.isNativePlatform() ? ["apple" as const] : [])] as SocialProvider[]).filter((provider) => providers?.includes(provider) || (providers === null && provider === "google")).map((provider) => {
-          const label = provider === "kakao" ? "카카오" : provider === "google" ? "Google" : "Apple";
-          const enabled = providers?.includes(provider);
-          return <button key={provider} type="button" className={`auth-social__button auth-social__button--${provider}`}
-            disabled={!enabled || busy || socialBusy !== null}
-            aria-busy={socialBusy === provider}
-            onClick={() => void onSocialLogin(provider)}>
-            <span className="auth-social__content">
-              <span className="auth-social__icon" aria-hidden="true">{provider === "kakao" ? <svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3C6.48 3 2 6.46 2 10.73c0 2.77 1.88 5.2 4.7 6.57l-1.2 4.1c-.1.35.3.63.59.42l4.8-3.28c.37.03.74.05 1.11.05 5.52 0 10-3.46 10-7.86S17.52 3 12 3Z" /></svg> : provider === "google" ? <img src={`${import.meta.env.BASE_URL}google-g-logo.png`} alt="" width={20} height={20} /> : null}</span>
-              <span className="auth-social__label">
-                <span className={socialBusy === provider ? "auth-social__label--hidden" : undefined}>{locale === "ja" ? `${label}で続ける` : `${label}로 계속하기`}</span>
-                {socialBusy === provider ? <span className="auth-social__progress" role="status">{locale === "ja" ? "接続中…" : "연결 중…"}</span> : null}
+      {params.get("account") === "deleted" && (
+        <p role="status">
+          {locale === "ja"
+            ? "退会が完了しました。DANのアカウントと個人情報を削除しました。"
+            : "회원탈퇴가 완료됐어요. DAN 계정과 개인정보를 삭제했어요."}
+        </p>
+      )}
+      <div
+        className="auth-social"
+        aria-label={locale === "ja" ? "ソーシャルログイン" : "간편 로그인"}
+      >
+        {visibleProviders.map((provider) => {
+          const label = providerLabel(provider);
+          const enabled =
+            providers === null
+              ? provider === "google" || provider === "apple"
+              : providers.includes(provider);
+          return (
+            <button
+              key={provider}
+              type="button"
+              className={`auth-social__button auth-social__button--${provider}`}
+              disabled={!enabled || busy || socialBusy !== null}
+              aria-busy={socialBusy === provider}
+              onClick={() => void onSocialLogin(provider)}
+            >
+              <span className="auth-social__content">
+                <span className="auth-social__icon" aria-hidden="true">
+                  {provider === "kakao" ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24">
+                      <path
+                        fill="currentColor"
+                        d="M12 3C6.48 3 2 6.46 2 10.73c0 2.77 1.88 5.2 4.7 6.57l-1.2 4.1c-.1.35.3.63.59.42l4.8-3.28c.37.03.74.05 1.11.05 5.52 0 10-3.46 10-7.86S17.52 3 12 3Z"
+                      />
+                    </svg>
+                  ) : provider === "google" ? (
+                    <img
+                      src={`${import.meta.env.BASE_URL}google-g-logo.png`}
+                      alt=""
+                      width={20}
+                      height={20}
+                    />
+                  ) : (
+                    <AppleMark />
+                  )}
+                </span>
+                <span className="auth-social__label">
+                  <span
+                    className={
+                      socialBusy === provider
+                        ? "auth-social__label--hidden"
+                        : undefined
+                    }
+                  >
+                    {locale === "ja"
+                      ? `${label}で続ける`
+                      : `${label}로 계속하기`}
+                  </span>
+                  {socialBusy === provider ? (
+                    <span className="auth-social__progress" role="status">
+                      {locale === "ja" ? "接続中…" : "연결 중…"}
+                    </span>
+                  ) : null}
+                </span>
               </span>
-            </span>
-          </button>;
+            </button>
+          );
         })}
-        <div className="auth-social__divider"><span>{locale === "ja" ? "または" : "또는"}</span></div>
+        <div className="auth-social__divider">
+          <span>{locale === "ja" ? "または" : "또는"}</span>
+        </div>
       </div>
-      <form className="section-stack auth-screen__form" onSubmit={(e) => void onSubmit(e)}>
+      <form
+        className="section-stack auth-screen__form"
+        onSubmit={(e) => void onSubmit(e)}
+      >
         {isSignUp ? (
           <Field label={copy.displayNameLabel}>
             <TextInput
@@ -219,27 +324,46 @@ export function LoginPage() {
             {notice}
           </p>
         ) : null}
-        <Button fullWidth type="submit" disabled={busy || socialBusy !== null} size="lg">
-          {busy ? copy.saving : isSignUp ? copy.createAccount : (locale === "ja" ? "メールで続ける" : "이메일로 계속하기")}
+        <Button
+          fullWidth
+          type="submit"
+          disabled={busy || socialBusy !== null}
+          size="lg"
+        >
+          {busy
+            ? copy.saving
+            : isSignUp
+              ? copy.createAccount
+              : locale === "ja"
+                ? "メールで続ける"
+                : "이메일로 계속하기"}
         </Button>
       </form>
 
       <p className="auth-screen__signup">
-        <span>{isSignUp ? (locale === "ja" ? "アカウントをお持ちですか？" : "이미 계정이 있나요?") : (locale === "ja" ? "初めてご利用ですか？" : "계정이 없나요?")}</span>
-      <button
-        type="button"
-        className="text-link"
-        aria-label={isSignUp ? copy.haveAccount : copy.needAccount}
-        disabled={busy || socialBusy !== null}
-        onClick={() => {
-          setIsSignUp((v) => !v);
-          clearError();
-          setLocalError(null);
-          setNotice(null);
-        }}
-      >
-        {isSignUp ? copy.login : copy.signup}
-      </button>
+        <span>
+          {isSignUp
+            ? locale === "ja"
+              ? "アカウントをお持ちですか？"
+              : "이미 계정이 있나요?"
+            : locale === "ja"
+              ? "初めてご利用ですか？"
+              : "계정이 없나요?"}
+        </span>
+        <button
+          type="button"
+          className="text-link"
+          aria-label={isSignUp ? copy.haveAccount : copy.needAccount}
+          disabled={busy || socialBusy !== null}
+          onClick={() => {
+            setIsSignUp((v) => !v);
+            clearError();
+            setLocalError(null);
+            setNotice(null);
+          }}
+        >
+          {isSignUp ? copy.login : copy.signup}
+        </button>
       </p>
       <Link to="/" className="text-link text-link--muted">
         {copy.goBack}

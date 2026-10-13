@@ -288,6 +288,7 @@ export const jaPilotCopy: Partial<LocalizedCopy> = {
   emptyBio: "まだ紹介がありません。",
   emptyBioSelf: "一言紹介を追加してみましょう。",
   authGoogle: "Googleで登録",
+  authApple: "Appleで登録",
   authEmail: "メールで登録",
   vaultOpen: "保管庫",
   registerOwned: "持ち物として登録",

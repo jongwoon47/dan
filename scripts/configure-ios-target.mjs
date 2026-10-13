@@ -50,7 +50,31 @@ project = project.replace(
   /PRODUCT_BUNDLE_IDENTIFIER = [^;]+;/g,
   `PRODUCT_BUNDLE_IDENTIFIER = ${bundleId};`,
 );
+if (!project.includes("CODE_SIGN_ENTITLEMENTS = App/App.entitlements;")) {
+  project = project.replace(
+    /CODE_SIGN_STYLE = Automatic;/g,
+    "CODE_SIGN_ENTITLEMENTS = App/App.entitlements;\n\t\t\t\tCODE_SIGN_STYLE = Automatic;",
+  );
+}
 writeFileSync(projectPath, project);
+
+const entitlementsPath = "ios/App/App/App.entitlements";
+if (!existsSync(entitlementsPath)) {
+  writeFileSync(
+    entitlementsPath,
+    `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+\t<key>com.apple.developer.applesignin</key>
+\t<array>
+\t\t<string>Default</string>
+\t</array>
+</dict>
+</plist>
+`,
+  );
+}
 
 const swiftPath = "ios/App/CapApp-SPM/Package.swift";
 if (existsSync(swiftPath)) {
