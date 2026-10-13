@@ -2,7 +2,7 @@ import {
   STAGING_PROJECT_REF_ENV,
   STAGING_SEED_CONFIRM,
   STAGING_SUPABASE_PROJECT_REF,
-  containsProductionSupabaseRef,
+  containsRetiredSupabaseRef,
   extractSupabaseProjectRef,
   isForbiddenProductionTarget,
   isLocalPostgresUrl,
@@ -94,11 +94,11 @@ export function assertStagingSeedAllowed(
     };
   }
 
-  if (containsProductionSupabaseRef(expected)) {
+  if (containsRetiredSupabaseRef(expected)) {
     return {
       ok: false,
       code: 1,
-      message: "REFUSED: staging seed cannot use a production Supabase project ref.",
+      message: "REFUSED: staging seed cannot use a retired Supabase project ref.",
     };
   }
   if (expected.toLowerCase() !== STAGING_SUPABASE_PROJECT_REF) {
@@ -119,7 +119,7 @@ export function assertStagingSeedAllowed(
     };
   }
 
-  if (containsProductionSupabaseRef(actual) || actual !== expected.toLowerCase()) {
+  if (containsRetiredSupabaseRef(actual) || actual !== expected.toLowerCase()) {
     return {
       ok: false,
       code: 1,

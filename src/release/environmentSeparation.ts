@@ -1,9 +1,10 @@
 /**
- * Production vs staging identifiers. No secret values live here.
+ * DAN runtime identifiers. No secret values live here.
  *
- * Staging must never point at the public Cloudflare project `dan`
- * or `dan.pages.dev`. Production and staging use separate Supabase refs;
- * both refs are public identifiers, never credentials.
+ * Product decision (2026-10-13): DAN operates on a single live Supabase project.
+ * Staging Cloudflare Pages and production Cloudflare Pages both talk to that
+ * project. The retired production ref must never be wired into clients again,
+ * and this agent must not delete it remotely.
  */
 
 export const STAGING_CLOUDFLARE_PROJECT = "dan-v1-staging-jongwoon";
@@ -17,15 +18,32 @@ export const STAGING_GITHUB_ENVIRONMENT = "staging";
 export const PRODUCTION_GITHUB_ENVIRONMENT = "production";
 export const STAGING_PROJECT_REF_ENV = "DAN_STAGING_SUPABASE_PROJECT_REF";
 export const PRODUCTION_PROJECT_REF_ENV = "DAN_PRODUCTION_SUPABASE_PROJECT_REF";
-export const STAGING_SUPABASE_PROJECT_REF = "wmznpuhqmmqunwtewntt";
+
+/** Single live DAN Supabase project (public identifier, not a credential). */
+export const DAN_SUPABASE_PROJECT_REF = "wmznpuhqmmqunwtewntt";
+
+/** Alias kept for staging workflows/guards; same project as production. */
+export const STAGING_SUPABASE_PROJECT_REF = DAN_SUPABASE_PROJECT_REF;
 
 export const PRODUCTION_CLOUDFLARE_PROJECT = "dan";
 export const PRODUCTION_PAGES_HOSTS = ["dan.pages.dev"] as const;
 
-/** Approved production Supabase refs. Public identifiers only, never keys. */
+/** Approved production Supabase refs — currently the single live DAN project. */
 export const PRODUCTION_SUPABASE_PROJECT_REFS: readonly string[] = [
+  DAN_SUPABASE_PROJECT_REF,
+];
+
+/**
+ * Former production project. Clients must not use it. Do not delete remotely
+ * from automation without an explicit human approval.
+ */
+export const RETIRED_SUPABASE_PROJECT_REFS: readonly string[] = [
   "hcbooyexjgsjzjncpvtk",
 ];
+
+/** Publishable browser key for the live DAN project (safe to embed in clients). */
+export const DAN_SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_Me62OYFMVYkBpeCDOjM7YA_SXNGTVgw";
 
 /** GitHub secret names for staging. Values are never committed. */
 export const STAGING_GITHUB_SECRET_NAMES = [
@@ -46,6 +64,13 @@ export const PRODUCTION_GITHUB_SECRET_NAMES = [
   "DAN_PRODUCTION_SUPABASE_PROJECT_REF",
 ] as const;
 
+export function containsRetiredSupabaseRef(value: string): boolean {
+  const lower = value.toLowerCase();
+  return RETIRED_SUPABASE_PROJECT_REFS.some((ref) =>
+    lower.includes(ref.toLowerCase()),
+  );
+}
+
 export function containsProductionSupabaseRef(value: string): boolean {
   const lower = value.toLowerCase();
   return PRODUCTION_SUPABASE_PROJECT_REFS.some((ref) =>
@@ -58,9 +83,13 @@ export function containsProductionPagesHost(value: string): boolean {
   return PRODUCTION_PAGES_HOSTS.some((host) => lower.includes(host));
 }
 
+/**
+ * Values staging deploys/seeds must never contain: production Pages hosts or
+ * retired Supabase projects. The shared live DAN Supabase ref is allowed.
+ */
 export function isForbiddenProductionTarget(value: string): boolean {
   return (
-    containsProductionSupabaseRef(value) || containsProductionPagesHost(value)
+    containsRetiredSupabaseRef(value) || containsProductionPagesHost(value)
   );
 }
 
@@ -80,7 +109,9 @@ export function extractSupabaseProjectRef(value: string): string | null {
   const dbHost = trimmed.match(/@db\.([a-z0-9]+)\.supabase\.co(?:[:/?#]|$)/i);
   if (dbHost?.[1]) return dbHost[1].toLowerCase();
 
-  const apiHost = trimmed.match(/^https?:\/\/([a-z0-9]+)\.supabase\.co(?:[:/?#]|$)/i);
+  const apiHost = trimmed.match(
+    /^https?:\/\/([a-z0-9]+)\.supabase\.co(?:[:/?#]|$)/i,
+  );
   if (apiHost?.[1]) return apiHost[1].toLowerCase();
 
   if (/pooler\.supabase\.com/i.test(trimmed)) {

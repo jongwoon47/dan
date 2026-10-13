@@ -2,8 +2,8 @@ import {
   PRODUCTION_CLOUDFLARE_PROJECT,
   PRODUCTION_DEPLOY_CONFIRM,
   PRODUCTION_SUPABASE_PROJECT_REFS,
-  STAGING_SUPABASE_PROJECT_REF,
   containsProductionSupabaseRef,
+  containsRetiredSupabaseRef,
   extractSupabaseProjectRef,
 } from "./environmentSeparation.ts";
 
@@ -54,7 +54,8 @@ export function assertProductionDeployAllowed(
 
   const url = env.PRODUCTION_VITE_SUPABASE_URL?.trim() ?? "";
   const key = env.PRODUCTION_VITE_SUPABASE_ANON_KEY?.trim() ?? "";
-  const expectedRef = env.DAN_PRODUCTION_SUPABASE_PROJECT_REF?.trim().toLowerCase() ?? "";
+  const expectedRef =
+    env.DAN_PRODUCTION_SUPABASE_PROJECT_REF?.trim().toLowerCase() ?? "";
 
   if (!url || !key || !expectedRef) {
     return {
@@ -68,16 +69,29 @@ export function assertProductionDeployAllowed(
     return {
       ok: false,
       code: 1,
-      message: "REFUSED: browser production config may not contain service-role/secret keys.",
+      message:
+        "REFUSED: browser production config may not contain service-role/secret keys.",
+    };
+  }
+  if (
+    containsRetiredSupabaseRef(url) ||
+    containsRetiredSupabaseRef(expectedRef) ||
+    containsRetiredSupabaseRef(key)
+  ) {
+    return {
+      ok: false,
+      code: 1,
+      message:
+        "REFUSED: retired Supabase project must not be used for production clients.",
     };
   }
 
   const actualRef = extractSupabaseProjectRef(url);
-  if (!actualRef || actualRef === STAGING_SUPABASE_PROJECT_REF) {
+  if (!actualRef) {
     return {
       ok: false,
       code: 1,
-      message: "REFUSED: production URL points at staging or an invalid Supabase host.",
+      message: "REFUSED: production URL is not a valid Supabase host.",
     };
   }
   if (
@@ -90,7 +104,8 @@ export function assertProductionDeployAllowed(
     return {
       ok: false,
       code: 1,
-      message: "REFUSED: production Supabase URL/ref is not the approved production project.",
+      message:
+        "REFUSED: production Supabase URL/ref is not the approved live DAN project.",
     };
   }
 

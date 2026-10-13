@@ -4,8 +4,8 @@ DAN now has separate staging and production backends and separate native auth sc
 
 ## Environments
 
-- Staging Supabase: `wmznpuhqmmqunwtewntt` — preserved but currently paused to stay within the Free-plan two-active-project limit.
-- Production Supabase: `hcbooyexjgsjzjncpvtk` — active in Seoul (`ap-northeast-2`).
+- Live DAN Supabase (staging + production clients): `wmznpuhqmmqunwtewntt`.
+- Retired Supabase project (do not wire, do not delete here): `hcbooyexjgsjzjncpvtk`.
 - Staging native callback: `dan-staging://auth/callback`.
 - Production native callback: `dan://auth/callback`.
 - Staging bundle ID remains `app.dan.staging`.
@@ -13,12 +13,10 @@ DAN now has separate staging and production backends and separate native auth sc
 
 ## Production backend status
 
-- All repository migrations through account deletion are applied to production.
-- Public tables have RLS enabled.
-- Production starts clean: no user or transaction rows; only catalog/policy seed rows exist.
-- `delete-account` Edge Function is deployed with JWT verification enabled.
-- Production frontend uses only the project's publishable browser key. Service-role/secret keys must never be bundled.
-- Google/Kakao/Apple provider configuration and Auth Site URL/redirect allowlist still have to be configured in the production Supabase Auth dashboard.
+- Single live project policy: see `docs/SINGLE_SUPABASE_CUTOVER_20261013.md`.
+- Consent + account-deletion schema verified on the live project; market-country and Apple profile-name migrations still need a privileged apply.
+- Frontend uses only the project's publishable browser key. Service-role/secret keys must never be bundled.
+- Google is enabled; Apple/Kakao provider configuration and Auth Site URL/redirect allowlist (`dan://auth/callback`, web `/login`) still have to be completed in the Supabase Auth dashboard.
 
 ## Build locally on a Mac
 

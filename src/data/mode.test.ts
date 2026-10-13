@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   PRODUCTION_SUPABASE_PROJECT_REFS,
+  RETIRED_SUPABASE_PROJECT_REFS,
   STAGING_SUPABASE_PROJECT_REF,
 } from "@/release/environmentSeparation";
 import { resolveDataMode } from "./mode";
@@ -76,5 +77,17 @@ describe("resolveDataMode", () => {
         anonKey: "sb_secret_never_ship_this",
       }),
     ).toThrow(/secret\/service-role/i);
+  });
+
+  it("refuses the retired Supabase project for any runtime", () => {
+    // Product decision 2026-10-13: hcbooy… is retired; clients must use wmznpu…
+    const retired = RETIRED_SUPABASE_PROJECT_REFS[0]!;
+    expect(() =>
+      resolveDataMode({
+        runtime: "production",
+        url: `https://${retired}.supabase.co`,
+        anonKey: "sb_publishable_test",
+      }),
+    ).toThrow(/retired/i);
   });
 });

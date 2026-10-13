@@ -31,13 +31,13 @@ jobs:
       VITE_DATA_MODE: supabase
       VITE_DAN_ENV: production
       VITE_BASE: /
-      VITE_SUPABASE_URL: https://hcbooyexjgsjzjncpvtk.supabase.co
-      VITE_SUPABASE_ANON_KEY: sb_publishable_S_rPcZDrwXl9JBEe0-zWfw_BISr12xd
+      VITE_SUPABASE_URL: https://wmznpuhqmmqunwtewntt.supabase.co
+      VITE_SUPABASE_ANON_KEY: sb_publishable_Me62OYFMVYkBpeCDOjM7YA_SXNGTVgw
       PRODUCTION_DEPLOY_CONFIRM: ${{ inputs.confirm }}
       PRODUCTION_CLOUDFLARE_PROJECT: dan
-      DAN_PRODUCTION_SUPABASE_PROJECT_REF: hcbooyexjgsjzjncpvtk
-      PRODUCTION_VITE_SUPABASE_URL: https://hcbooyexjgsjzjncpvtk.supabase.co
-      PRODUCTION_VITE_SUPABASE_ANON_KEY: sb_publishable_S_rPcZDrwXl9JBEe0-zWfw_BISr12xd
+      DAN_PRODUCTION_SUPABASE_PROJECT_REF: wmznpuhqmmqunwtewntt
+      PRODUCTION_VITE_SUPABASE_URL: https://wmznpuhqmmqunwtewntt.supabase.co
+      PRODUCTION_VITE_SUPABASE_ANON_KEY: sb_publishable_Me62OYFMVYkBpeCDOjM7YA_SXNGTVgw
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

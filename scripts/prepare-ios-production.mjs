@@ -16,7 +16,7 @@ const decision = assertProductionDeployAllowed({
   PRODUCTION_CLOUDFLARE_PROJECT: "dan",
   PRODUCTION_VITE_SUPABASE_URL: env.VITE_SUPABASE_URL,
   PRODUCTION_VITE_SUPABASE_ANON_KEY: env.VITE_SUPABASE_ANON_KEY,
-  DAN_PRODUCTION_SUPABASE_PROJECT_REF: "hcbooyexjgsjzjncpvtk",
+  DAN_PRODUCTION_SUPABASE_PROJECT_REF: "wmznpuhqmmqunwtewntt",
 });
 if (!decision.ok) {
   console.error(decision.message);

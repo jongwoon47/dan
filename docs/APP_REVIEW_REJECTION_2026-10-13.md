@@ -16,11 +16,13 @@ Version referenced: **1.0 (5)**
 
 ### 2. Guideline 2.1 — demo account login failed
 
-- Documented production Supabase project `hcbooyexjgsjzjncpvtk.supabase.co` returns **NXDOMAIN** (project missing / deleted).
+- Former production Supabase project `hcbooyexjgsjzjncpvtk.supabase.co` returns **NXDOMAIN**.
 - Cloudflare production Pages `https://dan.pages.dev` currently serves a stub (`HELLO WORLD.`), not DAN.
-- iOS production workflows embed the dead production URL + publishable key. Any build using that config cannot authenticate.
+- iOS/production workflows previously embedded the dead URL.
 
-**Still required (human):** restore or recreate the production Supabase project (or deliberately retarget production to a live project), redeploy Pages with the real app, create/confirm the App Review demo user, seed review data. Do **not** paste the review password into git.
+**Cutover (this branch):** clients retargeted to the single live project `wmznpuhqmmqunwtewntt` (see `docs/SINGLE_SUPABASE_CUTOVER_20261013.md`). Retired project is not deleted.
+
+**Still required (human):** deploy real DAN to `dan.pages.dev`, reset/create App Review demo user with service-role (`scripts/seed-app-review-account.mjs`), seed review data. Do **not** paste the review password into git.
 
 ### 3. Guideline 2.1(a) — new registration incomplete
 

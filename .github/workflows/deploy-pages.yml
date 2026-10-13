@@ -1,8 +1,9 @@
 name: Deploy GitHub Pages
 
-# PRODUCTION DEPLOY IS INTENTIONALLY DISABLED.
-# Do not re-enable main push deployment until a separate production
-# Supabase project is provisioned and the production guard is updated.
+# GitHub Pages production deploy stays disabled.
+# Public production hosting is Cloudflare Pages (`dan` → dan.pages.dev)
+# against the single live DAN Supabase project. See
+# docs/SINGLE_SUPABASE_CUTOVER_20261013.md.
 
 on:
   workflow_dispatch:
@@ -14,7 +15,7 @@ jobs:
   blocked:
     runs-on: ubuntu-latest
     steps:
-      - name: Refuse until production database exists
+      - name: Refuse GitHub Pages production path
         run: |
-          echo "REFUSED: production Supabase project is not configured."
+          echo "REFUSED: use Cloudflare Pages project dan (workflow deploy-cloudflare.yml)."
           exit 1

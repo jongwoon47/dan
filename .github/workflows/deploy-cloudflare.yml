@@ -29,10 +29,11 @@ jobs:
       VITE_BASE: /
       PRODUCTION_DEPLOY_CONFIRM: ${{ inputs.confirm }}
       PRODUCTION_CLOUDFLARE_PROJECT: dan
-      DAN_PRODUCTION_SUPABASE_PROJECT_REF: hcbooyexjgsjzjncpvtk
-      PRODUCTION_VITE_SUPABASE_URL: https://hcbooyexjgsjzjncpvtk.supabase.co
+      # Single live DAN Supabase project (shared with staging Pages).
+      DAN_PRODUCTION_SUPABASE_PROJECT_REF: wmznpuhqmmqunwtewntt
+      PRODUCTION_VITE_SUPABASE_URL: https://wmznpuhqmmqunwtewntt.supabase.co
       # Publishable browser key, not a service-role/secret key.
-      PRODUCTION_VITE_SUPABASE_ANON_KEY: sb_publishable_S_rPcZDrwXl9JBEe0-zWfw_BISr12xd
+      PRODUCTION_VITE_SUPABASE_ANON_KEY: sb_publishable_Me62OYFMVYkBpeCDOjM7YA_SXNGTVgw
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

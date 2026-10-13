@@ -2,6 +2,7 @@ import {
   PRODUCTION_SUPABASE_PROJECT_REFS,
   STAGING_SUPABASE_PROJECT_REF,
   containsProductionSupabaseRef,
+  containsRetiredSupabaseRef,
   extractSupabaseProjectRef,
 } from "@/release/environmentSeparation";
 
@@ -53,6 +54,9 @@ export function resolveDataMode(input: DataModeInput): DataMode {
   if (url && anonKey) {
     if (/service_role|sb_secret/i.test(anonKey)) {
       throw new Error("Browser Supabase configuration cannot use a secret/service-role key.");
+    }
+    if (containsRetiredSupabaseRef(url)) {
+      throw new Error("Retired Supabase project must not be used by DAN clients.");
     }
     if (runtime === "staging") {
       const ref = extractSupabaseProjectRef(url);

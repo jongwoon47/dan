@@ -5,6 +5,7 @@ import {
   STAGING_REMOTE_CONFIRM,
   STAGING_SUPABASE_PROJECT_REF,
   containsProductionSupabaseRef,
+  containsRetiredSupabaseRef,
 } from "./environmentSeparation.ts";
 
 export type RemoteDbDecision = {
@@ -54,13 +55,13 @@ export function assertRemoteMigrationAllowed(
       };
     }
     if (
-      containsProductionSupabaseRef(stagingRef) ||
-      containsProductionSupabaseRef(explicitRef)
+      containsRetiredSupabaseRef(stagingRef) ||
+      containsRetiredSupabaseRef(explicitRef)
     ) {
       return {
         ok: false,
         code: 1,
-        message: "REFUSED: staging cannot use a production Supabase project ref.",
+        message: "REFUSED: staging cannot use a retired Supabase project ref.",
       };
     }
     if (stagingRef !== STAGING_SUPABASE_PROJECT_REF) {

@@ -3,7 +3,7 @@ import {
   STAGING_DEPLOY_CONFIRM,
   STAGING_PROJECT_REF_ENV,
   STAGING_SUPABASE_PROJECT_REF,
-  containsProductionSupabaseRef,
+  containsRetiredSupabaseRef,
   extractSupabaseProjectRef,
   isForbiddenProductionTarget,
   isProductionCloudflareProject,
@@ -88,11 +88,11 @@ export function assertStagingDeployAllowed(
       message: `NEEDS USER: ${STAGING_PROJECT_REF_ENV} must identify the exact staging Supabase project.`,
     };
   }
-  if (containsProductionSupabaseRef(expectedRef)) {
+  if (containsRetiredSupabaseRef(expectedRef)) {
     return {
       ok: false,
       code: 1,
-      message: "REFUSED: the expected staging Supabase ref is a production ref.",
+      message: "REFUSED: staging cannot use a retired Supabase project ref.",
     };
   }
   if (expectedRef !== STAGING_SUPABASE_PROJECT_REF) {
@@ -133,7 +133,7 @@ export function assertStagingDeployAllowed(
       ok: false,
       code: 1,
       message:
-        "REFUSED: staging values point at production Supabase or dan.pages.dev.",
+        "REFUSED: staging values point at a retired Supabase project or dan.pages.dev.",
     };
   }
 
