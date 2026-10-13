@@ -30,6 +30,12 @@ DAN uses **one** live Supabase project:
 
 Required/preferred marketplace conditions, consent versions, and Apple name handling were **not** relaxed.
 
+## Ops recovery follow-up
+
+See `docs/OPS_RECOVERY_APPSTORE_20261013.md` for the pending migration apply order,
+Cloudflare `dan.pages.dev` deploy approval request, and Apple dashboard paths.
+Helpers: `npm run verify:live-schema`, `npm run db:apply:pending-live`, `npm run assert:production-bundle`.
+
 ## Remote schema gaps (need DB credentials)
 
 Verified via authenticated REST against `wmznpuhqmmqunwtewntt` (2026-10-13):

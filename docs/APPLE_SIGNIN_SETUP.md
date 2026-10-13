@@ -38,3 +38,9 @@ Native iOS does **not** require a Services ID / `.p8` secret. Those are only nee
 - Google login still works
 - Logout / account deletion
 - Review demo email/password account reaches home with seed data
+
+## Ops recovery cross-links
+
+- Single DB + migration apply: `docs/OPS_RECOVERY_APPSTORE_20261013.md`
+- Apply pending live SQL (when `SUPABASE_ACCESS_TOKEN` is set): `npm run db:apply:pending-live`
+- Confirm Auth after dashboard toggle: `curl -sS "$VITE_SUPABASE_URL/auth/v1/settings" -H "apikey: $VITE_SUPABASE_ANON_KEY" | jq .external.apple` → `true`
