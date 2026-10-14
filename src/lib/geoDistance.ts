@@ -13,6 +13,14 @@ export function saveViewerGeo(lat: number, lng: number): void {
   }
 }
 
+export function clearViewerGeo(): void {
+  try {
+    sessionStorage.removeItem(VIEWER_GEO_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function loadViewerGeo(maxAgeMs = 6 * 3600_000): ViewerGeo | null {
   try {
     const raw = sessionStorage.getItem(VIEWER_GEO_KEY);
@@ -51,15 +59,15 @@ export function distanceMeters(
 }
 
 /** Consumer distance label — never exact coordinates. */
-export function formatApproxDistance(meters: number): string {
+export function formatApproxDistance(meters: number, locale: "ko" | "ja" = "ko"): string {
   if (!Number.isFinite(meters) || meters < 0) return "";
   if (meters < 1000) {
     const rounded = Math.max(50, Math.round(meters / 50) * 50);
-    return `약 ${rounded}m`;
+    return locale === "ja" ? `約${rounded}m` : `약 ${rounded}m`;
   }
   const km = meters / 1000;
   const rounded = km < 10 ? Math.round(km * 10) / 10 : Math.round(km);
-  return `약 ${rounded}km`;
+  return locale === "ja" ? `約${rounded}km` : `약 ${rounded}km`;
 }
 
 /**
@@ -70,18 +78,18 @@ export function formatApproxDistance(meters: number): string {
 export function formatPublicPlaceLine(
   place: Place,
   viewer?: { lat: number; lng: number } | null,
-  opts?: { revealDetail?: boolean; approxMeters?: number | null },
+  opts?: { revealDetail?: boolean; approxMeters?: number | null; locale?: "ko" | "ja" },
 ): string {
   if (opts?.revealDetail) return place.publicLabel.trim();
 
   if (opts?.approxMeters != null && Number.isFinite(opts.approxMeters)) {
-    return formatApproxDistance(opts.approxMeters);
+    return formatApproxDistance(opts.approxMeters, opts.locale);
   }
 
   // Legacy client-side path (should not receive geo after privacy scrub).
   if (place.geo && viewer) {
     const meters = distanceMeters(viewer, place.geo);
-    return formatApproxDistance(meters);
+    return formatApproxDistance(meters, opts?.locale);
   }
   if (place.geo) {
     return (place.region2 || place.region1 || "내 주변").trim();

@@ -2,12 +2,22 @@
  * Security regression E2E against live Supabase (anon key + RLS/RPC).
  * Run: npm run test:e2e:security
  *
- * Requires migrations through 0014 applied.
+ * Product: live BUY demands require phone verification (0023_verification_gates).
+ * Optional SUPABASE_SERVICE_ROLE_KEY enables ops_set_user_verification so the
+ * BUY happy-path can run. Without it, BUY happy-path is SKIP_NO_SERVICE_ROLE
+ * (not a silent PASS). The phone-gate assertion always runs.
+ *
+ * Product (0030/0038): ownerships + sell_intents writes use ensure_ownership /
+ * upsert_quick_offer — authenticated direct INSERT was revoked. This script
+ * mirrors the app; it does not re-open REST inserts.
+ *
+ * Requires migrations through 0014 applied for distance RPC checks.
  */
 import { createClient } from "@supabase/supabase-js";
 
 const url = process.env.VITE_SUPABASE_URL;
 const key = process.env.VITE_SUPABASE_ANON_KEY;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || "";
 const mode = process.env.VITE_DATA_MODE;
 
 if (!url || !key) {
@@ -18,14 +28,35 @@ if (mode === "demo") {
   console.error("FAIL: VITE_DATA_MODE=demo");
   process.exit(1);
 }
+if (serviceKey && /sb_publishable|anon/i.test(serviceKey)) {
+  console.error("FAIL: SUPABASE_SERVICE_ROLE_KEY looks like a browser key");
+  process.exit(1);
+}
 
 const ts = Date.now();
 const password = "DanE2eSec-Pass1!";
 
-function client() {
-  return createClient(url, key, {
+function client(useService = false) {
+  return createClient(url, useService ? serviceKey : key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+}
+
+async function markVerified(userId, { phone = true, identity = false, payout = false } = {}) {
+  if (!serviceKey) {
+    throw new Error("ops_set_user_verification requires SUPABASE_SERVICE_ROLE_KEY");
+  }
+  const admin = client(true);
+  const { error } = await admin.rpc("ops_set_user_verification", {
+    p_user_id: userId,
+    p_phone_verified: phone,
+    p_identity_verified: identity,
+    p_payout_verified: payout,
+    p_seller_type: identity || payout ? "individual" : null,
+    p_provider: "e2e-security",
+    p_note: "security e2e",
+  });
+  if (error) throw error;
 }
 
 function assert(cond, msg) {
@@ -71,6 +102,7 @@ async function insertActiveTask(sb, userId, title) {
 
 const report = {
   happyTask: "FAIL",
+  buyPhoneGate: "FAIL",
   happyBuy: "FAIL",
   matchCompletion: "FAIL",
   matchClose: "FAIL",
@@ -195,9 +227,10 @@ try {
   const productId = product.data[0].id;
   const otherProductId = product.data[1]?.id ?? productId;
 
-  const buyRpc = await a.rpc("upsert_buy_demand", {
+  // Product requirement: unverified users cannot create live BUY demands.
+  const unverifiedBuy = await a.rpc("upsert_buy_demand", {
     p_product_id: productId,
-    p_title: "SEC BUY FORBIDDEN RESP",
+    p_title: "SEC BUY UNVERIFIED",
     p_description: "buy",
     p_category: "electronics",
     p_max_price: 150000,
@@ -207,19 +240,12 @@ try {
     p_expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
     p_fulfillment_options: [{ mode: "SHIPPING" }],
   });
-  if (buyRpc.error) throw buyRpc.error;
-
-  const buyResp = await b
-    .from("responses")
-    .insert({
-      demand_id: buyRpc.data.id,
-      responder_id: userB.id,
-      response_type: "FULFILL",
-      message: "should fail on BUY",
-      status: "OPEN",
-    })
-    .select("*");
-  assert(noRows(buyResp), "direct response on BUY must fail");
+  assert(unverifiedBuy.error, "unverified BUY must be rejected");
+  assert(
+    /phone verification required/i.test(String(unverifiedBuy.error.message || "")),
+    `expected phone gate, got: ${unverifiedBuy.error.message}`,
+  );
+  report.buyPhoneGate = "PASS";
 
   const toClose = await insertActiveTask(a, userA.id, "SEC CLOSE ME");
   const closed = await a.rpc("close_demand", { p_demand_id: toClose.id });
@@ -259,10 +285,8 @@ try {
   report.forbiddenResponseWrite = "PASS";
   report.migration0009 = "PASS";
 
-  const block = await a.from("blocks").insert({
-    blocker_id: userA.id,
-    blocked_id: userB.id,
-  });
+  // Product (0031): blocks are written only via block_user RPC, not direct REST.
+  const block = await a.rpc("block_user", { p_blocked_id: userB.id });
   if (block.error) throw block.error;
   const blockTask = await insertActiveTask(a, userA.id, "SEC BLOCKED");
   const blockedResp = await b.rpc("upsert_response", {
@@ -277,18 +301,14 @@ try {
   assert(blockedMsg.error, "blocked send_message must fail");
   report.blockedPair = "PASS";
 
-  const ownA = await a
-    .from("ownerships")
-    .insert({
-      user_id: userA.id,
-      product_id: productId,
-      condition: "like_new",
-      status: "OWNED",
-    })
-    .select("*")
-    .single();
+  // Product (0038/0030): ownership + sell_intents are RPC-only for authenticated.
+  const ownA = await a.rpc("ensure_ownership", {
+    p_product_id: productId,
+    p_condition: "like_new",
+  });
   if (ownA.error) throw ownA.error;
 
+  // Direct sell_intents INSERT is revoked; forged REST write must fail.
   const forged = await b
     .from("sell_intents")
     .insert({
@@ -300,77 +320,24 @@ try {
     })
     .select("*");
   assert(noRows(forged), "forged sell_intent must fail");
+  // Cross-user quick offer on A's ownership must also fail.
+  const forgedOffer = await b.rpc("upsert_quick_offer", {
+    p_ownership_id: ownA.data.id,
+    p_minimum_price: 1,
+    p_target_demand_id: null,
+    p_trade_method: "shipping",
+    p_approx_usage_count: null,
+    p_condition_note: "forged",
+    p_quick_photo_url: null,
+  });
+  assert(forgedOffer.error, "cross-user upsert_quick_offer must fail");
   report.forgedSellIntent = "PASS";
 
-  // Unblock B for happy BUY (delete own block)
-  await a.from("blocks").delete().eq("blocker_id", userA.id).eq("blocked_id", userB.id);
+  // Unblock B for later paths
+  const unblock = await a.rpc("unblock_user", { p_blocked_id: userB.id });
+  if (unblock.error) throw unblock.error;
 
-  const buyHappy = await a.rpc("upsert_buy_demand", {
-    p_product_id: productId,
-    p_title: "SEC HAPPY BUY",
-    p_description: "buy",
-    p_category: "electronics",
-    p_max_price: 2_000_000,
-    p_location: "택배",
-    p_condition_preference: "any",
-    p_trade_method: "shipping",
-    p_expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
-    p_fulfillment_options: [{ mode: "SHIPPING" }],
-  });
-  if (buyHappy.error) throw buyHappy.error;
-
-  const ownB = await b
-    .from("ownerships")
-    .insert({
-      user_id: userB.id,
-      product_id: productId,
-      condition: "like_new",
-      status: "OWNED",
-    })
-    .select("*")
-    .single();
-  if (ownB.error) throw ownB.error;
-  const sellB = await b
-    .from("sell_intents")
-    .insert({
-      ownership_id: ownB.data.id,
-      user_id: userB.id,
-      product_id: productId,
-      minimum_price: 1_000_000,
-      status: "OPEN",
-    })
-    .select("*")
-    .single();
-  if (sellB.error) throw sellB.error;
-  const interest = await a.rpc("express_buyer_interest", {
-    p_demand_id: buyHappy.data.id,
-    p_sell_intent_id: sellB.data.id,
-  });
-  if (interest.error) throw interest.error;
-  const connect = await b.rpc("seller_connect_match", {
-    p_match_id: interest.data.id,
-  });
-  if (connect.error) throw connect.error;
-  assert(connect.data.status === "CONNECTED", "buy connect");
-  report.happyBuy = "PASS";
-
-  const confirmA = await a.rpc("confirm_match_completion", {
-    p_match_id: connect.data.id,
-  });
-  if (confirmA.error) throw confirmA.error;
-  assert(
-    confirmA.data.status === "CONNECTED",
-    "one-sided confirm stays CONNECTED",
-  );
-  assert(confirmA.data.buyer_completed_at, "buyer_completed_at set");
-  const confirmB = await b.rpc("confirm_match_completion", {
-    p_match_id: connect.data.id,
-  });
-  if (confirmB.error) throw confirmB.error;
-  assert(confirmB.data.status === "COMPLETED", "both confirms → COMPLETED");
-  assert(confirmB.data.completed_at, "completed_at set");
-  report.matchCompletion = "PASS";
-
+  // Match close path uses TASK (no phone gate) and always runs.
   const closeTask = await insertActiveTask(a, userA.id, "SEC CLOSE MATCH");
   const closeResp = await b.rpc("upsert_response", {
     p_demand_id: closeTask.id,
@@ -419,15 +386,6 @@ try {
   assert(demandAfterReopen.data.status === "ACTIVE", "demand ACTIVE after reopen");
   report.matchClose = "PASS";
 
-  // ownership: no direct UPDATE (condition forge)
-  const ownUpdate = await b
-    .from("ownerships")
-    .update({ condition: "sealed" })
-    .eq("id", ownB.data.id)
-    .select("*");
-  assert(noRows(ownUpdate), "owner must not direct-update ownership");
-  report.ownershipDirectUpdate = "PASS";
-
   // Distance RPC: anon blocked; authenticated returns quantized meters
   const geoTask = await insertActiveTask(a, userA.id, "SEC GEO DIST");
   const geoUpsert = await a.rpc("upsert_demand_exact_geo", {
@@ -435,7 +393,10 @@ try {
     p_lat: 37.5665,
     p_lng: 126.978,
   });
-  if (geoUpsert.error) throw geoUpsert.error;
+  if (geoUpsert.error) {
+    // Missing 0012 GPS migration is a real schema gap — keep FAIL, don't soften.
+    throw new Error(`geo upsert failed (check 0012 migration): ${geoUpsert.error.message}`);
+  }
 
   const anon = client();
   const anonDist = await anon.rpc("approx_demand_distances", {
@@ -464,6 +425,117 @@ try {
   report.distanceRpcQuantized = "PASS";
   report.migration0014 = "PASS";
 
+  if (!serviceKey) {
+    report.happyBuy = "SKIP_NO_SERVICE_ROLE";
+    report.matchCompletion = "SKIP_NO_SERVICE_ROLE";
+    report.ownershipDirectUpdate = "SKIP_NO_SERVICE_ROLE";
+    console.log(JSON.stringify(report, null, 2));
+    console.error(
+      "SECURITY E2E PARTIAL: BUY happy-path needs SUPABASE_SERVICE_ROLE_KEY to mark phone/identity verification (product gate). Phone gate itself PASSED.",
+    );
+    process.exit(2);
+  }
+
+  await markVerified(userA.id, { phone: true });
+  await markVerified(userB.id, {
+    phone: true,
+    identity: true,
+    payout: true,
+  });
+
+  const buyRpc = await a.rpc("upsert_buy_demand", {
+    p_product_id: productId,
+    p_title: "SEC BUY FORBIDDEN RESP",
+    p_description: "buy",
+    p_category: "electronics",
+    p_max_price: 150000,
+    p_location: "택배",
+    p_condition_preference: "any",
+    p_trade_method: "shipping",
+    p_expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
+    p_fulfillment_options: [{ mode: "SHIPPING" }],
+  });
+  if (buyRpc.error) throw buyRpc.error;
+  const buyResp = await b
+    .from("responses")
+    .insert({
+      demand_id: buyRpc.data.id,
+      responder_id: userB.id,
+      response_type: "FULFILL",
+      message: "should fail on BUY",
+      status: "OPEN",
+    })
+    .select("*");
+  assert(noRows(buyResp), "direct response on BUY must fail");
+
+  const buyHappy = await a.rpc("upsert_buy_demand", {
+    p_product_id: productId,
+    p_title: "SEC HAPPY BUY",
+    p_description: "buy",
+    p_category: "electronics",
+    p_max_price: 2_000_000,
+    p_location: "택배",
+    p_condition_preference: "any",
+    p_trade_method: "shipping",
+    p_expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
+    p_fulfillment_options: [{ mode: "SHIPPING" }],
+  });
+  if (buyHappy.error) throw buyHappy.error;
+
+  const ownB = await b.rpc("ensure_ownership", {
+    p_product_id: productId,
+    p_condition: "like_new",
+  });
+  if (ownB.error) throw ownB.error;
+  const sellB = await b.rpc("upsert_quick_offer", {
+    p_ownership_id: ownB.data.id,
+    p_minimum_price: 1_000_000,
+    p_target_demand_id: buyHappy.data.id,
+    p_trade_method: "shipping",
+    p_approx_usage_count: null,
+    p_condition_note: "security e2e",
+    p_quick_photo_url: null,
+  });
+  if (sellB.error) throw sellB.error;
+  assert(sellB.data.status === "OPEN", "quick offer OPEN");
+  const interest = await a.rpc("express_buyer_interest", {
+    p_demand_id: buyHappy.data.id,
+    p_sell_intent_id: sellB.data.id,
+  });
+  if (interest.error) throw interest.error;
+  const connect = await b.rpc("seller_connect_match", {
+    p_match_id: interest.data.id,
+  });
+  if (connect.error) throw connect.error;
+  assert(connect.data.status === "CONNECTED", "buy connect");
+  report.happyBuy = "PASS";
+
+  const confirmA = await a.rpc("confirm_match_completion", {
+    p_match_id: connect.data.id,
+  });
+  if (confirmA.error) throw confirmA.error;
+  assert(
+    confirmA.data.status === "CONNECTED",
+    "one-sided confirm stays CONNECTED",
+  );
+  assert(confirmA.data.buyer_completed_at, "buyer_completed_at set");
+  const confirmB = await b.rpc("confirm_match_completion", {
+    p_match_id: connect.data.id,
+  });
+  if (confirmB.error) throw confirmB.error;
+  assert(confirmB.data.status === "COMPLETED", "both confirms → COMPLETED");
+  assert(confirmB.data.completed_at, "completed_at set");
+  report.matchCompletion = "PASS";
+
+  // ownership: no direct UPDATE (condition forge) — product boundary after 0038
+  const ownUpdate = await b
+    .from("ownerships")
+    .update({ condition: "sealed" })
+    .eq("id", ownB.data.id)
+    .select("*");
+  assert(noRows(ownUpdate), "owner must not direct-update ownership");
+  report.ownershipDirectUpdate = "PASS";
+
   console.log(JSON.stringify(report, null, 2));
   const bad = Object.entries(report).filter(([k, v]) => {
     if (
@@ -473,7 +545,7 @@ try {
     ) {
       return false;
     }
-    return v !== "PASS";
+    return v !== "PASS" && !String(v).startsWith("SKIP_");
   });
   if (bad.length) {
     console.error("SECURITY E2E FAILED keys:", bad.map(([k]) => k).join(", "));

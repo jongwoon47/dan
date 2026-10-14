@@ -68,10 +68,10 @@ describe("demandLifecycle", () => {
     expect(end.getDate()).toBe(15);
   });
 
-  it("extendBuyExpiresAt adds 30 days", () => {
+  it("extendBuyExpiresAt adds 7 days", () => {
     const now = Date.parse("2026-09-15T00:00:00.000Z");
     expect(extendBuyExpiresAt(now)).toBe(
-      new Date(now + 30 * 86400000).toISOString(),
+      new Date(now + 7 * 86400000).toISOString(),
     );
   });
 });

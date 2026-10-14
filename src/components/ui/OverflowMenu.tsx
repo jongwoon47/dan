@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { ko } from "@/copy/ko";
+import { useDanCopy } from "@/copy/useDanCopy";
 import "./overflowMenu.css";
 
 export type OverflowMenuItem = {
@@ -19,8 +19,10 @@ export function OverflowMenu({
   open,
   onOpenChange,
   items,
-  label = ko.moreActions,
+  label,
 }: Props) {
+  const copy = useDanCopy();
+  const resolvedLabel = label ?? copy.moreActions;
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -56,7 +58,7 @@ export function OverflowMenu({
       <button
         type="button"
         className="overflow-menu__trigger"
-        aria-label={label}
+        aria-label={resolvedLabel}
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => onOpenChange(!open)}

@@ -5,15 +5,16 @@ import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { useDeepHeader } from "@/components/layout/ShellChrome";
-import { ko } from "@/copy/ko";
+import { useDanCopy } from "@/copy/useDanCopy";
+import { useDanLocale } from "@/i18n/locale";
 import { useDan } from "@/domain/danContext";
 import type { PublicProfile } from "@/domain/types";
 import "./pages.css";
 
-function formatJoined(iso: string): string {
+function formatJoined(iso: string, locale: "ko" | "ja"): string {
   const d = new Date(iso);
   if (!Number.isFinite(d.getTime())) return "";
-  return d.toLocaleDateString("ko-KR", {
+  return d.toLocaleDateString(locale === "ja" ? "ja-JP" : "ko-KR", {
     year: "numeric",
     month: "numeric",
     day: "numeric",
@@ -22,6 +23,8 @@ function formatJoined(iso: string): string {
 
 export function ProfilePage() {
   const { userId = "" } = useParams();
+  const copy = useDanCopy();
+  const locale = useDanLocale();
   const {
     currentUser,
     getPublicProfile,
@@ -31,6 +34,8 @@ export function ProfilePage() {
     busy,
     logout,
     myMatches,
+    getProduct,
+    getDemand,
   } = useDan();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,6 +49,7 @@ export function ProfilePage() {
     "spam" | "fraud" | "abuse" | "other"
   >("spam");
   const [toast, setToast] = useState<string | null>(null);
+  const [historyTab, setHistoryTab] = useState<"completed" | "progress" | "cancelled">("completed");
   const isSelf = currentUser?.id === userId;
 
   const connectedMatch = useMemo(
@@ -62,20 +68,20 @@ export function ProfilePage() {
   }, []);
 
   useDeepHeader({
-    title: profile?.displayName ?? ko.profileTitle,
+    title: profile?.displayName ?? copy.profileTitle,
     rightKey: `${isSelf}-${menuOpen}`,
-    right: !isSelf ? (
+    right: currentUser && !isSelf ? (
       <OverflowMenu
         open={menuOpen}
         onOpenChange={onMenuOpenChange}
         items={[
           {
-            label: ko.block,
+            label: copy.block,
             danger: true,
             onSelect: () => setConfirm("block"),
           },
           {
-            label: ko.report,
+            label: copy.report,
             onSelect: () => setConfirm("report"),
           },
         ]}
@@ -84,6 +90,7 @@ export function ProfilePage() {
   });
 
   useEffect(() => {
+    if (!currentUser) return;
     let alive = true;
     void (async () => {
       setLoading(true);
@@ -100,7 +107,50 @@ export function ProfilePage() {
     return () => {
       alive = false;
     };
-  }, [getPublicProfile, userId]);
+  }, [currentUser, getPublicProfile, userId]);
+
+  const tradeHistoryRows = useMemo(() => {
+    if (!isSelf) return [];
+    const fallbackTitle = copy.tradeFallbackShort;
+    return myMatches
+      .filter((match) => {
+        if (historyTab === "completed") return match.status === "COMPLETED";
+        if (historyTab === "progress") {
+          return match.status === "CONNECTED" || match.status === "BUYER_INTERESTED" || match.status === "SELLER_ACCEPTED";
+        }
+        return match.status === "CLOSED" || match.status === "DECLINED";
+      })
+      .map((match) => {
+        const product = match.productId ? getProduct(match.productId) : undefined;
+        const demand = getDemand(match.demandId);
+        return {
+          id: match.id,
+          title: product?.name ?? demand?.title ?? fallbackTitle,
+          href:
+            match.status === "COMPLETED"
+              ? `/deal/${match.id}/complete`
+              : match.status === "CONNECTED"
+                ? `/deal/${match.id}/handoff`
+                : `/match/${match.id}`,
+          meta:
+            match.status === "COMPLETED"
+              ? copy.matchStatusCompleted
+              : match.status === "CLOSED" || match.status === "DECLINED"
+                ? copy.tradeCancelAction
+                : copy.tradeInProgress,
+        };
+      });
+  }, [copy, getDemand, getProduct, historyTab, isSelf, locale, myMatches]);
+
+  if (!currentUser) {
+    return (
+      <EmptyState
+        title={copy.needLogin}
+        body={copy.needLoginBody}
+        action={<Button to="/login">{copy.login}</Button>}
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -114,9 +164,9 @@ export function ProfilePage() {
   if (!profile) {
     return (
       <EmptyState
-        title={ko.profileTitle}
-        body={ko.genericError}
-        action={<Button to="/my" variant="secondary">{ko.navMy}</Button>}
+        title={copy.profileTitle}
+        body={copy.genericError}
+        action={<Button to="/my" variant="secondary">{copy.navMy}</Button>}
       />
     );
   }
@@ -147,12 +197,12 @@ export function ProfilePage() {
   const activityBits: string[] = [];
   if (profile.completedDemandCount > 0) {
     activityBits.push(
-      `${ko.profileCompleted} ${profile.completedDemandCount}`,
+      `${copy.profileCompleted} ${profile.completedDemandCount}`,
     );
   }
   if (profile.responseConnectionCount > 0) {
     activityBits.push(
-      `${ko.profileResponded} ${profile.responseConnectionCount}`,
+      `${copy.profileResponded} ${profile.responseConnectionCount}`,
     );
   }
 
@@ -165,7 +215,7 @@ export function ProfilePage() {
           </span>
           <div className="trust-card__meta">
             <h1 className="trust-card__name">{profile.displayName}</h1>
-            {areaLine ? <p className="trust-card__area">{areaLine}</p> : null}
+            <p className="trust-card__area">{areaLine || copy.areaUnset}</p>
             {profile.authLabel ? (
               <p className="trust-card__auth">{profile.authLabel}</p>
             ) : null}
@@ -175,7 +225,7 @@ export function ProfilePage() {
         {editing ? (
           <form className="composer-sheet" onSubmit={(e) => void onSave(e)}>
             <label className="field">
-              <span>{ko.displayName}</span>
+              <span>{copy.displayName}</span>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -184,19 +234,19 @@ export function ProfilePage() {
               />
             </label>
             <label className="field">
-              <span>{ko.profileArea}</span>
+              <span>{copy.profileArea}</span>
               <input
                 value={area}
                 onChange={(e) => setArea(e.target.value)}
-                placeholder={ko.defaultAreaHint}
+                placeholder={copy.defaultAreaHint}
               />
             </label>
             <label className="field">
-              <span>{ko.profileBio}</span>
+              <span>{copy.profileBio}</span>
               <textarea
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                placeholder={ko.profileBioPh}
+                placeholder={copy.profileBioPh}
                 rows={3}
                 maxLength={80}
               />
@@ -207,10 +257,10 @@ export function ProfilePage() {
                 variant="secondary"
                 onClick={() => setEditing(false)}
               >
-                {ko.cancel}
+                {copy.cancel}
               </Button>
               <Button type="submit" disabled={busy}>
-                {busy ? ko.saving : ko.profileSave}
+                {busy ? copy.saving : copy.profileSave}
               </Button>
             </div>
           </form>
@@ -224,40 +274,113 @@ export function ProfilePage() {
                 className="trust-card__bio-cta"
                 onClick={() => setEditing(true)}
               >
-                {ko.emptyBioSelf}
+                {copy.emptyBioSelf}
               </button>
             ) : null}
 
             <p className="trust-card__joined">
-              {ko.profileJoined} {formatJoined(profile.createdAt)}
+              {copy.profileJoined} {formatJoined(profile.createdAt, locale)}
             </p>
 
             {showStats ? (
               <div className="trust-card__stats">
-                <p className="trust-card__stats-label">{ko.profileActivity}</p>
+                <p className="trust-card__stats-label">{copy.profileActivity}</p>
                 <p className="trust-card__stats-value">
                   {activityBits.join(" · ")}
                 </p>
               </div>
             ) : null}
 
-            {profile.recentActivity.length > 0 ? (
-              <div className="trust-card__recent">
-                <p className="trust-card__stats-label">{ko.profileRecent}</p>
-                <ul className="trust-card__recent-list">
-                  {profile.recentActivity.map((row) => (
-                    <li key={row.id}>
-                      {row.href ? (
-                        <Link to={row.href} className="text-link">
-                          {row.label}
-                        </Link>
-                      ) : (
-                        <span>{row.label}</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
+            <div className="trust-history trust-history--blueprint">
+              <div className="trust-history__head">
+                <strong>{copy.trustSectionTitle}</strong>
+                <div className="trust-history__badges">
+                  {profile.identityVerified ? (
+                    <span className="trust-verified-badge">
+                      {copy.identityVerified}
+                    </span>
+                  ) : null}
+                  <span>{copy.confirmedTradeRecords}</span>
+                </div>
               </div>
+
+              <div className="trust-summary-strip">
+                <div>
+                  <strong>{profile.completedDemandCount}</strong>
+                  <span>{copy.profileCompleted}</span>
+                </div>
+                <div>
+                  <strong>{profile.unresolvedDisputeCount}</strong>
+                  <span>{copy.unresolvedDisputesLabel}</span>
+                </div>
+                <div>
+                  <strong>
+                    {profile.sellerFaultCancellationCount +
+                      profile.buyerFaultCancellationCount}
+                  </strong>
+                  <span>{copy.faultCancelLabel}</span>
+                </div>
+              </div>
+
+              {profile.confirmedMismatchCount > 0 ? (
+                <div className="trust-fact-list">
+                  <div>
+                    <span>{copy.snapshotMismatchLabel}</span>
+                    <strong>{profile.confirmedMismatchCount}</strong>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            {isSelf ? (
+              <section className="profile-trade-history">
+                <div className="profile-trade-history__head">
+                  <strong>{copy.myTradeHistoryTitle}</strong>
+                  <span>{copy.confirmedOnlyHint}</span>
+                </div>
+                <div
+                  className="profile-trade-tabs"
+                  role="tablist"
+                  aria-label={copy.tradeHistoryAria}
+                >
+                  <button
+                    type="button"
+                    className={historyTab === "completed" ? "is-active" : ""}
+                    onClick={() => setHistoryTab("completed")}
+                  >
+                    {copy.matchStatusCompleted}
+                  </button>
+                  <button
+                    type="button"
+                    className={historyTab === "progress" ? "is-active" : ""}
+                    onClick={() => setHistoryTab("progress")}
+                  >
+                    {copy.myRequestsActive}
+                  </button>
+                  <button
+                    type="button"
+                    className={historyTab === "cancelled" ? "is-active" : ""}
+                    onClick={() => setHistoryTab("cancelled")}
+                  >
+                    {copy.cancel}
+                  </button>
+                </div>
+                {tradeHistoryRows.length > 0 ? (
+                  <div className="profile-trade-list">
+                    {tradeHistoryRows.map((row) => (
+                      <Link key={row.id} to={row.href} className="profile-trade-row">
+                        <div>
+                          <strong>{row.title}</strong>
+                          <span>{row.meta}</span>
+                        </div>
+                        <span aria-hidden>›</span>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="profile-trade-empty">{copy.noTradesYet}</p>
+                )}
+              </section>
             ) : null}
 
             {toast ? <p className="section-desc">{toast}</p> : null}
@@ -269,24 +392,24 @@ export function ProfilePage() {
                   variant="secondary"
                   onClick={() => setEditing(true)}
                 >
-                  {ko.profileEdit}
+                  {copy.profileEdit}
                 </Button>
                 <div className="action-row action-row--split">
                   <Button fullWidth variant="ghost" to="/my">
-                    {ko.profileMyPosts}
+                    {copy.profileMyPosts}
                   </Button>
                   <Button fullWidth variant="ghost" to="/chats">
-                    {ko.navChats}
+                    {copy.navChats}
                   </Button>
                 </div>
                 <Button fullWidth variant="ghost" onClick={logout}>
-                  {ko.logout}
+                  {copy.logout}
                 </Button>
               </div>
             ) : connectedMatch ? (
               <div className="trust-card__actions">
                 <Button to={`/match/${connectedMatch.id}`} fullWidth size="lg">
-                  {ko.openChat}
+                  {copy.openChat}
                 </Button>
               </div>
             ) : null}
@@ -296,24 +419,24 @@ export function ProfilePage() {
 
       <ConfirmSheet
         open={confirm === "block"}
-        title={ko.block}
-        body={ko.blockConfirm}
-        confirmLabel={ko.block}
+        title={copy.block}
+        body={copy.blockConfirm}
+        confirmLabel={copy.block}
         danger
         onCancel={() => setConfirm(null)}
         onConfirm={() => {
           void blockUser(userId).then((ok) => {
             setConfirm(null);
-            if (ok) setToast(ko.blockedOk);
+            if (ok) setToast(copy.blockedOk);
           });
         }}
       />
 
       <ConfirmSheet
         open={confirm === "report"}
-        title={ko.report}
-        body={ko.reportReason}
-        confirmLabel={ko.reportSubmit}
+        title={copy.report}
+        body={copy.reportReason}
+        confirmLabel={copy.reportSubmit}
         onCancel={() => setConfirm(null)}
         onConfirm={() => {
           void reportUser({
@@ -321,17 +444,17 @@ export function ProfilePage() {
             reason: reportReason,
           }).then((ok) => {
             setConfirm(null);
-            if (ok) setToast(ko.reportSent);
+            if (ok) setToast(copy.reportSent);
           });
         }}
       >
         <div className="confirm-sheet__choices">
           {(
             [
-              ["spam", ko.reportSpam],
-              ["fraud", ko.reportFraud],
-              ["abuse", ko.reportAbuse],
-              ["other", ko.reportOther],
+              ["spam", copy.reportSpam],
+              ["fraud", copy.reportFraud],
+              ["abuse", copy.reportAbuse],
+              ["other", copy.reportOther],
             ] as const
           ).map(([value, label]) => (
             <button

@@ -1,4 +1,4 @@
-import { ko } from "@/copy/ko";
+import { useDanCopy } from "@/copy/useDanCopy";
 import type { PriceBucket } from "@/domain/types";
 import "./priceDistribution.css";
 
@@ -11,12 +11,13 @@ export function PriceDistribution({
   buckets: PriceBucket[];
   seekerCount?: number;
 }) {
+  const copy = useDanCopy();
   const visible = buckets.filter((b) => b.count > 0);
   const total = visible.reduce((sum, b) => sum + b.count, 0);
   const effectiveSeekers = seekerCount ?? total;
 
   if (effectiveSeekers < MIN_SEEKER_FOR_CHART || visible.length === 0) {
-    return <p className="price-dist__empty">{ko.priceDistEmpty}</p>;
+    return <p className="price-dist__empty">{copy.priceDistEmpty}</p>;
   }
 
   const max = Math.max(...visible.map((b) => b.count), 1);
@@ -34,7 +35,7 @@ export function PriceDistribution({
           </div>
           <span className="price-dist__count">
             {bucket.count}
-            {ko.myung}
+            {copy.myung}
           </span>
         </div>
       ))}

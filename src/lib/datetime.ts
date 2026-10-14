@@ -33,15 +33,31 @@ export function isBorrowRangeValid(startLocal: string, endLocal: string): boolea
   return new Date(end).getTime() > new Date(start).getTime();
 }
 
-export function formatWhenShort(iso?: string | null): string | null {
+export function formatWhenShort(
+  iso?: string | null,
+  language: "ko" | "ja" = "ko",
+): string | null {
   if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleString("ko-KR", {
+  return d.toLocaleString(language === "ja" ? "ja-JP" : "ko-KR", {
     month: "short",
     day: "numeric",
     weekday: "short",
     hour: "2-digit",
     minute: "2-digit",
+  });
+}
+
+export function formatDateMedium(
+  iso: string,
+  language: "ko" | "ja" = "ko",
+): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(language === "ja" ? "ja-JP" : "ko-KR", {
+    month: "long",
+    day: "numeric",
+    weekday: "short",
   });
 }

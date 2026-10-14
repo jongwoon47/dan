@@ -141,9 +141,11 @@ export function mergeVisibleMatches(args: {
       isPersistedMatchStatus(m.status),
   );
   const taken = new Set(
-    persistedForUser.map((m) =>
-      pairKey(m.demandId, m.sellIntentId ?? m.responseId ?? "none"),
-    ),
+    persistedForUser
+      .filter((m) => m.status !== "CLOSED")
+      .map((m) =>
+        pairKey(m.demandId, m.sellIntentId ?? m.responseId ?? "none"),
+      ),
   );
   const derived = args.candidates
     .filter(

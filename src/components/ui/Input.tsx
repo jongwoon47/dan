@@ -3,7 +3,8 @@ import type {
   ReactNode,
   SelectHTMLAttributes,
 } from "react";
-import { ko } from "@/copy/ko";
+import { useDanCopy } from "@/copy/useDanCopy";
+import { useDanLocale, type DanLocale } from "@/i18n/locale";
 import "./ui.css";
 
 type FieldProps = {
@@ -32,28 +33,35 @@ type DatetimeLocalInputProps = {
   placeholder?: string;
   required?: boolean;
   min?: string;
+  /** BCP 47 language for the native picker; defaults to active DAN locale. */
+  language?: DanLocale;
 };
 
-/** Native datetime-local with Korean empty placeholder (hides mm/dd/yyyy ghost). */
+/** Native datetime-local with locale-aware empty placeholder (hides mm/dd/yyyy ghost). */
 export function DatetimeLocalInput({
   value,
   onChange,
-  placeholder = ko.datetimePh,
+  placeholder,
   required,
   min,
+  language,
 }: DatetimeLocalInputProps) {
+  const locale = useDanLocale();
+  const copy = useDanCopy();
+  const lang = language ?? locale;
   const empty = !value.trim();
+  const resolvedPlaceholder = placeholder ?? copy.datetimePh;
   return (
     <span className={empty ? "datetime-local is-empty" : "datetime-local"}>
       {empty ? (
         <span className="datetime-local__ph" aria-hidden="true">
-          {placeholder}
+          {resolvedPlaceholder}
         </span>
       ) : null}
       <input
         className="dan-input datetime-local__input"
         type="datetime-local"
-        lang="ko-KR"
+        lang={lang === "ja" ? "ja-JP" : "ko-KR"}
         step={60}
         value={value}
         min={min}

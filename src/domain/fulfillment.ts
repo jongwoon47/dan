@@ -1,5 +1,22 @@
 import { ko } from "@/copy/ko";
 
+type FulfillLanguage = "ko" | "ja";
+
+/** JA fulfill labels kept here to avoid domain→React hook imports. */
+const jaFulfill = {
+  fulfillRemote: "オンライン",
+  fulfillShipping: "配送",
+  fulfillShippingShort: "配送",
+  fulfillMeetup: "手渡し",
+  fulfillMeetupDemand: "手渡し希望",
+  fulfillOnsite: "現地",
+  fulfillPickup: "受け取り",
+} as const;
+
+function fulfillCopy(language: FulfillLanguage = "ko") {
+  return language === "ja" ? { ...ko, ...jaFulfill } : ko;
+}
+
 /** Public approximate place — never exact private address in V1. */
 export type Place = {
   publicLabel: string;
@@ -93,21 +110,25 @@ export function primaryPublicPlace(options: FulfillmentOption[]): Place | null {
 }
 
 /** Mode-only labels for detail “진행 방식” (place shown separately). */
-export function formatFulfillmentModes(options: FulfillmentOption[]): string {
+export function formatFulfillmentModes(
+  options: FulfillmentOption[],
+  language: FulfillLanguage = "ko",
+): string {
+  const t = fulfillCopy(language);
   if (!options.length) return "";
   return options
     .map((option) => {
       switch (option.mode) {
         case "REMOTE":
-          return ko.fulfillRemote;
+          return t.fulfillRemote;
         case "SHIPPING":
-          return ko.fulfillShipping;
+          return t.fulfillShipping;
         case "MEETUP":
-          return ko.fulfillMeetup;
+          return t.fulfillMeetup;
         case "ONSITE":
-          return ko.fulfillOnsite;
+          return t.fulfillOnsite;
         case "PICKUP":
-          return ko.fulfillPickup;
+          return t.fulfillPickup;
         case "ROUTE":
           return `${formatPlace(option.from)} → ${formatPlace(option.to)}`;
       }
@@ -115,39 +136,50 @@ export function formatFulfillmentModes(options: FulfillmentOption[]): string {
     .join(" · ");
 }
 
-export function formatFulfillmentOption(option: FulfillmentOption): string {
+export function formatFulfillmentOption(
+  option: FulfillmentOption,
+  language: FulfillLanguage = "ko",
+): string {
+  const t = fulfillCopy(language);
   switch (option.mode) {
     case "REMOTE":
-      return ko.fulfillRemote;
+      return t.fulfillRemote;
     case "SHIPPING":
-      return ko.fulfillShipping;
+      return t.fulfillShipping;
     case "MEETUP":
-      return `${ko.fulfillMeetup} · ${formatPlace(option.place)}`;
+      return `${t.fulfillMeetup} · ${formatPlace(option.place)}`;
     case "ONSITE":
-      return `${ko.fulfillOnsite} · ${formatPlace(option.place)}`;
+      return `${t.fulfillOnsite} · ${formatPlace(option.place)}`;
     case "PICKUP":
-      return `${ko.fulfillPickup} · ${formatPlace(option.place)}`;
+      return `${t.fulfillPickup} · ${formatPlace(option.place)}`;
     case "ROUTE":
       return `${formatPlace(option.from)} → ${formatPlace(option.to)}`;
   }
 }
 
-export function formatFulfillmentSummary(options: FulfillmentOption[]): string {
+export function formatFulfillmentSummary(
+  options: FulfillmentOption[],
+  language: FulfillLanguage = "ko",
+): string {
   if (!options.length) return "";
-  return options.map(formatFulfillmentOption).join(" · ");
+  return options.map((option) => formatFulfillmentOption(option, language)).join(" · ");
 }
 
 /** Short card line (no verbose labels). */
-export function formatFulfillmentCardLine(options: FulfillmentOption[]): string {
+export function formatFulfillmentCardLine(
+  options: FulfillmentOption[],
+  language: FulfillLanguage = "ko",
+): string {
+  const t = fulfillCopy(language);
   return options
     .map((option) => {
       switch (option.mode) {
         case "REMOTE":
-          return ko.fulfillRemote;
+          return t.fulfillRemote;
         case "SHIPPING":
-          return ko.fulfillShippingShort;
+          return t.fulfillShippingShort;
         case "MEETUP":
-          return `${formatPlace(option.place)} ${ko.fulfillMeetup}`;
+          return `${formatPlace(option.place)} ${t.fulfillMeetup}`;
         case "ONSITE":
           return formatPlace(option.place);
         case "PICKUP":
@@ -159,7 +191,11 @@ export function formatFulfillmentCardLine(options: FulfillmentOption[]): string 
     .join(" · ");
 }
 
-export function summarizeBuyFulfillment(optionsList: FulfillmentOption[][]): string {
+export function summarizeBuyFulfillment(
+  optionsList: FulfillmentOption[][],
+  language: FulfillLanguage = "ko",
+): string {
+  const t = fulfillCopy(language);
   let shipping = false;
   let meetup = false;
   for (const options of optionsList) {
@@ -169,9 +205,9 @@ export function summarizeBuyFulfillment(optionsList: FulfillmentOption[][]): str
     }
   }
   const parts: string[] = [];
-  if (shipping) parts.push(ko.fulfillShippingShort);
-  if (meetup) parts.push(ko.fulfillMeetupDemand);
-  return parts.join(" · ") || ko.fulfillShippingShort;
+  if (shipping) parts.push(t.fulfillShippingShort);
+  if (meetup) parts.push(t.fulfillMeetupDemand);
+  return parts.join(" · ") || t.fulfillShippingShort;
 }
 
 export function hasRemoteOption(options: FulfillmentOption[]): boolean {

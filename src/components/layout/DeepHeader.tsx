@@ -1,4 +1,5 @@
 import { navigateBack } from "@/lib/navBack";
+import { useDanLocale } from "@/i18n/locale";
 import { useNavigate } from "react-router-dom";
 import type { ReactNode } from "react";
 import "./layout.css";
@@ -8,18 +9,27 @@ type Props = {
   subtitle?: string;
   right?: ReactNode;
   fallbackTo?: string;
+  onBack?: () => void;
 };
 
-export function DeepHeader({ title, subtitle, right, fallbackTo = "/" }: Props) {
+export function DeepHeader({ title, subtitle, right, fallbackTo = "/", onBack }: Props) {
   const navigate = useNavigate();
+  const locale = useDanLocale();
+  const backLabel = locale === "ja" ? "戻る" : "뒤로가기";
 
   return (
     <header className="deep-header">
       <button
         type="button"
         className="deep-header__back"
-        aria-label="뒤로가기"
-        onClick={() => navigateBack(navigate, fallbackTo)}
+        aria-label={backLabel}
+        onClick={() => {
+          if (onBack) {
+            onBack();
+            return;
+          }
+          navigateBack(navigate, fallbackTo);
+        }}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
           <path

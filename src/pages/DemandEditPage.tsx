@@ -3,7 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Chip, ChipGroup, DatetimeLocalInput, Field, TextInput } from "@/components/ui/Input";
-import { ko } from "@/copy/ko";
+import { useDanCopy } from "@/copy/useDanCopy";
+import { useDanLocale } from "@/i18n/locale";
 import { useDan } from "@/domain/danContext";
 import {
   defaultExpiresAtIso,
@@ -16,7 +17,7 @@ import {
   type FulfillmentOption,
 } from "@/domain/fulfillment";
 import type { ConditionPreference } from "@/domain/types";
-import { CONDITION_LABEL } from "@/domain/types";
+import { conditionLabel } from "@/i18n/categories";
 import {
   fromDatetimeLocalValue,
   isBorrowRangeValid,
@@ -73,6 +74,8 @@ function routeOf(options: FulfillmentOption[]): { from: string; to: string } {
 }
 
 export function DemandEditPage() {
+  const copy = useDanCopy();
+  const locale = useDanLocale();
   const { demandId = "" } = useParams();
   const navigate = useNavigate();
   const { getDemand, updateDemand, currentUser, busy } = useDan();
@@ -191,8 +194,8 @@ export function DemandEditPage() {
   if (!demand || demand.userId !== currentUser?.id) {
     return (
       <EmptyState
-        title={ko.missingDemand}
-        action={<Button to="/my" variant="secondary">{ko.navMy}</Button>}
+        title={copy.missingDemand}
+        action={<Button to="/my" variant="secondary">{copy.navMy}</Button>}
       />
     );
   }
@@ -200,10 +203,10 @@ export function DemandEditPage() {
   if (demand.status !== "ACTIVE") {
     return (
       <EmptyState
-        title={ko.demandClosed}
+        title={copy.demandClosed}
         action={
           <Button to={`/demand/item/${demand.id}`} variant="secondary">
-            {ko.goBack}
+            {copy.goBack}
           </Button>
         }
       />
@@ -214,60 +217,66 @@ export function DemandEditPage() {
   const price = parseMoneyInput(budget);
   const thought =
     current.type === "BUY"
-      ? formatPriceThought(price, "buy")
+      ? formatPriceThought(price, "buy", locale)
       : current.type === "BORROW"
-        ? formatPriceThought(price, "borrow")
-        : formatPriceThought(price, "reward");
+        ? formatPriceThought(price, "borrow", locale)
+        : formatPriceThought(price, "reward", locale);
 
   async function onSave(e: FormEvent) {
     e.preventDefault();
-    if (!title.trim() || price <= 0) {
-      setError(ko.genericError);
+    const nextTitle =
+      current.type === "BORROW"
+        ? itemName.trim()
+        : current.type === "TASK"
+          ? description.trim().split("\n")[0].slice(0, 60)
+          : title.trim();
+    if (!nextTitle || price <= 0) {
+      setError(copy.genericError);
       return;
     }
     if (current.type === "BORROW") {
       if (!borrowStart.trim() || !borrowEnd.trim()) {
-        setError(ko.timeRequiredError);
+        setError(copy.timeRequiredError);
         return;
       }
       if (!isBorrowRangeValid(borrowStart, borrowEnd)) {
-        setError(ko.borrowRangeError);
+        setError(copy.borrowRangeError);
         return;
       }
       if (
         !isDatetimeLocalNotPast(borrowStart) ||
         !isDatetimeLocalNotPast(borrowEnd)
       ) {
-        setError(ko.timePastError);
+        setError(copy.timePastError);
         return;
       }
     }
     if (current.type === "TASK") {
       if (!dueAt.trim()) {
-        setError(ko.timeRequiredError);
+        setError(copy.timeRequiredError);
         return;
       }
       if (!isDatetimeLocalNotPast(dueAt)) {
-        setError(ko.timePastError);
+        setError(copy.timePastError);
         return;
       }
     }
     if (current.type === "SERVICE") {
       if (!preferredAt.trim()) {
-        setError(ko.timeRequiredError);
+        setError(copy.timeRequiredError);
         return;
       }
       if (!isDatetimeLocalNotPast(preferredAt)) {
-        setError(ko.timePastError);
+        setError(copy.timePastError);
         return;
       }
     }
     if (current.type === "BUY" && !(buyShipping || buyMeetup)) {
-      setError(ko.genericError);
+      setError(copy.genericError);
       return;
     }
     if (!areFulfillmentOptionsValid(fulfillmentOptions)) {
-      setError(ko.genericError);
+      setError(copy.genericError);
       return;
     }
 
@@ -289,18 +298,16 @@ export function DemandEditPage() {
 
     const result = await updateDemand({
       demandId: current.id,
-      title: title.trim(),
+      title: nextTitle,
       description: description.trim(),
       budget: price,
       fulfillmentOptions: stripGeoFromFulfillmentOptions(fulfillmentOptions),
       expiresAt,
       maxPrice: current.type === "BUY" ? price : undefined,
       itemName:
-        current.type === "BORROW" ? itemName.trim() || title.trim() : undefined,
+        current.type === "BORROW" ? itemName.trim() : undefined,
       taskDescription:
-        current.type === "TASK"
-          ? description.trim() || current.details.taskDescription
-          : undefined,
+        current.type === "TASK" ? description.trim() : undefined,
       serviceDescription:
         current.type === "SERVICE"
           ? description.trim() || current.details.serviceDescription
@@ -324,7 +331,7 @@ export function DemandEditPage() {
           : undefined,
     });
     if (!result) {
-      setError(ko.genericError);
+      setError(copy.genericError);
       return;
     }
     navigate(`/demand/item/${current.id}`);
@@ -332,51 +339,94 @@ export function DemandEditPage() {
 
   return (
     <div className="page-stack page-narrow">
-      <form className="section-stack create-page__body" onSubmit={(e) => void onSave(e)}>
-        <Field label={ko.titleLabel}>
-          <TextInput
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
-        </Field>
+      <form className="section-stack create-page__body request-edit-form" onSubmit={(e) => void onSave(e)}>
+        <div className="create-page__prompt">
+          <p className="create-page__kicker">
+            {locale === "ja" ? "依頼を編集" : "요청 수정"}
+          </p>
+          <h1 className="section-title">
+            {current.type === "BUY"
+              ? locale === "ja"
+                ? "探している物の条件を変更しますか？"
+                : "찾는 물건의 조건을 수정할까요?"
+              : current.type === "BORROW"
+                ? locale === "ja"
+                  ? "借りる物の条件を変更しますか？"
+                  : "빌릴 물건의 조건을 수정할까요?"
+                : current.type === "TASK"
+                  ? locale === "ja"
+                    ? "お願い内容を変更しますか？"
+                    : "부탁할 내용을 수정할까요?"
+                  : locale === "ja"
+                    ? "サービスの条件を変更しますか？"
+                    : "필요한 서비스 조건을 수정할까요?"}
+          </h1>
+        </div>
 
-        {current.type === "BORROW" ? (
-          <Field label={ko.itemName}>
+        {current.type === "BUY" ? (
+          <div className="request-edit-primary">
+            <span>{locale === "ja" ? "商品" : "제품"}</span>
+            <strong>{title}</strong>
+          </div>
+        ) : current.type === "BORROW" ? (
+          <Field label={locale === "ja" ? "借りたい物" : "빌릴 물건"}>
             <TextInput
               value={itemName}
               onChange={(e) => setItemName(e.target.value)}
+              required
             />
           </Field>
-        ) : null}
+        ) : current.type === "TASK" ? (
+          <Field label={locale === "ja" ? "お願いしたい内容" : "부탁할 일"}>
+            <textarea
+              className="dan-input dan-textarea"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={4}
+              required
+            />
+          </Field>
+        ) : (
+          <Field label={locale === "ja" ? "必要なサービス" : "필요한 서비스"}>
+            <TextInput
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </Field>
+        )}
 
-        {current.type === "TASK" || current.type === "SERVICE" ? (
-          <Field label={ko.descLabel}>
+        {current.type !== "TASK" ? (
+          <Field
+            label={
+              current.type === "SERVICE"
+                ? locale === "ja"
+                  ? "追加説明"
+                  : "추가 설명"
+                : locale === "ja"
+                  ? "追加条件"
+                  : "추가 조건"
+            }
+          >
             <textarea
               className="dan-input dan-textarea"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
+              placeholder={
+                locale === "ja" ? "任意事項を記入してください" : "선택 사항을 적어주세요"
+              }
             />
           </Field>
-        ) : (
-          <Field label={ko.descLabel}>
-            <textarea
-              className="dan-input dan-textarea"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-            />
-          </Field>
-        )}
+        ) : null}
 
         <Field
-          label={budgetLabelForType(current.type)}
-          hint={current.type === "BORROW" ? ko.borrowBudgetHint : undefined}
+          label={budgetLabelForType(current.type, locale)}
+          hint={current.type === "BORROW" ? copy.borrowBudgetHint : undefined}
         >
           <TextInput
             inputMode="numeric"
-            value={formatDigitsGrouped(budget)}
+            value={formatDigitsGrouped(budget, locale)}
             onChange={(e) => setBudget(digitsOnly(e.target.value))}
             required
           />
@@ -386,7 +436,7 @@ export function DemandEditPage() {
         {current.type === "BUY" ? (
           <>
             <div>
-              <p className="field-inline-label">{ko.condition}</p>
+              <p className="field-inline-label">{copy.condition}</p>
               <ChipGroup>
                 {CONDITIONS.map((c) => (
                   <Chip
@@ -394,34 +444,34 @@ export function DemandEditPage() {
                     selected={condition === c}
                     onClick={() => setCondition(c)}
                   >
-                    {CONDITION_LABEL[c]}
+                    {conditionLabel(locale, c)}
                   </Chip>
                 ))}
               </ChipGroup>
             </div>
             <div>
-              <p className="field-inline-label">{ko.tradeMethod}</p>
+              <p className="field-inline-label">{copy.tradeMethod}</p>
               <ChipGroup>
                 <Chip
                   selected={buyShipping}
                   onClick={() => setBuyShipping((v) => !v)}
                 >
-                  {ko.buyShippingOpt}
+                  {copy.buyShippingOpt}
                 </Chip>
                 <Chip
                   selected={buyMeetup}
                   onClick={() => setBuyMeetup((v) => !v)}
                 >
-                  {ko.buyMeetupOpt}
+                  {copy.buyMeetupOpt}
                 </Chip>
               </ChipGroup>
             </div>
             {buyMeetup ? (
-              <Field label={ko.buyMeetupWhere}>
+              <Field label={copy.buyMeetupWhere}>
                 <TextInput
                   value={meetupPlace}
                   onChange={(e) => setMeetupPlace(e.target.value)}
-                  placeholder={ko.locationPh}
+                  placeholder={copy.locationPh}
                 />
               </Field>
             ) : null}
@@ -430,21 +480,21 @@ export function DemandEditPage() {
 
         {current.type === "BORROW" ? (
           <>
-            <Field label={ko.borrowWhere}>
+            <Field label={copy.borrowWhere}>
               <TextInput
                 value={borrowPlace}
                 onChange={(e) => setBorrowPlace(e.target.value)}
-                placeholder={ko.locationPh}
+                placeholder={copy.locationPh}
               />
             </Field>
-            <Field label={ko.borrowStart}>
+            <Field label={copy.borrowStart}>
               <DatetimeLocalInput
                 value={borrowStart}
                 onChange={setBorrowStart}
                 required
               />
             </Field>
-            <Field label={ko.borrowEnd}>
+            <Field label={copy.borrowEnd}>
               <DatetimeLocalInput
                 value={borrowEnd}
                 onChange={setBorrowEnd}
@@ -457,51 +507,51 @@ export function DemandEditPage() {
         {current.type === "TASK" ? (
           <>
             <div>
-              <p className="field-inline-label">{ko.taskHow}</p>
+              <p className="field-inline-label">{copy.taskHow}</p>
               <ChipGroup>
                 <Chip
                   selected={taskMode === "onsite"}
                   onClick={() => setTaskMode("onsite")}
                 >
-                  {ko.taskModeOnsite}
+                  {copy.taskModeOnsite}
                 </Chip>
                 <Chip
                   selected={taskMode === "pickup"}
                   onClick={() => setTaskMode("pickup")}
                 >
-                  {ko.taskModePickup}
+                  {copy.taskModePickup}
                 </Chip>
                 <Chip
                   selected={taskMode === "route"}
                   onClick={() => setTaskMode("route")}
                 >
-                  {ko.taskModeRoute}
+                  {copy.taskModeRoute}
                 </Chip>
                 <Chip
                   selected={taskMode === "remote"}
                   onClick={() => setTaskMode("remote")}
                 >
-                  {ko.taskModeRemote}
+                  {copy.taskModeRemote}
                 </Chip>
               </ChipGroup>
             </div>
             {taskMode === "route" ? (
               <div className="route-fields">
-                <Field label={ko.taskRouteFrom}>
+                <Field label={copy.taskRouteFrom}>
                   <TextInput
                     value={routeFrom}
                     onChange={(e) => setRouteFrom(e.target.value)}
-                    placeholder={ko.placePh}
+                    placeholder={copy.placePh}
                   />
                 </Field>
                 <span className="route-arrow" aria-hidden>
-                  {ko.routeArrow}
+                  {copy.routeArrow}
                 </span>
-                <Field label={ko.taskRouteTo}>
+                <Field label={copy.taskRouteTo}>
                   <TextInput
                     value={routeTo}
                     onChange={(e) => setRouteTo(e.target.value)}
-                    placeholder={ko.placePh}
+                    placeholder={copy.placePh}
                   />
                 </Field>
               </div>
@@ -509,17 +559,17 @@ export function DemandEditPage() {
             {taskMode === "onsite" || taskMode === "pickup" ? (
               <Field
                 label={
-                  taskMode === "pickup" ? ko.taskPickupPlace : ko.taskPlace
+                  taskMode === "pickup" ? copy.taskPickupPlace : copy.taskPlace
                 }
               >
                 <TextInput
                   value={taskPlace}
                   onChange={(e) => setTaskPlace(e.target.value)}
-                  placeholder={ko.locationPh}
+                  placeholder={copy.locationPh}
                 />
               </Field>
             ) : null}
-            <Field label={ko.dueAt}>
+            <Field label={copy.dueAt}>
               <DatetimeLocalInput
                 value={dueAt}
                 onChange={setDueAt}
@@ -532,32 +582,32 @@ export function DemandEditPage() {
         {current.type === "SERVICE" ? (
           <>
             <div>
-              <p className="field-inline-label">{ko.fulfillHow}</p>
+              <p className="field-inline-label">{copy.fulfillHow}</p>
               <ChipGroup>
                 <Chip
                   selected={serviceMode === "onsite"}
                   onClick={() => setServiceMode("onsite")}
                 >
-                  {ko.serviceOnsite}
+                  {copy.serviceOnsite}
                 </Chip>
                 <Chip
                   selected={serviceMode === "remote"}
                   onClick={() => setServiceMode("remote")}
                 >
-                  {ko.serviceRemote}
+                  {copy.serviceRemote}
                 </Chip>
               </ChipGroup>
             </div>
             {serviceMode === "onsite" ? (
-              <Field label={ko.servicePlace}>
+              <Field label={copy.servicePlace}>
                 <TextInput
                   value={servicePlace}
                   onChange={(e) => setServicePlace(e.target.value)}
-                  placeholder={ko.locationPh}
+                  placeholder={copy.locationPh}
                 />
               </Field>
             ) : null}
-            <Field label={ko.preferredAt}>
+            <Field label={copy.preferredAt}>
               <DatetimeLocalInput
                 value={preferredAt}
                 onChange={setPreferredAt}
@@ -569,7 +619,7 @@ export function DemandEditPage() {
 
         {error ? <p className="form-error">{error}</p> : null}
         <Button type="submit" fullWidth size="lg" disabled={busy}>
-          {busy ? ko.saving : ko.saveDemand}
+          {busy ? copy.saving : copy.saveDemand}
         </Button>
       </form>
     </div>

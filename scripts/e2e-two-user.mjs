@@ -17,10 +17,25 @@ if (mode === "demo") {
   process.exit(1);
 }
 
+const buyerEmail = process.env.DAN_E2E_BUYER_EMAIL;
+const buyerPassword = process.env.DAN_E2E_BUYER_PASSWORD;
+const sellerEmail = process.env.DAN_E2E_SELLER_EMAIL;
+const sellerPassword = process.env.DAN_E2E_SELLER_PASSWORD;
+
+if (!buyerEmail || !buyerPassword || !sellerEmail || !sellerPassword) {
+  console.error(
+    "BLOCKED: full BUY E2E requires pre-verified staging buyer/seller credentials " +
+      "(DAN_E2E_BUYER_EMAIL/PASSWORD and DAN_E2E_SELLER_EMAIL/PASSWORD).",
+  );
+  process.exit(2);
+}
+if (buyerEmail.trim().toLowerCase() === sellerEmail.trim().toLowerCase()) {
+  console.error("FAIL: buyer and seller E2E accounts must be different.");
+  process.exit(1);
+}
+
 const ts = Date.now();
 const password = "DanE2eLive-Pass1!";
-const emailA = `dan.e2e.a.${ts}@example.com`;
-const emailB = `dan.e2e.b.${ts}@example.com`;
 const emailC = `dan.e2e.c.${ts}@example.com`;
 
 function client() {
@@ -48,6 +63,16 @@ async function signup(sb, email, name) {
   return data.session.user;
 }
 
+async function signin(sb, email, accountPassword, label) {
+  const { data, error } = await sb.auth.signInWithPassword({
+    email,
+    password: accountPassword,
+  });
+  if (error) throw error;
+  assert(data.session, `no session for pre-verified ${label} account`);
+  return data.session.user;
+}
+
 const report = {
   task: "FAIL",
   buy: "FAIL",
@@ -62,8 +87,8 @@ try {
   const a = client();
   const b = client();
   const c = client();
-  const userA = await signup(a, emailA, "E2E A");
-  const userB = await signup(b, emailB, "E2E B");
+  const userA = await signin(a, buyerEmail, buyerPassword, "buyer");
+  const userB = await signin(b, sellerEmail, sellerPassword, "seller");
   const userC = await signup(c, emailC, "E2E C");
   log("auth", { a: userA.id, b: userB.id, c: userC.id });
 
@@ -226,6 +251,15 @@ try {
     p_body: "should fail",
   });
   assert(blockedMsg.error, "blocked message should fail");
+
+  // A/B are reusable pre-verified staging accounts. Do not leave the security
+  // probe block behind or the next E2E run would fail for the wrong reason.
+  const unblock = await a
+    .from("blocks")
+    .delete()
+    .eq("blocker_id", userA.id)
+    .eq("blocked_id", userB.id);
+  if (unblock.error) throw unblock.error;
 
   console.log(
     JSON.stringify(

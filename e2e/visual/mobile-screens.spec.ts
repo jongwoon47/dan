@@ -4,8 +4,9 @@ import path from "node:path";
 
 const ROUTES = [
   { name: "home", path: "/" },
-  { name: "feed", path: "/feed" },
+  { name: "explore", path: "/feed" },
   { name: "create", path: "/create" },
+  { name: "chats", path: "/chats" },
   { name: "my", path: "/my" },
   { name: "activity", path: "/activity" },
 ] as const;
@@ -26,11 +27,11 @@ async function assertNoHorizontalOverflow(page: Page) {
 
 async function settle(page: Page) {
   await page.waitForLoadState("networkidle").catch(() => undefined);
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(300);
 }
 
-test.describe("mobile visual QA", () => {
-  test("core screens fit and capture", async ({ page }, testInfo) => {
+test.describe("DAN V3 responsive visual QA", () => {
+  test("core app screens fit and capture", async ({ page }, testInfo) => {
     const project = testInfo.project.name;
     const outDir = path.join("qa-screenshots", project);
     mkdirSync(outDir, { recursive: true });
@@ -53,10 +54,23 @@ test.describe("mobile visual QA", () => {
       });
     }
 
-    // Deep: first feed card if present
+    for (const type of ["BUY", "BORROW", "TASK", "SERVICE"] as const) {
+      await page.goto(`/create?type=${type}`);
+      await settle(page);
+      try {
+        await assertNoHorizontalOverflow(page);
+      } catch (e) {
+        findings.push(`create-${type.toLowerCase()}: ${(e as Error).message}`);
+      }
+      await page.screenshot({
+        path: path.join(outDir, `create-${type.toLowerCase()}-phase1.png`),
+        fullPage: true,
+      });
+    }
+
     await page.goto("/feed");
     await settle(page);
-    const firstCard = page.locator("a.feed-row").first();
+    const firstCard = page.locator("a.feed-row, a.individual-demand-card").first();
     if (await firstCard.count()) {
       await firstCard.click();
       await settle(page);
@@ -71,21 +85,21 @@ test.describe("mobile visual QA", () => {
       });
     }
 
-    // Create phase 2 sticky footer at 390-class widths
-    await page.goto("/create?type=TASK");
+    await page.goto("/create?type=BUY");
     await settle(page);
-    await page.getByRole("radio", { name: "심부름" }).click();
-    await page.getByLabel("요청 제목").fill("모바일 QA 심부름");
-    await page.getByLabel("보상").fill("10000");
+    await page.getByLabel("찾는 제품").fill("iPhone 14 Pro");
+    await page.getByLabel("희망 가격 (최대)").fill("900000");
     await page.getByRole("button", { name: "다음" }).click();
     await settle(page);
+
     try {
       await assertNoHorizontalOverflow(page);
     } catch (e) {
       findings.push(`create-phase2: ${(e as Error).message}`);
     }
+
     await page.screenshot({
-      path: path.join(outDir, "create-phase2.png"),
+      path: path.join(outDir, "create-buy-phase2.png"),
       fullPage: true,
     });
 

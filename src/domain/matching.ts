@@ -55,6 +55,7 @@ export function canCreateMatch(input: MatchCandidateInput): boolean {
   if (!isBuyDemand(demand)) return false;
   if (!isDemandLive(demand, nowMs)) return false;
   if (sellIntent.status !== "OPEN") return false;
+  if (sellIntent.targetDemandId && sellIntent.targetDemandId !== demand.id) return false;
   if (demand.details.productId !== sellIntent.productId) return false;
   if (demand.userId === sellIntent.userId) return false;
   if (!isPriceCompatible(demand.details.maxPrice, sellIntent.minimumPrice)) {
@@ -66,6 +67,9 @@ export function canCreateMatch(input: MatchCandidateInput): boolean {
       ownershipCondition,
     )
   ) {
+    return false;
+  }
+  if (!isTradeCompatible(demand.details.tradeMethod, sellIntent.tradeMethod)) {
     return false;
   }
   return true;

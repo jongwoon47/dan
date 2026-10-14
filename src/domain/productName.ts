@@ -2,15 +2,22 @@
 export function productMatchKey(raw: string): string {
   let s = raw.trim().normalize("NFKC").toLowerCase();
   s = s
+    .replace(/프로\s*맥스/g, "promax")
+    .replace(/프로맥스/g, "promax")
+    .replace(/플레이스테이션/g, "playstation")
+    .replace(/후지필름/g, "fujifilm")
+    .replace(/닌텐도/g, "nintendo")
     .replace(/아이폰/g, "iphone")
     .replace(/에어팟/g, "airpods")
     .replace(/맥북/g, "macbook")
     .replace(/갤럭시/g, "galaxy")
+    .replace(/소니/g, "sony")
+    .replace(/캐논/g, "canon")
+    .replace(/니콘/g, "nikon")
+    .replace(/리코/g, "ricoh")
     .replace(/스위치/g, "switch")
-    .replace(/프로\s*맥스/g, "promax")
-    .replace(/프로맥스/g, "promax")
-    .replace(/프로/g, "pro")
     .replace(/울트라/g, "ultra")
+    .replace(/프로/g, "pro")
     .replace(/맥스/g, "max");
   return s.replace(/[^a-z0-9가-힣]/gi, "");
 }

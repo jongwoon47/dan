@@ -19,5 +19,12 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts"]
+  "include": [
+    "capacitor.config.ts",
+    "vite.config.ts",
+    "scripts/seed-staging.ts",
+    "scripts/assert-staging-deploy.ts",
+    "scripts/staging-workflow.test.ts",
+    "scripts/remote-migration.guard.test.ts"
+  ]
 }

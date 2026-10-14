@@ -27,6 +27,14 @@ secrets/
 **/service_account*.json
 **/credentials*.json
 
+# Database backups (PII) — never commit; keep outside the worktree when possible
+backups/
+*.dump
+*.dump.sha256
+*.dump.manifest.json
+*.pg_dump.log
+dan-backups/
+
 # Local / OS / editor
 *.local
 .DS_Store
@@ -56,4 +64,14 @@ qa-screenshots/
 .tunnel.log
 .wrangler-login.out
 .wrangler-login.err
+
+# Generated native web bundle/config and local signing state
+ios/App/App/public/
+ios/App/App/capacitor.config.json
+ios/App/App/config.xml
+ios/**/xcuserdata/
+ios/**/DerivedData/
+*.mobileprovision
+*.ipa
+*.xcarchive/
 

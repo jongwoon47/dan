@@ -72,3 +72,134 @@
   font-size: 0.75rem;
   font-weight: 600;
 }
+
+
+.product-visual--camera {
+  background:
+    radial-gradient(circle at 50% 35%, rgba(91, 63, 242, 0.08), transparent 58%),
+    linear-gradient(145deg, #fbfaff, #f0edff);
+  color: #312b49;
+}
+
+.product-visual__camera {
+  width: 72%;
+  height: auto;
+  display: block;
+}
+
+.product-visual--sm .product-visual__camera {
+  width: 78%;
+}
+
+.product-visual--lg .product-visual__camera {
+  width: min(42%, 150px);
+}
+
+
+.product-visual--generic {
+  background:
+    radial-gradient(circle at 50% 35%, rgba(91, 63, 242, 0.08), transparent 58%),
+    linear-gradient(145deg, #fbfaff, #f4f2ff);
+}
+
+.product-visual__category-glyph {
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: #ffffff;
+  border: 1px solid rgba(91, 63, 242, 0.16);
+  box-shadow: 0 4px 10px rgba(49, 43, 73, 0.06);
+  color: #4b3fc9;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.product-visual--sm .product-visual__category-glyph {
+  min-width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+}
+
+.product-visual--lg .product-visual__category-glyph {
+  min-width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  font-size: 1.15rem;
+}
+
+
+/* Premium named product artwork ------------------------------------------- */
+
+.product-visual--rich {
+  background:
+    radial-gradient(circle at 50% 28%, rgba(255,255,255,.98) 0 22%, rgba(255,255,255,.55) 44%, transparent 66%),
+    linear-gradient(145deg, #f6f3ff 0%, #ebe8f7 100%);
+}
+
+.product-visual__named-art {
+  width: 82%;
+  height: 82%;
+  display: block;
+  filter: drop-shadow(0 9px 8px rgba(30, 27, 47, .18));
+}
+
+.product-visual--sm .product-visual__named-art {
+  width: 82%;
+  height: 82%;
+}
+
+.product-visual--md .product-visual__named-art {
+  width: 80%;
+  height: 80%;
+}
+
+.product-visual--lg .product-visual__named-art {
+  width: min(48%, 190px);
+  height: min(70%, 150px);
+}
+
+.product-visual__named-art--phone {
+  width: 58% !important;
+}
+
+.product-visual__named-art--laptop {
+  width: 88% !important;
+}
+
+.product-visual__named-art--chair {
+  width: 70% !important;
+}
+
+.product-visual__named-art--lens {
+  width: 68% !important;
+}
+
+.product-visual--cat-electronics {
+  background:
+    radial-gradient(circle at 48% 28%, rgba(255,255,255,.98), transparent 45%),
+    linear-gradient(145deg, #eef3fb, #e5e9f3);
+}
+
+.product-visual--cat-computer {
+  background:
+    radial-gradient(circle at 48% 26%, rgba(255,255,255,.98), transparent 44%),
+    linear-gradient(145deg, #f0efff, #e2e1f8);
+}
+
+.product-visual--cat-furniture {
+  background:
+    radial-gradient(circle at 48% 26%, rgba(255,255,255,.98), transparent 46%),
+    linear-gradient(145deg, #f8f1e9, #eee7df);
+}
+
+.product-visual--cat-lens {
+  background:
+    radial-gradient(circle at 50% 26%, rgba(255,255,255,.98), transparent 44%),
+    linear-gradient(145deg, #f1eff6, #e5e2eb);
+}

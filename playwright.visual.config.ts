@@ -3,8 +3,9 @@ import { defineConfig, devices } from "@playwright/test";
 const baseURL = process.env.DAN_E2E_BASE_URL ?? "http://127.0.0.1:5174";
 
 /**
- * Mobile visual QA — demo mode, three phone shapes.
- * Run: npm run test:qa:mobile
+ * Responsive visual QA — demo mode.
+ * Mobile app composition: 390px / iPhone / Android.
+ * Desktop web composition: 1440px.
  */
 export default defineConfig({
   testDir: "e2e/visual",
@@ -40,6 +41,14 @@ export default defineConfig({
     {
       name: "android",
       use: { ...devices["Pixel 7"] },
+    },
+    {
+      name: "desktop",
+      use: {
+        browserName: "chromium",
+        viewport: { width: 1440, height: 1000 },
+        deviceScaleFactor: 1,
+      },
     },
   ],
   webServer: {
