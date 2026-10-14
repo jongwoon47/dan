@@ -22,6 +22,7 @@
     "assert:production-deploy": "node --experimental-strip-types scripts/assert-production-deploy.ts",
     "assert:production-bundle": "node --experimental-strip-types --env-file-if-exists=.env.local scripts/assert-production-bundle.mjs",
     "verify:live-schema": "node --env-file-if-exists=.env.local scripts/verify-live-schema.mjs",
+    "db:backup:live": "bash scripts/backup-live-dan-db.sh",
     "db:apply:pending-live": "node --experimental-strip-types --env-file-if-exists=.env.local scripts/apply-pending-live-migrations.mjs",
     "ios:production": "node --experimental-strip-types --env-file-if-exists=.env.local scripts/prepare-ios-production.mjs"
   },

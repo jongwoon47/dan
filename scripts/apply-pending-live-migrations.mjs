@@ -1,7 +1,11 @@
 /**
  * Apply the pending non-destructive live-DAN migrations with pre/post verify.
  *
- * Requires:
+ * Requires a verified pg_dump backup first (Free plan has no auto backups):
+ *   DAN_BACKUP_MANIFEST=/path/outside/repo/….manifest.json
+ *   (from scripts/backup-live-dan-db.sh)
+ *
+ * Also requires:
  *   SUPABASE_ACCESS_TOKEN=sbp_…
  *   VITE_SUPABASE_URL=https://wmznpuhqmmqunwtewntt.supabase.co
  *   VITE_SUPABASE_ANON_KEY=… (publishable)
@@ -14,10 +18,80 @@
  *   node scripts/apply-pending-live-migrations.mjs --plan
  */
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 import { DAN_SUPABASE_PROJECT_REF } from "../src/release/environmentSeparation.ts";
 
 const PLAN_ONLY = process.argv.includes("--plan");
+
+function assertBackupManifest() {
+  const manifestPath = process.env.DAN_BACKUP_MANIFEST?.trim() ?? "";
+  if (!manifestPath) {
+    return {
+      ok: false,
+      code: 2,
+      message:
+        "NEEDS USER: DAN_BACKUP_MANIFEST required. Run scripts/backup-live-dan-db.sh with SUPABASE_DB_URL first. Refusing migrate without backup.",
+    };
+  }
+  if (!existsSync(manifestPath)) {
+    return { ok: false, code: 2, message: `Missing manifest: ${manifestPath}` };
+  }
+  if (manifestPath.startsWith("/workspace/") || manifestPath.includes("/workspace/")) {
+    return {
+      ok: false,
+      code: 1,
+      message: "REFUSED: backup manifest must live outside the git worktree.",
+    };
+  }
+  let manifest;
+  try {
+    manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  } catch {
+    return { ok: false, code: 1, message: "FAIL: manifest is not valid JSON" };
+  }
+  if (manifest.projectRef !== DAN_SUPABASE_PROJECT_REF) {
+    return { ok: false, code: 1, message: "REFUSED: manifest projectRef mismatch" };
+  }
+  if (!manifest.dumpPath || !existsSync(manifest.dumpPath)) {
+    return { ok: false, code: 1, message: "FAIL: dumpPath missing on disk" };
+  }
+  if (String(manifest.dumpPath).includes("/workspace/")) {
+    return {
+      ok: false,
+      code: 1,
+      message: "REFUSED: dump must not be inside the git worktree.",
+    };
+  }
+  const bytes = readFileSync(manifest.dumpPath);
+  if (!bytes.length) {
+    return { ok: false, code: 1, message: "FAIL: dump is empty" };
+  }
+  const hash = createHash("sha256").update(bytes).digest("hex");
+  if (manifest.sha256 && hash !== manifest.sha256) {
+    return { ok: false, code: 1, message: "FAIL: dump sha256 mismatch vs manifest" };
+  }
+  if (!manifest.hasProfilesTableData) {
+    return { ok: false, code: 1, message: "FAIL: manifest reports no profiles TABLE DATA" };
+  }
+  if ((manifest.tocEntries ?? 0) < 50) {
+    return { ok: false, code: 1, message: "FAIL: manifest TOC too small" };
+  }
+  if (String(manifest.restoreProbe || "").startsWith("fail")) {
+    return {
+      ok: false,
+      code: 1,
+      message:
+        "FAIL: restoreProbe failed — fix/restore-verify backup before migrate.",
+    };
+  }
+  return {
+    ok: true,
+    code: 0,
+    message: `Backup OK ${path.basename(manifest.dumpPath)} sha256=${hash.slice(0, 12)}…`,
+  };
+}
 
 const FILES = [
   "supabase/migrations/20261009000000_private_nearby_discovery.sql",
@@ -83,10 +157,15 @@ if (pre !== 0) {
 
 if (PLAN_ONLY) {
   console.log(
-    "\nPLAN ONLY — not applying. Set SUPABASE_ACCESS_TOKEN and remove --plan to apply.",
+    "\nPLAN ONLY — not applying. After pg_dump backup, set DAN_BACKUP_MANIFEST + SUPABASE_ACCESS_TOKEN.",
   );
   process.exit(0);
 }
+
+const backup = assertBackupManifest();
+console.log("\n=== BACKUP GATE ===");
+console.log(backup.message);
+if (!backup.ok) process.exit(backup.code);
 
 if (!process.env.SUPABASE_ACCESS_TOKEN?.startsWith("sbp_")) {
   console.error(

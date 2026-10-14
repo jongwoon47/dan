@@ -27,6 +27,14 @@ secrets/
 **/service_account*.json
 **/credentials*.json
 
+# Database backups (PII) — never commit; keep outside the worktree when possible
+backups/
+*.dump
+*.dump.sha256
+*.dump.manifest.json
+*.pg_dump.log
+dan-backups/
+
 # Local / OS / editor
 *.local
 .DS_Store

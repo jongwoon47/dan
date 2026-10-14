@@ -43,7 +43,32 @@ node scripts/apply-pending-live-migrations.mjs
 Plan only (no token): `node scripts/apply-pending-live-migrations.mjs --plan`  
 Pre/post REST checks: `node scripts/verify-live-schema.mjs` / `--expect-market`
 
-**Status:** Apply **BLOCKED** in this agent — `SUPABASE_ACCESS_TOKEN` not in environment. SQL is ready; no destructive SQL in the chain.
+**Status:** Apply **BLOCKED** until a verified `pg_dump` backup exists. Free plan has no automatic backups. This agent currently has publishable keys only — no `SUPABASE_DB_URL` / `SUPABASE_ACCESS_TOKEN`. Live RLS count (review account, 2026-10-14): **profiles ≥ 104**, demands 12.
+
+### Free-plan backup (required before apply)
+
+```bash
+# 1) Get DB URI from:
+#    Supabase Dashboard → Project Settings → Database → Connection string → URI
+#    (Session mode / direct). Host/user must include wmznpuhqmmqunwtewntt.
+#    Never use retired hcbooyexjgsjzjncpvtk.
+
+# 2) Inject as agent/shell secret (never commit, never paste into git):
+export SUPABASE_DB_URL='postgresql://postgres.…:[PASSWORD]@…/postgres'
+
+# 3) Dump outside the git worktree:
+npm run db:backup:live
+# → /var/dan-backups or ~/dan-backups/*.dump + .sha256 + .manifest.json
+
+# 4) Apply only after backup gate passes:
+export DAN_BACKUP_MANIFEST=/absolute/path/to/….manifest.json
+export SUPABASE_ACCESS_TOKEN=sbp_…
+DAN_ENV=staging DAN_REMOTE_CONFIRM=apply-staging-only \
+DAN_STAGING_SUPABASE_PROJECT_REF=wmznpuhqmmqunwtewntt \
+npm run db:apply:pending-live
+```
+
+`db:apply:pending-live` **refuses** without `DAN_BACKUP_MANIFEST` whose dump sha256 matches and which lives outside `/workspace`.
 
 ## 2. Cloudflare production deploy (`dan.pages.dev`)
 
