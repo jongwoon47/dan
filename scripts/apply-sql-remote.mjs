@@ -1,21 +1,25 @@
 /**
- * Apply one or more SQL files to the live DAN Supabase project via Management API.
+ * Apply one or more SQL files to the live DAN Supabase project.
  *
- * Prefer SUPABASE_ACCESS_TOKEN in the environment (sbp_…). Falls back to the
- * Windows CredMan helper used by older apply scripts.
+ * Paths (in order):
+ *   1) SUPABASE_ACCESS_TOKEN (sbp_…) → Management API /database/query
+ *   2) SUPABASE_DB_URL / DATABASE_URL → psql -v ON_ERROR_STOP=1
  *
- * Example:
+ * Both paths refuse retired refs and destructive DROP TABLE/TRUNCATE/DELETE.
+ * After each successful file, records supabase_migrations.schema_migrations
+ * so the ledger stays consistent with the repo filenames.
+ *
+ * Example (psql path):
  *   DAN_ENV=staging \
  *   DAN_REMOTE_CONFIRM=apply-staging-only \
  *   DAN_STAGING_SUPABASE_PROJECT_REF=wmznpuhqmmqunwtewntt \
- *   SUPABASE_ACCESS_TOKEN=sbp_… \
- *   node scripts/apply-sql-remote.mjs supabase/migrations/20261009010000_market_country_currency.sql
- *
- * Destructive deletes are refused. Files are applied in the given order.
+ *   SUPABASE_DB_URL=postgresql://… \
+ *   node scripts/apply-sql-remote.mjs supabase/migrations/20261009010000_….sql
  */
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, unlinkSync, writeFileSync, mkdtempSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
+import os from "node:os";
 import { assertRemoteMigrationAllowed } from "../src/release/remoteDbTargetGuard.ts";
 import {
   DAN_SUPABASE_PROJECT_REF,
@@ -60,14 +64,50 @@ for (const file of files) {
   }
 }
 
+function dbUrl() {
+  return (
+    process.env.SUPABASE_DB_URL?.trim() ||
+    process.env.DATABASE_URL?.trim() ||
+    process.env.STAGING_SUPABASE_DB_URL?.trim() ||
+    ""
+  );
+}
+
+function assertDbUrlTargetsLive(url) {
+  const lower = url.toLowerCase();
+  if (!lower.includes(DAN_SUPABASE_PROJECT_REF)) {
+    console.error(`REFUSED: DB URL must target ${DAN_SUPABASE_PROJECT_REF}`);
+    process.exit(1);
+  }
+  if (RETIRED_SUPABASE_PROJECT_REFS.some((r) => lower.includes(r))) {
+    console.error("REFUSED: retired Supabase project in DB URL");
+    process.exit(1);
+  }
+}
+
+function migrationVersionName(file) {
+  const base = path.basename(file, ".sql");
+  const m = base.match(/^(\d+)(?:_(.+))?$/);
+  if (!m) {
+    throw new Error(`Cannot parse migration version from ${base}`);
+  }
+  return { version: m[1], name: m[2] ?? base };
+}
+
+function ledgerSql(file) {
+  const { version, name } = migrationVersionName(file);
+  // Keep ledger consistent with `supabase db push` / CLI without rewriting history.
+  return `
+insert into supabase_migrations.schema_migrations (version, name)
+values ('${version}', '${name.replace(/'/g, "''")}')
+on conflict (version) do update set name = excluded.name;
+`;
+}
+
 function getAccessToken() {
   const fromEnv = process.env.SUPABASE_ACCESS_TOKEN?.trim() ?? "";
   if (fromEnv) return fromEnv;
-  if (process.platform !== "win32") {
-    throw new Error(
-      "NEEDS USER: set SUPABASE_ACCESS_TOKEN (sbp_…) — Windows CredMan fallback is unavailable here.",
-    );
-  }
+  if (process.platform !== "win32") return "";
   const ps1 = `
 Add-Type -TypeDefinition @"
 using System;using System.Runtime.InteropServices;using System.Text;
@@ -113,15 +153,8 @@ public class CredY {
   }
 }
 
-const token = getAccessToken();
-if (!token.startsWith("sbp_")) {
-  console.error("REFUSED: SUPABASE_ACCESS_TOKEN must be an sbp_ management token.");
-  process.exit(2);
-}
-
-const endpoint = `https://api.supabase.com/v1/projects/${REF}/database/query`;
-
-async function runSql(sql, label) {
+async function runViaManagementApi(token, sql, label) {
+  const endpoint = `https://api.supabase.com/v1/projects/${REF}/database/query`;
   const res = await fetch(endpoint, {
     method: "POST",
     headers: {
@@ -136,8 +169,69 @@ async function runSql(sql, label) {
   if (!res.ok) throw new Error(`${label} failed`);
 }
 
-for (const file of files) {
-  await runSql(readFileSync(file, "utf8"), path.basename(file));
+function runViaPsql(url, sql, label) {
+  const dir = mkdtempSync(path.join(os.tmpdir(), "dan-sql-"));
+  const file = path.join(dir, `${label}.sql`);
+  writeFileSync(file, sql, "utf8");
+  try {
+    // Never print connection string. ON_ERROR_STOP aborts the file on first error.
+    execFileSync(
+      "psql",
+      [url, "-v", "ON_ERROR_STOP=1", "-f", file, "-q"],
+      {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+        env: { ...process.env, PGPASSWORD: undefined },
+      },
+    );
+    console.log(`[${label}] psql OK`);
+  } catch (e) {
+    const err = e.stderr || e.message || String(e);
+    // Redact any accidental URI fragments from psql errors.
+    const scrubbed = String(err).replace(/postgresql:\/\/[^\s]+/gi, "postgresql://[redacted]");
+    console.error(`[${label}] psql FAILED`);
+    console.error(scrubbed.slice(0, 2000));
+    throw new Error(`${label} failed`);
+  } finally {
+    try {
+      unlinkSync(file);
+    } catch {
+      /* ignore */
+    }
+  }
 }
 
-console.log("Applied", files.length, "file(s) to", REF);
+const token = getAccessToken();
+const url = dbUrl();
+const mode = token.startsWith("sbp_")
+  ? "management-api"
+  : url
+    ? "psql"
+    : null;
+
+if (!mode) {
+  console.error(
+    "NEEDS USER: set SUPABASE_ACCESS_TOKEN (sbp_…) or SUPABASE_DB_URL for apply.",
+  );
+  process.exit(2);
+}
+
+if (mode === "psql") {
+  assertDbUrlTargetsLive(url);
+  console.log(`Apply path: psql → ${REF}`);
+} else {
+  console.log(`Apply path: management-api → ${REF}`);
+}
+
+for (const file of files) {
+  const label = path.basename(file);
+  // Single transaction: DDL + ledger row, or neither (no silent history skew).
+  const body = `begin;\n${readFileSync(file, "utf8")}\n\n-- ledger\n${ledgerSql(file)}\ncommit;\n`;
+  if (mode === "management-api") {
+    await runViaManagementApi(token, body, label);
+  } else {
+    runViaPsql(url, body, label);
+  }
+}
+
+console.log("Applied", files.length, "file(s) to", REF, `via ${mode}`);

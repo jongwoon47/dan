@@ -62,13 +62,16 @@ npm run db:backup:live
 
 # 4) Apply only after backup gate passes:
 export DAN_BACKUP_MANIFEST=/absolute/path/to/….manifest.json
-export SUPABASE_ACCESS_TOKEN=sbp_…
+# Either Management API token OR the same DB URL (psql path):
+export SUPABASE_ACCESS_TOKEN=sbp_…   # optional if SUPABASE_DB_URL is set
 DAN_ENV=staging DAN_REMOTE_CONFIRM=apply-staging-only \
 DAN_STAGING_SUPABASE_PROJECT_REF=wmznpuhqmmqunwtewntt \
 npm run db:apply:pending-live
 ```
 
 `db:apply:pending-live` **refuses** without `DAN_BACKUP_MANIFEST` whose dump sha256 matches and which lives outside `/workspace`.
+
+**Cloud Agent note:** secrets inject at agent **start**. If `SUPABASE_DB_URL` was added after this session booted, start a new agent on `cursor/apple-review-fix-801a` so `CLOUD_AGENT_INJECTED_SECRET_NAMES` includes it.
 
 ## 2. Cloudflare production deploy (`dan.pages.dev`)
 

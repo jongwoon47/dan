@@ -167,12 +167,21 @@ console.log("\n=== BACKUP GATE ===");
 console.log(backup.message);
 if (!backup.ok) process.exit(backup.code);
 
-if (!process.env.SUPABASE_ACCESS_TOKEN?.startsWith("sbp_")) {
+const hasToken = process.env.SUPABASE_ACCESS_TOKEN?.startsWith("sbp_");
+const hasDbUrl = Boolean(
+  process.env.SUPABASE_DB_URL?.trim() ||
+    process.env.DATABASE_URL?.trim() ||
+    process.env.STAGING_SUPABASE_DB_URL?.trim(),
+);
+if (!hasToken && !hasDbUrl) {
   console.error(
-    "\nNEEDS USER: SUPABASE_ACCESS_TOKEN (sbp_…) required to apply. Migrations are ready and non-destructive.",
+    "\nNEEDS USER: SUPABASE_ACCESS_TOKEN (sbp_…) or SUPABASE_DB_URL required to apply after backup.",
   );
   process.exit(2);
 }
+console.log(
+  `\nApply credentials: ${hasToken ? "management-api token" : "psql via SUPABASE_DB_URL"}`,
+);
 
 console.log("\n=== APPLY ===");
 const apply = runNode(["scripts/apply-sql-remote.mjs", ...FILES]);
